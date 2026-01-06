@@ -56,7 +56,7 @@ docker compose version
 ### 1️⃣ Clone the Repository
 
 ```bash
-git clone https://github.com/M-Aymane-404/MyCampus.git
+git clone https://github.com/M-Aymane-404/myCampus.git
 cd MyCampus
 ```
 
@@ -111,7 +111,7 @@ Spring Boot does **not** expose `/` by default.
 Use a real API endpoint such as:
 
 ```
-http://localhost:8080/api/health
+http://localhost:8080/api/test/ping
 ```
 
 ---
@@ -149,7 +149,7 @@ jdbc:mysql://mysql:3306/mycampus
 ### Test Backend Health
 
 ```bash
-curl http://localhost:8080/api/health
+curl http://localhost:8080/api/test/ping
 ```
 
 Expected response:
