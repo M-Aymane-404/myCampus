@@ -1,0 +1,80 @@
+ Global Dashboard Container DTO ( TableauBordAdministratifDTO ) {
+
+
+* Global statistics DTO (look what this  variable provide  )
+* List of statistics by filière (look what this list has )
+*List of statistics by département (look what this list has)
+*Date of dashboard generation
+
+}
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+had TableauBordAdministratifDTO howa lighaytsifat fl api dyal dashbord o ghaykono fih dok 4 dyal l hwayaj 
+
+
+
+
+hado homa smiyat kola variable f had l classe hahiya l class kamla 
+
+
+public class TableauBordAdministratifDTO {
+    
+    private final StatistiquesGlobalesDTO statistiquesGlobales;
+    private final List<StatistiquesParFiliereDTO> statistiquesParFiliere;
+    private final List<StatistiquesParDepartementDTO> statistiquesParDepartement;
+    private final Date dateGeneration;
+}
+
+
+
+had chi lithat chraht fih ach kola variable ola list achfih 
+
+
+
+--------------------------------------- here what variable provide ------------------------------------------------------------------------------
+
+### 1️⃣ Global Statistics DTO
+
+
+* Total number of students
+* Total number of professors
+* Total number of administrators
+* Total number of users
+* Total number of active users (enabled = true)
+* Total number of departments
+* Total number of filières
+* Total number of classes
+* Total number of modules
+* Total number of matières
+
+
+---
+
+### 2️⃣ Statistics by Filière DTO
+
+
+* Filière identifier (id)
+* Filière name
+* Total number of students in this filière
+* Total number of professors teaching in this filière
+* Total number of modules in this filière
+
+
+
+---
+
+
+### 3️⃣ Statistics by Département DTO
+
+
+* Département identifier (id)
+* Département name
+* Total number of filières
+* Total number of professors
+* Total number of students
+
+
+---
+
+
