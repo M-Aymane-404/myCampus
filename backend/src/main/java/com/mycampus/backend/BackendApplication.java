@@ -1,7 +1,6 @@
 package com.mycampus.backend;
 
-import com.mycampus.backend.Entities.Client;
-import com.mycampus.backend.repositorys.IClientRepository;
+
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -15,25 +14,7 @@ public class BackendApplication {
     }
 
 
-    @Bean
-    CommandLineRunner start(IClientRepository clientRepository) {
-        return args -> {
-            clientRepository.save(Client.builder()
-                    .prenom("Kamal")
-                    .nom("Alami")
-                    .age(30)
-                    .build());
-            clientRepository.save(Client.builder()
-                    .prenom("Ahmed")
-                    .nom("Bennani")
-                    .age(40)
-                    .build());
-            clientRepository.findAll().forEach(c->System.out.println(c));
-
-
-        };
-    }
-
+  
 
 
 

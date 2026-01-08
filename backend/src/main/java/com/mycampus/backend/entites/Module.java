@@ -1,0 +1,41 @@
+package com.mycampus.backend.entites;
+
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import java.util.List;
+
+@Entity
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class Module {
+    
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    
+    @Column(nullable = false, unique = true)
+    private String codeModule;
+    
+    @Column(nullable = false)
+    private String nom;
+    
+    private String description;
+    
+    @Column(nullable = false)
+    private String semestre;
+    
+    @Column(nullable = false)
+    private Double coefficient;
+    
+    @ManyToOne
+    @JoinColumn(name = "classe_id", nullable = false)
+    private Classe classe;
+    
+    @OneToMany(mappedBy = "module")
+    private List<Matiere> matieres;
+}
