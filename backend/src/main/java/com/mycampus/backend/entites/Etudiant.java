@@ -6,6 +6,8 @@ import lombok.Setter;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import com.mycampus.backend.enumerations.EtatInscription;
+
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 
@@ -31,7 +33,7 @@ public class Etudiant extends Utilisateur {
     
     private String anneeFinEtude;
     
-    private Date dateNaissance;
+    private LocalDate dateNaissance;
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

@@ -1,5 +1,6 @@
 package com.mycampus.backend.dto;
 
+import com.mycampus.backend.entites.Professeur;
 import com.mycampus.backend.enumerations.EtatStructure;
 import lombok.Builder;
 import lombok.Getter;
@@ -19,4 +20,5 @@ public class FiliereDTO {
     private final EtatStructure etat;
     private final Long departementId;
     private final String departementNom;
+    private final Long chef_filiere_id;
 }

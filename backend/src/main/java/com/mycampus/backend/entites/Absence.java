@@ -6,6 +6,9 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Entity
@@ -33,7 +36,7 @@ public class Absence {
     private String motif;
     
     @Column(nullable = false)
-    private Date dateDeclaration;
+    private LocalDateTime dateDeclaration;
     
     @ManyToOne
     @JoinColumn(name = "seance_id", nullable = false)

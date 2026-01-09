@@ -6,6 +6,9 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Entity
@@ -26,12 +29,12 @@ public class Notification {
     private String message;
     
     @Column(nullable = false)
-    private Date dateEnvoi;
+    private LocalDateTime dateEnvoi;
     
     @Column(nullable = false)
     private Boolean lu = false;
     
-    private Date dateLecture;
+    private LocalDateTime dateLecture;
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

@@ -45,4 +45,9 @@ public class Filiere {
     
     @OneToMany(mappedBy = "filiere")
     private List<Classe> classes;
+
+    @OneToOne
+    @JoinColumn(name = "chef_filiere_id", unique = true)
+    private Professeur chefFiliere;
+
 }

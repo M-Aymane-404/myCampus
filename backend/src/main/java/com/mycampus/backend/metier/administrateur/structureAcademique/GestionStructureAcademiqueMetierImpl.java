@@ -55,7 +55,7 @@ public class GestionStructureAcademiqueMetierImpl implements GestionStructureAca
 
         
         Departement departement = structureMapper.versDepartement(departementDTO);
-        departement.setDateCreation(new Date());
+        departement.setDateCreation( LocalDate.now());
         Departement departementSauvegarde = departementRepository.save(departement);
         return structureMapper.versDepartementDTO(departementSauvegarde);
     }

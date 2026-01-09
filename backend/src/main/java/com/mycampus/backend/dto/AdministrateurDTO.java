@@ -1,23 +1,23 @@
 package com.mycampus.backend.dto;
 
+import jakarta.persistence.Column;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.AllArgsConstructor;
+import lombok.experimental.SuperBuilder;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Getter
 @AllArgsConstructor
-@Builder
-public class AdministrateurDTO {
-    
-    private final Long id;
-    private final String ppr;
-    private final String nom;
-    private final String prenom;
-    private final String email;
-    private final String fonction;
-    private final String grade;
-    private final boolean enabled;
-    private final Date dateCreation;
-    private final Date dateDerniereConnexion;
+@SuperBuilder
+public class AdministrateurDTO  extends UtilisateurDto{
+
+    private String ppr;
+
+    private String grade;
+
+    private String fonction;
 }
