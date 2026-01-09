@@ -1,0 +1,125 @@
+.liste-approbations {
+  background-color: var(--couleur-carte);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px var(--couleur-ombre);
+  border: 1px solid var(--couleur-bordure);
+}
+
+.liste-approbations-titre {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--couleur-texte);
+  margin: 0 0 1.5rem 0;
+}
+
+.liste-approbations-contenu {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.liste-approbations-vide {
+  text-align: center;
+  color: var(--couleur-texte-clair);
+  padding: 2rem;
+  font-size: 0.9375rem;
+}
+
+.item-approbation {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem;
+  background-color: var(--couleur-fond);
+  border-radius: 0.5rem;
+  border: 1px solid var(--couleur-bordure);
+  transition: background-color 0.2s ease;
+}
+
+.item-approbation:hover {
+  background-color: #f1f5f9;
+}
+
+.item-approbation-avatar {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+}
+
+.item-approbation-initiales {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 600;
+  z-index: 1;
+}
+
+.item-approbation-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.item-approbation-nom {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--couleur-texte);
+  margin: 0;
+}
+
+.item-approbation-role {
+  font-size: 0.8125rem;
+  color: var(--couleur-texte-clair);
+  margin: 0;
+}
+
+.item-approbation-departement {
+  font-size: 0.8125rem;
+  color: var(--couleur-texte-clair);
+  margin: 0;
+}
+
+.item-approbation-date {
+  display: flex;
+  align-items: center;
+}
+
+.item-approbation-date-texte {
+  font-size: 0.8125rem;
+  color: var(--couleur-texte-clair);
+  margin: 0;
+  white-space: nowrap;
+}
+
+.item-approbation-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  .item-approbation {
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+  }
+
+  .item-approbation-date {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .item-approbation-actions {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+  }
+
+  .item-approbation-actions button {
+    flex: 1;
+  }
+}
+

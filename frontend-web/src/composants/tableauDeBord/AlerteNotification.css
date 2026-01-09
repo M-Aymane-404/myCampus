@@ -1,0 +1,59 @@
+.alerte-notification {
+  background-color: var(--couleur-carte);
+  border-radius: 0.75rem;
+  padding: 1rem 1.5rem;
+  box-shadow: 0 2px 8px var(--couleur-ombre);
+  display: flex;
+  gap: 1rem;
+  border: 1px solid var(--couleur-bordure);
+  position: relative;
+  overflow: hidden;
+}
+
+.alerte-notification-bordure {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+}
+
+.alerte-notification-warning .alerte-notification-bordure {
+  background-color: var(--couleur-warning);
+}
+
+.alerte-notification-info .alerte-notification-bordure {
+  background-color: var(--couleur-info);
+}
+
+.alerte-notification-success .alerte-notification-bordure {
+  background-color: var(--couleur-success);
+}
+
+.alerte-notification-error .alerte-notification-bordure {
+  background-color: var(--couleur-error);
+}
+
+.alerte-notification-contenu {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-left: 0.5rem;
+}
+
+.alerte-notification-message {
+  font-size: 0.9375rem;
+  color: var(--couleur-texte);
+  margin: 0;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .alerte-notification-contenu {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+

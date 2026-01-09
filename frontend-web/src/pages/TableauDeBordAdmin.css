@@ -1,0 +1,118 @@
+.tableau-de-bord-admin {
+  width: 100%;
+  max-width: 100%;
+  padding: 0;
+}
+
+.tableau-de-bord-header {
+  margin-bottom: 2rem;
+}
+
+.tableau-de-bord-titre {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--couleur-texte);
+  margin: 0 0 0.5rem 0;
+}
+
+.tableau-de-bord-sous-titre {
+  font-size: 1rem;
+  color: var(--couleur-texte-clair);
+  margin: 0;
+}
+
+.tableau-de-bord-statistiques-ligne1,
+.tableau-de-bord-statistiques-ligne2 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.tableau-de-bord-alertes {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.tableau-de-bord-graphiques {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.graphique-grand,
+.graphique-moyen {
+  width: 100%;
+}
+
+.tableau-de-bord-liste-approbations,
+.tableau-de-bord-journal-audit {
+  margin-bottom: 2rem;
+}
+
+.tableau-de-bord-actions-rapides {
+  margin-bottom: 2rem;
+}
+
+.chargement-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 1rem;
+  color: var(--couleur-texte-clair);
+}
+
+.chargement-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--couleur-bordure);
+  border-top-color: var(--couleur-principale);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 1200px) {
+  .tableau-de-bord-graphiques {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .tableau-de-bord-titre {
+    font-size: 1.5rem;
+  }
+
+  .tableau-de-bord-statistiques-ligne1,
+  .tableau-de-bord-statistiques-ligne2 {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .tableau-de-bord-graphiques {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .tableau-de-bord-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .tableau-de-bord-alertes,
+  .tableau-de-bord-liste-approbations,
+  .tableau-de-bord-journal-audit,
+  .tableau-de-bord-actions-rapides {
+    margin-bottom: 1.5rem;
+  }
+}
+

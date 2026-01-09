@@ -1,0 +1,83 @@
+.journal-audit {
+  background-color: var(--couleur-carte);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px var(--couleur-ombre);
+  border: 1px solid var(--couleur-bordure);
+}
+
+.journal-audit-titre {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--couleur-texte);
+  margin: 0 0 1.5rem 0;
+}
+
+.journal-audit-contenu {
+  overflow-x: auto;
+}
+
+.journal-audit-vide {
+  text-align: center;
+  color: var(--couleur-texte-clair);
+  padding: 2rem;
+  font-size: 0.9375rem;
+}
+
+.tableau-audit {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tableau-audit thead {
+  background-color: var(--couleur-fond);
+}
+
+.tableau-audit th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--couleur-texte-clair);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid var(--couleur-bordure);
+}
+
+.tableau-audit td {
+  padding: 1rem;
+  font-size: 0.875rem;
+  color: var(--couleur-texte);
+  border-bottom: 1px solid var(--couleur-bordure);
+}
+
+.tableau-audit tbody tr:hover {
+  background-color: var(--couleur-fond);
+}
+
+.tableau-audit tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.cellule-action {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cellule-action svg {
+  color: var(--couleur-principale);
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .tableau-audit {
+    font-size: 0.75rem;
+  }
+
+  .tableau-audit th,
+  .tableau-audit td {
+    padding: 0.5rem;
+  }
+}
+

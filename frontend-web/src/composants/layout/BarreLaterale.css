@@ -1,0 +1,138 @@
+.barre-laterale {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 280px;
+  height: 100vh;
+  background-color: #1e3a8a;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.barre-laterale-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.logo-icone-container {
+  width: 48px;
+  height: 48px;
+  background-color: var(--couleur-principale);
+  color: white;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.logo-icone {
+  color: white;
+}
+
+.logo-texte {
+  display: flex;
+  flex-direction: column;
+}
+
+.logo-titre {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: white;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.logo-sous-titre {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.barre-laterale-nav {
+  flex: 1;
+  overflow-y: hidden;
+  overflow-x: hidden;
+  padding: 1rem 0;
+}
+
+.menu-liste {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.menu-liste li {
+  margin: 0.25rem 0;
+}
+
+.menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1.5rem;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.menu-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.menu-item svg {
+  color: rgba(255, 255, 255, 0.8);
+  flex-shrink: 0;
+}
+
+.menu-item:hover svg {
+  color: white;
+}
+
+.menu-item-actif {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: white;
+  font-weight: 600;
+}
+
+.menu-item-actif svg {
+  color: white;
+}
+
+.menu-item-actif:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.barre-laterale-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@media (max-width: 768px) {
+  .barre-laterale {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+
+  .barre-laterale.ouvert {
+    transform: translateX(0);
+  }
+}
+
