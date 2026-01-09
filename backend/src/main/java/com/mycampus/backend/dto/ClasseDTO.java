@@ -5,11 +5,13 @@ import lombok.AllArgsConstructor;
 
 @Getter
 @AllArgsConstructor
-public class StatistiquesParFiliereDTO {
+public class ClasseDTO {
     
+    private final Long id;
+    private final String codeClasse;
+    private final String nom;
+    private final String niveau;
+    private final Integer effectifMax;
     private final Long filiereId;
     private final String filiereNom;
-    private final Long totalEtudiants;
-    private final Long totalProfesseurs;
-    private final Long totalModules;
 }
