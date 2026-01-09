@@ -254,13 +254,16 @@ public class GestionStructureAcademiqueMetierImpl implements GestionStructureAca
     }
 
     @Override
-    public <ModuleDTO> trouverModuleParId(Long id) {
+    public ModuleDTO trouverModuleParId(Long id) throws StructureAcademiqueException {
         if (id == null) {
-            return .empty();
+            throw  new StructureAcademiqueException(
+                    "id est obligatoire"
+            );
         }
         
-        <Module> module = moduleRepository.findById(id);
-        return module.map(structureMapper::versModuleDTO);
+        Module module = moduleRepository.findById(id).orElseThrow(() ->
+                new StructureAcademiqueException("Module non trouvé avec l'identifiant: " + id));;;
+        return structureMapper.versModuleDTO(module);
     }
 
     @Override

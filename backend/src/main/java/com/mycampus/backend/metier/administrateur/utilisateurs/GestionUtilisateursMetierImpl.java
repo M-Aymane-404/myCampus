@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
+;
 
 @Service
 @Transactional
@@ -53,23 +53,29 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
     }
 
     @Override
-    public Optional<AdministrateurDTO> trouverAdministrateurParId(Long id) {
+    public AdministrateurDTO trouverAdministrateurParId(Long id) throws UtilisateursException {
         if (id == null) {
-            return Optional.empty();
+            throw  new UtilisateursException(
+                    "id est obligatoire"
+            );
         }
         
-        Optional<Administrateur> administrateur = administrateurRepository.findById(id);
-        return administrateur.map(administrateurMapper::versAdministrateurDTO);
+        Administrateur administrateur = administrateurRepository.findById(id).orElseThrow(() ->
+                new UtilisateursException("Administrateur non trouvé avec l'identifiant: " + id));
+        return administrateurMapper.versAdministrateurDTO(administrateur);
     }
 
     @Override
-    public Optional<AdministrateurDTO> trouverAdministrateurParPpr(String ppr) {
-        if (ppr == null || ppr.trim().isEmpty()) {
-            return Optional.empty();
+    public AdministrateurDTO trouverAdministrateurParPpr(String ppr) throws UtilisateursException {
+        if (ppr == null) {
+            throw  new UtilisateursException(
+                    "id est obligatoire"
+            );
         }
         
-        Optional<Administrateur> administrateur = administrateurRepository.findByPpr(ppr);
-        return administrateur.map(administrateurMapper::versAdministrateurDTO);
+        Administrateur administrateur = administrateurRepository.findByPpr(ppr).orElseThrow(() ->
+                new UtilisateursException("Administrateur non trouvé avec l'identifiant: " + ppr));;
+        return administrateurMapper.versAdministrateurDTO(administrateur);
     }
 
     @Override
@@ -92,13 +98,11 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
             throw new UtilisateursException("L'identifiant de l'administrateur ne peut pas être nul");
         }
         
-        Optional<Administrateur> administrateurExistant = administrateurRepository.findById(id);
-        if (!administrateurExistant.isPresent()) {
-            throw new UtilisateursException("Administrateur non trouvé avec l'identifiant: " + id);
-        }
+        Administrateur adminAModifier = administrateurRepository.findById(id).orElseThrow(()->
+                new UtilisateursException("Administrateur non trouvé avec l'identifiant: " + id));
+
         
-        Administrateur adminAModifier = administrateurExistant.get();
-        
+
         if (administrateurDTO.getNom() != null && !administrateurDTO.getNom().trim().isEmpty()) {
             adminAModifier.setNom(administrateurDTO.getNom());
         }
@@ -146,26 +150,23 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
     @Override
     @Transactional
     public void activerAdministrateur(Long id) throws UtilisateursException {
-        Optional<Administrateur> administrateur = administrateurRepository.findById(id);
-        if (!administrateur.isPresent()) {
-            throw new UtilisateursException("Administrateur non trouvé avec l'identifiant: " + id);
-        }
+        Administrateur administrateur = administrateurRepository.findById(id).orElseThrow(()->
+                new UtilisateursException("Administrateur non trouvé avec l'identifiant: " + id));
+
         
-        Administrateur admin = administrateur.get();
-        admin.setEnabled(true);
-        administrateurRepository.save(admin);
+        administrateur.setEnabled(true);
+        administrateurRepository.save(administrateur);
     }
 
     @Override
     @Transactional
     public void desactiverAdministrateur(Long id) throws UtilisateursException {
-        Optional<Administrateur> administrateur = administrateurRepository.findById(id);
-        if (!administrateur.isPresent()) {
-            throw new UtilisateursException("Administrateur non trouvé avec l'identifiant: " + id);
-        }
-        
-        Administrateur admin = administrateur.get();
-        admin.setEnabled(false);
-        administrateurRepository.save(admin);
+        Administrateur administrateur = administrateurRepository.findById(id).orElseThrow(()->
+                new UtilisateursException("Administrateur non trouvé avec l'identifiant: " + id));
+
+
+
+        administrateur.setEnabled(false);
+        administrateurRepository.save(administrateur);
     }
 }

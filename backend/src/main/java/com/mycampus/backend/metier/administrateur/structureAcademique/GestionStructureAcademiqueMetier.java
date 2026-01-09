@@ -8,7 +8,6 @@ import com.mycampus.backend.dto.MatiereDTO;
 import com.mycampus.backend.exceptions.StructureAcademiqueException;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface GestionStructureAcademiqueMetier {
     
@@ -40,7 +39,7 @@ public interface GestionStructureAcademiqueMetier {
     // Module management
     ModuleDTO creerModule(ModuleDTO moduleDTO) throws StructureAcademiqueException;
     
-    Optional<ModuleDTO> trouverModuleParId(Long id);
+    ModuleDTO trouverModuleParId(Long id) throws StructureAcademiqueException;
     
     List<ModuleDTO> listerTousLesModules() throws StructureAcademiqueException;
     

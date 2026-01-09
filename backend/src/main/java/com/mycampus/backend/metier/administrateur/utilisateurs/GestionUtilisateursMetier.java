@@ -4,15 +4,14 @@ import com.mycampus.backend.dto.AdministrateurDTO;
 import com.mycampus.backend.exceptions.UtilisateursException;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface GestionUtilisateursMetier {
     
     AdministrateurDTO creerAdministrateur(AdministrateurDTO administrateurDTO) throws UtilisateursException;
     
-    Optional<AdministrateurDTO> trouverAdministrateurParId(Long id);
+    AdministrateurDTO trouverAdministrateurParId(Long id) throws UtilisateursException;
     
-    Optional<AdministrateurDTO> trouverAdministrateurParPpr(String ppr);
+    AdministrateurDTO trouverAdministrateurParPpr(String ppr) throws UtilisateursException;
     
     List<AdministrateurDTO> listerTousLesAdministrateurs() throws UtilisateursException;
     
