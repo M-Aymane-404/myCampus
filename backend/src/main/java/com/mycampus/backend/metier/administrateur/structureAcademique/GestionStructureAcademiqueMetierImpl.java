@@ -20,6 +20,9 @@ import com.mycampus.backend.exceptions.StructureAcademiqueException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.util.Date;
 import java.util.List;
 ;
 
@@ -49,8 +52,10 @@ public class GestionStructureAcademiqueMetierImpl implements GestionStructureAca
         if (departementRepository.existsByCodeDepartement(departementDTO.getCodeDepartement())) {
             throw new StructureAcademiqueException("Un département avec ce code existe déjà");
         }
+
         
         Departement departement = structureMapper.versDepartement(departementDTO);
+        departement.setDateCreation(new Date());
         Departement departementSauvegarde = departementRepository.save(departement);
         return structureMapper.versDepartementDTO(departementSauvegarde);
     }

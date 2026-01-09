@@ -1,11 +1,13 @@
 package com.mycampus.backend.dto;
 
+import lombok.Builder;
 import lombok.Getter;
 import lombok.AllArgsConstructor;
 import java.util.Date;
 
 @Getter
 @AllArgsConstructor
+@Builder
 public class AdministrateurDTO {
     
     private final Long id;

@@ -1,10 +1,12 @@
 package com.mycampus.backend.dto;
 
+import lombok.Builder;
 import lombok.Getter;
 import lombok.AllArgsConstructor;
 
 @Getter
 @AllArgsConstructor
+@Builder
 public class ClasseDTO {
     
     private final Long id;

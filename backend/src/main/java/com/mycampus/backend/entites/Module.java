@@ -30,7 +30,7 @@ public class Module {
     private String semestre;
     
     @Column(nullable = false)
-    private Double coefficient;
+    private Integer coefficient;
     
     @ManyToOne
     @JoinColumn(name = "classe_id", nullable = false)

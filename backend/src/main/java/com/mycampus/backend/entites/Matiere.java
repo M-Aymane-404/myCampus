@@ -28,7 +28,7 @@ public class Matiere {
     private String description;
     
     @Column(nullable = false)
-    private Double coefficient;
+    private Integer coefficient;
     
     @ManyToOne
     @JoinColumn(name = "module_id", nullable = false)
