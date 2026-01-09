@@ -1,0 +1,5 @@
+apogee,nom,prenom,email,cin,tel,niveau,filiere,anneeInscription,semestreActuel,etatInscription,dateNaissance
+APG004,El Amrani,Ahmed,ahmed.elamrani@student.univ.ma,GH901234,0623456789,L2,GI-2024,2023,S3,INSCRIT,2002-03-15
+APG005,Idrissi,Fatima,fatima.idrissi@student.univ.ma,IJ567890,0634567890,M1,GI-2024,2022,S1,INSCRIT,2001-07-22
+APG006,Benali,Youssef,youssef.benali@student.univ.ma,KL123456,0645678901,L3,GIL-2024,2022,S5,INSCRIT,2000-11-08
+

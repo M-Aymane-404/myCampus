@@ -61,21 +61,21 @@ const TableauDeBordAdmin = () => {
           valeur={statistiques.totalEtudiants}
           variation={{ valeur: 12, label: 'this month', positif: true }}
           icone={Users}
-          couleur="primaire"
+          couleur="primary"
         />
         <CarteStatistique
           titre="Professors"
           valeur={statistiques.totalProfesseurs}
           variation={{ valeur: 3, label: 'this month', positif: true }}
           icone={UserCheck}
-          couleur="primaire"
+          couleur="primary"
         />
         <CarteStatistique
           titre="Modules"
           valeur={statistiques.totalModules}
           variation={{ valeur: statistiques.totalModules, label: 'Active courses', positif: true }}
           icone={BookOpen}
-          couleur="primaire"
+          couleur="primary"
         />
       </div>
 
@@ -85,21 +85,21 @@ const TableauDeBordAdmin = () => {
           valeur={statistiques.totalDepartements}
           variation={{ valeur: statistiques.totalDepartements, label: 'Academic units', positif: true }}
           icone={Building2}
-          couleur="primaire"
+          couleur="primary"
         />
         <CarteStatistique
           titre="Active Now"
           valeur={statistiques.totalUtilisateursActifs}
           variation={{ valeur: statistiques.totalUtilisateursActifs, label: 'Online users', positif: true }}
           icone={UsersActive}
-          couleur="primaire"
+          couleur="success"
         />
         <CarteStatistique
           titre="Pending"
           valeur={0}
           variation={{ valeur: 12, label: 'chi haja urgent', positif: false }}
           icone={Clock}
-          couleur="primaire"
+          couleur="accent"
         />
       </div>
 

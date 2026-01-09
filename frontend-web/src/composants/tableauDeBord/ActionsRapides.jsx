@@ -1,5 +1,4 @@
 import { UserPlus, UserCheck, BookOpen, Upload, Download, Building2, FileText, Settings } from 'lucide-react';
-import BoutonAction from '../communs/BoutonAction';
 import './ActionsRapides.css';
 
 const ActionsRapides = ({ surAction }) => {
@@ -21,14 +20,14 @@ const ActionsRapides = ({ surAction }) => {
         {actions.map((action) => {
           const Icone = action.icone;
           return (
-            <BoutonAction
+            <button
               key={action.id}
-              libelle={action.libelle}
-              variante="secondaire"
-              taille="moyen"
-              icone={Icone}
+              className="quick-action-btn"
               onClick={() => surAction?.(action.id)}
-            />
+            >
+              <Icone />
+              <span>{action.libelle}</span>
+            </button>
           );
         })}
       </div>

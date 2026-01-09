@@ -1,13 +1,18 @@
 .alerte-notification {
-  background-color: var(--couleur-carte);
-  border-radius: 0.75rem;
+  background: var(--white);
+  border-radius: var(--radius-lg);
   padding: 1rem 1.5rem;
-  box-shadow: 0 2px 8px var(--couleur-ombre);
+  box-shadow: var(--shadow-sm);
   display: flex;
   gap: 1rem;
-  border: 1px solid var(--couleur-bordure);
+  border: 1px solid var(--gray-200);
   position: relative;
   overflow: hidden;
+  transition: var(--transition-normal);
+}
+
+.alerte-notification:hover {
+  box-shadow: var(--shadow-md);
 }
 
 .alerte-notification-bordure {
@@ -19,19 +24,19 @@
 }
 
 .alerte-notification-warning .alerte-notification-bordure {
-  background-color: var(--couleur-warning);
+  background-color: #f59e0b;
 }
 
 .alerte-notification-info .alerte-notification-bordure {
-  background-color: var(--couleur-info);
+  background-color: var(--secondary);
 }
 
 .alerte-notification-success .alerte-notification-bordure {
-  background-color: var(--couleur-success);
+  background-color: var(--success);
 }
 
 .alerte-notification-error .alerte-notification-bordure {
-  background-color: var(--couleur-error);
+  background-color: var(--error);
 }
 
 .alerte-notification-contenu {
@@ -45,7 +50,7 @@
 
 .alerte-notification-message {
   font-size: 0.9375rem;
-  color: var(--couleur-texte);
+  color: var(--dark);
   margin: 0;
   font-weight: 500;
 }
@@ -56,4 +61,3 @@
     align-items: flex-start;
   }
 }
-

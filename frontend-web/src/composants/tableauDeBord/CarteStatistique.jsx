@@ -1,14 +1,16 @@
+import { TrendingUp, TrendingDown } from 'lucide-react';
 import './CarteStatistique.css';
 
-const CarteStatistique = ({ titre, valeur, variation, icone: Icone, couleur = 'primaire' }) => {
+const CarteStatistique = ({ titre, valeur, variation, icone: Icone, couleur = 'primary' }) => {
   return (
-    <div className={`carte-statistique carte-statistique-${couleur}`}>
+    <div className="carte-statistique">
       <div className="carte-statistique-header">
-        <div className="carte-statistique-icone">
-          {Icone && <Icone size={24} />}
+        <div className={`carte-statistique-icone ${couleur}`}>
+          {Icone && <Icone />}
         </div>
         {variation && (
           <span className={`carte-statistique-variation ${variation.positif ? 'positif' : 'negatif'}`}>
+            {variation.positif ? <TrendingUp /> : <TrendingDown />}
             {variation.positif ? '+' : ''}{variation.valeur} {variation.label}
           </span>
         )}

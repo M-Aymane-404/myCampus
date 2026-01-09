@@ -1,0 +1,6 @@
+Module,Matière,Type,Date,Heure Début,Heure Fin,Salle,Professeur,Filière,Classe,État
+GI-INFO-101,Algorithmique,COURS,2024-02-20,08:00,10:00,A101,Ahmed Alami,GI-2024,L3-A,Programmée
+GI-INFO-101,Algorithmique,TD,2024-02-21,10:00,12:00,B205,Ahmed Alami,GI-2024,L3-B,Programmée
+GI-INFO-102,POO,TP,2024-02-22,14:00,17:00,Lab-Info-1,Fatima Bennani,GI-2024,L3-A,Programmée
+GI-INFO-103,Base de données,COURS,2024-02-23,08:00,10:00,A102,Mohamed Chraibi,GI-2024,M1-A,Programmée
+

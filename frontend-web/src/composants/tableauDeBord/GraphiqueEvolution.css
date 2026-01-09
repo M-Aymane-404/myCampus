@@ -1,26 +1,30 @@
+/* Dashboard Cards */
 .graphique-evolution {
-  background-color: var(--couleur-carte);
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px var(--couleur-ombre);
-  border: 1px solid var(--couleur-bordure);
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-200);
+  overflow: hidden;
 }
 
 .graphique-titre {
-  font-size: 1.125rem;
+  font-size: 1.1rem;
   font-weight: 600;
-  color: var(--couleur-texte);
-  margin: 0 0 0.25rem 0;
+  color: var(--dark);
+  margin: 0 0 5px 0;
+  padding: 20px 25px 0 25px;
 }
 
 .graphique-sous-titre {
-  font-size: 0.875rem;
-  color: var(--couleur-texte-clair);
-  margin: 0 0 1.5rem 0;
+  font-size: 0.9rem;
+  color: var(--gray-500);
+  margin: 0 0 20px 0;
+  padding: 0 25px;
 }
 
 .graphique-contenu {
   width: 100%;
+  padding: 0 25px 25px 25px;
 }
 
 @media (max-width: 768px) {
@@ -28,4 +32,3 @@
     padding: 1rem;
   }
 }
-
