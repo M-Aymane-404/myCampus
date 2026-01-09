@@ -1,0 +1,60 @@
+.bouton-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.bouton-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.bouton-action-primaire {
+  background-color: var(--couleur-principale);
+  color: white;
+}
+
+.bouton-action-primaire:hover:not(:disabled) {
+  background-color: #1e40af;
+}
+
+.bouton-action-secondaire {
+  background-color: var(--couleur-bordure);
+  color: var(--couleur-texte);
+}
+
+.bouton-action-secondaire:hover:not(:disabled) {
+  background-color: #cbd5e1;
+}
+
+.bouton-action-danger {
+  background-color: var(--couleur-error);
+  color: white;
+}
+
+.bouton-action-danger:hover:not(:disabled) {
+  background-color: #dc2626;
+}
+
+.bouton-action-petit {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8125rem;
+}
+
+.bouton-action-moyen {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+.bouton-action-grand {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+}
+

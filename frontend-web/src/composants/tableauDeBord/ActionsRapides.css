@@ -1,0 +1,33 @@
+.actions-rapides {
+  background-color: var(--couleur-carte);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px var(--couleur-ombre);
+  border: 1px solid var(--couleur-bordure);
+}
+
+.actions-rapides-titre {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--couleur-texte);
+  margin: 0 0 1.5rem 0;
+}
+
+.actions-rapides-grille {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .actions-rapides-grille {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .actions-rapides-grille {
+    grid-template-columns: 1fr;
+  }
+}
+

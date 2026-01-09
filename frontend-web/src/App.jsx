@@ -1,35 +1,44 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from 'react';
+import ConteneurPrincipal from './composants/layout/ConteneurPrincipal';
+import TableauDeBordAdmin from './pages/TableauDeBordAdmin';
+import './App.css';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [elementActif, setElementActif] = useState('tableau-de-bord');
+
+  const gererChangementElement = (idElement) => {
+    setElementActif(idElement);
+  };
+
+  const rendreContenu = () => {
+    switch (elementActif) {
+      case 'tableau-de-bord':
+        return <TableauDeBordAdmin />;
+      case 'etudiants':
+        return <div>Page Étudiants (À implémenter)</div>;
+      case 'professeurs':
+        return <div>Page Professeurs (À implémenter)</div>;
+      case 'modules':
+        return <div>Page Modules (À implémenter)</div>;
+      case 'departements':
+        return <div>Page Départements (À implémenter)</div>;
+      case 'journal-audit':
+        return <div>Page Journal d'Audit (À implémenter)</div>;
+      case 'parametres':
+        return <div>Page Paramètres (À implémenter)</div>;
+      default:
+        return <TableauDeBordAdmin />;
+    }
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <ConteneurPrincipal
+      elementActif={elementActif}
+      surChangementElement={gererChangementElement}
+    >
+      {rendreContenu()}
+    </ConteneurPrincipal>
+  );
 }
 
-export default App
+export default App;

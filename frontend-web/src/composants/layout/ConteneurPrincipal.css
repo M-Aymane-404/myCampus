@@ -1,0 +1,30 @@
+.conteneur-principal {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.contenu-principal {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-left: 280px;
+  transition: margin-left 0.3s ease;
+}
+
+.contenu-page {
+  flex: 1;
+  padding: 2rem;
+  background-color: var(--couleur-fond);
+}
+
+@media (max-width: 768px) {
+  .contenu-principal {
+    margin-left: 0;
+  }
+
+  .contenu-page {
+    padding: 1rem;
+  }
+}
+

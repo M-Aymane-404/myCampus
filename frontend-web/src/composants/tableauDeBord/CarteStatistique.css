@@ -1,0 +1,95 @@
+.carte-statistique {
+  background-color: var(--couleur-carte);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px var(--couleur-ombre);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid var(--couleur-bordure);
+}
+
+.carte-statistique:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px var(--couleur-ombre);
+}
+
+.carte-statistique-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.carte-statistique-icone {
+  width: 48px;
+  height: 48px;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--couleur-fond);
+  color: var(--couleur-principale);
+}
+
+.carte-statistique-primaire .carte-statistique-icone {
+  background-color: rgba(30, 58, 138, 0.1);
+  color: var(--couleur-principale);
+}
+
+.carte-statistique-secondaire .carte-statistique-icone {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: var(--couleur-secondaire);
+}
+
+.carte-statistique-success .carte-statistique-icone {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: var(--couleur-success);
+}
+
+.carte-statistique-variation {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.carte-statistique-variation.positif {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: var(--couleur-success);
+}
+
+.carte-statistique-variation.negatif {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--couleur-error);
+}
+
+.carte-statistique-contenu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.carte-statistique-titre {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--couleur-texte-clair);
+  margin: 0;
+}
+
+.carte-statistique-valeur {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--couleur-texte);
+  margin: 0;
+  line-height: 1.2;
+}
+
+@media (max-width: 768px) {
+  .carte-statistique {
+    padding: 1rem;
+  }
+
+  .carte-statistique-valeur {
+    font-size: 1.5rem;
+  }
+}
+
