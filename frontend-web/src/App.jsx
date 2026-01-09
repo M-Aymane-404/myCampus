@@ -1,6 +1,14 @@
 import { useState } from 'react';
 import ConteneurPrincipal from './composants/layout/ConteneurPrincipal';
 import TableauDeBordAdmin from './pages/TableauDeBordAdmin';
+import GestionDepartements from './pages/GestionDepartements';
+import GestionFilieres from './pages/GestionFilieres';
+import GestionProfesseurs from './pages/GestionProfesseurs';
+import GestionEtudiants from './pages/GestionEtudiants';
+import GestionModules from './pages/GestionModules';
+import GestionEmploiTemps from './pages/GestionEmploiTemps';
+import GestionComptes from './pages/GestionComptes';
+import JournalAuditPage from './pages/JournalAuditPage';
 import './App.css';
 
 function App() {
@@ -14,18 +22,22 @@ function App() {
     switch (elementActif) {
       case 'tableau-de-bord':
         return <TableauDeBordAdmin />;
-      case 'etudiants':
-        return <div>Page Étudiants (À implémenter)</div>;
-      case 'professeurs':
-        return <div>Page Professeurs (À implémenter)</div>;
-      case 'modules':
-        return <div>Page Modules (À implémenter)</div>;
       case 'departements':
-        return <div>Page Départements (À implémenter)</div>;
+        return <GestionDepartements />;
+      case 'filieres':
+        return <GestionFilieres />;
+      case 'professeurs':
+        return <GestionProfesseurs />;
+      case 'etudiants':
+        return <GestionEtudiants />;
+      case 'modules':
+        return <GestionModules />;
+      case 'emploi-temps':
+        return <GestionEmploiTemps />;
+      case 'comptes':
+        return <GestionComptes />;
       case 'journal-audit':
-        return <div>Page Journal d'Audit (À implémenter)</div>;
-      case 'parametres':
-        return <div>Page Paramètres (À implémenter)</div>;
+        return <JournalAuditPage />;
       default:
         return <TableauDeBordAdmin />;
     }

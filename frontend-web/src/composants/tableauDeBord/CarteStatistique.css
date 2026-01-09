@@ -1,95 +1,104 @@
+/* Stats Cards */
 .carte-statistique {
-  background-color: var(--couleur-carte);
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px var(--couleur-ombre);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  border: 1px solid var(--couleur-bordure);
+  background: var(--white);
+  padding: 25px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-normal);
+  animation: fadeIn 0.5s ease forwards;
+  border: 1px solid var(--gray-200);
 }
 
 .carte-statistique:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px var(--couleur-ombre);
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-lg);
 }
 
 .carte-statistique-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 1rem;
+  margin-bottom: 15px;
 }
 
 .carte-statistique-icone {
-  width: 48px;
-  height: 48px;
-  border-radius: 0.5rem;
+  width: 50px;
+  height: 50px;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: var(--couleur-fond);
-  color: var(--couleur-principale);
 }
 
-.carte-statistique-primaire .carte-statistique-icone {
-  background-color: rgba(30, 58, 138, 0.1);
-  color: var(--couleur-principale);
+.carte-statistique-icone.primary {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
 }
 
-.carte-statistique-secondaire .carte-statistique-icone {
-  background-color: rgba(59, 130, 246, 0.1);
-  color: var(--couleur-secondaire);
+.carte-statistique-icone.accent {
+  background: linear-gradient(135deg, var(--accent) 0%, #e76f51 100%);
 }
 
-.carte-statistique-success .carte-statistique-icone {
-  background-color: rgba(16, 185, 129, 0.1);
-  color: var(--couleur-success);
+.carte-statistique-icone.success {
+  background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+}
+
+.carte-statistique-icone.info {
+  background: linear-gradient(135deg, var(--secondary) 0%, #0891b2 100%);
+}
+
+.carte-statistique-icone svg {
+  width: 24px;
+  height: 24px;
+  color: var(--white);
 }
 
 .carte-statistique-variation {
-  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
   font-weight: 600;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
 }
 
 .carte-statistique-variation.positif {
-  background-color: rgba(16, 185, 129, 0.1);
-  color: var(--couleur-success);
+  color: var(--success);
 }
 
 .carte-statistique-variation.negatif {
-  background-color: rgba(239, 68, 68, 0.1);
-  color: var(--couleur-error);
+  color: var(--error);
+}
+
+.carte-statistique-variation svg {
+  width: 16px;
+  height: 16px;
 }
 
 .carte-statistique-contenu {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 5px;
 }
 
 .carte-statistique-titre {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--couleur-texte-clair);
+  color: var(--gray-500);
+  font-size: 0.9rem;
   margin: 0;
 }
 
 .carte-statistique-valeur {
-  font-size: 2rem;
+  font-size: 2.2rem;
   font-weight: 700;
-  color: var(--couleur-texte);
+  color: var(--dark);
   margin: 0;
   line-height: 1.2;
 }
 
 @media (max-width: 768px) {
   .carte-statistique {
-    padding: 1rem;
+    padding: 20px;
   }
 
   .carte-statistique-valeur {
-    font-size: 1.5rem;
+    font-size: 1.8rem;
   }
 }
-

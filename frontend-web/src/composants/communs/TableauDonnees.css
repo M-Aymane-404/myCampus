@@ -1,0 +1,214 @@
+.tableau-donnees {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-200);
+  overflow: hidden;
+}
+
+.tableau-donnees-header {
+  padding: 20px 25px;
+  border-bottom: 1px solid var(--gray-200);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.tableau-donnees-titre {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--dark);
+  margin: 0;
+}
+
+.tableau-donnees-actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.recherche-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.recherche-icone {
+  position: absolute;
+  left: 12px;
+  color: var(--gray-400);
+  pointer-events: none;
+}
+
+.recherche-input {
+  padding: 10px 15px 10px 40px;
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  width: 250px;
+  transition: var(--transition-normal);
+}
+
+.recherche-input:focus {
+  outline: none;
+  border-color: var(--secondary);
+}
+
+.tableau-donnees-contenu {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 600px;
+  width: 100%;
+}
+
+.tableau-donnees-contenu::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.tableau-donnees-contenu::-webkit-scrollbar-track {
+  background: var(--gray-100);
+  border-radius: 4px;
+}
+
+.tableau-donnees-contenu::-webkit-scrollbar-thumb {
+  background: var(--gray-400);
+  border-radius: 4px;
+}
+
+.tableau-donnees-contenu::-webkit-scrollbar-thumb:hover {
+  background: var(--gray-500);
+}
+
+.tableau-donnees-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.tableau-donnees-table th {
+  text-align: left;
+  padding: 12px 15px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--gray-500);
+  border-bottom: 2px solid var(--gray-200);
+  background: var(--gray-100);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
+}
+
+.tableau-donnees-table td {
+  padding: 15px;
+  border-bottom: 1px solid var(--gray-100);
+  font-size: 0.9rem;
+  color: var(--dark);
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+.tableau-donnees-table tbody tr:hover {
+  background: var(--gray-100);
+}
+
+.tableau-donnees-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.tableau-donnees-boutons-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.bouton-action-icone {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: var(--gray-100);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition-normal);
+  color: var(--gray-600);
+}
+
+.bouton-action-icone:hover {
+  background: var(--secondary);
+  color: var(--white);
+}
+
+.bouton-action-icone.bouton-action-danger:hover {
+  background: var(--error);
+  color: var(--white);
+}
+
+.tableau-donnees-vide {
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--gray-500);
+}
+
+.tableau-donnees-pagination {
+  padding: 20px 25px;
+  border-top: 1px solid var(--gray-200);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.bouton-pagination {
+  padding: 8px 16px;
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  background: var(--white);
+  color: var(--gray-600);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition-normal);
+}
+
+.bouton-pagination:hover:not(:disabled) {
+  border-color: var(--secondary);
+  background: var(--gray-100);
+}
+
+.bouton-pagination:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-info {
+  color: var(--gray-600);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+  .tableau-donnees-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .recherche-input {
+    width: 100%;
+  }
+
+  .tableau-donnees-table {
+    font-size: 0.8rem;
+  }
+
+  .tableau-donnees-table th,
+  .tableau-donnees-table td {
+    padding: 10px 8px;
+  }
+}

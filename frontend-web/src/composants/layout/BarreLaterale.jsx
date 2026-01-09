@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { GraduationCap, LayoutDashboard, Users, UserCheck, BookOpen, Building2, FileText, Settings } from 'lucide-react';
+import { GraduationCap, LayoutDashboard, Users, UserCheck, BookOpen, Building2, FileText, Calendar } from 'lucide-react';
 import IndicateurSession from '../communs/IndicateurSession';
 import './BarreLaterale.css';
 
@@ -22,12 +22,14 @@ const BarreLaterale = ({ elementActif, surChangementElement }) => {
 
   const elementsMenu = [
     { id: 'tableau-de-bord', icone: LayoutDashboard, libelle: 'Tableau de bord' },
-    { id: 'etudiants', icone: Users, libelle: 'Étudiants' },
-    { id: 'professeurs', icone: UserCheck, libelle: 'Professeurs' },
-    { id: 'modules', icone: BookOpen, libelle: 'Modules' },
     { id: 'departements', icone: Building2, libelle: 'Départements' },
+    { id: 'filieres', icone: GraduationCap, libelle: 'Filières' },
+    { id: 'professeurs', icone: UserCheck, libelle: 'Professeurs' },
+    { id: 'etudiants', icone: Users, libelle: 'Étudiants' },
+    { id: 'modules', icone: BookOpen, libelle: 'Modules' },
+    { id: 'emploi-temps', icone: Calendar, libelle: 'Emploi du temps' },
+    { id: 'comptes', icone: Users, libelle: 'Comptes' },
     { id: 'journal-audit', icone: FileText, libelle: 'Journal d\'audit' },
-    { id: 'parametres', icone: Settings, libelle: 'Paramètres' },
   ];
 
   const formaterTemps = (secondes) => {
@@ -38,12 +40,14 @@ const BarreLaterale = ({ elementActif, surChangementElement }) => {
 
   const traductionsMenu = {
     'tableau-de-bord': 'Dashboard',
-    'etudiants': 'Students',
-    'professeurs': 'Professors',
-    'modules': 'Modules',
     'departements': 'Departments',
+    'filieres': 'Filières',
+    'professeurs': 'Professors',
+    'etudiants': 'Students',
+    'modules': 'Modules',
+    'emploi-temps': 'Schedule',
+    'comptes': 'Accounts',
     'journal-audit': 'Audit Logs',
-    'parametres': 'Settings',
   };
 
   return (

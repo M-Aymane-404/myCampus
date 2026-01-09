@@ -1,0 +1,116 @@
+.gestion-emploi-temps {
+  width: 100%;
+  max-width: 100%;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+.gestion-emploi-temps-header {
+  margin-bottom: 2rem;
+}
+
+.gestion-emploi-temps-titre {
+  font-family: var(--font-heading), serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin: 0 0 5px 0;
+}
+
+.gestion-emploi-temps-sous-titre {
+  font-size: 0.9rem;
+  color: var(--gray-500);
+  margin: 0;
+}
+
+.gestion-emploi-temps-statistiques {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.cellule-salle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+}
+
+.gestion-emploi-temps-filtres {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-200);
+}
+
+.filtres-container {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.filtre-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filtre-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--dark);
+  white-space: nowrap;
+}
+
+.filtre-select {
+  padding: 8px 12px;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  color: var(--dark);
+  background: var(--white);
+  cursor: pointer;
+  transition: var(--transition-normal);
+  min-width: 180px;
+}
+
+.filtre-select:hover {
+  border-color: var(--primary);
+}
+
+.filtre-select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1);
+}
+
+@media (max-width: 1200px) {
+  .gestion-emploi-temps-statistiques {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .gestion-emploi-temps-statistiques {
+    grid-template-columns: 1fr;
+  }
+
+  .filtres-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filtre-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filtre-select {
+    width: 100%;
+  }
+}
+

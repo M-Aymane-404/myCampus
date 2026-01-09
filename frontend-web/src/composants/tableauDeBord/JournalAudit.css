@@ -1,58 +1,58 @@
+/* Cards */
 .journal-audit {
-  background-color: var(--couleur-carte);
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px var(--couleur-ombre);
-  border: 1px solid var(--couleur-bordure);
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  border: 1px solid var(--gray-200);
 }
 
 .journal-audit-titre {
-  font-size: 1.125rem;
+  font-size: 1.1rem;
   font-weight: 600;
-  color: var(--couleur-texte);
-  margin: 0 0 1.5rem 0;
+  color: var(--dark);
+  margin: 0;
+  padding: 20px 25px;
+  border-bottom: 1px solid var(--gray-200);
 }
 
 .journal-audit-contenu {
   overflow-x: auto;
+  padding: 25px;
 }
 
 .journal-audit-vide {
   text-align: center;
-  color: var(--couleur-texte-clair);
+  color: var(--gray-500);
   padding: 2rem;
   font-size: 0.9375rem;
 }
 
+/* Table */
 .tableau-audit {
   width: 100%;
   border-collapse: collapse;
 }
 
-.tableau-audit thead {
-  background-color: var(--couleur-fond);
-}
-
 .tableau-audit th {
-  padding: 0.75rem 1rem;
   text-align: left;
-  font-size: 0.8125rem;
+  padding: 12px 15px;
+  font-size: 0.8rem;
   font-weight: 600;
-  color: var(--couleur-texte-clair);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border-bottom: 2px solid var(--couleur-bordure);
+  color: var(--gray-500);
+  border-bottom: 2px solid var(--gray-200);
 }
 
 .tableau-audit td {
-  padding: 1rem;
-  font-size: 0.875rem;
-  color: var(--couleur-texte);
-  border-bottom: 1px solid var(--couleur-bordure);
+  padding: 15px;
+  border-bottom: 1px solid var(--gray-100);
+  font-size: 0.9rem;
 }
 
 .tableau-audit tbody tr:hover {
-  background-color: var(--couleur-fond);
+  background: var(--gray-100);
 }
 
 .tableau-audit tbody tr:last-child td {
@@ -66,18 +66,19 @@
 }
 
 .cellule-action svg {
-  color: var(--couleur-principale);
+  color: var(--primary);
   flex-shrink: 0;
 }
 
 @media (max-width: 768px) {
   .tableau-audit {
-    font-size: 0.75rem;
+    display: block;
+    overflow-x: auto;
   }
 
   .tableau-audit th,
   .tableau-audit td {
     padding: 0.5rem;
+    font-size: 0.75rem;
   }
 }
-
