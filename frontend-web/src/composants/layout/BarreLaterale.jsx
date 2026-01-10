@@ -3,7 +3,7 @@ import { GraduationCap, LayoutDashboard, Users, UserCheck, BookOpen, Building2, 
 import IndicateurSession from '../communs/IndicateurSession';
 import './BarreLaterale.css';
 
-const BarreLaterale = ({ elementActif, surChangementElement }) => {
+const BarreLaterale = ({ elementActif, surChangementElement, estOuverte = false }) => {
   const [tempsRestant, setTempsRestant] = useState(30 * 60);
 
   useEffect(() => {
@@ -51,19 +51,7 @@ const BarreLaterale = ({ elementActif, surChangementElement }) => {
   };
 
   return (
-    <aside className="barre-laterale">
-      <div className="barre-laterale-header">
-        <div className="logo-container">
-          <div className="logo-icone-container">
-            <GraduationCap className="logo-icone" size={24} />
-          </div>
-          <div className="logo-texte">
-            <h1 className="logo-titre">MyCampus</h1>
-            <p className="logo-sous-titre">Academic Portal</p>
-          </div>
-        </div>
-      </div>
-
+    <aside className={`barre-laterale ${estOuverte ? 'open' : ''}`}>
       <nav className="barre-laterale-nav">
         <ul className="menu-liste">
           {elementsMenu.map((element) => {

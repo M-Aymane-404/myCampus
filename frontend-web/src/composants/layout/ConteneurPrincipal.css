@@ -3,24 +3,19 @@
   display: flex;
   min-height: 100vh;
   background: var(--gray-100);
+  position: relative;
 }
 
 .contenu-principal {
   flex: 1;
-  margin-left: 280px;
+  margin-left: 0;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  width: 100%;
 }
 
 .contenu-page {
   flex: 1;
   padding: 30px;
-}
-
-/* Responsive */
-@media (max-width: 992px) {
-  .contenu-principal {
-    margin-left: 0;
-  }
 }
