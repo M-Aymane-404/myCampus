@@ -1,16 +1,14 @@
-import BarreLaterale from './BarreLaterale';
 import EnTete from './EnTete';
 import './ConteneurPrincipal.css';
 
 const ConteneurPrincipal = ({ children, elementActif, surChangementElement }) => {
   return (
     <div className="conteneur-principal">
-      <BarreLaterale 
-        elementActif={elementActif} 
-        surChangementElement={surChangementElement}
-      />
       <div className="contenu-principal">
-        <EnTete />
+        <EnTete 
+          elementActif={elementActif}
+          surChangementElement={surChangementElement}
+        />
         <main className="contenu-page">
           {children}
         </main>

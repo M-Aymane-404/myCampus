@@ -117,6 +117,7 @@ const GestionDepartements = () => {
   const [modalAffecterProf, setModalAffecterProf] = useState(false);
   const [modalAjouterFiliere, setModalAjouterFiliere] = useState(false);
   const [departementSelectionne, setDepartementSelectionne] = useState(null);
+  const [departementCourant, setDepartementCourant] = useState(null);
   const [formulaireDepartement, setFormulaireDepartement] = useState({
     nom: '',
     code: '',
@@ -130,6 +131,7 @@ const GestionDepartements = () => {
   });
 
   const ouvrirModalAjoutDepartement = () => {
+    setDepartementCourant(null);
     setFormulaireDepartement({
       nom: '',
       code: '',
@@ -137,6 +139,23 @@ const GestionDepartements = () => {
       chefDepartement: ''
     });
     setModalAjoutDepartement(true);
+  };
+
+  const ouvrirModalModification = (departement) => {
+    setDepartementCourant(departement);
+    setFormulaireDepartement({
+      nom: departement.nom,
+      code: departement.code,
+      description: departement.description || '',
+      chefDepartement: departement.chefDepartement || ''
+    });
+    setModalAjoutDepartement(true);
+  };
+
+  const supprimer = (departement) => {
+    if (window.confirm(`Êtes-vous sûr de vouloir supprimer le département "${departement.nom}" ? Cette action est irréversible.`)) {
+      setDepartements(prev => prev.filter(d => d.id !== departement.id));
+    }
   };
 
   const ouvrirModalAffecterProf = (departement) => {
@@ -170,14 +189,24 @@ const GestionDepartements = () => {
       return;
     }
 
-    const nouveauDepartement = {
-      id: departements.length + 1,
-      ...formulaireDepartement,
-      nombreProfesseurs: 0,
-      nombreFilieres: 0,
-      nombreEtudiants: 0
-    };
-    setDepartements(prev => [...prev, nouveauDepartement]);
+    if (departementCourant) {
+      // Modification
+      setDepartements(prev => prev.map(d => 
+        d.id === departementCourant.id 
+          ? { ...d, ...formulaireDepartement }
+          : d
+      ));
+    } else {
+      // Ajout
+      const nouveauDepartement = {
+        id: departements.length + 1,
+        ...formulaireDepartement,
+        nombreProfesseurs: 0,
+        nombreFilieres: 0,
+        nombreEtudiants: 0
+      };
+      setDepartements(prev => [...prev, nouveauDepartement]);
+    }
     setModalAjoutDepartement(false);
   };
 
@@ -296,8 +325,10 @@ const GestionDepartements = () => {
         colonnes={colonnes}
         donnees={departements}
         surAjouter={ouvrirModalAjoutDepartement}
+        surModifier={ouvrirModalModification}
+        surSupprimer={supprimer}
         recherche={true}
-        actions={false}
+        actions={true}
       />
 
       {/* Détails des départements */}
@@ -385,11 +416,14 @@ const GestionDepartements = () => {
         })}
       </div>
 
-      {/* Modal Ajout Département */}
+      {/* Modal Ajout/Modification Département */}
       <FormulaireModal
-        titre="Ajouter un Département"
+        titre={departementCourant ? 'Modifier le Département' : 'Ajouter un Département'}
         estOuvert={modalAjoutDepartement}
-        surFermer={() => setModalAjoutDepartement(false)}
+        surFermer={() => {
+          setModalAjoutDepartement(false);
+          setDepartementCourant(null);
+        }}
         surSauvegarder={sauvegarderDepartement}
       >
         <ChampFormulaire

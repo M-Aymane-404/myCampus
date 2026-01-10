@@ -1,4 +1,5 @@
 import { TrendingUp, TrendingDown } from 'lucide-react';
+
 import './CarteStatistique.css';
 
 const CarteStatistique = ({ titre, valeur, variation, icone: Icone, couleur = 'primary' }) => {
