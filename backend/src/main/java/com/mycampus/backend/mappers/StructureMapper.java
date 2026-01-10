@@ -24,12 +24,15 @@ public class StructureMapper {
             return null;
         }
         
-        return new DepartementDTO(
-            departement.getId(),
-            departement.getCodeDepartement(),
-            departement.getTypeDepartement(),
-            departement.getDescription()
-        );
+        return   DepartementDTO.builder()
+                .id(departement.getId())
+                .codeDepartement(departement.getCodeDepartement())
+                .typeDepartement(departement.getTypeDepartement())
+                .description(departement.getDescription())
+                .dateCreation(departement.getDateCreation())
+                .chefDepartement(departement.getChefDepartement())
+                .build();
+
     }
 
     public List<DepartementDTO> versListeDepartementsDTO(List<Departement> departements) {
@@ -52,6 +55,7 @@ public class StructureMapper {
         departement.setCodeDepartement(departementDTO.getCodeDepartement());
         departement.setTypeDepartement(departementDTO.getTypeDepartement());
         departement.setDescription(departementDTO.getDescription());
+
         
         return departement;
     }
@@ -62,17 +66,20 @@ public class StructureMapper {
             return null;
         }
         
-        return new FiliereDTO(
-            filiere.getId(),
-            filiere.getCodeFiliere(),
-            filiere.getNom(),
-            filiere.getDescription(),
-            filiere.getDureeFormation(),
-            filiere.getNiveauDiplome(),
-            filiere.getEtat(),
-            filiere.getDepartement() != null ? filiere.getDepartement().getId() : null,
-            filiere.getDepartement() != null ? filiere.getDepartement().getTypeDepartement() : null
-        );
+        return  FiliereDTO.builder()
+                .id(filiere.getId())
+                .codeFiliere(filiere.getCodeFiliere())
+                .nom(filiere.getNom())
+                .description(filiere.getDescription())
+                .dureeFormation(filiere.getDureeFormation())
+                .niveauDiplome(filiere.getNiveauDiplome())
+                .etat(filiere.getEtat())
+                .departementId( filiere.getDepartement() != null ? filiere.getDepartement().getId() : null)
+                .departementNom( filiere.getDepartement() != null ? filiere.getDepartement().getTypeDepartement() : null)
+                .chef_filiere_id(filiere.getChefFiliere().getId())
+                .build();
+
+
     }
 
     public List<FiliereDTO> versListeFilieresDTO(List<Filiere> filieres) {
@@ -98,6 +105,7 @@ public class StructureMapper {
         filiere.setDureeFormation(filiereDTO.getDureeFormation());
         filiere.setNiveauDiplome(filiereDTO.getNiveauDiplome());
         filiere.setEtat(filiereDTO.getEtat());
+
         
         return filiere;
     }

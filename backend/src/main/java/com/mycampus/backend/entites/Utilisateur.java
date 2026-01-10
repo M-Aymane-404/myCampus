@@ -5,6 +5,9 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
@@ -42,9 +45,9 @@ public class Utilisateur {
     @Column(nullable = false)
     private Boolean enabled = true;
     
-    private Date dateCreation;
+    private LocalDateTime dateCreation;
     
-    private Date dateDerniereConnexion;
+    private LocalDateTime dateDerniereConnexion;
     
     @OneToMany(mappedBy = "utilisateur")
     private List<Notification> notifications;

@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 
@@ -27,8 +29,14 @@ public class Departement {
     
     private String description;
     
-    private Date dateCreation;
+    private LocalDate dateCreation;
     
     @OneToMany(mappedBy = "departement")
     private List<Filiere> filieres;
+
+    @OneToMany(mappedBy = "departementOuTravail")
+    private List<Professeur> professeurs;
+
+    @OneToOne(mappedBy = "departementDirigee")
+    private Professeur chefDepartement;
 }

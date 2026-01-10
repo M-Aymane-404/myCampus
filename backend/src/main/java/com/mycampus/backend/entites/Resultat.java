@@ -5,6 +5,9 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Entity
@@ -24,7 +27,7 @@ public class Resultat {
     private String mention;
     
     @Column(nullable = false)
-    private Date datePublication;
+    private LocalDateTime datePublication;
     
     @Column(nullable = false)
     private Boolean valide = false;

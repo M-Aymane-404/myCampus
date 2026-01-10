@@ -30,7 +30,7 @@ public class Filiere {
     private String emploiTemps;
     
     @Column(nullable = false)
-    private Integer dureeFormation;
+    private String dureeFormation;
     
     @Column(nullable = false)
     private String niveauDiplome;
@@ -45,4 +45,9 @@ public class Filiere {
     
     @OneToMany(mappedBy = "filiere")
     private List<Classe> classes;
+
+    @OneToOne
+    @JoinColumn(name = "chef_filiere_id", unique = true)
+    private Professeur chefFiliere;
+
 }

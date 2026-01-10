@@ -6,6 +6,9 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
@@ -25,7 +28,7 @@ public class Seance {
     private TypeSeance type;
     
     @Column(nullable = false)
-    private Date date;
+    private LocalDateTime date;
     
     @Column(nullable = false)
     private String heureDebut;

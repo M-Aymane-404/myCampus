@@ -15,18 +15,18 @@ public class AdministrateurMapper {
             return null;
         }
         
-        return new AdministrateurDTO(
-            administrateur.getId(),
-            administrateur.getPpr(),
-            administrateur.getNom(),
-            administrateur.getPrenom(),
-            administrateur.getEmail(),
-            administrateur.getFonction(),
-            administrateur.getGrade(),
-            administrateur.getEnabled(),
-            administrateur.getDateCreation(),
-            administrateur.getDateDerniereConnexion()
-        );
+        return AdministrateurDTO.builder()
+                .id(administrateur.getId())
+                .ppr(administrateur.getPpr())
+                .nom(administrateur.getNom())
+                .prenom(administrateur.getPrenom())
+                .email(administrateur.getEmail())
+                .fonction(administrateur.getFonction())
+                .grade(administrateur.getGrade())
+                .enabled(administrateur.getEnabled())
+                .dateCreation(administrateur.getDateCreation())
+                .dateDerniereConnexion(administrateur.getDateDerniereConnexion())
+                .build();
     }
 
     public List<AdministrateurDTO> versListeAdministrateursDTO(List<Administrateur> administrateurs) {
@@ -54,7 +54,7 @@ public class AdministrateurMapper {
         administrateur.setEmail(administrateurDTO.getEmail());
         administrateur.setFonction(administrateurDTO.getFonction());
         administrateur.setGrade(administrateurDTO.getGrade());
-        administrateur.setEnabled(administrateurDTO.isEnabled());
+        administrateur.setEnabled(administrateurDTO.getEnabled());
         administrateur.setDateCreation(administrateurDTO.getDateCreation());
         administrateur.setDateDerniereConnexion(administrateurDTO.getDateDerniereConnexion());
         

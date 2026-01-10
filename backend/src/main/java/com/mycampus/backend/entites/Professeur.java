@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 
@@ -24,11 +26,24 @@ public class Professeur extends Utilisateur {
     
     @Column(nullable = false)
     private String grade;
-    
-    private Date dateRecrutement;
+
+    private LocalDate dateRecrutement;
     
     private String statut;
     
     @OneToMany(mappedBy = "professeur")
     private List<Seance> seances;
+
+    @ManyToOne
+    private Departement departementOuTravail;
+
+    @OneToOne
+    private Departement departementDirigee;
+
+
+
+    @OneToOne(mappedBy = "chefFiliere")
+    private Filiere filiereDirigee;
+
+
 }

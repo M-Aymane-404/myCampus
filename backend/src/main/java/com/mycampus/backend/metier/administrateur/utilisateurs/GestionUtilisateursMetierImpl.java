@@ -9,6 +9,8 @@ import com.mycampus.backend.exceptions.UtilisateursException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 ;
@@ -45,7 +47,7 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
         }
         
         Administrateur administrateur = administrateurMapper.versAdministrateur(administrateurDTO);
-        administrateur.setDateCreation(new Date());
+        administrateur.setDateCreation(LocalDateTime.now());
         administrateur.setEnabled(true);
         
         Administrateur administrateurSauvegarde = administrateurRepository.save(administrateur);
