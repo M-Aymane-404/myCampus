@@ -5,18 +5,24 @@ import com.mycampus.backend.entites.Filiere;
 import com.mycampus.backend.entites.Classe;
 import com.mycampus.backend.entites.Module;
 import com.mycampus.backend.entites.Matiere;
+import com.mycampus.backend.entites.AffectationEnseignement;
+import com.mycampus.backend.entites.Seance;
 import com.mycampus.backend.dto.DepartementDTO;
 import com.mycampus.backend.dto.FiliereDTO;
 import com.mycampus.backend.dto.ClasseDTO;
 import com.mycampus.backend.dto.ModuleDTO;
 import com.mycampus.backend.dto.MatiereDTO;
+import com.mycampus.backend.dto.AffectationEnseignementDTO;
+import com.mycampus.backend.dto.SeanceDTO;
 import org.springframework.beans.BeanUtils;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
+@RequiredArgsConstructor
 public class StructureMapper {
 
     // Département mappings
@@ -25,15 +31,9 @@ public class StructureMapper {
             return null;
         }
         
-        return   DepartementDTO.builder()
-                .id(departement.getId())
-                .codeDepartement(departement.getCodeDepartement())
-                .typeDepartement(departement.getTypeDepartement())
-                .description(departement.getDescription())
-                .dateCreation(departement.getDateCreation())
-                .chefDepartement(departement.getChefDepartement())
-                .build();
-
+        DepartementDTO departementDTO = new DepartementDTO();
+        BeanUtils.copyProperties(departement, departementDTO);
+        return departementDTO;
     }
 
     public List<DepartementDTO> versListeDepartementsDTO(List<Departement> departements) {
@@ -52,12 +52,7 @@ public class StructureMapper {
         }
         
         Departement departement = new Departement();
-        departement.setId(departementDTO.getId());
-        departement.setCodeDepartement(departementDTO.getCodeDepartement());
-        departement.setTypeDepartement(departementDTO.getTypeDepartement());
-        departement.setDescription(departementDTO.getDescription());
-
-        
+        BeanUtils.copyProperties(departementDTO, departement);
         return departement;
     }
 
@@ -68,16 +63,12 @@ public class StructureMapper {
         }
 
         FiliereDTO filiereDTO = new FiliereDTO();
-
         BeanUtils.copyProperties(filiere, filiereDTO);
         filiereDTO.setChef_filiere_id(filiere.getChefFiliere() != null ? filiere.getChefFiliere().getId() : null);
-        filiereDTO.setDepartementId( filiere.getDepartement() != null ? filiere.getDepartement().getId() : null);
+        filiereDTO.setDepartementId(filiere.getDepartement() != null ? filiere.getDepartement().getId() : null);
         filiereDTO.setDepartementNom(filiere.getDepartement() != null ? filiere.getDepartement().getTypeDepartement() : null);
 
-
-        return  filiereDTO;
-
-
+        return filiereDTO;
     }
 
     public List<FiliereDTO> versListeFilieresDTO(List<Filiere> filieres) {
@@ -96,15 +87,7 @@ public class StructureMapper {
         }
         
         Filiere filiere = new Filiere();
-        filiere.setId(filiereDTO.getId());
-        filiere.setCodeFiliere(filiereDTO.getCodeFiliere());
-        filiere.setNom(filiereDTO.getNom());
-        filiere.setDescription(filiereDTO.getDescription());
-        filiere.setDureeFormation(filiereDTO.getDureeFormation());
-        filiere.setNiveauDiplome(filiereDTO.getNiveauDiplome());
-        filiere.setEtat(filiereDTO.getEtat());
-
-        
+        BeanUtils.copyProperties(filiereDTO, filiere);
         return filiere;
     }
 
@@ -114,14 +97,12 @@ public class StructureMapper {
             return null;
         }
 
-
         ClasseDTO classeDTO = new ClasseDTO();
         BeanUtils.copyProperties(classe, classeDTO);
         classeDTO.setFiliereId(classe.getFiliere() != null ? classe.getFiliere().getId() : null);
         classeDTO.setFiliereNom(classe.getFiliere() != null ? classe.getFiliere().getNom() : null);
 
-        return  classeDTO;
-
+        return classeDTO;
     }
 
     public List<ClasseDTO> versListeClassesDTO(List<Classe> classes) {
@@ -140,11 +121,7 @@ public class StructureMapper {
         }
         
         Classe classe = new Classe();
-
-
         BeanUtils.copyProperties(classeDTO, classe);
-
-        
         return classe;
     }
 
@@ -156,8 +133,8 @@ public class StructureMapper {
 
         ModuleDTO moduleDTO = new ModuleDTO();
         BeanUtils.copyProperties(module, moduleDTO);
-        moduleDTO.setClasseId(module.getClasse() != null ? module.getClasse().getId() : null);
-        moduleDTO.setClasseNom(module.getClasse() != null ? module.getClasse().getNom() : null);
+        moduleDTO.setFiliereId(module.getFiliere() != null ? module.getFiliere().getId() : null);
+        moduleDTO.setFiliereNom(module.getFiliere() != null ? module.getFiliere().getNom() : null);
 
         return moduleDTO;
     }
@@ -178,9 +155,7 @@ public class StructureMapper {
         }
         
         Module module = new Module();
-
         BeanUtils.copyProperties(moduleDTO, module);
-        
         return module;
     }
 
@@ -196,9 +171,6 @@ public class StructureMapper {
         matiereDTO.setModuleNom(matiere.getModule() != null ? matiere.getModule().getNom() : null);
         
         return matiereDTO;
-
-
-
     }
 
     public List<MatiereDTO> versListeMatieresDTO(List<Matiere> matieres) {
@@ -218,7 +190,60 @@ public class StructureMapper {
         
         Matiere matiere = new Matiere();
         BeanUtils.copyProperties(matiereDTO, matiere);
-        
         return matiere;
+    }
+
+    // AffectationEnseignement mappings
+    public AffectationEnseignementDTO versAffectationEnseignementDTO(AffectationEnseignement affectation) {
+        if (affectation == null) {
+            return null;
+        }
+        
+        AffectationEnseignementDTO affectationDTO = new AffectationEnseignementDTO();
+        BeanUtils.copyProperties(affectation, affectationDTO);
+        
+        // Manual mapping for nested relations
+        affectationDTO.setProfesseurId(affectation.getProfesseur() != null ? affectation.getProfesseur().getId() : null);
+        affectationDTO.setProfesseurNom(affectation.getProfesseur() != null ? 
+            affectation.getProfesseur().getPrenom() + " " + affectation.getProfesseur().getNom() : null);
+        affectationDTO.setClasseId(affectation.getClasse() != null ? affectation.getClasse().getId() : null);
+        affectationDTO.setClasseNom(affectation.getClasse() != null ? affectation.getClasse().getNom() : null);
+        affectationDTO.setMatiereId(affectation.getMatiere() != null ? affectation.getMatiere().getId() : null);
+        affectationDTO.setMatiereNom(affectation.getMatiere() != null ? affectation.getMatiere().getNom() : null);
+        
+        return affectationDTO;
+    }
+
+    public List<AffectationEnseignementDTO> versListeAffectationEnseignementDTO(List<AffectationEnseignement> affectations) {
+        return affectations.stream()
+            .map(this::versAffectationEnseignementDTO)
+            .collect(Collectors.toList());
+    }
+
+    // Seance mappings
+    public SeanceDTO versSeanceDTO(Seance seance) {
+        if (seance == null) {
+            return null;
+        }
+
+        SeanceDTO seanceDTO = new SeanceDTO();
+        BeanUtils.copyProperties(seance, seanceDTO);
+        
+        // Manual mapping for affectationEnseignement relation
+        seanceDTO.setAffectationEnseignementId(
+            seance.getAffectationEnseignement() != null ? seance.getAffectationEnseignement().getId() : null
+        );
+
+        return seanceDTO;
+    }
+
+    public List<SeanceDTO> versListeSeancesDTO(List<Seance> seances) {
+        if (seances == null) {
+            return List.of();
+        }
+        
+        return seances.stream()
+            .map(this::versSeanceDTO)
+            .collect(Collectors.toList());
     }
 }

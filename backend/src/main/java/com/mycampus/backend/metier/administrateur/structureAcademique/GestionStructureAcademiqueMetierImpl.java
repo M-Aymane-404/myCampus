@@ -127,7 +127,7 @@ public class GestionStructureAcademiqueMetierImpl implements GestionStructureAca
         }
         
         Filiere filiere = filiereRepository.findById(id).orElseThrow(() ->
-                new StructureAcademiqueException("filières non trouvé avec l'identifiant: " + id ));
+                new StructureAcademiqueException("filière non trouvé avec l'identifiant: " + id ));
         return structureMapper.versFiliereDTO(filiere);
     }
 
@@ -176,6 +176,10 @@ public class GestionStructureAcademiqueMetierImpl implements GestionStructureAca
             throw new StructureAcademiqueException("La classe doit être rattachée à une filière");
         }
         
+        if (classeDTO.getEffectifMax() == null || classeDTO.getEffectifMax() <= 0) {
+            throw new StructureAcademiqueException("L'effectif maximum est obligatoire et doit être supérieur à 0");
+        }
+        
         Classe classe = structureMapper.versClasse(classeDTO);
         
         // Récupérer la filière
@@ -197,7 +201,7 @@ public class GestionStructureAcademiqueMetierImpl implements GestionStructureAca
         }
         
         Classe classe = classeRepository.findById(id).orElseThrow(() ->
-                new StructureAcademiqueException("Département non trouvé avec l'identifiant: " + id));;
+                new StructureAcademiqueException("Classe non trouvé avec l'identifiant: " + id));;
         return structureMapper.versClasseDTO(classe);
     }
 
@@ -242,17 +246,17 @@ public class GestionStructureAcademiqueMetierImpl implements GestionStructureAca
             throw new StructureAcademiqueException("Un module avec ce code existe déjà");
         }
         
-        if (moduleDTO.getClasseId() == null) {
-            throw new StructureAcademiqueException("Le module doit être rattaché à une classe");
+        if (moduleDTO.getFiliereId() == null) {
+            throw new StructureAcademiqueException("Le module doit être rattaché à une filière");
         }
         
         Module module = structureMapper.versModule(moduleDTO);
         
-        // Récupérer la classe
-        Classe classe = classeRepository.findById(moduleDTO.getClasseId()).orElseThrow(()->
-             new StructureAcademiqueException("Classe non trouvée avec l'identifiant: " + moduleDTO.getClasseId()));
+        // Récupérer la filière
+        Filiere filiere = filiereRepository.findById(moduleDTO.getFiliereId()).orElseThrow(() ->
+            new StructureAcademiqueException("Filière non trouvée avec l'identifiant: " + moduleDTO.getFiliereId()));
 
-        module.setClasse(classe);
+        module.setFiliere(filiere);
         
         Module moduleSauvegarde = moduleRepository.save(module);
         return structureMapper.versModuleDTO(moduleSauvegarde);
@@ -284,16 +288,16 @@ public class GestionStructureAcademiqueMetierImpl implements GestionStructureAca
 
     @Override
     @Transactional(readOnly = true)
-    public List<ModuleDTO> trouverModulesParClasse(Long classeId) throws StructureAcademiqueException {
-        if (classeId == null) {
+    public List<ModuleDTO> trouverModulesParFiliere(Long filiereId) throws StructureAcademiqueException {
+        if (filiereId == null) {
             return List.of();
         }
         
         try {
-            List<Module> modules = moduleRepository.findByClasseId(classeId);
+            List<Module> modules = moduleRepository.findByFiliereId(filiereId);
             return structureMapper.versListeModulesDTO(modules);
         } catch (Exception e) {
-            throw new StructureAcademiqueException("Erreur lors de la recherche des modules par classe: " + e.getMessage(), e);
+            throw new StructureAcademiqueException("Erreur lors de la recherche des modules par filière: " + e.getMessage(), e);
         }
     }
 
@@ -337,7 +341,7 @@ public class GestionStructureAcademiqueMetierImpl implements GestionStructureAca
         }
         
         Matiere matiere = matiereRepository.findById(id).orElseThrow(() ->
-                new StructureAcademiqueException("Département non trouvé avec l'identifiant: " + id));;
+                new StructureAcademiqueException("Matière non trouvé avec l'identifiant: " + id));;
         return structureMapper.versMatiereDTO(matiere);
     }
 

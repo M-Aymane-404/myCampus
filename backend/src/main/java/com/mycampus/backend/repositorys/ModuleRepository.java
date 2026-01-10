@@ -11,5 +11,5 @@ public interface ModuleRepository extends JpaRepository<Module, Long> {
     
     boolean existsByCodeModule(String codeModule);
     
-    List<Module> findByClasseId(Long classeId);
+    List<Module> findByFiliereId(Long filiereId);
 }

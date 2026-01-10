@@ -46,6 +46,18 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
             throw new UtilisateursException("Un utilisateur avec cet email existe déjà");
         }
         
+        if (administrateurDTO.getCin() == null || administrateurDTO.getCin().trim().isEmpty()) {
+            throw new UtilisateursException("Le CIN de l'administrateur est obligatoire");
+        }
+        
+        if (utilisateurRepository.existsByCin(administrateurDTO.getCin())) {
+            throw new UtilisateursException("Un utilisateur avec ce CIN existe déjà");
+        }
+        
+        if (administrateurDTO.getPassword() == null || administrateurDTO.getPassword().trim().isEmpty()) {
+            throw new UtilisateursException("Le mot de passe de l'administrateur est obligatoire");
+        }
+        
         Administrateur administrateur = administrateurMapper.versAdministrateur(administrateurDTO);
         administrateur.setDateCreation(LocalDateTime.now());
         administrateur.setEnabled(true);

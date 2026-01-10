@@ -14,6 +14,6 @@ public class ModuleDTO {
     private  String description;
     private  String semestre;
     private  Integer coefficient;
-    private  Long classeId;
-    private  String classeNom;
+    private  Long filiereId;
+    private  String filiereNom;
 }

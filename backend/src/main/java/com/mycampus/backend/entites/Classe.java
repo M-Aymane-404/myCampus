@@ -41,5 +41,5 @@ public class Classe {
     private List<Etudiant> etudiants;
     
     @OneToMany(mappedBy = "classe")
-    private List<Module> modules;
+    private List<AffectationEnseignement> affectationEnseignements;
 }

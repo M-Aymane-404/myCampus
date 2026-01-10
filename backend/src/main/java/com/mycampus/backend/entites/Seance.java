@@ -43,12 +43,8 @@ public class Seance {
     private String contenu;
     
     @ManyToOne
-    @JoinColumn(name = "matiere_id", nullable = false)
-    private Matiere matiere;
-    
-    @ManyToOne
-    @JoinColumn(name = "professeur_id", nullable = false)
-    private Professeur professeur;
+    @JoinColumn(name = "affectation_enseignement_id", nullable = false)
+    private AffectationEnseignement affectationEnseignement;
     
     @OneToMany(mappedBy = "seance")
     private List<Absence> absences;

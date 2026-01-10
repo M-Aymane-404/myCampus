@@ -43,7 +43,7 @@ public interface GestionStructureAcademiqueMetier {
     
     List<ModuleDTO> listerTousLesModules() throws StructureAcademiqueException;
     
-    List<ModuleDTO> trouverModulesParClasse(Long classeId) throws StructureAcademiqueException;
+    List<ModuleDTO> trouverModulesParFiliere(Long filiereId) throws StructureAcademiqueException;
     
     // Matière management
     MatiereDTO creerMatiere(MatiereDTO matiereDTO) throws StructureAcademiqueException;

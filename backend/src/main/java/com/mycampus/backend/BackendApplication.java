@@ -6,12 +6,11 @@ import com.mycampus.backend.dto.ClasseDTO;
 import com.mycampus.backend.dto.ModuleDTO;
 import com.mycampus.backend.dto.MatiereDTO;
 import com.mycampus.backend.dto.AdministrateurDTO;
-
 import com.mycampus.backend.enumerations.EtatStructure;
 import com.mycampus.backend.exceptions.StructureAcademiqueException;
+import com.mycampus.backend.exceptions.UtilisateursException;
 import com.mycampus.backend.metier.administrateur.structureAcademique.GestionStructureAcademiqueMetier;
 import com.mycampus.backend.metier.administrateur.utilisateurs.GestionUtilisateursMetier;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -42,10 +41,8 @@ public class BackendApplication {
             testStructureAcademique(gestionStructureAcademiqueMetier);
             
             // Test 2: Gestion Utilisateurs
-           // testUtilisateurs(gestionUtilisateursMetier);
+            testUtilisateurs(gestionUtilisateursMetier);
             
-            // Test 3: Tableau de Bord
-
             logger.info("=== FIN DES TESTS DES MÉTIERS ===");
         };
     }
@@ -83,22 +80,22 @@ public class BackendApplication {
                 .codeClasse("ILCS1")
                 .nom("ILCS Semestre 1")
                 .niveau("1ère année")
-                    .anneeUniversitaire("2025/2026")
-
+                .anneeUniversitaire("2025/2026")
+                .effectifMax(30)
                 .filiereId(filiereCreee.getId())
                 .build();
             
             ClasseDTO classeCree = metier.creerClasse(classeDTO);
             logger.info("Classe créée: {} - {}", classeCree.getId(), classeCree.getNom());
             
-            // Créer un module lié à la classe
+            // Créer un module lié à la filière
             ModuleDTO moduleDTO = ModuleDTO.builder()
                 .codeModule("MATH101")
                 .nom("Mathématiques Fondamentales")
                 .description("Module de mathématiques de base")
                 .semestre("S1")
                 .coefficient(3)
-                .classeId(classeCree.getId())
+                .filiereId(filiereCreee.getId())
                 .build();
             
             ModuleDTO moduleCree = metier.creerModule(moduleDTO);
@@ -128,6 +125,9 @@ public class BackendApplication {
             List<ClasseDTO> classes = metier.trouverClassesParFiliere(filiereCreee.getId());
             logger.info("Classes pour la filière {}: {}", filiereCreee.getNom(), classes.size());
             
+            List<ModuleDTO> modules = metier.trouverModulesParFiliere(filiereCreee.getId());
+            logger.info("Modules pour la filière {}: {}", filiereCreee.getNom(), modules.size());
+            
             logger.info("--- TEST STRUCTURE ACADÉMIQUE TERMINÉ AVEC SUCCÈS ---");
             
         } catch (StructureAcademiqueException e) {
@@ -135,9 +135,9 @@ public class BackendApplication {
         } catch (Exception e) {
             logger.error("ERREUR INATTENDUE dans testStructureAcademique: {}", e.getMessage(), e);
         }
-    }}
+    }
 
-    /*private void testUtilisateurs(GestionUtilisateursMetier metier) {
+    private void testUtilisateurs(GestionUtilisateursMetier metier) {
         logger.info("--- TEST GESTION UTILISATEURS ---");
         
         try {
@@ -147,6 +147,8 @@ public class BackendApplication {
                 .nom("Dupont")
                 .prenom("Jean")
                 .email("jean.dupont@mycampus.ma")
+                .cin("AA123456")
+                .password("password123")
                 .fonction("Administrateur Système")
                 .grade("A1")
                 .build();
@@ -155,15 +157,14 @@ public class BackendApplication {
             logger.info("Administrateur créé: {} - {} {}", adminCree.getId(), adminCree.getPrenom(), adminCree.getNom());
             
             // Tester la recherche par PPR
-            <AdministrateurDTO> adminParPpr = metier.trouverAdministrateurParPpr("12345678");
-            if (adminParPpr.isPresent()) {
-                logger.info("Administrateur trouvé par PPR: {}", adminParPpr.get().getEmail());
+            AdministrateurDTO adminParPpr = metier.trouverAdministrateurParPpr("12345678");
+            if (adminParPpr != null) {
+                logger.info("Administrateur trouvé par PPR: {}", adminParPpr.getEmail());
             }
             
             // Lister tous les administrateurs
-            ListeAdministrateursDTO listeAdmins = metier.listerTousLesAdministrateurs();
-            logger.info("Total administrateurs: Actifs={}, Inactifs={}", 
-                listeAdmins.getTotalActifs(), listeAdmins.getTotalInactifs());
+            List<AdministrateurDTO> listeAdmins = metier.listerTousLesAdministrateurs();
+            logger.info("Total administrateurs: {}", listeAdmins.size());
             
             // Modifier un administrateur
             adminCree.setFonction("Administrateur Principal");
@@ -185,9 +186,4 @@ public class BackendApplication {
             logger.error("ERREUR INATTENDUE dans testUtilisateurs: {}", e.getMessage(), e);
         }
     }
-
-
 }
-
-
-     */

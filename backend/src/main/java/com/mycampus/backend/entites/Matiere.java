@@ -1,6 +1,5 @@
 package com.mycampus.backend.entites;
 
-import com.mycampus.backend.enumerations.TypeSeance;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -35,7 +34,7 @@ public class Matiere {
     private Module module;
     
     @OneToMany(mappedBy = "matiere")
-    private List<Seance> seances;
+    private List<AffectationEnseignement> affectationEnseignements;
     
     @OneToMany(mappedBy = "matiere")
     private List<Examen> examens;

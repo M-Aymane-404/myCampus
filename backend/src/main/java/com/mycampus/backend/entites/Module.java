@@ -33,8 +33,8 @@ public class Module {
     private Integer coefficient;
     
     @ManyToOne
-    @JoinColumn(name = "classe_id", nullable = false)
-    private Classe classe;
+    @JoinColumn(name = "filiere_id", nullable = false)
+    private Filiere filiere;
     
     @OneToMany(mappedBy = "module")
     private List<Matiere> matieres;

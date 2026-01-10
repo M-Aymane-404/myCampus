@@ -32,7 +32,7 @@ public class Professeur extends Utilisateur {
     private String statut;
     
     @OneToMany(mappedBy = "professeur")
-    private List<Seance> seances;
+    private List<AffectationEnseignement> affectationEnseignements;
 
     @ManyToOne
     private Departement departementOuTravail;
@@ -40,10 +40,7 @@ public class Professeur extends Utilisateur {
     @OneToOne
     private Departement departementDirigee;
 
-
-
     @OneToOne(mappedBy = "chefFiliere")
     private Filiere filiereDirigee;
-
 
 }
