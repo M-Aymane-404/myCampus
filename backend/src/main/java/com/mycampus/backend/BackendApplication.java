@@ -83,6 +83,7 @@ public class BackendApplication {
                 .codeClasse("ILCS1")
                 .nom("ILCS Semestre 1")
                 .niveau("1ère année")
+                    .anneeUniversitaire("2025/2026")
 
                 .filiereId(filiereCreee.getId())
                 .build();

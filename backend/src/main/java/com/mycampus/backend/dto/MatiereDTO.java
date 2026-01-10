@@ -1,19 +1,19 @@
 package com.mycampus.backend.dto;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.AllArgsConstructor;
+import lombok.*;
 
-@Getter
 @AllArgsConstructor
+@NoArgsConstructor
 @Builder
+@Data
+
 public class MatiereDTO {
     
-    private final Long id;
-    private final String codeMatiere;
-    private final String nom;
-    private final String description;
-    private final Integer coefficient;
-    private final Long moduleId;
-    private final String moduleNom;
+    private  Long id;
+    private  String codeMatiere;
+    private  String nom;
+    private  String description;
+    private  Integer coefficient;
+    private  Long moduleId;
+    private  String moduleNom;
 }

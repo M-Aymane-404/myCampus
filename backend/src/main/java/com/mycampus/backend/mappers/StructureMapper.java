@@ -10,6 +10,7 @@ import com.mycampus.backend.dto.FiliereDTO;
 import com.mycampus.backend.dto.ClasseDTO;
 import com.mycampus.backend.dto.ModuleDTO;
 import com.mycampus.backend.dto.MatiereDTO;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -65,19 +66,16 @@ public class StructureMapper {
         if (filiere == null) {
             return null;
         }
-        
-        return  FiliereDTO.builder()
-                .id(filiere.getId())
-                .codeFiliere(filiere.getCodeFiliere())
-                .nom(filiere.getNom())
-                .description(filiere.getDescription())
-                .dureeFormation(filiere.getDureeFormation())
-                .niveauDiplome(filiere.getNiveauDiplome())
-                .etat(filiere.getEtat())
-                .departementId( filiere.getDepartement() != null ? filiere.getDepartement().getId() : null)
-                .departementNom( filiere.getDepartement() != null ? filiere.getDepartement().getTypeDepartement() : null)
-                .chef_filiere_id(filiere.getChefFiliere() != null ? filiere.getChefFiliere().getId() : null)
-                .build();
+
+        FiliereDTO filiereDTO = new FiliereDTO();
+
+        BeanUtils.copyProperties(filiere, filiereDTO);
+        filiereDTO.setChef_filiere_id(filiere.getChefFiliere() != null ? filiere.getChefFiliere().getId() : null);
+        filiereDTO.setDepartementId( filiere.getDepartement() != null ? filiere.getDepartement().getId() : null);
+        filiereDTO.setDepartementNom(filiere.getDepartement() != null ? filiere.getDepartement().getTypeDepartement() : null);
+
+
+        return  filiereDTO;
 
 
     }
@@ -115,16 +113,15 @@ public class StructureMapper {
         if (classe == null) {
             return null;
         }
-        
-        return new ClasseDTO(
-            classe.getId(),
-            classe.getCodeClasse(),
-            classe.getNom(),
-            classe.getNiveau(),
-            classe.getEffectifMax(),
-            classe.getFiliere() != null ? classe.getFiliere().getId() : null,
-            classe.getFiliere() != null ? classe.getFiliere().getNom() : null
-        );
+
+
+        ClasseDTO classeDTO = new ClasseDTO();
+        BeanUtils.copyProperties(classe, classeDTO);
+        classeDTO.setFiliereId(classe.getFiliere() != null ? classe.getFiliere().getId() : null);
+        classeDTO.setFiliereNom(classe.getFiliere() != null ? classe.getFiliere().getNom() : null);
+
+        return  classeDTO;
+
     }
 
     public List<ClasseDTO> versListeClassesDTO(List<Classe> classes) {
@@ -143,11 +140,10 @@ public class StructureMapper {
         }
         
         Classe classe = new Classe();
-        classe.setId(classeDTO.getId());
-        classe.setCodeClasse(classeDTO.getCodeClasse());
-        classe.setNom(classeDTO.getNom());
-        classe.setNiveau(classeDTO.getNiveau());
-        classe.setEffectifMax(classeDTO.getEffectifMax());
+
+
+        BeanUtils.copyProperties(classeDTO, classe);
+
         
         return classe;
     }
@@ -157,17 +153,13 @@ public class StructureMapper {
         if (module == null) {
             return null;
         }
-        
-        return new ModuleDTO(
-            module.getId(),
-            module.getCodeModule(),
-            module.getNom(),
-            module.getDescription(),
-            module.getSemestre(),
-            module.getCoefficient(),
-            module.getClasse() != null ? module.getClasse().getId() : null,
-            module.getClasse() != null ? module.getClasse().getNom() : null
-        );
+
+        ModuleDTO moduleDTO = new ModuleDTO();
+        BeanUtils.copyProperties(module, moduleDTO);
+        moduleDTO.setClasseId(module.getClasse() != null ? module.getClasse().getId() : null);
+        moduleDTO.setClasseNom(module.getClasse() != null ? module.getClasse().getNom() : null);
+
+        return moduleDTO;
     }
 
     public List<ModuleDTO> versListeModulesDTO(List<Module> modules) {
@@ -186,12 +178,8 @@ public class StructureMapper {
         }
         
         Module module = new Module();
-        module.setId(moduleDTO.getId());
-        module.setCodeModule(moduleDTO.getCodeModule());
-        module.setNom(moduleDTO.getNom());
-        module.setDescription(moduleDTO.getDescription());
-        module.setSemestre(moduleDTO.getSemestre());
-        module.setCoefficient(moduleDTO.getCoefficient());
+
+        BeanUtils.copyProperties(moduleDTO, module);
         
         return module;
     }
@@ -201,16 +189,16 @@ public class StructureMapper {
         if (matiere == null) {
             return null;
         }
+
+        MatiereDTO matiereDTO = new MatiereDTO();
+        BeanUtils.copyProperties(matiere, matiereDTO);
+        matiereDTO.setModuleId(matiere.getModule() != null ? matiere.getModule().getId() : null);
+        matiereDTO.setModuleNom(matiere.getModule() != null ? matiere.getModule().getNom() : null);
         
-        return new MatiereDTO(
-            matiere.getId(),
-            matiere.getCodeMatiere(),
-            matiere.getNom(),
-            matiere.getDescription(),
-            matiere.getCoefficient(),
-            matiere.getModule() != null ? matiere.getModule().getId() : null,
-            matiere.getModule() != null ? matiere.getModule().getNom() : null
-        );
+        return matiereDTO;
+
+
+
     }
 
     public List<MatiereDTO> versListeMatieresDTO(List<Matiere> matieres) {
@@ -229,11 +217,7 @@ public class StructureMapper {
         }
         
         Matiere matiere = new Matiere();
-        matiere.setId(matiereDTO.getId());
-        matiere.setCodeMatiere(matiereDTO.getCodeMatiere());
-        matiere.setNom(matiereDTO.getNom());
-        matiere.setDescription(matiereDTO.getDescription());
-        matiere.setCoefficient(matiereDTO.getCoefficient());
+        BeanUtils.copyProperties(matiereDTO, matiere);
         
         return matiere;
     }

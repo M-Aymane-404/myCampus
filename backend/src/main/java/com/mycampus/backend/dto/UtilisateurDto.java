@@ -4,16 +4,18 @@ import com.mycampus.backend.entites.Notification;
 import jakarta.persistence.Column;
 import jakarta.persistence.OneToMany;
 import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
 import java.util.List;
-@Getter
 @AllArgsConstructor
 @NoArgsConstructor
 @SuperBuilder
+@Data
+
 public class UtilisateurDto {
     private Long id;
 

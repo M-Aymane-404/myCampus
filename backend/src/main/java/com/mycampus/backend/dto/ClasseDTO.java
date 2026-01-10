@@ -1,19 +1,19 @@
 package com.mycampus.backend.dto;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.AllArgsConstructor;
-
-@Getter
+import lombok.*;
 @AllArgsConstructor
+@NoArgsConstructor
 @Builder
+@Data
+
 public class ClasseDTO {
     
-    private final Long id;
-    private final String codeClasse;
-    private final String nom;
-    private final String niveau;
-    private final Integer effectifMax;
-    private final Long filiereId;
-    private final String filiereNom;
+    private  Long id;
+    private  String codeClasse;
+    private  String nom;
+    private  String niveau;
+    private  Integer effectifMax;
+    private  Long filiereId;
+    private  String filiereNom;
+    private  String anneeUniversitaire;
 }
