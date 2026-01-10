@@ -32,8 +32,8 @@ public class Resultat {
     @Column(nullable = false)
     private Double note;
     
-    private String mention;
-    
+
+
     @Column(nullable = false)
     private LocalDateTime datePublication;
     

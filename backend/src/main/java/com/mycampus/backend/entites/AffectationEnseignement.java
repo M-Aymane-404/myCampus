@@ -1,5 +1,6 @@
 package com.mycampus.backend.entites;
 
+import com.mycampus.backend.enumerations.Semestre;
 import com.mycampus.backend.enumerations.TypeSeance;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -20,9 +21,10 @@ public class AffectationEnseignement {
     
     @Column(nullable = false)
     private String anneeUniversitaire;
-    
+
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String semestre;
+    private Semestre semestre;
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

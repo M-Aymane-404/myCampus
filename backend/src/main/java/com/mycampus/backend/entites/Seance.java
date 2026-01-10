@@ -1,5 +1,6 @@
 package com.mycampus.backend.entites;
 
+import com.mycampus.backend.enumerations.EtatSeance;
 import com.mycampus.backend.enumerations.TypeSeance;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -31,14 +32,16 @@ public class Seance {
     private LocalDateTime date;
     
     @Column(nullable = false)
-    private String heureDebut;
+    private LocalDateTime heureDebut;
     
     @Column(nullable = false)
-    private String heureFin;
+    private LocalDateTime heureFin;
     
     private String salle;
-    
-    private String etat;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private EtatSeance etat;
     
     private String contenu;
     
