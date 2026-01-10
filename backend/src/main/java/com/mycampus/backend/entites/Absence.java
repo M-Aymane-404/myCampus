@@ -23,8 +23,7 @@ public class Absence {
     private Long id;
     
     
-    @Column(nullable = false)
-    private String semestre;
+
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

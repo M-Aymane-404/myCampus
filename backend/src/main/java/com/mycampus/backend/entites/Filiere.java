@@ -49,8 +49,8 @@ public class Filiere {
     @OneToMany(mappedBy = "filiere")
     private List<Module> modules;
 
-    @OneToOne
-    @JoinColumn(name = "chef_filiere_id", unique = true)
+    @OneToOne(optional = true)
+    @JoinColumn(name = "chef_filiere_id", nullable = true, unique = true)
     private Professeur chefFiliere;
 
 }

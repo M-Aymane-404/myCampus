@@ -1,5 +1,6 @@
 package com.mycampus.backend.entites;
 
+import com.mycampus.backend.enumerations.Semestre;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -27,10 +28,12 @@ public class Etudiant extends Utilisateur {
     
     @Column(nullable = false)
     private Integer anneeInscription;
-    
+
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String semestreActuel;
-    
+    private Semestre semestreActuel;
+
+
     private String anneeFinEtude;
     
     private LocalDate dateNaissance;

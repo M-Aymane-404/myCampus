@@ -1,5 +1,7 @@
 package com.mycampus.backend.entites;
 
+import com.mycampus.backend.enumerations.Semestre;
+import com.mycampus.backend.enumerations.TypeExamen;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,18 +21,21 @@ public class Examen {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String semestre;
+    private Semestre semestre;
+
     
     @Column(nullable = false)
     private Date dateExamen;
     
     @Column(nullable = false)
     private Integer numeroExamen;
-    
+
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String typeExamen;
+    private TypeExamen typeExamen;
     
     @Column(nullable = false)
     private Integer duree;

@@ -37,7 +37,12 @@ public class Professeur extends Utilisateur {
     @ManyToOne
     private Departement departementOuTravail;
 
-    @OneToOne
+    @OneToOne(optional = true)
+    @JoinColumn(
+            name = "departement_dirigee_id",
+            nullable = true,
+            unique = true
+    )
     private Departement departementDirigee;
 
     @OneToOne(mappedBy = "chefFiliere")

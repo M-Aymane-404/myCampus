@@ -15,6 +15,14 @@ import java.util.Date;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+
+@Table(
+        name = "resultat",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_resultat_examen_etudiant",
+                columnNames = {"examen_id", "etudiant_id"}
+        )
+)
 public class Resultat {
     
     @Id
@@ -34,11 +42,11 @@ public class Resultat {
     
     private String fichierExam;
     
-    @ManyToOne
+    @ManyToOne(optional = false)
     @JoinColumn(name = "examen_id", nullable = false)
     private Examen examen;
     
-    @ManyToOne
+    @ManyToOne(optional = false)
     @JoinColumn(name = "etudiant_id", nullable = false)
     private Etudiant etudiant;
 }
