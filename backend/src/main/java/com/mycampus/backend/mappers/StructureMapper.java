@@ -76,7 +76,7 @@ public class StructureMapper {
                 .etat(filiere.getEtat())
                 .departementId( filiere.getDepartement() != null ? filiere.getDepartement().getId() : null)
                 .departementNom( filiere.getDepartement() != null ? filiere.getDepartement().getTypeDepartement() : null)
-                .chef_filiere_id(filiere.getChefFiliere().getId())
+                .chef_filiere_id(filiere.getChefFiliere() != null ? filiere.getChefFiliere().getId() : null)
                 .build();
 
 
