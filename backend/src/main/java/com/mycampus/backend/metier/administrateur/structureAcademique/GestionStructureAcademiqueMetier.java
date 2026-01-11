@@ -18,6 +18,10 @@ public interface GestionStructureAcademiqueMetier {
     
     List<DepartementDTO> listerTousLesDepartements() throws StructureAcademiqueException;
     
+    DepartementDTO modifierDepartement(Long departementId, DepartementDTO departementDTO) throws StructureAcademiqueException;
+    
+    void supprimerDepartement(Long departementId) throws StructureAcademiqueException;
+    
     // Filière management
     FiliereDTO creerFiliere(FiliereDTO filiereDTO) throws StructureAcademiqueException;
     
@@ -26,6 +30,10 @@ public interface GestionStructureAcademiqueMetier {
     List<FiliereDTO> listerToutesLesFilieres() throws StructureAcademiqueException;
     
     List<FiliereDTO> trouverFilieresParDepartement(Long departementId) throws StructureAcademiqueException;
+    
+    FiliereDTO modifierFiliere(Long filiereId, FiliereDTO filiereDTO) throws StructureAcademiqueException;
+    
+    void supprimerFiliere(Long filiereId) throws StructureAcademiqueException;
     
     // Classe management
     ClasseDTO creerClasse(ClasseDTO classeDTO) throws StructureAcademiqueException;
@@ -36,6 +44,10 @@ public interface GestionStructureAcademiqueMetier {
     
     List<ClasseDTO> trouverClassesParFiliere(Long filiereId) throws StructureAcademiqueException;
     
+    ClasseDTO modifierClasse(Long classeId, ClasseDTO classeDTO) throws StructureAcademiqueException;
+    
+    void supprimerClasse(Long classeId) throws StructureAcademiqueException;
+    
     // Module management
     ModuleDTO creerModule(ModuleDTO moduleDTO) throws StructureAcademiqueException;
     
@@ -45,6 +57,10 @@ public interface GestionStructureAcademiqueMetier {
     
     List<ModuleDTO> trouverModulesParFiliere(Long filiereId) throws StructureAcademiqueException;
     
+    ModuleDTO modifierModule(Long moduleId, ModuleDTO moduleDTO) throws StructureAcademiqueException;
+    
+    void supprimerModule(Long moduleId) throws StructureAcademiqueException;
+    
     // Matière management
     MatiereDTO creerMatiere(MatiereDTO matiereDTO) throws StructureAcademiqueException;
     
@@ -53,4 +69,8 @@ public interface GestionStructureAcademiqueMetier {
     List<MatiereDTO> listerToutesLesMatieres() throws StructureAcademiqueException;
     
     List<MatiereDTO> trouverMatieresParModule(Long moduleId) throws StructureAcademiqueException;
+    
+    MatiereDTO modifierMatiere(Long matiereId, MatiereDTO matiereDTO) throws StructureAcademiqueException;
+    
+    void supprimerMatiere(Long matiereId) throws StructureAcademiqueException;
 }

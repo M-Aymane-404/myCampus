@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import com.mycampus.backend.enumerations.Semestre;
 import java.util.List;
 
 @Entity
@@ -26,8 +27,9 @@ public class Module {
     
     private String description;
     
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String semestre;
+    private Semestre semestre;
     
     @Column(nullable = false)
     private Integer coefficient;

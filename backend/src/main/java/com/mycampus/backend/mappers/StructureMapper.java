@@ -14,6 +14,7 @@ import com.mycampus.backend.dto.ModuleDTO;
 import com.mycampus.backend.dto.MatiereDTO;
 import com.mycampus.backend.dto.AffectationEnseignementDTO;
 import com.mycampus.backend.dto.SeanceDTO;
+import com.mycampus.backend.enumerations.Semestre;
 import org.springframework.beans.BeanUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
