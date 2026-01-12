@@ -9,4 +9,6 @@ import java.util.List;
 @Repository
 public interface EtudiantRepository extends JpaRepository<Etudiant, Long> {
     List<Etudiant> findByClasseId(Long classeId);
+    Etudiant findByApogee(String apogee);
+    boolean existsByApogee(String apogee);
 }

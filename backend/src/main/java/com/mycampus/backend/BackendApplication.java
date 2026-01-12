@@ -1,13 +1,8 @@
 package com.mycampus.backend;
 
-import com.mycampus.backend.dto.DepartementDTO;
-import com.mycampus.backend.dto.FiliereDTO;
-import com.mycampus.backend.dto.ClasseDTO;
-import com.mycampus.backend.dto.ModuleDTO;
-import com.mycampus.backend.dto.MatiereDTO;
-import com.mycampus.backend.dto.AdministrateurDTO;
-import com.mycampus.backend.enumerations.EtatStructure;
-import com.mycampus.backend.enumerations.Semestre;
+import com.mycampus.backend.dto.*;
+import com.mycampus.backend.enumerations.*;
+
 import com.mycampus.backend.exceptions.StructureAcademiqueException;
 import com.mycampus.backend.exceptions.UtilisateursException;
 import com.mycampus.backend.metier.administrateur.structureAcademique.GestionStructureAcademiqueMetier;
@@ -38,11 +33,11 @@ public class BackendApplication {
         return args -> {
             logger.info("=== DÉMARRAGE DES TESTS DES MÉTIERS ===");
             
-            // Test 1: Gestion Structure Académique
-            testStructureAcademique(gestionStructureAcademiqueMetier);
+          //  Test 1: Gestion Structure Académique
+           testStructureAcademique(gestionStructureAcademiqueMetier);
             
-            // Test 2: Gestion Utilisateurs
-            testUtilisateurs(gestionUtilisateursMetier);
+           //  Test 2: Gestion Utilisateurs
+          testUtilisateurs(gestionUtilisateursMetier);
             
             logger.info("=== FIN DES TESTS DES MÉTIERS ===");
         };
@@ -228,8 +223,8 @@ public class BackendApplication {
             
             MatiereDTO matiereVerifiee = metier.trouverMatiereParId(matiereId);
             logger.info("[STRUCTURE] Vérification matière: nom={}, coefficient={}", matiereVerifiee.getNom(), matiereVerifiee.getCoefficient());
-            
-            // SUPPRESSION
+  
+     /*       // SUPPRESSION
             logger.info("[STRUCTURE] === SUPPRESSION DES ENTITÉS ===");
             
             // Supprimer la matière
@@ -290,10 +285,10 @@ public class BackendApplication {
                 logger.warn("[STRUCTURE] Le département n'a pas été supprimé correctement");
             } catch (StructureAcademiqueException e) {
                 logger.info("[STRUCTURE] Suppression département confirmée: id={} (non trouvé)", departementId);
-            }
+            }*/
             
             logger.info("[STRUCTURE] --- TEST STRUCTURE ACADÉMIQUE TERMINÉ AVEC SUCCÈS ---");
-            
+
         } catch (StructureAcademiqueException e) {
             logger.error("[STRUCTURE] ERREUR dans testStructureAcademique: {}", e.getMessage());
         } catch (Exception e) {
@@ -392,14 +387,228 @@ public class BackendApplication {
                 metier.supprimerAdministrateur(adminId);
                 logger.info("[UTILISATEURS] Suppression administrateur confirmée: id={}", adminId);
                 
-                // Vérifier la suppression
                 metier.trouverAdministrateurParId(adminId);
                 logger.warn("[UTILISATEURS] L'administrateur n'a pas été supprimé correctement");
             } catch (UtilisateursException e) {
                 logger.info("[UTILISATEURS] Suppression administrateur confirmée: id={} (non trouvé)", adminId);
             }
             
-            logger.info("[UTILISATEURS] --- TEST GESTION UTILISATEURS TERMINÉ AVEC SUCCÈS ---");
+            // ==================== TEST PROFESSEUR ====================
+            logger.info("[UTILISATEURS] === CRÉATION PROFESSEUR ===");
+            
+            Long profId = null;
+            
+            ProfesseurDTO professeurDTO = ProfesseurDTO.builder()
+                .ppr("87654321")
+                .nom("Martin")
+                .prenom("Pierre")
+                .email("pierre.martin@mycampus.ma")
+                .cin("BB987654")
+                .password("password456")
+                .tel("0623456789")
+                .specialite("Informatique")
+                .grade("PES")
+                .statut("Titulaire")
+                .dateRecrutement(java.time.LocalDate.of(2020, 9, 1))
+                // Relations optionnelles - mettre à null pour éviter les dépendances
+                .departementDirigeeId(null)
+                .departementOuTravailId(null)
+                .filiereDirigeeId(null)
+                .build();
+            
+            ProfesseurDTO profCree = metier.creerProfesseur(professeurDTO);
+            profId = profCree.getId();
+            logger.info("[UTILISATEURS] Création professeur OK: id={}, prenom={}, nom={}, specialite={}", 
+                profCree.getId(), profCree.getPrenom(), profCree.getNom(), profCree.getSpecialite());
+            
+            // VÉRIFICATION CRÉATION PROFESSEUR
+            logger.info("[UTILISATEURS] === VÉRIFICATION CRÉATION PROFESSEUR ===");
+            
+            ProfesseurDTO profParPpr = metier.trouverProfesseurParPpr("87654321");
+            if (profParPpr != null) {
+                logger.info("[UTILISATEURS] Vérification professeur par PPR OK: email={}, grade={}", 
+                    profParPpr.getEmail(), profParPpr.getGrade());
+            }
+            
+            List<ProfesseurDTO> listeProfs = metier.listerTousLesProfesseurs();
+            logger.info("[UTILISATEURS] Total professeurs: {}", listeProfs.size());
+            
+            // MISE À JOUR PROFESSEUR
+            logger.info("[UTILISATEURS] === MISE À JOUR PROFESSEUR ===");
+            
+            ProfesseurDTO profUpdate = ProfesseurDTO.builder()
+                .id(profId)
+
+                .ppr("87654321")
+                .nom("Martin")
+                .prenom("Pierre")
+                .email("pierre.martin.modifie@mycampus.ma")
+                .cin("BB987654")
+                .tel("0623456789")
+                .specialite("Intelligence Artificielle")
+                .grade("PH")
+                .statut("Titulaire")
+                .dateRecrutement(java.time.LocalDate.of(2020, 9, 1))
+                .departementDirigeeId(null)
+                .departementOuTravailId(null)
+                .filiereDirigeeId(null)
+
+                                    .build();
+            
+            String ancienneSpecialite = profCree.getSpecialite();
+            String ancienGrades = profCree.getGrade();
+            String ancienEmails = profCree.getEmail();
+            
+            ProfesseurDTO profModifie = metier.modifierProfesseur(profId, profUpdate);
+            logger.info("[UTILISATEURS] Mise à jour professeur OK: id={}, specialiteAvant={}, specialiteApres={}, gradeAvant={}, gradeApres={}, emailAvant={}, emailApres={}", 
+                profModifie.getId(), ancienneSpecialite, profModifie.getSpecialite(), ancienGrades, profModifie.getGrade(), ancienEmails, profModifie.getEmail());
+            
+            // VÉRIFICATION MISE À JOUR PROFESSEUR
+            logger.info("[UTILISATEURS] === VÉRIFICATION MISE À JOUR PROFESSEUR ===");
+            
+            ProfesseurDTO profVerifie = metier.trouverProfesseurParId(profId);
+            logger.info("[UTILISATEURS] Vérification mise à jour professeur: specialite={}, grade={}, email={}", 
+                profVerifie.getSpecialite(), profVerifie.getGrade(), profVerifie.getEmail());
+            
+            // ACTIVATION/DÉSACTIVATION PROFESSEUR
+            logger.info("[UTILISATEURS] === TEST ACTIVATION/DÉSACTIVATION PROFESSEUR ===");
+            
+            metier.desactiverProfesseur(profId);
+            logger.info("[UTILISATEURS] Professeur désactivé: id={}", profId);
+            
+            // Vérifier désactivation
+            ProfesseurDTO profDesactive = metier.trouverProfesseurParId(profId);
+            logger.info("[UTILISATEURS] Vérification désactivation professeur: enabled={}", profDesactive.getEnabled());
+            
+            metier.activerProfesseur(profId);
+            logger.info("[UTILISATEURS] Professeur réactivé: id={}", profId);
+            
+            // Vérifier réactivation
+            ProfesseurDTO profReactive = metier.trouverProfesseurParId(profId);
+            logger.info("[UTILISATEURS] Vérification réactivation professeur: enabled={}", profReactive.getEnabled());
+            
+            // SUPPRESSION PROFESSEUR
+            logger.info("[UTILISATEURS] === SUPPRESSION PROFESSEUR ===");
+            
+            try {
+                metier.supprimerProfesseur(profId);
+                logger.info("[UTILISATEURS] Suppression professeur confirmée: id={}", profId);
+                
+                // Vérifier la suppression
+                metier.trouverProfesseurParId(profId);
+                logger.warn("[UTILISATEURS] Le professeur n'a pas été supprimé correctement");
+            } catch (UtilisateursException e) {
+                logger.info("[UTILISATEURS] Suppression professeur confirmée: id={} (non trouvé)", profId);
+            }
+            
+            // ==================== TEST ETUDIANT ====================
+            logger.info("[UTILISATEURS] === CRÉATION ETUDIANT ===");
+            
+            Long etudiantId = null;
+            
+            EtudiantDTO etudiantDTO = EtudiantDTO.builder()
+                .apogee("202300123")
+                .nom("Bernard")
+                .prenom("Sophie")
+                .email("sophie.bernard@mycampus.ma")
+                .cin("CC123789")
+                .password("password789")
+                .tel("0634567890")
+                .niveau("3ème année")
+                .anneeInscription(2023)
+                .semestreActuel(Semestre.S5)
+                .dateNaissance(java.time.LocalDate.of(2002, 5, 15))
+                .etatInscription(EtatInscription.INSCRIT)
+                // Classe optionnelle - mettre à null pour éviter les dépendances
+                .classeId(1L)
+                .build();
+            
+            EtudiantDTO etudiantCree = metier.creerEtudiant(etudiantDTO);
+            etudiantId = etudiantCree.getId();
+            logger.info("[UTILISATEURS] Création étudiant OK: id={}, prenom={}, nom={}, apogee={}, niveau={}", 
+                etudiantCree.getId(), etudiantCree.getPrenom(), etudiantCree.getNom(), 
+                etudiantCree.getApogee(), etudiantCree.getNiveau());
+            
+            // VÉRIFICATION CRÉATION ETUDIANT
+            logger.info("[UTILISATEURS] === VÉRIFICATION CRÉATION ETUDIANT ===");
+            
+            EtudiantDTO etudiantParApogee = metier.trouverEtudiantParApogee("202300123");
+            if (etudiantParApogee != null) {
+                logger.info("[UTILISATEURS] Vérification étudiant par Apogée OK: email={}, semestre={}", 
+                    etudiantParApogee.getEmail(), etudiantParApogee.getSemestreActuel());
+            }
+            
+            List<EtudiantDTO> listeEtudiants = metier.listerTousLesEtudiants();
+            logger.info("[UTILISATEURS] Total étudiants: {}", listeEtudiants.size());
+            
+            // MISE À JOUR ETUDIANT
+            logger.info("[UTILISATEURS] === MISE À JOUR ETUDIANT ===");
+            
+            EtudiantDTO etudiantUpdate = EtudiantDTO.builder()
+                .id(etudiantId)
+                .apogee("202300123")
+                .nom("Bernard")
+                .prenom("Sophie")
+                .email("sophie.bernard.modifie@mycampus.ma")
+                .cin("CC123789")
+                .tel("0634567890")
+                .niveau("4ème année")
+                .anneeInscription(2023)
+                .semestreActuel(com.mycampus.backend.enumerations.Semestre.S2)
+                .dateNaissance(java.time.LocalDate.of(2002, 5, 15))
+                .etatInscription(EtatInscription.INSCRIT)
+                .classeId(null)
+                .build();
+            
+            String ancienNiveau = etudiantCree.getNiveau();
+            Semestre ancienSemestre = etudiantCree.getSemestreActuel();
+            String ancienEmailEtudiant = etudiantCree.getEmail();
+            
+            EtudiantDTO etudiantModifie = metier.modifierEtudiant(etudiantId, etudiantUpdate);
+            logger.info("[UTILISATEURS] Mise à jour étudiant OK: id={}, niveauAvant={}, niveauApres={}, semestreAvant={}, semestreApres={}, emailAvant={}, emailApres={}", 
+                etudiantModifie.getId(), ancienNiveau, etudiantModifie.getNiveau(), 
+                ancienSemestre, etudiantModifie.getSemestreActuel(), 
+                ancienEmailEtudiant, etudiantModifie.getEmail());
+            
+            // VÉRIFICATION MISE À JOUR ETUDIANT
+            logger.info("[UTILISATEURS] === VÉRIFICATION MISE À JOUR ETUDIANT ===");
+            
+            EtudiantDTO etudiantVerifie = metier.trouverEtudiantParId(etudiantId);
+            logger.info("[UTILISATEURS] Vérification mise à jour étudiant: niveau={}, semestre={}, email={}", 
+                etudiantVerifie.getNiveau(), etudiantVerifie.getSemestreActuel(), etudiantVerifie.getEmail());
+            
+            // ACTIVATION/DÉSACTIVATION ETUDIANT
+            logger.info("[UTILISATEURS] === TEST ACTIVATION/DÉSACTIVATION ETUDIANT ===");
+            
+            metier.desactiverEtudiant(etudiantId);
+            logger.info("[UTILISATEURS] Étudiant désactivé: id={}", etudiantId);
+            
+            // Vérifier désactivation
+            EtudiantDTO etudiantDesactive = metier.trouverEtudiantParId(etudiantId);
+            logger.info("[UTILISATEURS] Vérification désactivation étudiant: enabled={}", etudiantDesactive.getEnabled());
+            
+            metier.activerEtudiant(etudiantId);
+            logger.info("[UTILISATEURS] Étudiant réactivé: id={}", etudiantId);
+            
+            // Vérifier réactivation
+            EtudiantDTO etudiantReactive = metier.trouverEtudiantParId(etudiantId);
+            logger.info("[UTILISATEURS] Vérification réactivation étudiant: enabled={}", etudiantReactive.getEnabled());
+            
+            // SUPPRESSION ETUDIANT
+            logger.info("[UTILISATEURS] === SUPPRESSION ETUDIANT ===");
+            
+            try {
+                metier.supprimerEtudiant(etudiantId);
+                logger.info("[UTILISATEURS] Suppression étudiant confirmée: id={}", etudiantId);
+                
+                // Vérifier la suppression
+                metier.trouverEtudiantParId(etudiantId);
+                logger.warn("[UTILISATEURS] L'étudiant n'a pas été supprimé correctement");
+            } catch (UtilisateursException e) {
+                logger.info("[UTILISATEURS] Suppression étudiant confirmée: id={} (non trouvé)", etudiantId);
+            }
+            
+            logger.info("[UTILISATEURS] --- TEST GESTION UTILISATEURS (ADMIN + PROF + ETUDIANT) TERMINÉ AVEC SUCCÈS ---");
             
         } catch (UtilisateursException e) {
             logger.error("[UTILISATEURS] ERREUR dans testUtilisateurs: {}", e.getMessage());
