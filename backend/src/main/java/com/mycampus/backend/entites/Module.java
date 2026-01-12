@@ -1,10 +1,7 @@
 package com.mycampus.backend.entites;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import lombok.*;
 import com.mycampus.backend.enumerations.Semestre;
 import java.util.List;
 
@@ -13,6 +10,8 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = {"filiere", "matieres"})
+@EqualsAndHashCode(exclude = {"filiere", "matieres"})
 public class Module {
     
     @Id
@@ -34,10 +33,10 @@ public class Module {
     @Column(nullable = false)
     private Integer coefficient;
     
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "filiere_id", nullable = false)
     private Filiere filiere;
     
-    @OneToMany(mappedBy = "module")
+    @OneToMany(mappedBy = "module", fetch = FetchType.LAZY)
     private List<Matiere> matieres;
 }

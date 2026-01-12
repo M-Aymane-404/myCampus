@@ -3,10 +3,7 @@ package com.mycampus.backend.entites;
 import com.mycampus.backend.enumerations.EtatSeance;
 import com.mycampus.backend.enumerations.TypeSeance;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -18,6 +15,8 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = {"affectationEnseignement", "presences", "fichierSeances"})
+@EqualsAndHashCode(exclude = {"affectationEnseignement", "presences", "fichierSeances"})
 public class Seance {
     
     @Id
@@ -45,13 +44,13 @@ public class Seance {
     
     private String contenu;
     
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "affectation_enseignement_id", nullable = false)
     private AffectationEnseignement affectationEnseignement;
     
-    @OneToMany(mappedBy = "seance")
+    @OneToMany(mappedBy = "seance", fetch = FetchType.LAZY)
     private List<Presence> presences;
     
-    @OneToMany(mappedBy = "seance")
+    @OneToMany(mappedBy = "seance", fetch = FetchType.LAZY)
     private List<FichierSeance> fichierSeances;
 }

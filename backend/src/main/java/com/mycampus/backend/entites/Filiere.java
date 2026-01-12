@@ -1,10 +1,7 @@
 package com.mycampus.backend.entites;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import lombok.*;
 import com.mycampus.backend.enumerations.EtatStructure;
 import java.util.List;
 
@@ -13,6 +10,8 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = {"departement", "classes", "modules", "chefFiliere"})
+@EqualsAndHashCode(exclude = {"departement", "classes", "modules", "chefFiliere"})
 public class Filiere {
     
     @Id
@@ -39,17 +38,17 @@ public class Filiere {
     @Column(nullable = false)
     private EtatStructure etat;
     
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "departement_id", nullable = false)
     private Departement departement;
     
-    @OneToMany(mappedBy = "filiere")
+    @OneToMany(mappedBy = "filiere", fetch = FetchType.LAZY)
     private List<Classe> classes;
 
-    @OneToMany(mappedBy = "filiere")
+    @OneToMany(mappedBy = "filiere", fetch = FetchType.LAZY)
     private List<Module> modules;
 
-    @OneToOne(optional = true)
+    @OneToOne(fetch = FetchType.LAZY, optional = true)
     @JoinColumn(name = "chef_filiere_id", nullable = true, unique = true)
     private Professeur chefFiliere;
 

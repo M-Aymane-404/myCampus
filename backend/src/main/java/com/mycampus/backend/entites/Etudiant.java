@@ -2,10 +2,7 @@ package com.mycampus.backend.entites;
 
 import com.mycampus.backend.enumerations.Semestre;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import lombok.*;
 import com.mycampus.backend.enumerations.EtatInscription;
 
 import java.time.LocalDate;
@@ -18,6 +15,8 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = {"classe", "presences", "resultats"})
+@EqualsAndHashCode(exclude = {"classe", "presences", "resultats"})
 public class Etudiant extends Utilisateur {
     
     @Column(nullable = false, unique = true)
@@ -42,13 +41,13 @@ public class Etudiant extends Utilisateur {
     @Column(nullable = false)
     private EtatInscription etatInscription;
     
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "classe_id", nullable = false)
     private Classe classe;
     
-    @OneToMany(mappedBy = "etudiant")
+    @OneToMany(mappedBy = "etudiant", fetch = FetchType.LAZY)
     private List<Presence> presences;
-    
-    @OneToMany(mappedBy = "etudiant")
+
+    @OneToMany(mappedBy = "etudiant", fetch = FetchType.LAZY)
     private List<Resultat> resultats;
 }

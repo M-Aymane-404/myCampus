@@ -1,10 +1,7 @@
 package com.mycampus.backend.entites;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -15,6 +12,8 @@ import java.util.Date;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = {"seance"})
+@EqualsAndHashCode(exclude = {"seance"})
 public class FichierSeance {
     
     @Id
@@ -36,7 +35,7 @@ public class FichierSeance {
     @Column(nullable = false)
     private LocalDateTime dateUpload;
     
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "seance_id", nullable = false)
     private Seance seance;
 }

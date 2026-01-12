@@ -1,10 +1,8 @@
 package com.mycampus.backend.entites;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import lombok.*;
+
 import java.util.List;
 
 @Entity
@@ -12,6 +10,8 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = {"filiere", "etudiants", "affectationEnseignements"})
+@EqualsAndHashCode(exclude = {"filiere", "etudiants", "affectationEnseignements"})
 public class Classe {
     
     @Id
@@ -33,13 +33,13 @@ public class Classe {
     @Column(nullable = false)
     private Integer effectifMax;
     
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "filiere_id", nullable = false)
     private Filiere filiere;
     
-    @OneToMany(mappedBy = "classe")
+    @OneToMany(mappedBy = "classe", fetch = FetchType.LAZY)
     private List<Etudiant> etudiants;
     
-    @OneToMany(mappedBy = "classe")
+    @OneToMany(mappedBy = "classe", fetch = FetchType.LAZY)
     private List<AffectationEnseignement> affectationEnseignements;
 }

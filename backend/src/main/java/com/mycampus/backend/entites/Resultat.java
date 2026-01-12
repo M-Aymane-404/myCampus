@@ -1,10 +1,7 @@
 package com.mycampus.backend.entites;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -15,7 +12,8 @@ import java.util.Date;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-
+@ToString(exclude = {"examen", "etudiant"})
+@EqualsAndHashCode(exclude = {"examen", "examen"})
 @Table(
         name = "resultat",
         uniqueConstraints = @UniqueConstraint(
@@ -42,11 +40,11 @@ public class Resultat {
     
     private String fichierExam;
     
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "examen_id", nullable = false)
     private Examen examen;
     
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "etudiant_id", nullable = false)
     private Etudiant etudiant;
 }

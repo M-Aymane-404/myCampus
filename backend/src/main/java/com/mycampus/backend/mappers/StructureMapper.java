@@ -65,9 +65,17 @@ public class StructureMapper {
 
         FiliereDTO filiereDTO = new FiliereDTO();
         BeanUtils.copyProperties(filiere, filiereDTO);
-        filiereDTO.setChef_filiere_id(filiere.getChefFiliere() != null ? filiere.getChefFiliere().getId() : null);
-        filiereDTO.setDepartementId(filiere.getDepartement() != null ? filiere.getDepartement().getId() : null);
-        filiereDTO.setDepartementNom(filiere.getDepartement() != null ? filiere.getDepartement().getTypeDepartement() : null);
+        
+        // Mapping sécurisé - éviter le lazy loading
+        if (filiere.getDepartement() != null) {
+            filiereDTO.setChef_filiere_id(filiere.getChefFiliere() != null ? filiere.getChefFiliere().getId() : null);
+            filiereDTO.setDepartementId(filiere.getDepartement().getId());
+            filiereDTO.setDepartementNom(filiere.getDepartement().getTypeDepartement());
+        } else {
+            filiereDTO.setChef_filiere_id(null);
+            filiereDTO.setDepartementId(null);
+            filiereDTO.setDepartementNom(null);
+        }
 
         return filiereDTO;
     }
@@ -100,8 +108,15 @@ public class StructureMapper {
 
         ClasseDTO classeDTO = new ClasseDTO();
         BeanUtils.copyProperties(classe, classeDTO);
-        classeDTO.setFiliereId(classe.getFiliere() != null ? classe.getFiliere().getId() : null);
-        classeDTO.setFiliereNom(classe.getFiliere() != null ? classe.getFiliere().getNom() : null);
+        
+        // Mapping sécurisé - éviter le lazy loading
+        if (classe.getFiliere() != null) {
+            classeDTO.setFiliereId(classe.getFiliere().getId());
+            classeDTO.setFiliereNom(classe.getFiliere().getNom());
+        } else {
+            classeDTO.setFiliereId(null);
+            classeDTO.setFiliereNom(null);
+        }
 
         return classeDTO;
     }
@@ -134,8 +149,15 @@ public class StructureMapper {
 
         ModuleDTO moduleDTO = new ModuleDTO();
         BeanUtils.copyProperties(module, moduleDTO);
-        moduleDTO.setFiliereId(module.getFiliere() != null ? module.getFiliere().getId() : null);
-        moduleDTO.setFiliereNom(module.getFiliere() != null ? module.getFiliere().getNom() : null);
+        
+        // Mapping sécurisé - éviter le lazy loading
+        if (module.getFiliere() != null) {
+            moduleDTO.setFiliereId(module.getFiliere().getId());
+            moduleDTO.setFiliereNom(module.getFiliere().getNom());
+        } else {
+            moduleDTO.setFiliereId(null);
+            moduleDTO.setFiliereNom(null);
+        }
 
         return moduleDTO;
     }

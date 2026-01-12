@@ -1,10 +1,7 @@
 package com.mycampus.backend.entites;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -13,10 +10,12 @@ import java.util.List;
 
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
-@Getter
-@Setter
+@Data
+
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = {"notifications"})
+@EqualsAndHashCode(exclude = {"notifications"})
 public class Utilisateur {
     
     @Id
@@ -49,6 +48,6 @@ public class Utilisateur {
     
     private LocalDateTime dateDerniereConnexion;
     
-    @OneToMany(mappedBy = "utilisateur")
+    @OneToMany(mappedBy = "utilisateur", fetch = FetchType.LAZY)
     private List<Notification> notifications;
 }

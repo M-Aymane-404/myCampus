@@ -2,10 +2,7 @@ package com.mycampus.backend.entites;
 
 import com.mycampus.backend.enumerations.TypeNotification;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -16,6 +13,8 @@ import java.util.Date;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = {"utilisateur"})
+@EqualsAndHashCode(exclude = {"utilisateur"})
 public class Notification {
     
     @Id
@@ -40,7 +39,7 @@ public class Notification {
     @Column(nullable = false)
     private TypeNotification type;
     
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "utilisateur_id", nullable = false)
     private Utilisateur utilisateur;
 }

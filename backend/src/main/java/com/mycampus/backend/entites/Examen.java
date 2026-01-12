@@ -3,10 +3,7 @@ package com.mycampus.backend.entites;
 import com.mycampus.backend.enumerations.Semestre;
 import com.mycampus.backend.enumerations.TypeExamen;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import lombok.*;
 import com.mycampus.backend.enumerations.EtatExamen;
 import java.util.Date;
 import java.util.List;
@@ -16,6 +13,8 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = {"matiere", "resultats"})
+@EqualsAndHashCode(exclude = {"matiere", "resultats"})
 public class Examen {
     
     @Id
@@ -46,10 +45,10 @@ public class Examen {
     
     private String feuilleCorrection;
     
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "matiere_id", nullable = false)
     private Matiere matiere;
     
-    @OneToMany(mappedBy = "examen")
+    @OneToMany(mappedBy = "examen" ,fetch = FetchType.LAZY)
     private List<Resultat> resultats;
 }

@@ -1,10 +1,7 @@
 package com.mycampus.backend.entites;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.util.Date;
@@ -16,6 +13,8 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = {"affectationEnseignements", "departementOuTravail", "departementDirigee", "filiereDirigee"})
+@EqualsAndHashCode(exclude = {"affectationEnseignements", "departementOuTravail", "departementDirigee", "filiereDirigee"})
 public class Professeur extends Utilisateur {
     
     @Column(nullable = false, unique = true)
@@ -31,13 +30,13 @@ public class Professeur extends Utilisateur {
     
     private String statut;
     
-    @OneToMany(mappedBy = "professeur")
+    @OneToMany(mappedBy = "professeur", fetch = FetchType.LAZY)
     private List<AffectationEnseignement> affectationEnseignements;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     private Departement departementOuTravail;
 
-    @OneToOne(optional = true)
+    @OneToOne(fetch = FetchType.LAZY, optional = true)
     @JoinColumn(
             name = "departement_dirigee_id",
             nullable = true,
@@ -45,7 +44,7 @@ public class Professeur extends Utilisateur {
     )
     private Departement departementDirigee;
 
-    @OneToOne(mappedBy = "chefFiliere")
+    @OneToOne(fetch = FetchType.LAZY, mappedBy = "chefFiliere")
     private Filiere filiereDirigee;
 
 }

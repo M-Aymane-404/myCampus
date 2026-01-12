@@ -1,10 +1,7 @@
 package com.mycampus.backend.entites;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.util.Date;
@@ -15,6 +12,8 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = {"filieres", "professeurs", "chefDepartement"})
+@EqualsAndHashCode(exclude = {"filieres", "professeurs", "chefDepartement"})
 public class Departement {
     
     @Id
@@ -31,12 +30,12 @@ public class Departement {
     
     private LocalDate dateCreation;
     
-    @OneToMany(mappedBy = "departement")
+    @OneToMany(mappedBy = "departement", fetch = FetchType.LAZY)
     private List<Filiere> filieres;
 
-    @OneToMany(mappedBy = "departementOuTravail")
+    @OneToMany(mappedBy = "departementOuTravail", fetch = FetchType.LAZY)
     private List<Professeur> professeurs;
 
-    @OneToOne(mappedBy = "departementDirigee")
+    @OneToOne(mappedBy = "departementDirigee", fetch = FetchType.LAZY)
     private Professeur chefDepartement;
 }

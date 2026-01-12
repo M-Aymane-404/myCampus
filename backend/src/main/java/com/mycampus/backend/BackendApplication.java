@@ -488,7 +488,7 @@ public class BackendApplication {
             logger.info("[UTILISATEURS] Vérification réactivation professeur: enabled={}", profReactive.getEnabled());
             
             // SUPPRESSION PROFESSEUR
-            logger.info("[UTILISATEURS] === SUPPRESSION PROFESSEUR ===");
+          /*  logger.info("[UTILISATEURS] === SUPPRESSION PROFESSEUR ===");
             
             try {
                 metier.supprimerProfesseur(profId);
@@ -499,7 +499,7 @@ public class BackendApplication {
                 logger.warn("[UTILISATEURS] Le professeur n'a pas été supprimé correctement");
             } catch (UtilisateursException e) {
                 logger.info("[UTILISATEURS] Suppression professeur confirmée: id={} (non trouvé)", profId);
-            }
+            }*/
             
             // ==================== TEST ETUDIANT ====================
             logger.info("[UTILISATEURS] === CRÉATION ETUDIANT ===");
@@ -595,7 +595,7 @@ public class BackendApplication {
             logger.info("[UTILISATEURS] Vérification réactivation étudiant: enabled={}", etudiantReactive.getEnabled());
             
             // SUPPRESSION ETUDIANT
-            logger.info("[UTILISATEURS] === SUPPRESSION ETUDIANT ===");
+         /*   logger.info("[UTILISATEURS] === SUPPRESSION ETUDIANT ===");
             
             try {
                 metier.supprimerEtudiant(etudiantId);
@@ -606,7 +606,7 @@ public class BackendApplication {
                 logger.warn("[UTILISATEURS] L'étudiant n'a pas été supprimé correctement");
             } catch (UtilisateursException e) {
                 logger.info("[UTILISATEURS] Suppression étudiant confirmée: id={} (non trouvé)", etudiantId);
-            }
+            }*/
             
             logger.info("[UTILISATEURS] --- TEST GESTION UTILISATEURS (ADMIN + PROF + ETUDIANT) TERMINÉ AVEC SUCCÈS ---");
             

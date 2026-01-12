@@ -180,6 +180,7 @@ public class GestionStructureAcademiqueMetierImpl implements GestionStructureAca
     }
 
     @Override
+    @Transactional(readOnly = true)
     public FiliereDTO trouverFiliereParId(Long id) throws StructureAcademiqueException {
         if (id == null) {
             throw  new StructureAcademiqueException(

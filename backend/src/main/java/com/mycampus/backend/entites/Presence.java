@@ -2,10 +2,7 @@ package com.mycampus.backend.entites;
 
 import com.mycampus.backend.enumerations.StatusAbsence;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -14,6 +11,8 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = {"seance", "etudiant"})
+@EqualsAndHashCode(exclude = {"seance", "etudiant"})
 public class Presence {
     
     @Id
@@ -35,11 +34,11 @@ public class Presence {
     @Column(nullable = false)
     private LocalDateTime dateDeclaration;
     
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "seance_id", nullable = false)
     private Seance seance;
     
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "etudiant_id", nullable = false)
     private Etudiant etudiant;
 }
