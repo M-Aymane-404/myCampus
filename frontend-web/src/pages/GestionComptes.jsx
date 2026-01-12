@@ -178,23 +178,26 @@ const GestionComptes = () => {
         <CarteStatistique
           titre="Total Comptes"
           valeur={totalComptes}
-          variation={{ valeur: 5, label: 'cette année', positif: true }}
+          variation={{ valeur: 5, label: '', positif: true }}
           icone={Users}
           couleur="primary"
+          iconeCouleur="dark"
         />
         <CarteStatistique
           titre="Comptes Actifs"
           valeur={comptesActifs}
-          variation={{ valeur: comptesActifs, label: 'actifs', positif: true }}
+          variation={{ valeur: comptesActifs, label: '', positif: true }}
           icone={UserCheck}
           couleur="success"
+          iconeCouleur="light"
         />
         <CarteStatistique
           titre="Administrateurs"
           valeur={administrateurs}
-          variation={{ valeur: administrateurs, label: 'admins', positif: true }}
+          variation={{ valeur: administrateurs, label: '', positif: true }}
           icone={Shield}
           couleur="info"
+          iconeCouleur="dark"
         />
       </div>
 

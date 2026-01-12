@@ -52,49 +52,7 @@ const JournalAudit = ({ journaux }) => {
     }
   };
 
-  return (
-    <div className="journal-audit">
-      <h3 className="journal-audit-titre">Recent Audit Log</h3>
-      <div className="journal-audit-contenu">
-        {(!journaux || journaux.length === 0) ? (
-          <p className="journal-audit-vide">No recent activity</p>
-        ) : (
-          <table className="tableau-audit">
-            <thead>
-              <tr>
-                <th>ACTION</th>
-                <th>USER</th>
-                <th>TARGET</th>
-                <th>TIMESTAMP</th>
-                <th>STATUS</th>
-              </tr>
-            </thead>
-            <tbody>
-              {journaux.map((journal, index) => {
-                const statut = obtenirStatut(journal.statut);
-                return (
-                  <tr key={index}>
-                    <td>
-                      <div className="cellule-action">
-                        {obtenirIcone(journal.type)}
-                        <span>{traduireAction(journal.action || journal.type)}</span>
-                      </div>
-                    </td>
-                    <td>{journal.utilisateurEmail || journal.email}</td>
-                    <td>{journal.cible || journal.target}</td>
-                    <td>{journal.horodatage || journal.timestamp}</td>
-                    <td>
-                      <BadgeStatut type={statut.type} libelle={statut.libelle} />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
-    </div>
-  );
+  
 };
 
 export default JournalAudit;

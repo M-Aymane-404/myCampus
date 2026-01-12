@@ -24,10 +24,15 @@
 }
 
 .gestion-emploi-temps-statistiques {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
   margin-bottom: 30px;
+  align-items: stretch;
+  width: 100%;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  justify-content: center;
 }
 
 .cellule-salle {
@@ -90,13 +95,13 @@
 
 @media (max-width: 1200px) {
   .gestion-emploi-temps-statistiques {
-    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
   }
 }
 
 @media (max-width: 768px) {
   .gestion-emploi-temps-statistiques {
-    grid-template-columns: 1fr;
+    gap: 8px;
   }
 
   .filtres-container {

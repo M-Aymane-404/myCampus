@@ -1,30 +1,73 @@
 /* Dashboard Cards */
 .graphique-departement {
-  background: var(--white);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--gray-200);
+  background: #FFFFFF;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #F2F4F7;
   overflow: hidden;
+  padding: 40px;
+}
+
+.graphique-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
 }
 
 .graphique-titre {
   font-size: 1.1rem;
   font-weight: 600;
-  color: var(--dark);
+  color: #4A4A4A;
   margin: 0 0 5px 0;
-  padding: 20px 25px 0 25px;
 }
 
 .graphique-sous-titre {
   font-size: 0.9rem;
-  color: var(--gray-500);
-  margin: 0 0 20px 0;
-  padding: 0 25px;
+  color: #4A4A4A;
+  opacity: 0.7;
+  margin: 0;
+}
+
+.graphique-select-container {
+  position: relative;
+  display: inline-block;
+}
+
+.graphique-select-annee {
+  appearance: none;
+  padding: 8px 32px 8px 12px;
+  border: 1px solid #F2F4F7;
+  border-radius: 8px;
+  background: #FFFFFF;
+  color: #4A4A4A;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.graphique-select-annee:hover {
+  border-color: #328CC1;
+}
+
+.graphique-select-annee:focus {
+  border-color: #328CC1;
+  box-shadow: 0 0 0 3px rgba(50, 140, 193, 0.1);
+}
+
+.graphique-select-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #4A4A4A;
 }
 
 .graphique-contenu {
   width: 100%;
-  padding: 0 25px 25px 25px;
 }
 
 @media (max-width: 768px) {

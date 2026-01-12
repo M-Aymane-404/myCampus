@@ -188,23 +188,26 @@ const GestionFilieres = () => {
         <CarteStatistique
           titre="Total Filières"
           valeur={totalFilieres}
-          variation={{ valeur: 2, label: 'cette année', positif: true }}
+          variation={{ valeur: 2, label: '', positif: true }}
           icone={GraduationCap}
           couleur="primary"
+          iconeCouleur="dark"
         />
         <CarteStatistique
           titre="Filières Ouvertes"
           valeur={filieresOuvertes}
-          variation={{ valeur: filieresOuvertes, label: 'actives', positif: true }}
+          variation={{ valeur: filieresOuvertes, label: '', positif: true }}
           icone={GraduationCap}
           couleur="success"
+          iconeCouleur="light"
         />
         <CarteStatistique
           titre="Total Étudiants"
           valeur={totalEtudiants}
-          variation={{ valeur: 45, label: 'nouveaux', positif: true }}
+          variation={{ valeur: 45, label: '', positif: true }}
           icone={GraduationCap}
           couleur="info"
+          iconeCouleur="dark"
         />
       </div>
 

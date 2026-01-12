@@ -5,12 +5,9 @@ const ActionsRapides = ({ surAction }) => {
   const actions = [
     { id: 'ajouter-etudiant', icone: UserPlus, libelle: 'Add Student' },
     { id: 'ajouter-professeur', icone: UserCheck, libelle: 'Add Professor' },
-    { id: 'creer-module', icone: BookOpen, libelle: 'Create Module' },
-    { id: 'import-bulk', icone: Upload, libelle: 'Import CSV' },
-    { id: 'exporter-donnees', icone: Download, libelle: 'Export Data' },
-    { id: 'gerer-departements', icone: Building2, libelle: 'Manage Departments' },
-    { id: 'journal-audit', icone: FileText, libelle: 'Audit Log' },
-    { id: 'parametres-systeme', icone: Settings, libelle: 'System Settings' },
+    { id: 'creer-module', icone: BookOpen, libelle: 'Database backup' },
+    { id: 'gerer-departements', icone: Building2, libelle: 'Announcement' },
+    
   ];
 
   return (

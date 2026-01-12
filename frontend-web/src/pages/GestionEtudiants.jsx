@@ -319,23 +319,26 @@ const GestionEtudiants = () => {
         <CarteStatistique
           titre="Total Étudiants"
           valeur={totalEtudiants}
-          variation={{ valeur: 45, label: 'cette année', positif: true }}
+          variation={{ valeur: 45, label: '', positif: true }}
           icone={Users}
           couleur="primary"
+          iconeCouleur="dark"
         />
         <CarteStatistique
           titre="Étudiants Inscrits"
           valeur={etudiantsInscrits}
-          variation={{ valeur: etudiantsInscrits, label: 'actifs', positif: true }}
+          variation={{ valeur: etudiantsInscrits, label: '', positif: true }}
           icone={UserCheck}
           couleur="success"
+          iconeCouleur="light"
         />
         <CarteStatistique
           titre="Diplômés"
           valeur={etudiantsDiplomes}
-          variation={{ valeur: etudiantsDiplomes, label: 'diplômés', positif: true }}
+          variation={{ valeur: etudiantsDiplomes, label: '', positif: true }}
           icone={GraduationCap}
           couleur="info"
+          iconeCouleur="dark"
         />
       </div>
 

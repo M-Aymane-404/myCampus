@@ -1,30 +1,66 @@
 /* Dashboard Cards */
 .graphique-distribution {
-  background: var(--white);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--gray-200);
+  background: #FFFFFF;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #F2F4F7;
   overflow: hidden;
+  padding: 25px;
 }
 
 .graphique-titre {
   font-size: 1.1rem;
   font-weight: 600;
-  color: var(--dark);
-  margin: 0 0 5px 0;
-  padding: 20px 25px 0 25px;
-}
-
-.graphique-sous-titre {
-  font-size: 0.9rem;
-  color: var(--gray-500);
+  color: #4A4A4A;
   margin: 0 0 20px 0;
-  padding: 0 25px;
 }
 
 .graphique-contenu {
   width: 100%;
-  padding: 0 25px 25px 25px;
+}
+
+.graphique-filieres-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.graphique-filiere-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.graphique-filiere-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.graphique-filiere-nom {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #4A4A4A;
+}
+
+.graphique-filiere-pourcentage {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #4A4A4A;
+}
+
+.graphique-filiere-barre-container {
+  width: 100%;
+  height: 8px;
+  background: #F2F4F7;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.graphique-filiere-barre {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
 }
 
 @media (max-width: 768px) {

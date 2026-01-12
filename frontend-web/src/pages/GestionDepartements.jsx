@@ -300,23 +300,26 @@ const GestionDepartements = () => {
         <CarteStatistique
           titre="Total Départements"
           valeur={totalDepartements}
-          variation={{ valeur: totalDepartements, label: 'départements', positif: true }}
+          variation={{ valeur: 3, label: '', positif: true }}
           icone={Building2}
           couleur="primary"
+          iconeCouleur="dark"
         />
         <CarteStatistique
           titre="Total Professeurs"
           valeur={totalProfesseurs}
-          variation={{ valeur: totalProfesseurs, label: 'professeurs', positif: true }}
+          variation={{ valeur: 3, label: '', positif: true }}
           icone={Users}
           couleur="success"
+          iconeCouleur="light"
         />
         <CarteStatistique
           titre="Total Filières"
           valeur={totalFilieres}
-          variation={{ valeur: totalFilieres, label: 'filières', positif: true }}
+          variation={{ valeur: 6, label: '', positif: true }}
           icone={GraduationCap}
           couleur="info"
+          iconeCouleur="dark"
         />
       </div>
 

@@ -225,23 +225,26 @@ const GestionProfesseurs = () => {
         <CarteStatistique
           titre="Total Professeurs"
           valeur={totalProfesseurs}
-          variation={{ valeur: 2, label: 'cette année', positif: true }}
+          variation={{ valeur: 2, label: '', positif: true }}
           icone={UserCheck}
           couleur="primary"
+          iconeCouleur="dark"
         />
         <CarteStatistique
           titre="Professeurs Actifs"
           valeur={professeursActifs}
-          variation={{ valeur: professeursActifs, label: 'en activité', positif: true }}
+          variation={{ valeur: professeursActifs, label: '', positif: true }}
           icone={UserCheck}
           couleur="success"
+          iconeCouleur="light"
         />
         <CarteStatistique
           titre="Attributions"
           valeur={totalFilieresAttribuees}
-          variation={{ valeur: totalFilieresAttribuees, label: 'attributions', positif: true }}
+          variation={{ valeur: totalFilieresAttribuees, label: '', positif: true }}
           icone={GraduationCap}
           couleur="info"
+          iconeCouleur="dark"
         />
       </div>
 

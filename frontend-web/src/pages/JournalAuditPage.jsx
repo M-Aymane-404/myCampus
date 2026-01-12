@@ -23,23 +23,26 @@ const JournalAuditPage = () => {
         <CarteStatistique
           titre="Total Logs"
           valeur={totalLogs}
-          variation={{ valeur: totalLogs, label: 'entrées', positif: true }}
+          variation={{ valeur: 3, label: '', positif: true }}
           icone={FileText}
           couleur="primary"
+          iconeCouleur="dark"
         />
         <CarteStatistique
           titre="Connexions"
           valeur={logsConnexion}
-          variation={{ valeur: logsConnexion, label: 'connexions', positif: true }}
+          variation={{ valeur: 0, label: '', positif: true }}
           icone={Shield}
           couleur="info"
+          iconeCouleur="light"
         />
         <CarteStatistique
           titre="Modifications"
           valeur={logsModification}
-          variation={{ valeur: logsModification, label: 'modifications', positif: true }}
+          variation={{ valeur: 0, label: '', positif: true }}
           icone={AlertCircle}
           couleur="accent"
+          iconeCouleur="dark"
         />
       </div>
 

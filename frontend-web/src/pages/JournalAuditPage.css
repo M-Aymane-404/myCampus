@@ -24,10 +24,15 @@
 }
 
 .journal-audit-page-statistiques {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
   margin-bottom: 30px;
+  align-items: stretch;
+  width: 100%;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  justify-content: center;
 }
 
 .journal-audit-page-contenu {
@@ -36,13 +41,13 @@
 
 @media (max-width: 1200px) {
   .journal-audit-page-statistiques {
-    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
   }
 }
 
 @media (max-width: 768px) {
   .journal-audit-page-statistiques {
-    grid-template-columns: 1fr;
+    gap: 8px;
   }
 }
 

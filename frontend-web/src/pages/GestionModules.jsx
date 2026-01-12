@@ -168,23 +168,26 @@ const GestionModules = () => {
         <CarteStatistique
           titre="Total Modules"
           valeur={totalModules}
-          variation={{ valeur: 5, label: 'cette année', positif: true }}
+          variation={{ valeur: 5, label: '', positif: true }}
           icone={BookOpen}
           couleur="primary"
+          iconeCouleur="dark"
         />
         <CarteStatistique
           titre="Total Heures"
           valeur={totalHeures}
-          variation={{ valeur: totalHeures, label: 'heures', positif: true }}
+          variation={{ valeur: totalHeures, label: '', positif: true }}
           icone={FileText}
           couleur="info"
+          iconeCouleur="light"
         />
         <CarteStatistique
           titre="Coefficient Moyen"
           valeur={moyenneCoefficient}
-          variation={{ valeur: moyenneCoefficient, label: 'moyenne', positif: true }}
+          variation={{ valeur: moyenneCoefficient, label: '', positif: true }}
           icone={GraduationCap}
           couleur="success"
+          iconeCouleur="dark"
         />
       </div>
 

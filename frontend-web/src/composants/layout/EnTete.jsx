@@ -1,4 +1,4 @@
-import { Moon, Sun, Bell, GraduationCap, LayoutDashboard, Users, UserCheck, BookOpen, Building2, FileText, Calendar, ChevronDown, User, LogOut, Mail, Phone, MapPin, Camera, X } from 'lucide-react';
+import { Moon, Sun, Bell, GraduationCap, LayoutDashboard, Users, UserCheck, BookOpen, Building2, FileText, Calendar, ChevronDown, User, LogOut, Mail, Phone, MapPin, Camera, X, Search } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import FormulaireModal from '../communs/FormulaireModal';
 import ChampFormulaire from '../communs/ChampFormulaire';
@@ -55,15 +55,14 @@ const EnTete = ({ nombreNotifications = 3, elementActif, surChangementElement })
   };
 
   const elementsMenu = [
-    { id: 'tableau-de-bord', icone: LayoutDashboard, libelle: 'Tableau de bord' },
-    { id: 'departements', icone: Building2, libelle: 'Départements' },
+    { id: 'tableau-de-bord', icone: LayoutDashboard, libelle: 'Dashboard' },
+    { id: 'departements', icone: Building2, libelle: 'Departments' },
     { id: 'filieres', icone: GraduationCap, libelle: 'Filières' },
-    { id: 'professeurs', icone: UserCheck, libelle: 'Professeurs' },
-    { id: 'etudiants', icone: Users, libelle: 'Étudiants' },
+    { id: 'professeurs', icone: UserCheck, libelle: 'Professors' },
+    { id: 'etudiants', icone: Users, libelle: 'Students' },
     { id: 'modules', icone: BookOpen, libelle: 'Modules' },
-    { id: 'emploi-temps', icone: Calendar, libelle: 'Emploi du temps' },
-    { id: 'comptes', icone: Users, libelle: 'Comptes' },
-    { id: 'journal-audit', icone: FileText, libelle: 'Journal d\'audit' },
+    { id: 'emploi-temps', icone: Calendar, libelle: 'Schedule' },
+    { id: 'comptes', icone: Users, libelle: 'Accounts' },
   ];
 
   const traductionsMenu = {
@@ -75,7 +74,6 @@ const EnTete = ({ nombreNotifications = 3, elementActif, surChangementElement })
     'modules': 'Modules',
     'emploi-temps': 'Schedule',
     'comptes': 'Accounts',
-    'journal-audit': 'Audit Logs',
   };
 
   const gererClicMenu = (id) => {
@@ -155,55 +153,65 @@ const EnTete = ({ nombreNotifications = 3, elementActif, surChangementElement })
 
   return (
     <header className="en-tete">
-      <div className="en-tete-gauche">
-        <div className="logo-container-header">
-          <div className="logo-icone-container-header">
-            <GraduationCap className="logo-icone-header" size={24} />
-          </div>
-          <div className="logo-texte-header">
-            <h1 className="logo-titre-header">MyCampus</h1>
-            <p className="logo-sous-titre-header">Academic Portal</p>
+      {/* Top Section */}
+      <div className="en-tete-top">
+        <div className="en-tete-gauche">
+          <div className="logo-container-header">
+            <div className="logo-icone-container-header">
+              <GraduationCap className="logo-icone-header" size={24} />
+            </div>
+            <div className="logo-texte-header">
+              <h1 className="logo-titre-header">École Supérieure</h1>
+              <p className="logo-sous-titre-header">Administration Dashboard</p>
+            </div>
           </div>
         </div>
-      </div>
-      <div className="en-tete-actions">
-        <button 
-          className="bouton-mode-sombre"
-          onClick={basculerModeSombre}
-          aria-label="Basculer le mode sombre"
-        >
-          {modeSombre ? <Sun size={20} /> : <Moon size={20} />}
-        </button>
-
-        <div className="notification-container">
-          <button className="bouton-notification" aria-label="Notifications">
-            <Bell size={20} />
-            
-          </button>
-        </div>
-
-        <div className="profil-admin-container" ref={menuRef}>
-          <button 
-            className="profil-admin"
-            onClick={() => setMenuOuvert(!menuOuvert)}
-            aria-label="Menu de navigation"
-          >
-            <div className="avatar-profil">
-              {photoPreview ? (
-                <img src={photoPreview} alt="Photo de profil" className="avatar-image-small" />
-              ) : (
-                <span className="avatar-lettre">{infosUtilisateur.prenom.charAt(0)}{infosUtilisateur.nom.charAt(0)}</span>
-              )}
-            </div>
-            <div className="info-profil">
-              <span className="nom-profil">{infosUtilisateur.prenom} {infosUtilisateur.nom}</span>
-              <span className="role-profil">Administrator</span>
-            </div>
-            <ChevronDown 
-              size={16} 
-              className={`chevron-menu ${menuOuvert ? 'ouvert' : ''}`}
+        
+        <div className="en-tete-centre">
+          <div className="barre-recherche-container">
+            <Search className="recherche-icone" size={20} />
+            <input 
+              type="text" 
+              className="barre-recherche" 
+              placeholder="Rechercher..." 
             />
-          </button>
+          </div>
+        </div>
+
+        <div className="en-tete-actions">
+          <div className="notification-container">
+            <button className="bouton-notification" aria-label="Notifications">
+              <Bell size={20} />
+              {nombreNotifications > 0 && (
+                <span className="badge-notification">{nombreNotifications}</span>
+              )}
+            </button>
+          </div>
+
+          <div className="separateur-vertical"></div>
+
+          <div className="profil-admin-container" ref={menuRef}>
+            <button 
+              className="profil-admin"
+              onClick={() => setMenuOuvert(!menuOuvert)}
+              aria-label="Menu de navigation"
+            >
+              <div className="info-profil">
+                <span className="nom-profil">Administrateur</span>
+                <span className="role-profil">{infosUtilisateur.email}</span>
+              </div>
+              <div className="avatar-profil">
+                {photoPreview ? (
+                  <img src={photoPreview} alt="Photo de profil" className="avatar-image-small" />
+                ) : (
+                  <span className="avatar-lettre">{infosUtilisateur.prenom.charAt(0)}{infosUtilisateur.nom.charAt(0)}</span>
+                )}
+              </div>
+              <ChevronDown 
+                size={16} 
+                className={`chevron-menu ${menuOuvert ? 'ouvert' : ''}`}
+              />
+            </button>
           
           {menuOuvert && (
             <div className="menu-deroulant">
@@ -230,21 +238,15 @@ const EnTete = ({ nombreNotifications = 3, elementActif, surChangementElement })
               </div>
               <div className="menu-deroulant-separateur"></div>
               <ul className="menu-deroulant-liste">
-                {elementsMenu.map((element) => {
-                  const Icone = element.icone;
-                  const estActif = elementActif === element.id;
-                  return (
-                    <li key={element.id}>
-                      <button
-                        className={`menu-deroulant-item ${estActif ? 'actif' : ''}`}
-                        onClick={() => gererClicMenu(element.id)}
-                      >
-                        <Icone size={18} />
-                        <span>{traductionsMenu[element.id] || element.libelle}</span>
-                      </button>
-                    </li>
-                  );
-                })}
+                <li>
+                  <button
+                    className={`menu-deroulant-item ${elementActif === 'journal-audit' ? 'actif' : ''}`}
+                    onClick={() => gererClicMenu('journal-audit')}
+                  >
+                    <FileText size={18} />
+                    <span>Journal d'audit</span>
+                  </button>
+                </li>
               </ul>
               <div className="menu-deroulant-separateur"></div>
               <div className="menu-deroulant-footer">
@@ -259,7 +261,26 @@ const EnTete = ({ nombreNotifications = 3, elementActif, surChangementElement })
             </div>
           )}
         </div>
+        </div>
       </div>
+
+      {/* Bottom Navigation Bar */}
+      <nav className="en-tete-nav">
+        {elementsMenu.map((element) => {
+          const Icone = element.icone;
+          const estActif = elementActif === element.id;
+          return (
+            <button
+              key={element.id}
+              className={`nav-item ${estActif ? 'nav-item-actif' : ''}`}
+              onClick={() => gererClicMenu(element.id)}
+            >
+              <Icone size={18} />
+              <span>{element.libelle}</span>
+            </button>
+          );
+        })}
+      </nav>
 
       {/* Modal Informations Utilisateur */}
       <FormulaireModal

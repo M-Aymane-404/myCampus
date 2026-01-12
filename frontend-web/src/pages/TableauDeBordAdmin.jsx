@@ -51,81 +51,54 @@ const TableauDeBordAdmin = () => {
   return (
     <div className="tableau-de-bord-admin">
       <div className="tableau-de-bord-header">
-        <h1 className="tableau-de-bord-titre">Administrator Dashboard</h1>
-        <p className="tableau-de-bord-sous-titre">System overview and management controls</p>
+        <h1 className="tableau-de-bord-titre">Welcome back to your workspace</h1>
+        <p className="tableau-de-bord-sous-titre">Here is a comprehensive overview of your institution for today.</p>
       </div>
 
-      <div className="tableau-de-bord-statistiques-ligne1">
+      <div className="tableau-de-bord-statistiques-container">
         <CarteStatistique
           titre="Students"
           valeur={statistiques.totalEtudiants}
-          variation={{ valeur: 12, label: 'this month', positif: true }}
+          variation={{ valeur: 12, label: '%', positif: true }}
           icone={Users}
           couleur="primary"
+          iconeCouleur="dark"
         />
         <CarteStatistique
           titre="Professors"
           valeur={statistiques.totalProfesseurs}
-          variation={{ valeur: 3, label: 'this month', positif: true }}
+          variation={{ valeur: 3, label: '', positif: true }}
           icone={UserCheck}
           couleur="primary"
+          iconeCouleur="light"
         />
         <CarteStatistique
           titre="Modules"
           valeur={statistiques.totalModules}
-          variation={{ valeur: statistiques.totalModules, label: 'Active courses', positif: true }}
+          variation={{ valeur: 42, label: '', positif: true }}
           icone={BookOpen}
           couleur="primary"
+          iconeCouleur="dark"
         />
-      </div>
-
-      <div className="tableau-de-bord-statistiques-ligne2">
         <CarteStatistique
           titre="Departments"
           valeur={statistiques.totalDepartements}
           variation={{ valeur: statistiques.totalDepartements, label: 'Academic units', positif: true }}
           icone={Building2}
           couleur="primary"
-        />
-        <CarteStatistique
-          titre="Active Now"
-          valeur={statistiques.totalUtilisateursActifs}
-          variation={{ valeur: statistiques.totalUtilisateursActifs, label: 'Online users', positif: true }}
-          icone={UsersActive}
-          couleur="success"
+          iconeCouleur="light"
         />
         <CarteStatistique
           titre="Pending"
           valeur={0}
-          variation={{ valeur: 12, label: 'chi haja urgent', positif: false }}
+          variation={{ valeur: 94, label: '%', positif: true }}
           icone={Clock}
           couleur="accent"
+          iconeCouleur="dark"
         />
       </div>
 
-      <div className="tableau-de-bord-alertes">
-        <AlerteNotification
-          type="warning"
-          message="hadik lhaja li urgent"
-          boutonTexte="Review Now"
-          couleurBordure="warning"
-          surClicBouton={() => console.log('Review approvals')}
-        />
-        <AlerteNotification
-          type="info"
-          message="Database backup scheduled for tonight at 2:00 AM"
-          boutonTexte="View Schedule"
-          couleurBordure="info"
-          surClicBouton={() => console.log('View schedule')}
-        />
-        <AlerteNotification
-          type="success"
-          message="All systems operational - 99.9% uptime"
-          boutonTexte="View Status"
-          couleurBordure="success"
-          surClicBouton={() => console.log('View status')}
-        />
-      </div>
+      
 
       <div className="tableau-de-bord-graphiques">
         <div className="graphique-grand">

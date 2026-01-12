@@ -24,10 +24,15 @@
 }
 
 .gestion-departements-statistiques {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
   margin-bottom: 30px;
+  align-items: stretch;
+  width: 100%;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  justify-content: center;
 }
 
 .gestion-departements-details {
@@ -190,7 +195,7 @@
 
 @media (max-width: 1200px) {
   .gestion-departements-statistiques {
-    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
   }
 
   .departement-carte-contenu {
@@ -200,7 +205,7 @@
 
 @media (max-width: 768px) {
   .gestion-departements-statistiques {
-    grid-template-columns: 1fr;
+    gap: 8px;
   }
 
   .departement-carte-header {

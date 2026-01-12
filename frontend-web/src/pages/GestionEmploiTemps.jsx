@@ -269,23 +269,26 @@ const GestionEmploiTemps = () => {
         <CarteStatistique
           titre="Séances Programmées"
           valeur={seancesProgrammees}
-          variation={{ valeur: seancesProgrammees, label: 'à venir', positif: true }}
+          variation={{ valeur: 2, label: '', positif: true }}
           icone={Calendar}
           couleur="primary"
+          iconeCouleur="dark"
         />
         <CarteStatistique
           titre="Séances Terminées"
           valeur={seancesTerminees}
-          variation={{ valeur: seancesTerminees, label: 'terminées', positif: true }}
+          variation={{ valeur: 1, label: '', positif: true }}
           icone={Clock}
           couleur="success"
+          iconeCouleur="light"
         />
         <CarteStatistique
           titre="Total Heures"
           valeur={totalHeures.toFixed(1)}
-          variation={{ valeur: totalHeures, label: 'heures', positif: true }}
+          variation={{ valeur: 7, label: '', positif: true }}
           icone={Clock}
           couleur="info"
+          iconeCouleur="dark"
         />
       </div>
 
