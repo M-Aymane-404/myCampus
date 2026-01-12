@@ -47,7 +47,7 @@ public class Etudiant extends Utilisateur {
     private Classe classe;
     
     @OneToMany(mappedBy = "etudiant")
-    private List<Absence> absences;
+    private List<Presence> presences;
     
     @OneToMany(mappedBy = "etudiant")
     private List<Resultat> resultats;

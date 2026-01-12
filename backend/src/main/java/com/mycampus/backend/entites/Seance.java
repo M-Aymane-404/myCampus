@@ -29,7 +29,7 @@ public class Seance {
     private TypeSeance type;
     
     @Column(nullable = false)
-    private LocalDateTime date;
+    private LocalDate date;
     
     @Column(nullable = false)
     private LocalDateTime heureDebut;
@@ -50,7 +50,7 @@ public class Seance {
     private AffectationEnseignement affectationEnseignement;
     
     @OneToMany(mappedBy = "seance")
-    private List<Absence> absences;
+    private List<Presence> presences;
     
     @OneToMany(mappedBy = "seance")
     private List<FichierSeance> fichierSeances;
