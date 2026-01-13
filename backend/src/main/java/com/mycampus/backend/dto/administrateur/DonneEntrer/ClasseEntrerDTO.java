@@ -1,12 +1,15 @@
-package com.mycampus.backend.dto;
+package com.mycampus.backend.dto.administrateur.DonneEntrer;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Data
 
-public class ClasseDTO {
+public class ClasseEntrerDTO {
     
     private  Long id;
     private  String codeClasse;
@@ -14,6 +17,5 @@ public class ClasseDTO {
     private  String niveau;
     private  Integer effectifMax;
     private  Long filiereId;
-    private  String filiereNom;
     private  String anneeUniversitaire;
 }

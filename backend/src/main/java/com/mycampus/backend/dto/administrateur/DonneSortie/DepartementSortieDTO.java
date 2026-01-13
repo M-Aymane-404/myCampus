@@ -1,4 +1,4 @@
-package com.mycampus.backend.dto;
+package com.mycampus.backend.dto.administrateur.DonneSortie;
 
 import com.mycampus.backend.entites.Professeur;
 import lombok.*;
@@ -10,7 +10,7 @@ import java.time.LocalDate;
 @Builder
 @Data
 
-public class DepartementDTO {
+public class DepartementSortieDTO {
 
     private  Long id;
     private  String codeDepartement;

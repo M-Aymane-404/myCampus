@@ -1,13 +1,16 @@
-package com.mycampus.backend.dto;
+package com.mycampus.backend.dto.administrateur.DonneEntrer;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Data
 
-public class MatiereDTO {
+public class MatiereEntrerDTO {
     
     private  Long id;
     private  String codeMatiere;
@@ -15,5 +18,4 @@ public class MatiereDTO {
     private  String description;
     private  Integer coefficient;
     private  Long moduleId;
-    private  String moduleNom;
 }

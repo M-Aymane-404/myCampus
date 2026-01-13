@@ -1,9 +1,7 @@
-package com.mycampus.backend.dto;
+package com.mycampus.backend.dto.administrateur.DonneSortie;
 
 
-import com.mycampus.backend.entites.Utilisateur;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -14,7 +12,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-public class ProfesseurDTO extends UtilisateurDto {
+public class ProfesseurSortieDTO extends UtilisateurSortieDto {
     private String ppr;
 
     private String specialite;

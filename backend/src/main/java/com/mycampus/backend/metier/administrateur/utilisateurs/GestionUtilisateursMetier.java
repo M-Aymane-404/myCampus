@@ -1,8 +1,11 @@
 package com.mycampus.backend.metier.administrateur.utilisateurs;
 
-import com.mycampus.backend.dto.AdministrateurDTO;
-import com.mycampus.backend.dto.ProfesseurDTO;
-import com.mycampus.backend.dto.EtudiantDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.AdministrateurEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.EtudiantEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.ProfesseurEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneSortie.AdministrateurSortieDTO;
+import com.mycampus.backend.dto.administrateur.DonneSortie.ProfesseurSortieDTO;
+import com.mycampus.backend.dto.administrateur.DonneSortie.EtudiantSortieDTO;
 import com.mycampus.backend.exceptions.UtilisateursException;
 
 import java.util.List;
@@ -11,15 +14,15 @@ public interface GestionUtilisateursMetier {
     
     // ==================== ADMINISTRATEUR ====================
     
-    AdministrateurDTO creerAdministrateur(AdministrateurDTO administrateurDTO) throws UtilisateursException;
+    AdministrateurSortieDTO creerAdministrateur(AdministrateurEntrerDTO administrateurEntrerDTO) throws UtilisateursException;
     
-    AdministrateurDTO trouverAdministrateurParId(Long id) throws UtilisateursException;
+    AdministrateurSortieDTO trouverAdministrateurParId(Long id) throws UtilisateursException;
     
-    AdministrateurDTO trouverAdministrateurParPpr(String ppr) throws UtilisateursException;
+    AdministrateurSortieDTO trouverAdministrateurParPpr(String ppr) throws UtilisateursException;
     
-    List<AdministrateurDTO> listerTousLesAdministrateurs() throws UtilisateursException;
+    List<AdministrateurSortieDTO> listerTousLesAdministrateurs() throws UtilisateursException;
     
-    AdministrateurDTO modifierAdministrateur(Long id, AdministrateurDTO administrateurDTO) throws UtilisateursException;
+    AdministrateurSortieDTO modifierAdministrateur(Long id, AdministrateurEntrerDTO administrateurEntrerDTO) throws UtilisateursException;
     
     void supprimerAdministrateur(Long id) throws UtilisateursException;
     
@@ -29,15 +32,15 @@ public interface GestionUtilisateursMetier {
     
     // ==================== PROFESSEUR ====================
     
-    ProfesseurDTO creerProfesseur(ProfesseurDTO professeurDTO) throws UtilisateursException;
+    ProfesseurSortieDTO creerProfesseur(ProfesseurEntrerDTO professeurEntrerDTO) throws UtilisateursException;
     
-    ProfesseurDTO trouverProfesseurParId(Long id) throws UtilisateursException;
+    ProfesseurSortieDTO trouverProfesseurParId(Long id) throws UtilisateursException;
     
-    ProfesseurDTO trouverProfesseurParPpr(String ppr) throws UtilisateursException;
+    ProfesseurSortieDTO trouverProfesseurParPpr(String ppr) throws UtilisateursException;
     
-    List<ProfesseurDTO> listerTousLesProfesseurs() throws UtilisateursException;
+    List<ProfesseurSortieDTO> listerTousLesProfesseurs() throws UtilisateursException;
     
-    ProfesseurDTO modifierProfesseur(Long id, ProfesseurDTO professeurDTO) throws UtilisateursException;
+    ProfesseurSortieDTO modifierProfesseur(Long id, ProfesseurEntrerDTO professeurEntrerDTO) throws UtilisateursException;
     
     void supprimerProfesseur(Long id) throws UtilisateursException;
     
@@ -47,15 +50,15 @@ public interface GestionUtilisateursMetier {
     
     // ==================== ETUDIANT ====================
     
-    EtudiantDTO creerEtudiant(EtudiantDTO etudiantDTO) throws UtilisateursException;
+    EtudiantSortieDTO creerEtudiant(EtudiantEntrerDTO etudiantEntrerDTO) throws UtilisateursException;
     
-    EtudiantDTO trouverEtudiantParId(Long id) throws UtilisateursException;
+    EtudiantSortieDTO trouverEtudiantParId(Long id) throws UtilisateursException;
     
-    EtudiantDTO trouverEtudiantParApogee(String apogee) throws UtilisateursException;
+    EtudiantSortieDTO trouverEtudiantParApogee(String apogee) throws UtilisateursException;
     
-    List<EtudiantDTO> listerTousLesEtudiants() throws UtilisateursException;
+    List<EtudiantSortieDTO> listerTousLesEtudiants() throws UtilisateursException;
     
-    EtudiantDTO modifierEtudiant(Long id, EtudiantDTO etudiantDTO) throws UtilisateursException;
+    EtudiantSortieDTO modifierEtudiant(Long id, EtudiantEntrerDTO etudiantEntrerDTO) throws UtilisateursException;
     
     void supprimerEtudiant(Long id) throws UtilisateursException;
     

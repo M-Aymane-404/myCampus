@@ -1,4 +1,4 @@
-package com.mycampus.backend.dto;
+package com.mycampus.backend.dto.administrateur.DonneSortie;
 
 import lombok.*;
 import com.mycampus.backend.enumerations.Semestre;
@@ -7,7 +7,7 @@ import com.mycampus.backend.enumerations.Semestre;
 @AllArgsConstructor
 @Builder
 @NoArgsConstructor
-public class ModuleDTO {
+public class ModuleSortieDTO {
     
     private  Long id;
     private  String codeModule;

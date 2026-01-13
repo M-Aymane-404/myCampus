@@ -7,14 +7,19 @@ import com.mycampus.backend.entites.Module;
 import com.mycampus.backend.entites.Matiere;
 import com.mycampus.backend.entites.AffectationEnseignement;
 import com.mycampus.backend.entites.Seance;
-import com.mycampus.backend.dto.DepartementDTO;
-import com.mycampus.backend.dto.FiliereDTO;
-import com.mycampus.backend.dto.ClasseDTO;
-import com.mycampus.backend.dto.ModuleDTO;
-import com.mycampus.backend.dto.MatiereDTO;
-import com.mycampus.backend.dto.AffectationEnseignementDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.DepartementEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.FiliereEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.ClasseEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.ModuleEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.MatiereEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.AffectationEnseignementEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneSortie.DepartementSortieDTO;
+import com.mycampus.backend.dto.administrateur.DonneSortie.FiliereSortieDTO;
+import com.mycampus.backend.dto.administrateur.DonneSortie.ClasseSortieDTO;
+import com.mycampus.backend.dto.administrateur.DonneSortie.ModuleSortieDTO;
+import com.mycampus.backend.dto.administrateur.DonneSortie.MatiereSortieDTO;
+import com.mycampus.backend.dto.administrateur.DonneSortie.AffectationEnseignementSortieDTO;
 import com.mycampus.backend.dto.SeanceDTO;
-import com.mycampus.backend.enumerations.Semestre;
 import org.springframework.beans.BeanUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -26,234 +31,269 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class StructureMapper {
 
-    // Département mappings
-    public DepartementDTO versDepartementDTO(Departement departement) {
+    // ==================== DEPARTEMENT ====================
+
+    public DepartementSortieDTO FromDepartementVersDepartementSortieDTO(Departement departement) {
         if (departement == null) {
             return null;
         }
         
-        DepartementDTO departementDTO = new DepartementDTO();
-        BeanUtils.copyProperties(departement, departementDTO);
-        return departementDTO;
+        DepartementSortieDTO departementSortieDTO = new DepartementSortieDTO();
+        BeanUtils.copyProperties(departement, departementSortieDTO);
+        return departementSortieDTO;
     }
 
-    public List<DepartementDTO> versListeDepartementsDTO(List<Departement> departements) {
+    public List<DepartementSortieDTO> FromListeDepartementVersListeDepartementSortieDTO(List<Departement> departements) {
         if (departements == null) {
             return List.of();
         }
         
         return departements.stream()
-            .map(this::versDepartementDTO)
+            .map(this::FromDepartementVersDepartementSortieDTO)
             .collect(Collectors.toList());
     }
 
-    public Departement versDepartement(DepartementDTO departementDTO) {
-        if (departementDTO == null) {
+    public Departement FromDepartementEntrerVersDepartement(DepartementEntrerDTO departementEntrerDTO) {
+        if (departementEntrerDTO == null) {
             return null;
         }
         
         Departement departement = new Departement();
-        BeanUtils.copyProperties(departementDTO, departement);
+        BeanUtils.copyProperties(departementEntrerDTO, departement);
         return departement;
     }
 
-    // Filière mappings
-    public FiliereDTO versFiliereDTO(Filiere filiere) {
+    // ==================== FILIERE ====================
+
+    public FiliereSortieDTO FromFiliereVersFiliereSortieDTO(Filiere filiere) {
         if (filiere == null) {
             return null;
         }
 
-        FiliereDTO filiereDTO = new FiliereDTO();
-        BeanUtils.copyProperties(filiere, filiereDTO);
+        FiliereSortieDTO filiereSortieDTO = new FiliereSortieDTO();
+        BeanUtils.copyProperties(filiere, filiereSortieDTO);
         
-        // Mapping sécurisé - éviter le lazy loading
+        // Mapping manuel des IDs de relations
         if (filiere.getDepartement() != null) {
-            filiereDTO.setChef_filiere_id(filiere.getChefFiliere() != null ? filiere.getChefFiliere().getId() : null);
-            filiereDTO.setDepartementId(filiere.getDepartement().getId());
-            filiereDTO.setDepartementNom(filiere.getDepartement().getTypeDepartement());
+            filiereSortieDTO.setDepartementId(filiere.getDepartement().getId());
+            filiereSortieDTO.setDepartementNom(filiere.getDepartement().getTypeDepartement());
         } else {
-            filiereDTO.setChef_filiere_id(null);
-            filiereDTO.setDepartementId(null);
-            filiereDTO.setDepartementNom(null);
+            filiereSortieDTO.setDepartementId(null);
+            filiereSortieDTO.setDepartementNom(null);
         }
+        
+        filiereSortieDTO.setChef_filiere_id(filiere.getChefFiliere() != null ? filiere.getChefFiliere().getId() : null);
 
-        return filiereDTO;
+        return filiereSortieDTO;
     }
 
-    public List<FiliereDTO> versListeFilieresDTO(List<Filiere> filieres) {
+    public List<FiliereSortieDTO> FromListeFiliereVersListeFiliereSortieDTO(List<Filiere> filieres) {
         if (filieres == null) {
             return List.of();
         }
         
         return filieres.stream()
-            .map(this::versFiliereDTO)
+            .map(this::FromFiliereVersFiliereSortieDTO)
             .collect(Collectors.toList());
     }
 
-    public Filiere versFiliere(FiliereDTO filiereDTO) {
-        if (filiereDTO == null) {
+    public Filiere FromFiliereEntrerVersFiliere(FiliereEntrerDTO filiereEntrerDTO) {
+        if (filiereEntrerDTO == null) {
             return null;
         }
         
         Filiere filiere = new Filiere();
-        BeanUtils.copyProperties(filiereDTO, filiere);
+        BeanUtils.copyProperties(filiereEntrerDTO, filiere);
         return filiere;
     }
 
-    // Classe mappings
-    public ClasseDTO versClasseDTO(Classe classe) {
+    // ==================== CLASSE ====================
+
+    public ClasseSortieDTO FromClasseVersClasseSortieDTO(Classe classe) {
         if (classe == null) {
             return null;
         }
 
-        ClasseDTO classeDTO = new ClasseDTO();
-        BeanUtils.copyProperties(classe, classeDTO);
+        ClasseSortieDTO classeSortieDTO = new ClasseSortieDTO();
+        BeanUtils.copyProperties(classe, classeSortieDTO);
         
-        // Mapping sécurisé - éviter le lazy loading
+        // Mapping manuel de l'ID de la filière
         if (classe.getFiliere() != null) {
-            classeDTO.setFiliereId(classe.getFiliere().getId());
-            classeDTO.setFiliereNom(classe.getFiliere().getNom());
+            classeSortieDTO.setFiliereId(classe.getFiliere().getId());
+            classeSortieDTO.setFiliereNom(classe.getFiliere().getNom());
         } else {
-            classeDTO.setFiliereId(null);
-            classeDTO.setFiliereNom(null);
+            classeSortieDTO.setFiliereId(null);
+            classeSortieDTO.setFiliereNom(null);
         }
 
-        return classeDTO;
+        return classeSortieDTO;
     }
 
-    public List<ClasseDTO> versListeClassesDTO(List<Classe> classes) {
+    public List<ClasseSortieDTO> FromListeClasseVersListeClasseSortieDTO(List<Classe> classes) {
         if (classes == null) {
             return List.of();
         }
         
         return classes.stream()
-            .map(this::versClasseDTO)
+            .map(this::FromClasseVersClasseSortieDTO)
             .collect(Collectors.toList());
     }
 
-    public Classe versClasse(ClasseDTO classeDTO) {
-        if (classeDTO == null) {
+    public Classe FromClasseEntrerVersClasse(ClasseEntrerDTO classeEntrerDTO) {
+        if (classeEntrerDTO == null) {
             return null;
         }
         
         Classe classe = new Classe();
-        BeanUtils.copyProperties(classeDTO, classe);
+        BeanUtils.copyProperties(classeEntrerDTO, classe);
         return classe;
     }
 
-    // Module mappings
-    public ModuleDTO versModuleDTO(Module module) {
+    // ==================== MODULE ====================
+
+    public ModuleSortieDTO FromModuleVersModuleSortieDTO(Module module) {
         if (module == null) {
             return null;
         }
 
-        ModuleDTO moduleDTO = new ModuleDTO();
-        BeanUtils.copyProperties(module, moduleDTO);
+        ModuleSortieDTO moduleSortieDTO = new ModuleSortieDTO();
+        BeanUtils.copyProperties(module, moduleSortieDTO);
         
-        // Mapping sécurisé - éviter le lazy loading
+        // Mapping manuel de l'ID de la filière
         if (module.getFiliere() != null) {
-            moduleDTO.setFiliereId(module.getFiliere().getId());
-            moduleDTO.setFiliereNom(module.getFiliere().getNom());
+            moduleSortieDTO.setFiliereId(module.getFiliere().getId());
+            moduleSortieDTO.setFiliereNom(module.getFiliere().getNom());
         } else {
-            moduleDTO.setFiliereId(null);
-            moduleDTO.setFiliereNom(null);
+            moduleSortieDTO.setFiliereId(null);
+            moduleSortieDTO.setFiliereNom(null);
         }
 
-        return moduleDTO;
+        return moduleSortieDTO;
     }
 
-    public List<ModuleDTO> versListeModulesDTO(List<Module> modules) {
+    public List<ModuleSortieDTO> FromListeModuleVersListeModuleSortieDTO(List<Module> modules) {
         if (modules == null) {
             return List.of();
         }
         
         return modules.stream()
-            .map(this::versModuleDTO)
+            .map(this::FromModuleVersModuleSortieDTO)
             .collect(Collectors.toList());
     }
 
-    public Module versModule(ModuleDTO moduleDTO) {
-        if (moduleDTO == null) {
+    public Module FromModuleEntrerVersModule(ModuleEntrerDTO moduleEntrerDTO) {
+        if (moduleEntrerDTO == null) {
             return null;
         }
         
         Module module = new Module();
-        BeanUtils.copyProperties(moduleDTO, module);
+        BeanUtils.copyProperties(moduleEntrerDTO, module);
         return module;
     }
 
-    // Matière mappings
-    public MatiereDTO versMatiereDTO(Matiere matiere) {
+    // ==================== MATIERE ====================
+
+    public MatiereSortieDTO FromMatiereVersMatiereSortieDTO(Matiere matiere) {
         if (matiere == null) {
             return null;
         }
 
-        MatiereDTO matiereDTO = new MatiereDTO();
-        BeanUtils.copyProperties(matiere, matiereDTO);
-        matiereDTO.setModuleId(matiere.getModule() != null ? matiere.getModule().getId() : null);
-        matiereDTO.setModuleNom(matiere.getModule() != null ? matiere.getModule().getNom() : null);
+        MatiereSortieDTO matiereSortieDTO = new MatiereSortieDTO();
+        BeanUtils.copyProperties(matiere, matiereSortieDTO);
         
-        return matiereDTO;
+        // Mapping manuel de l'ID du module
+        if (matiere.getModule() != null) {
+            matiereSortieDTO.setModuleId(matiere.getModule().getId());
+            matiereSortieDTO.setModuleNom(matiere.getModule().getNom());
+        } else {
+            matiereSortieDTO.setModuleId(null);
+            matiereSortieDTO.setModuleNom(null);
+        }
+
+        return matiereSortieDTO;
     }
 
-    public List<MatiereDTO> versListeMatieresDTO(List<Matiere> matieres) {
+    public List<MatiereSortieDTO> FromListeMatiereVersListeMatiereSortieDTO(List<Matiere> matieres) {
         if (matieres == null) {
             return List.of();
         }
         
         return matieres.stream()
-            .map(this::versMatiereDTO)
+            .map(this::FromMatiereVersMatiereSortieDTO)
             .collect(Collectors.toList());
     }
 
-    public Matiere versMatiere(MatiereDTO matiereDTO) {
-        if (matiereDTO == null) {
+    public Matiere FromMatiereEntrerVersMatiere(MatiereEntrerDTO matiereEntrerDTO) {
+        if (matiereEntrerDTO == null) {
             return null;
         }
         
         Matiere matiere = new Matiere();
-        BeanUtils.copyProperties(matiereDTO, matiere);
+        BeanUtils.copyProperties(matiereEntrerDTO, matiere);
         return matiere;
     }
 
-    // AffectationEnseignement mappings
-    public AffectationEnseignementDTO versAffectationEnseignementDTO(AffectationEnseignement affectation) {
+    // ==================== AFFECTATION ENSEIGNEMENT ====================
+
+    public AffectationEnseignementSortieDTO FromAffectationEnseignementVersAffectationEnseignementSortieDTO(AffectationEnseignement affectation) {
         if (affectation == null) {
             return null;
         }
         
-        AffectationEnseignementDTO affectationDTO = new AffectationEnseignementDTO();
-        BeanUtils.copyProperties(affectation, affectationDTO);
+        AffectationEnseignementSortieDTO affectationSortieDTO = new AffectationEnseignementSortieDTO();
+        BeanUtils.copyProperties(affectation, affectationSortieDTO);
         
-        // Manual mapping for nested relations
-        affectationDTO.setProfesseurPpr(affectation.getProfesseur() != null ? affectation.getProfesseur().getPpr() : null);
-        affectationDTO.setProfesseurNom(affectation.getProfesseur() != null ? 
-            affectation.getProfesseur().getPrenom() + " " + affectation.getProfesseur().getNom() : null);
-        affectationDTO.setClasseId(affectation.getClasse() != null ? affectation.getClasse().getId() : null);
-        affectationDTO.setClasseNom(affectation.getClasse() != null ? affectation.getClasse().getNom() : null);
-        affectationDTO.setMatiereId(affectation.getMatiere() != null ? affectation.getMatiere().getId() : null);
-        affectationDTO.setMatiereNom(affectation.getMatiere() != null ? affectation.getMatiere().getNom() : null);
-        
-        return affectationDTO;
-    }
-
-    public AffectationEnseignement versAffectationEnseignement(AffectationEnseignementDTO affectation) {
-        if (affectation == null) {
-            return null;
+        // Mapping manuel des relations
+        if (affectation.getProfesseur() != null) {
+            affectationSortieDTO.setProfesseurPpr(affectation.getProfesseur().getPpr());
+            affectationSortieDTO.setProfesseurNom(affectation.getProfesseur().getPrenom() + " " + affectation.getProfesseur().getNom());
+        } else {
+            affectationSortieDTO.setProfesseurPpr(null);
+            affectationSortieDTO.setProfesseurNom(null);
         }
-        AffectationEnseignement affectationDTO = new AffectationEnseignement();
-        BeanUtils.copyProperties(affectation, affectationDTO);
-        return affectationDTO;
+        
+        if (affectation.getClasse() != null) {
+            affectationSortieDTO.setClasseId(affectation.getClasse().getId());
+            affectationSortieDTO.setClasseNom(affectation.getClasse().getNom());
+        } else {
+            affectationSortieDTO.setClasseId(null);
+            affectationSortieDTO.setClasseNom(null);
+        }
+        
+        if (affectation.getMatiere() != null) {
+            affectationSortieDTO.setMatiereId(affectation.getMatiere().getId());
+            affectationSortieDTO.setMatiereNom(affectation.getMatiere().getNom());
+        } else {
+            affectationSortieDTO.setMatiereId(null);
+            affectationSortieDTO.setMatiereNom(null);
+        }
+
+        return affectationSortieDTO;
     }
 
-    public List<AffectationEnseignementDTO> versListeAffectationEnseignementDTO(List<AffectationEnseignement> affectations) {
+    public List<AffectationEnseignementSortieDTO> FromListeAffectationEnseignementVersListeAffectationEnseignementSortieDTO(List<AffectationEnseignement> affectations) {
+        if (affectations == null) {
+            return List.of();
+        }
+        
         return affectations.stream()
-            .map(this::versAffectationEnseignementDTO)
+            .map(this::FromAffectationEnseignementVersAffectationEnseignementSortieDTO)
             .collect(Collectors.toList());
     }
 
-    // Seance mappings
-    public SeanceDTO versSeanceDTO(Seance seance) {
+    public AffectationEnseignement FromAffectationEnseignementEntrerVersAffectationEnseignement(AffectationEnseignementEntrerDTO affectationEnseignementEntrerDTO) {
+        if (affectationEnseignementEntrerDTO == null) {
+            return null;
+        }
+        
+        AffectationEnseignement affectation = new AffectationEnseignement();
+        BeanUtils.copyProperties(affectationEnseignementEntrerDTO, affectation);
+        return affectation;
+    }
+
+    // ==================== SEANCE ====================
+
+    public SeanceDTO FromSeanceVersSeanceDTO(Seance seance) {
         if (seance == null) {
             return null;
         }
@@ -261,7 +301,7 @@ public class StructureMapper {
         SeanceDTO seanceDTO = new SeanceDTO();
         BeanUtils.copyProperties(seance, seanceDTO);
         
-        // Manual mapping for affectationEnseignement relation
+        // Mapping manuel de l'ID de l'affectation
         seanceDTO.setAffectationEnseignementId(
             seance.getAffectationEnseignement() != null ? seance.getAffectationEnseignement().getId() : null
         );
@@ -269,13 +309,13 @@ public class StructureMapper {
         return seanceDTO;
     }
 
-    public List<SeanceDTO> versListeSeancesDTO(List<Seance> seances) {
+    public List<SeanceDTO> FromListeSeanceVersListeSeanceDTO(List<Seance> seances) {
         if (seances == null) {
             return List.of();
         }
         
         return seances.stream()
-            .map(this::versSeanceDTO)
+            .map(this::FromSeanceVersSeanceDTO)
             .collect(Collectors.toList());
     }
 }

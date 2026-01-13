@@ -1,6 +1,5 @@
-package com.mycampus.backend.dto;
+package com.mycampus.backend.dto.administrateur.DonneSortie;
 
-import com.mycampus.backend.entites.Professeur;
 import com.mycampus.backend.enumerations.EtatStructure;
 import lombok.*;
 
@@ -9,7 +8,7 @@ import lombok.*;
 @Builder
 @Data
 
-public class FiliereDTO {
+public class FiliereSortieDTO {
 
     private  Long id;
     private  String codeFiliere;

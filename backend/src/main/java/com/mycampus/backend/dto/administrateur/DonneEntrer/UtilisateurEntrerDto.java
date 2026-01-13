@@ -1,22 +1,18 @@
-package com.mycampus.backend.dto;
+package com.mycampus.backend.dto.administrateur.DonneEntrer;
 
-import com.mycampus.backend.entites.Notification;
-import jakarta.persistence.Column;
-import jakarta.persistence.OneToMany;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
-import java.util.List;
+
 @AllArgsConstructor
 @NoArgsConstructor
 @SuperBuilder
 @Data
 
-public class UtilisateurDto {
+public class UtilisateurEntrerDto {
     private Long id;
 
     private String nom;
@@ -35,7 +31,7 @@ public class UtilisateurDto {
 
     private Boolean enabled ;
 
-    private LocalDateTime dateCreation;
+
 
     private LocalDateTime dateDerniereConnexion;
 

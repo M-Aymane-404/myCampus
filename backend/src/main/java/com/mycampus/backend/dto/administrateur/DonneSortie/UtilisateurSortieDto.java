@@ -1,0 +1,39 @@
+package com.mycampus.backend.dto.administrateur.DonneSortie;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+
+import java.time.LocalDateTime;
+
+@AllArgsConstructor
+@NoArgsConstructor
+@SuperBuilder
+@Data
+
+public class UtilisateurSortieDto {
+    private Long id;
+
+    private String nom;
+
+    private String prenom;
+
+    private String email;
+
+    private String password;
+
+    private String cin;
+
+    private String tel;
+
+    private String photo;
+
+    private Boolean enabled ;
+
+    private LocalDateTime dateCreation;
+
+    private LocalDateTime dateDerniereConnexion;
+
+
+}

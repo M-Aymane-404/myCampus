@@ -1,6 +1,6 @@
 package com.mycampus.backend;
 
-import com.mycampus.backend.dto.*;
+import com.mycampus.backend.dto.administrateur.DonneSortie.*;
 import com.mycampus.backend.enumerations.*;
 
 import com.mycampus.backend.exceptions.StructureAcademiqueException;
@@ -19,29 +19,29 @@ import java.util.List;
 @SpringBootApplication
 public class BackendApplication {
 
-    private static final Logger logger = LoggerFactory.getLogger(BackendApplication.class);
+  //  private static final Logger logger = LoggerFactory.getLogger(BackendApplication.class);
 
     public static void main(String[] args) {
         SpringApplication.run(BackendApplication.class, args);
     }
 
-    @Bean
-    CommandLineRunner testMetierLayers(
+    //@Bean
+    /*CommandLineRunner testMetierLayers(
         GestionStructureAcademiqueMetier gestionStructureAcademiqueMetier,
         GestionUtilisateursMetier gestionUtilisateursMetier
     ) {
         return args -> {
-          //  logger.info("=== DÉMARRAGE DES TESTS DES MÉTIERS ===");
+      //  logger.info("=== DÉMARRAGE DES TESTS DES MÉTIERS ===");
             
           //  Test 1: Gestion Structure Académique
-          // testStructureAcademique(gestionStructureAcademiqueMetier);
+           testStructureAcademique(gestionStructureAcademiqueMetier);
             
            //  Test 2: Gestion Utilisateurs
-       //   testUtilisateurs(gestionUtilisateursMetier);
+              testUtilisateurs(gestionUtilisateursMetier);
             
          //   logger.info("=== FIN DES TESTS DES MÉTIERS ===");
             logger.info("=== DÉMARRAGE DES TESTS DE Affectation ===");
-           AffectationEnseignementDTO affectationEnseignementDTO = AffectationEnseignementDTO.builder()
+           AffectationEnseignementSortieDTO affectationEnseignementSortieDTO = AffectationEnseignementSortieDTO.builder()
                    .anneeUniversitaire("2025/2026")
                    .semestre(Semestre.S1)
                    .matiereId(1L)
@@ -49,7 +49,7 @@ public class BackendApplication {
                    .classeId(1L)
                    .build();
          //  gestionStructureAcademiqueMetier.creerAffectationEnseignement(affectationEnseignementDTO);
-            AffectationEnseignementDTO affectationEnseignementDTO1 = AffectationEnseignementDTO.builder()
+            AffectationEnseignementSortieDTO affectationEnseignementSortieDTO1 = AffectationEnseignementSortieDTO.builder()
                     .anneeUniversitaire("2026/2027")
                     .semestre(Semestre.S2)
                     .matiereId(1L)
@@ -76,18 +76,18 @@ public class BackendApplication {
             logger.info("[STRUCTURE] === CRÉATION DES ENTITÉS ===");
             
             // Créer un département
-            DepartementDTO departementDTO = DepartementDTO.builder()
+            DepartementSortieDTO departementSortieDTO = DepartementSortieDTO.builder()
                 .codeDepartement("INFO")
                 .typeDepartement("Informatique")
                 .description("Département d'informatique")
                 .build();
             
-            DepartementDTO departementCree = metier.creerDepartement(departementDTO);
+            DepartementSortieDTO departementCree = metier.creerDepartement(departementSortieDTO);
             departementId = departementCree.getId();
             logger.info("[STRUCTURE] Création département OK: id={}, code={}", departementCree.getId(), departementCree.getCodeDepartement());
             
             // Créer une filière liée au département
-            FiliereDTO filiereDTO = FiliereDTO.builder()
+            FiliereSortieDTO filiereSortieDTO = FiliereSortieDTO.builder()
                 .codeFiliere("ILCS")
                 .nom("Informatique Licence Cyber Sécurité")
                 .description("Formation en cybersécurité")
@@ -97,12 +97,12 @@ public class BackendApplication {
                 .departementId(departementCree.getId())
                 .build();
             
-            FiliereDTO filiereCreee = metier.creerFiliere(filiereDTO);
+            FiliereSortieDTO filiereCreee = metier.creerFiliere(filiereSortieDTO);
             filiereId = filiereCreee.getId();
             logger.info("[STRUCTURE] Création filière OK: id={}, nom={}", filiereCreee.getId(), filiereCreee.getNom());
             
             // Créer une classe liée à la filière
-            ClasseDTO classeDTO = ClasseDTO.builder()
+            ClasseSortieDTO classeSortieDTO = ClasseSortieDTO.builder()
                 .codeClasse("ILCS1")
                 .nom("ILCS Semestre 1")
                 .niveau("1ère année")
@@ -111,12 +111,12 @@ public class BackendApplication {
                 .filiereId(filiereCreee.getId())
                 .build();
             
-            ClasseDTO classeCree = metier.creerClasse(classeDTO);
+            ClasseSortieDTO classeCree = metier.creerClasse(classeSortieDTO);
             classeId = classeCree.getId();
             logger.info("[STRUCTURE] Création classe OK: id={}, nom={}", classeCree.getId(), classeCree.getNom());
             
             // Créer un module lié à la filière
-            ModuleDTO moduleDTO = ModuleDTO.builder()
+            ModuleSortieDTO moduleSortieDTO = ModuleSortieDTO.builder()
                 .codeModule("MATH101")
                 .nom("Mathématiques Fondamentales")
                 .description("Module de mathématiques de base")
@@ -125,12 +125,12 @@ public class BackendApplication {
                 .filiereId(filiereCreee.getId())
                 .build();
             
-            ModuleDTO moduleCree = metier.creerModule(moduleDTO);
+            ModuleSortieDTO moduleCree = metier.creerModule(moduleSortieDTO);
             moduleId = moduleCree.getId();
             logger.info("[STRUCTURE] Création module OK: id={}, nom={}", moduleCree.getId(), moduleCree.getNom());
             
             // Créer une matière liée au module
-            MatiereDTO matiereDTO = MatiereDTO.builder()
+            MatiereSortieDTO matiereSortieDTO = MatiereSortieDTO.builder()
                 .codeMatiere("ALGEBRE")
                 .nom("Algèbre Linéaire")
                 .description("Cours d'algèbre linéaire")
@@ -138,7 +138,7 @@ public class BackendApplication {
                 .moduleId(moduleCree.getId())
                 .build();
             
-            MatiereDTO matiereCree = metier.creerMatiere(matiereDTO);
+            MatiereSortieDTO matiereCree = metier.creerMatiere(matiereSortieDTO);
             matiereId = matiereCree.getId();
             logger.info("[STRUCTURE] Création matière OK: id={}, nom={}", matiereCree.getId(), matiereCree.getNom());
             
@@ -146,7 +146,7 @@ public class BackendApplication {
             logger.info("[STRUCTURE] === MISE À JOUR DES ENTITÉS ===");
             
             // Mettre à jour le département
-            DepartementDTO departementUpdate = DepartementDTO.builder()
+            DepartementSortieDTO departementUpdate = DepartementSortieDTO.builder()
                 .id(departementId)
                 .codeDepartement("INFO")
                 .typeDepartement("Informatique et Réseaux")
@@ -154,12 +154,12 @@ public class BackendApplication {
                 .build();
             
             String ancienneDescription = departementCree.getDescription();
-            DepartementDTO departementModifie = metier.modifierDepartement(departementId, departementUpdate);
+            DepartementSortieDTO departementModifie = metier.modifierDepartement(departementId, departementUpdate);
             logger.info("[STRUCTURE] Mise à jour département OK: id={}, descriptionAvant={}, descriptionApres={}", 
                 departementModifie.getId(), ancienneDescription, departementModifie.getDescription());
             
             // Mettre à jour la filière
-            FiliereDTO filiereUpdate = FiliereDTO.builder()
+            FiliereSortieDTO filiereUpdate = FiliereSortieDTO.builder()
                 .id(filiereId)
                 .codeFiliere("ILCS")
                 .nom("Informatique Licence Cybersécurité Spécialisée")
@@ -171,12 +171,12 @@ public class BackendApplication {
                 .build();
             
             String ancienNomFiliere = filiereCreee.getNom();
-            FiliereDTO filiereModifiee = metier.modifierFiliere(filiereId, filiereUpdate);
+            FiliereSortieDTO filiereModifiee = metier.modifierFiliere(filiereId, filiereUpdate);
             logger.info("[STRUCTURE] Mise à jour filière OK: id={}, nomAvant={}, nomApres={}", 
                 filiereModifiee.getId(), ancienNomFiliere, filiereModifiee.getNom());
             
             // Mettre à jour la classe
-            ClasseDTO classeUpdate = ClasseDTO.builder()
+            ClasseSortieDTO classeUpdate = ClasseSortieDTO.builder()
                 .id(classeId)
                 .codeClasse("ILCS1")
                 .nom("ILCS Semestre 1 - Groupe A")
@@ -188,12 +188,12 @@ public class BackendApplication {
             
             String ancienNomClasse = classeCree.getNom();
             Integer ancienEffectif = classeCree.getEffectifMax();
-            ClasseDTO classeModifiee = metier.modifierClasse(classeId, classeUpdate);
+            ClasseSortieDTO classeModifiee = metier.modifierClasse(classeId, classeUpdate);
             logger.info("[STRUCTURE] Mise à jour classe OK: id={}, nomAvant={}, nomApres={}, effectifAvant={}, effectifApres={}", 
                 classeModifiee.getId(), ancienNomClasse, classeModifiee.getNom(), ancienEffectif, classeModifiee.getEffectifMax());
             
             // Mettre à jour le module
-            ModuleDTO moduleUpdate = ModuleDTO.builder()
+            ModuleSortieDTO moduleUpdate = ModuleSortieDTO.builder()
                 .id(moduleId)
                 .codeModule("MATH101")
                 .nom("Mathématiques Appliquées")
@@ -205,12 +205,12 @@ public class BackendApplication {
             
             String ancienNomModule = moduleCree.getNom();
             Integer ancienCoefficient = moduleCree.getCoefficient();
-            ModuleDTO moduleModifie = metier.modifierModule(moduleId, moduleUpdate);
+            ModuleSortieDTO moduleModifie = metier.modifierModule(moduleId, moduleUpdate);
             logger.info("[STRUCTURE] Mise à jour module OK: id={}, nomAvant={}, nomApres={}, coefficientAvant={}, coefficientApres={}", 
                 moduleModifie.getId(), ancienNomModule, moduleModifie.getNom(), ancienCoefficient, moduleModifie.getCoefficient());
             
             // Mettre à jour la matière
-            MatiereDTO matiereUpdate = MatiereDTO.builder()
+            MatiereSortieDTO matiereUpdate = MatiereSortieDTO.builder()
                 .id(matiereId)
                 .codeMatiere("ALGEBRE")
                 .nom("Algèbre Linéaire Avancée")
@@ -221,26 +221,26 @@ public class BackendApplication {
             
             String ancienNomMatiere = matiereCree.getNom();
             Integer ancienCoefficientMatiere = matiereCree.getCoefficient();
-            MatiereDTO matiereModifiee = metier.modifierMatiere(matiereId, matiereUpdate);
+            MatiereSortieDTO matiereModifiee = metier.modifierMatiere(matiereId, matiereUpdate);
             logger.info("[STRUCTURE] Mise à jour matière OK: id={}, nomAvant={}, nomApres={}, coefficientAvant={}, coefficientApres={}", 
                 matiereModifiee.getId(), ancienNomMatiere, matiereModifiee.getNom(), ancienCoefficientMatiere, matiereModifiee.getCoefficient());
             
             // VÉRIFICATION DES MISES À JOUR
             logger.info("[STRUCTURE] === VÉRIFICATION DES MISES À JOUR ===");
             
-            DepartementDTO departementVerifie = metier.trouverDepartementParId(departementId);
+            DepartementSortieDTO departementVerifie = metier.trouverDepartementParId(departementId);
             logger.info("[STRUCTURE] Vérification département: description={}", departementVerifie.getDescription());
             
-            FiliereDTO filiereVerifiee = metier.trouverFiliereParId(filiereId);
+            FiliereSortieDTO filiereVerifiee = metier.trouverFiliereParId(filiereId);
             logger.info("[STRUCTURE] Vérification filière: nom={}", filiereVerifiee.getNom());
             
-            ClasseDTO classeVerifiee = metier.trouverClasseParId(classeId);
+            ClasseSortieDTO classeVerifiee = metier.trouverClasseParId(classeId);
             logger.info("[STRUCTURE] Vérification classe: nom={}, effectifMax={}", classeVerifiee.getNom(), classeVerifiee.getEffectifMax());
             
-            ModuleDTO moduleVerifie = metier.trouverModuleParId(moduleId);
+            ModuleSortieDTO moduleVerifie = metier.trouverModuleParId(moduleId);
             logger.info("[STRUCTURE] Vérification module: nom={}, coefficient={}", moduleVerifie.getNom(), moduleVerifie.getCoefficient());
             
-            MatiereDTO matiereVerifiee = metier.trouverMatiereParId(matiereId);
+            MatiereSortieDTO matiereVerifiee = metier.trouverMatiereParId(matiereId);
             logger.info("[STRUCTURE] Vérification matière: nom={}, coefficient={}", matiereVerifiee.getNom(), matiereVerifiee.getCoefficient());
   
      /*       // SUPPRESSION
@@ -304,7 +304,7 @@ public class BackendApplication {
                 logger.warn("[STRUCTURE] Le département n'a pas été supprimé correctement");
             } catch (StructureAcademiqueException e) {
                 logger.info("[STRUCTURE] Suppression département confirmée: id={} (non trouvé)", departementId);
-            }*/
+            }
             
             logger.info("[STRUCTURE] --- TEST STRUCTURE ACADÉMIQUE TERMINÉ AVEC SUCCÈS ---");
 
@@ -324,7 +324,7 @@ public class BackendApplication {
             // CRÉATION
             logger.info("[UTILISATEURS] === CRÉATION ADMINISTRATEUR ===");
             
-            AdministrateurDTO administrateurDTO = AdministrateurDTO.builder()
+            AdministrateurSortieDTO administrateurSortieDTO = AdministrateurSortieDTO.builder()
                 .ppr("12345678")
                 .nom("Dupont")
                 .prenom("Jean")
@@ -336,7 +336,7 @@ public class BackendApplication {
                 .grade("A1")
                 .build();
             
-            AdministrateurDTO adminCree = metier.creerAdministrateur(administrateurDTO);
+            AdministrateurSortieDTO adminCree = metier.creerAdministrateur(administrateurSortieDTO);
             adminId = adminCree.getId();
             logger.info("[UTILISATEURS] Création administrateur OK: id={}, prenom={}, nom={}", 
                 adminCree.getId(), adminCree.getPrenom(), adminCree.getNom());
@@ -344,18 +344,18 @@ public class BackendApplication {
             // VÉRIFICATION CRÉATION
             logger.info("[UTILISATEURS] === VÉRIFICATION CRÉATION ===");
             
-            AdministrateurDTO adminParPpr = metier.trouverAdministrateurParPpr("12345678");
+            AdministrateurSortieDTO adminParPpr = metier.trouverAdministrateurParPpr("12345678");
             if (adminParPpr != null) {
                 logger.info("[UTILISATEURS] Vérification par PPR OK: email={}", adminParPpr.getEmail());
             }
             
-            List<AdministrateurDTO> listeAdmins = metier.listerTousLesAdministrateurs();
+            List<AdministrateurSortieDTO> listeAdmins = metier.listerTousLesAdministrateurs();
             logger.info("[UTILISATEURS] Total administrateurs: {}", listeAdmins.size());
             
             // MISE À JOUR
             logger.info("[UTILISATEURS] === MISE À JOUR ADMINISTRATEUR ===");
             
-            AdministrateurDTO adminUpdate = AdministrateurDTO.builder()
+            AdministrateurSortieDTO adminUpdate = AdministrateurSortieDTO.builder()
                 .id(adminId)
                 .ppr("12345678")
                 .nom("Dupont")
@@ -371,14 +371,14 @@ public class BackendApplication {
             String ancienGrade = adminCree.getGrade();
             String ancienEmail = adminCree.getEmail();
             
-            AdministrateurDTO adminModifie = metier.modifierAdministrateur(adminId, adminUpdate);
+            AdministrateurSortieDTO adminModifie = metier.modifierAdministrateur(adminId, adminUpdate);
             logger.info("[UTILISATEURS] Mise à jour administrateur OK: id={}, fonctionAvant={}, fonctionApres={}, gradeAvant={}, gradeApres={}, emailAvant={}, emailApres={}", 
                 adminModifie.getId(), ancienneFonction, adminModifie.getFonction(), ancienGrade, adminModifie.getGrade(), ancienEmail, adminModifie.getEmail());
             
             // VÉRIFICATION MISE À JOUR
             logger.info("[UTILISATEURS] === VÉRIFICATION MISE À JOUR ===");
             
-            AdministrateurDTO adminVerifie = metier.trouverAdministrateurParId(adminId);
+            AdministrateurSortieDTO adminVerifie = metier.trouverAdministrateurParId(adminId);
             logger.info("[UTILISATEURS] Vérification mise à jour: fonction={}, grade={}, email={}", 
                 adminVerifie.getFonction(), adminVerifie.getGrade(), adminVerifie.getEmail());
             
@@ -389,14 +389,14 @@ public class BackendApplication {
             logger.info("[UTILISATEURS] Administrateur désactivé: id={}", adminId);
             
             // Vérifier désactivation
-            AdministrateurDTO adminDesactive = metier.trouverAdministrateurParId(adminId);
+            AdministrateurSortieDTO adminDesactive = metier.trouverAdministrateurParId(adminId);
             logger.info("[UTILISATEURS] Vérification désactivation: enabled={}", adminDesactive.getEnabled());
             
             metier.activerAdministrateur(adminId);
             logger.info("[UTILISATEURS] Administrateur réactivé: id={}", adminId);
             
             // Vérifier réactivation
-            AdministrateurDTO adminReactive = metier.trouverAdministrateurParId(adminId);
+            AdministrateurSortieDTO adminReactive = metier.trouverAdministrateurParId(adminId);
             logger.info("[UTILISATEURS] Vérification réactivation: enabled={}", adminReactive.getEnabled());
             
             // SUPPRESSION
@@ -417,7 +417,7 @@ public class BackendApplication {
             
             Long profId = null;
             
-            ProfesseurDTO professeurDTO = ProfesseurDTO.builder()
+            ProfesseurSortieDTO professeurSortieDTO = ProfesseurSortieDTO.builder()
                 .ppr("87654321")
                 .nom("Martin")
                 .prenom("Pierre")
@@ -435,7 +435,7 @@ public class BackendApplication {
                 .filiereDirigeeId(null)
                 .build();
             
-            ProfesseurDTO profCree = metier.creerProfesseur(professeurDTO);
+            ProfesseurSortieDTO profCree = metier.creerProfesseur(professeurSortieDTO);
             profId = profCree.getId();
             logger.info("[UTILISATEURS] Création professeur OK: id={}, prenom={}, nom={}, specialite={}", 
                 profCree.getId(), profCree.getPrenom(), profCree.getNom(), profCree.getSpecialite());
@@ -443,19 +443,19 @@ public class BackendApplication {
             // VÉRIFICATION CRÉATION PROFESSEUR
             logger.info("[UTILISATEURS] === VÉRIFICATION CRÉATION PROFESSEUR ===");
             
-            ProfesseurDTO profParPpr = metier.trouverProfesseurParPpr("87654321");
+            ProfesseurSortieDTO profParPpr = metier.trouverProfesseurParPpr("87654321");
             if (profParPpr != null) {
                 logger.info("[UTILISATEURS] Vérification professeur par PPR OK: email={}, grade={}", 
                     profParPpr.getEmail(), profParPpr.getGrade());
             }
             
-            List<ProfesseurDTO> listeProfs = metier.listerTousLesProfesseurs();
+            List<ProfesseurSortieDTO> listeProfs = metier.listerTousLesProfesseurs();
             logger.info("[UTILISATEURS] Total professeurs: {}", listeProfs.size());
             
             // MISE À JOUR PROFESSEUR
             logger.info("[UTILISATEURS] === MISE À JOUR PROFESSEUR ===");
             
-            ProfesseurDTO profUpdate = ProfesseurDTO.builder()
+            ProfesseurSortieDTO profUpdate = ProfesseurSortieDTO.builder()
                 .id(profId)
 
                 .ppr("87654321")
@@ -478,14 +478,14 @@ public class BackendApplication {
             String ancienGrades = profCree.getGrade();
             String ancienEmails = profCree.getEmail();
             
-            ProfesseurDTO profModifie = metier.modifierProfesseur(profId, profUpdate);
+            ProfesseurSortieDTO profModifie = metier.modifierProfesseur(profId, profUpdate);
             logger.info("[UTILISATEURS] Mise à jour professeur OK: id={}, specialiteAvant={}, specialiteApres={}, gradeAvant={}, gradeApres={}, emailAvant={}, emailApres={}", 
                 profModifie.getId(), ancienneSpecialite, profModifie.getSpecialite(), ancienGrades, profModifie.getGrade(), ancienEmails, profModifie.getEmail());
             
             // VÉRIFICATION MISE À JOUR PROFESSEUR
             logger.info("[UTILISATEURS] === VÉRIFICATION MISE À JOUR PROFESSEUR ===");
             
-            ProfesseurDTO profVerifie = metier.trouverProfesseurParId(profId);
+            ProfesseurSortieDTO profVerifie = metier.trouverProfesseurParId(profId);
             logger.info("[UTILISATEURS] Vérification mise à jour professeur: specialite={}, grade={}, email={}", 
                 profVerifie.getSpecialite(), profVerifie.getGrade(), profVerifie.getEmail());
             
@@ -496,18 +496,18 @@ public class BackendApplication {
             logger.info("[UTILISATEURS] Professeur désactivé: id={}", profId);
             
             // Vérifier désactivation
-            ProfesseurDTO profDesactive = metier.trouverProfesseurParId(profId);
+            ProfesseurSortieDTO profDesactive = metier.trouverProfesseurParId(profId);
             logger.info("[UTILISATEURS] Vérification désactivation professeur: enabled={}", profDesactive.getEnabled());
             
             metier.activerProfesseur(profId);
             logger.info("[UTILISATEURS] Professeur réactivé: id={}", profId);
             
             // Vérifier réactivation
-            ProfesseurDTO profReactive = metier.trouverProfesseurParId(profId);
+            ProfesseurSortieDTO profReactive = metier.trouverProfesseurParId(profId);
             logger.info("[UTILISATEURS] Vérification réactivation professeur: enabled={}", profReactive.getEnabled());
             
             // SUPPRESSION PROFESSEUR
-          /*  logger.info("[UTILISATEURS] === SUPPRESSION PROFESSEUR ===");
+     logger.info("[UTILISATEURS] === SUPPRESSION PROFESSEUR ===");
             
             try {
                 metier.supprimerProfesseur(profId);
@@ -518,14 +518,14 @@ public class BackendApplication {
                 logger.warn("[UTILISATEURS] Le professeur n'a pas été supprimé correctement");
             } catch (UtilisateursException e) {
                 logger.info("[UTILISATEURS] Suppression professeur confirmée: id={} (non trouvé)", profId);
-            }*/
+            }
             
             // ==================== TEST ETUDIANT ====================
             logger.info("[UTILISATEURS] === CRÉATION ETUDIANT ===");
             
             Long etudiantId = null;
             
-            EtudiantDTO etudiantDTO = EtudiantDTO.builder()
+            EtudiantSortieDTO etudiantSortieDTO = EtudiantSortieDTO.builder()
                 .apogee("202300123")
                 .nom("Bernard")
                 .prenom("Sophie")
@@ -542,7 +542,7 @@ public class BackendApplication {
                 .classeId(1L)
                 .build();
             
-            EtudiantDTO etudiantCree = metier.creerEtudiant(etudiantDTO);
+            EtudiantSortieDTO etudiantCree = metier.creerEtudiant(etudiantSortieDTO);
             etudiantId = etudiantCree.getId();
             logger.info("[UTILISATEURS] Création étudiant OK: id={}, prenom={}, nom={}, apogee={}, niveau={}", 
                 etudiantCree.getId(), etudiantCree.getPrenom(), etudiantCree.getNom(), 
@@ -551,19 +551,19 @@ public class BackendApplication {
             // VÉRIFICATION CRÉATION ETUDIANT
             logger.info("[UTILISATEURS] === VÉRIFICATION CRÉATION ETUDIANT ===");
             
-            EtudiantDTO etudiantParApogee = metier.trouverEtudiantParApogee("202300123");
+            EtudiantSortieDTO etudiantParApogee = metier.trouverEtudiantParApogee("202300123");
             if (etudiantParApogee != null) {
                 logger.info("[UTILISATEURS] Vérification étudiant par Apogée OK: email={}, semestre={}", 
                     etudiantParApogee.getEmail(), etudiantParApogee.getSemestreActuel());
             }
             
-            List<EtudiantDTO> listeEtudiants = metier.listerTousLesEtudiants();
+            List<EtudiantSortieDTO> listeEtudiants = metier.listerTousLesEtudiants();
             logger.info("[UTILISATEURS] Total étudiants: {}", listeEtudiants.size());
             
             // MISE À JOUR ETUDIANT
             logger.info("[UTILISATEURS] === MISE À JOUR ETUDIANT ===");
             
-            EtudiantDTO etudiantUpdate = EtudiantDTO.builder()
+            EtudiantSortieDTO etudiantUpdate = EtudiantSortieDTO.builder()
                 .id(etudiantId)
                 .apogee("202300123")
                 .nom("Bernard")
@@ -583,7 +583,7 @@ public class BackendApplication {
             Semestre ancienSemestre = etudiantCree.getSemestreActuel();
             String ancienEmailEtudiant = etudiantCree.getEmail();
             
-            EtudiantDTO etudiantModifie = metier.modifierEtudiant(etudiantId, etudiantUpdate);
+            EtudiantSortieDTO etudiantModifie = metier.modifierEtudiant(etudiantId, etudiantUpdate);
             logger.info("[UTILISATEURS] Mise à jour étudiant OK: id={}, niveauAvant={}, niveauApres={}, semestreAvant={}, semestreApres={}, emailAvant={}, emailApres={}", 
                 etudiantModifie.getId(), ancienNiveau, etudiantModifie.getNiveau(), 
                 ancienSemestre, etudiantModifie.getSemestreActuel(), 
@@ -592,7 +592,7 @@ public class BackendApplication {
             // VÉRIFICATION MISE À JOUR ETUDIANT
             logger.info("[UTILISATEURS] === VÉRIFICATION MISE À JOUR ETUDIANT ===");
             
-            EtudiantDTO etudiantVerifie = metier.trouverEtudiantParId(etudiantId);
+            EtudiantSortieDTO etudiantVerifie = metier.trouverEtudiantParId(etudiantId);
             logger.info("[UTILISATEURS] Vérification mise à jour étudiant: niveau={}, semestre={}, email={}", 
                 etudiantVerifie.getNiveau(), etudiantVerifie.getSemestreActuel(), etudiantVerifie.getEmail());
             
@@ -603,18 +603,18 @@ public class BackendApplication {
             logger.info("[UTILISATEURS] Étudiant désactivé: id={}", etudiantId);
             
             // Vérifier désactivation
-            EtudiantDTO etudiantDesactive = metier.trouverEtudiantParId(etudiantId);
+            EtudiantSortieDTO etudiantDesactive = metier.trouverEtudiantParId(etudiantId);
             logger.info("[UTILISATEURS] Vérification désactivation étudiant: enabled={}", etudiantDesactive.getEnabled());
             
             metier.activerEtudiant(etudiantId);
             logger.info("[UTILISATEURS] Étudiant réactivé: id={}", etudiantId);
             
             // Vérifier réactivation
-            EtudiantDTO etudiantReactive = metier.trouverEtudiantParId(etudiantId);
+            EtudiantSortieDTO etudiantReactive = metier.trouverEtudiantParId(etudiantId);
             logger.info("[UTILISATEURS] Vérification réactivation étudiant: enabled={}", etudiantReactive.getEnabled());
             
             // SUPPRESSION ETUDIANT
-         /*   logger.info("[UTILISATEURS] === SUPPRESSION ETUDIANT ===");
+            logger.info("[UTILISATEURS] === SUPPRESSION ETUDIANT ===");
             
             try {
                 metier.supprimerEtudiant(etudiantId);
@@ -625,7 +625,7 @@ public class BackendApplication {
                 logger.warn("[UTILISATEURS] L'étudiant n'a pas été supprimé correctement");
             } catch (UtilisateursException e) {
                 logger.info("[UTILISATEURS] Suppression étudiant confirmée: id={} (non trouvé)", etudiantId);
-            }*/
+            }
             
             logger.info("[UTILISATEURS] --- TEST GESTION UTILISATEURS (ADMIN + PROF + ETUDIANT) TERMINÉ AVEC SUCCÈS ---");
             
@@ -634,5 +634,5 @@ public class BackendApplication {
         } catch (Exception e) {
             logger.error("[UTILISATEURS] ERREUR INATTENDUE dans testUtilisateurs: {}", e.getMessage(), e);
         }
-    }
+    }*/
 }

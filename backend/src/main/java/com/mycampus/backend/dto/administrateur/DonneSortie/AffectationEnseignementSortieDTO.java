@@ -1,14 +1,13 @@
-package com.mycampus.backend.dto;
+package com.mycampus.backend.dto.administrateur.DonneSortie;
 
 import com.mycampus.backend.enumerations.Semestre;
-import com.mycampus.backend.enumerations.TypeSeance;
 import lombok.*;
 
 @Data
 @AllArgsConstructor
 @Builder
 @NoArgsConstructor
-public class AffectationEnseignementDTO {
+public class AffectationEnseignementSortieDTO {
     
     private Long id;
     private String anneeUniversitaire;

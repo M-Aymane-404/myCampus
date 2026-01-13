@@ -1,9 +1,12 @@
 package com.mycampus.backend.mappers;
 
-import com.mycampus.backend.dto.ProfesseurDTO;
-import com.mycampus.backend.dto.EtudiantDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.AdministrateurEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.EtudiantEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.ProfesseurEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneSortie.ProfesseurSortieDTO;
+import com.mycampus.backend.dto.administrateur.DonneSortie.EtudiantSortieDTO;
 import com.mycampus.backend.entites.Administrateur;
-import com.mycampus.backend.dto.AdministrateurDTO;
+import com.mycampus.backend.dto.administrateur.DonneSortie.AdministrateurSortieDTO;
 import com.mycampus.backend.entites.Professeur;
 import com.mycampus.backend.entites.Etudiant;
 import org.springframework.beans.BeanUtils;
@@ -17,33 +20,33 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UtilisateursMapper {
 
-    public AdministrateurDTO versAdministrateurDTO(Administrateur administrateur) {
+    public AdministrateurSortieDTO FromAdministrateurVersAdministrateurSortieDTO(Administrateur administrateur) {
         if (administrateur == null) {
             return null;
         }
         
-        AdministrateurDTO administrateurDTO = new AdministrateurDTO();
-        BeanUtils.copyProperties(administrateur, administrateurDTO);
-        return administrateurDTO;
+        AdministrateurSortieDTO administrateurSortieDTO = new AdministrateurSortieDTO();
+        BeanUtils.copyProperties(administrateur, administrateurSortieDTO);
+        return administrateurSortieDTO;
     }
 
-    public List<AdministrateurDTO> versListeAdministrateursDTO(List<Administrateur> administrateurs) {
+    public List<AdministrateurSortieDTO> versListeAdministrateursDTO(List<Administrateur> administrateurs) {
         if (administrateurs == null) {
             return List.of();
         }
         
         return administrateurs.stream()
-            .map(this::versAdministrateurDTO)
+            .map(this::FromAdministrateurVersAdministrateurSortieDTO)
             .collect(Collectors.toList());
     }
 
-    public Administrateur versAdministrateur(AdministrateurDTO administrateurDTO) {
-        if (administrateurDTO == null) {
+    public Administrateur FromAdministrateurEntrerVersAdministrateur(AdministrateurEntrerDTO administrateurEntrerDTO) {
+        if (administrateurEntrerDTO == null) {
             return null;
         }
         
         Administrateur administrateur = new Administrateur();
-        BeanUtils.copyProperties(administrateurDTO, administrateur);
+        BeanUtils.copyProperties(administrateurEntrerDTO, administrateur);
         return administrateur;
     }
 
@@ -53,39 +56,39 @@ public class UtilisateursMapper {
 
     // ==================== PROFESSEUR ====================
 
-    public ProfesseurDTO versProfesseurDTO(Professeur professeur) {
+    public ProfesseurSortieDTO FromProfesseurVersProfesseurSortirDTO(Professeur professeur) {
         if (professeur == null) {
             return null;
         }
 
-        ProfesseurDTO professeurDTO = new ProfesseurDTO();
-        BeanUtils.copyProperties(professeur, professeurDTO);
+        ProfesseurSortieDTO professeurSortieDTO = new ProfesseurSortieDTO();
+        BeanUtils.copyProperties(professeur, professeurSortieDTO);
         
         // Mapping manuel des IDs de relations
-        professeurDTO.setDepartementDirigeeId(professeur.getDepartementDirigee() != null ? professeur.getDepartementDirigee().getId() : null);
-        professeurDTO.setDepartementOuTravailId(professeur.getDepartementOuTravail() != null ? professeur.getDepartementOuTravail().getId() : null);
-        professeurDTO.setFiliereDirigeeId(professeur.getFiliereDirigee() != null ? professeur.getFiliereDirigee().getId() : null);
+        professeurSortieDTO.setDepartementDirigeeId(professeur.getDepartementDirigee() != null ? professeur.getDepartementDirigee().getId() : null);
+        professeurSortieDTO.setDepartementOuTravailId(professeur.getDepartementOuTravail() != null ? professeur.getDepartementOuTravail().getId() : null);
+        professeurSortieDTO.setFiliereDirigeeId(professeur.getFiliereDirigee() != null ? professeur.getFiliereDirigee().getId() : null);
         
-        return professeurDTO;
+        return professeurSortieDTO;
     }
 
-    public List<ProfesseurDTO> versListeProfesseur(List<Professeur> professeurs) {
+    public List<ProfesseurSortieDTO> FromListeProfesseurVersListeProfesseurSortie(List<Professeur> professeurs) {
         if ( professeurs == null) {
             return List.of();
         }
 
         return professeurs.stream()
-                .map(this::versProfesseurDTO)
+                .map(this::FromProfesseurVersProfesseurSortirDTO)
                 .collect(Collectors.toList());
     }
 
-    public Professeur versProfesseur(ProfesseurDTO professeurDTO) {
-        if (professeurDTO == null) {
+    public Professeur FromProfesseurEntrerversProfesseur(ProfesseurEntrerDTO professeurEntrerDTO) {
+        if (professeurEntrerDTO == null) {
             return null;
         }
 
         Professeur professeur = new Professeur();
-        BeanUtils.copyProperties(professeurDTO, professeur);
+        BeanUtils.copyProperties(professeurEntrerDTO, professeur);
         return professeur;
     }
 
@@ -94,37 +97,37 @@ public class UtilisateursMapper {
 
     // ==================== ETUDIANT ====================
 
-    public EtudiantDTO versEtudiantDTO(Etudiant etudiant) {
+    public EtudiantSortieDTO FromEtudientVersEtudiantSortieDTO(Etudiant etudiant) {
         if (etudiant == null) {
             return null;
         }
 
-        EtudiantDTO etudiantDTO = new EtudiantDTO();
-        BeanUtils.copyProperties(etudiant, etudiantDTO);
+        EtudiantSortieDTO etudiantSortieDTO = new EtudiantSortieDTO();
+        BeanUtils.copyProperties(etudiant, etudiantSortieDTO);
         
         // Mapping manuel de l'ID de la classe
-        etudiantDTO.setClasseId(etudiant.getClasse() != null ? etudiant.getClasse().getId() : null);
+        etudiantSortieDTO.setClasseId(etudiant.getClasse() != null ? etudiant.getClasse().getId() : null);
         
-        return etudiantDTO;
+        return etudiantSortieDTO;
     }
 
-    public List<EtudiantDTO> versListeEtudiantsDTO(List<Etudiant> etudiants) {
+    public List<EtudiantSortieDTO> FromListeEtudiantVersListeEtudiantsSortieDTO(List<Etudiant> etudiants) {
         if (etudiants == null) {
             return List.of();
         }
 
         return etudiants.stream()
-                .map(this::versEtudiantDTO)
+                .map(this::FromEtudientVersEtudiantSortieDTO)
                 .collect(Collectors.toList());
     }
 
-    public Etudiant versEtudiant(EtudiantDTO etudiantDTO) {
-        if (etudiantDTO == null) {
+    public Etudiant FromEtudiantEntrerversEtudiant(EtudiantEntrerDTO etudiantEntrerDTO) {
+        if (etudiantEntrerDTO == null) {
             return null;
         }
 
         Etudiant etudiant = new Etudiant();
-        BeanUtils.copyProperties(etudiantDTO, etudiant);
+        BeanUtils.copyProperties(etudiantEntrerDTO, etudiant);
         return etudiant;
     }
 

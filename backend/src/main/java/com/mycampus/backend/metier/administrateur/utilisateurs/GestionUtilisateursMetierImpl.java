@@ -1,15 +1,17 @@
 package com.mycampus.backend.metier.administrateur.utilisateurs;
 
-import com.mycampus.backend.dto.AdministrateurDTO;
-import com.mycampus.backend.dto.ProfesseurDTO;
-import com.mycampus.backend.dto.EtudiantDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.AdministrateurEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.EtudiantEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.ProfesseurEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneSortie.AdministrateurSortieDTO;
+import com.mycampus.backend.dto.administrateur.DonneSortie.ProfesseurSortieDTO;
+import com.mycampus.backend.dto.administrateur.DonneSortie.EtudiantSortieDTO;
 import com.mycampus.backend.entites.Administrateur;
 import com.mycampus.backend.entites.Departement;
 import com.mycampus.backend.entites.Filiere;
 import com.mycampus.backend.entites.Professeur;
 import com.mycampus.backend.entites.Etudiant;
 import com.mycampus.backend.entites.Classe;
-import com.mycampus.backend.metier.administrateur.structureAcademique.GestionStructureAcademiqueMetier;
 import com.mycampus.backend.repositorys.*;
 import com.mycampus.backend.mappers.UtilisateursMapper;
 import com.mycampus.backend.exceptions.UtilisateursException;
@@ -36,51 +38,51 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
     //private final PasswordEncoder passwordEncoder;
 
     @Override
-    public AdministrateurDTO creerAdministrateur(AdministrateurDTO administrateurDTO) throws UtilisateursException {
-        if (administrateurDTO == null) {
+    public AdministrateurSortieDTO creerAdministrateur(AdministrateurEntrerDTO administrateurEntrerDTO) throws UtilisateursException {
+        if (administrateurEntrerDTO == null) {
             throw new UtilisateursException("L'administrateur ne peut pas être nul");
         }
         
-        if (administrateurDTO.getPpr() == null || administrateurDTO.getPpr().trim().isEmpty()) {
+        if (administrateurEntrerDTO.getPpr() == null || administrateurEntrerDTO.getPpr().trim().isEmpty()) {
             throw new UtilisateursException("Le PPR de l'administrateur est obligatoire");
         }
         
-        if (administrateurRepository.existsByPpr(administrateurDTO.getPpr())) {
+        if (administrateurRepository.existsByPpr(administrateurEntrerDTO.getPpr())) {
             throw new UtilisateursException("Un administrateur avec ce PPR existe déjà");
         }
         
-        if (administrateurDTO.getEmail() == null || administrateurDTO.getEmail().trim().isEmpty()) {
+        if (administrateurEntrerDTO.getEmail() == null || administrateurEntrerDTO.getEmail().trim().isEmpty()) {
             throw new UtilisateursException("L'email de l'administrateur est obligatoire");
         }
         
-        if (utilisateurRepository.existsByEmail(administrateurDTO.getEmail())) {
+        if (utilisateurRepository.existsByEmail(administrateurEntrerDTO.getEmail())) {
             throw new UtilisateursException("Un utilisateur avec cet email existe déjà");
         }
         
-        if (administrateurDTO.getCin() == null || administrateurDTO.getCin().trim().isEmpty()) {
+        if (administrateurEntrerDTO.getCin() == null || administrateurEntrerDTO.getCin().trim().isEmpty()) {
             throw new UtilisateursException("Le CIN de l'administrateur est obligatoire");
         }
         
-        if (utilisateurRepository.existsByCin(administrateurDTO.getCin())) {
+        if (utilisateurRepository.existsByCin(administrateurEntrerDTO.getCin())) {
             throw new UtilisateursException("Un utilisateur avec ce CIN existe déjà");
         }
         
-        if (administrateurDTO.getPassword() == null || administrateurDTO.getPassword().trim().isEmpty()) {
+        if (administrateurEntrerDTO.getPassword() == null || administrateurEntrerDTO.getPassword().trim().isEmpty()) {
             throw new UtilisateursException("Le mot de passe de l'administrateur est obligatoire");
         }
         
-        Administrateur administrateur = utilisateursMapper.versAdministrateur(administrateurDTO);
+        Administrateur administrateur = utilisateursMapper.FromAdministrateurEntrerVersAdministrateur(administrateurEntrerDTO);
         administrateur.setDateCreation(LocalDateTime.now());
         administrateur.setEnabled(true);
       //  administrateur.setPassword(passwordEncoder.encode(administrateurDTO.getPassword()));
 
         
         Administrateur administrateurSauvegarde = administrateurRepository.save(administrateur);
-        return utilisateursMapper.versAdministrateurDTO(administrateurSauvegarde);
+        return utilisateursMapper.FromAdministrateurVersAdministrateurSortieDTO(administrateurSauvegarde);
     }
 
     @Override
-    public AdministrateurDTO trouverAdministrateurParId(Long id) throws UtilisateursException {
+    public AdministrateurSortieDTO trouverAdministrateurParId(Long id) throws UtilisateursException {
         if (id == null) {
             throw  new UtilisateursException(
                     "id est obligatoire"
@@ -89,11 +91,11 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
         
         Administrateur administrateur = administrateurRepository.findById(id).orElseThrow(() ->
                 new UtilisateursException("Administrateur introuvable avec l'identifiant: " + id));
-        return utilisateursMapper.versAdministrateurDTO(administrateur);
+        return utilisateursMapper.FromAdministrateurVersAdministrateurSortieDTO(administrateur);
     }
 
     @Override
-    public AdministrateurDTO trouverAdministrateurParPpr(String ppr) throws UtilisateursException {
+    public AdministrateurSortieDTO trouverAdministrateurParPpr(String ppr) throws UtilisateursException {
         if (ppr == null) {
             throw  new UtilisateursException(
                     "id est obligatoire"
@@ -106,24 +108,24 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
         }
 
 
-        return utilisateursMapper.versAdministrateurDTO(administrateur);
+        return utilisateursMapper.FromAdministrateurVersAdministrateurSortieDTO(administrateur);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<AdministrateurDTO> listerTousLesAdministrateurs() throws UtilisateursException {
+    public List<AdministrateurSortieDTO> listerTousLesAdministrateurs() throws UtilisateursException {
         try {
             List<Administrateur> administrateurs = administrateurRepository.findAll();
 
             
-            return administrateurs.stream().map(utilisateursMapper::versAdministrateurDTO).toList() ;
+            return administrateurs.stream().map(utilisateursMapper::FromAdministrateurVersAdministrateurSortieDTO).toList() ;
         } catch (Exception e) {
             throw new UtilisateursException("Erreur lors de la liste des administrateurs: " + e.getMessage(), e);
         }
     }
 
     @Override
-    public AdministrateurDTO modifierAdministrateur(Long id, AdministrateurDTO administrateurDTO) throws UtilisateursException {
+    public AdministrateurSortieDTO modifierAdministrateur(Long id, AdministrateurEntrerDTO administrateurEntrerDTO) throws UtilisateursException {
         if (id == null) {
             throw new UtilisateursException("L'identifiant de l'administrateur ne peut pas être nul");
         }
@@ -133,28 +135,28 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
 
         
 
-        if (administrateurDTO.getNom() != null && !administrateurDTO.getNom().trim().isEmpty()) {
-            adminAModifier.setNom(administrateurDTO.getNom());
+        if (administrateurEntrerDTO.getNom() != null && !administrateurEntrerDTO.getNom().trim().isEmpty()) {
+            adminAModifier.setNom(administrateurEntrerDTO.getNom());
         }
         
-        if (administrateurDTO.getPrenom() != null && !administrateurDTO.getPrenom().trim().isEmpty()) {
-            adminAModifier.setPrenom(administrateurDTO.getPrenom());
+        if (administrateurEntrerDTO.getPrenom() != null && !administrateurEntrerDTO.getPrenom().trim().isEmpty()) {
+            adminAModifier.setPrenom(administrateurEntrerDTO.getPrenom());
         }
         
-        if (administrateurDTO.getEmail() != null && !administrateurDTO.getEmail().trim().isEmpty()) {
-            if (!adminAModifier.getEmail().equals(administrateurDTO.getEmail()) && 
-                utilisateurRepository.existsByEmail(administrateurDTO.getEmail())) {
+        if (administrateurEntrerDTO.getEmail() != null && !administrateurEntrerDTO.getEmail().trim().isEmpty()) {
+            if (!adminAModifier.getEmail().equals(administrateurEntrerDTO.getEmail()) &&
+                utilisateurRepository.existsByEmail(administrateurEntrerDTO.getEmail())) {
                 throw new UtilisateursException("Un utilisateur avec cet email existe déjà");
             }
-            adminAModifier.setEmail(administrateurDTO.getEmail());
+            adminAModifier.setEmail(administrateurEntrerDTO.getEmail());
         }
         
-        if (administrateurDTO.getFonction() != null) {
-            adminAModifier.setFonction(administrateurDTO.getFonction());
+        if (administrateurEntrerDTO.getFonction() != null) {
+            adminAModifier.setFonction(administrateurEntrerDTO.getFonction());
         }
         
-        if (administrateurDTO.getGrade() != null && !administrateurDTO.getGrade().trim().isEmpty()) {
-            adminAModifier.setGrade(administrateurDTO.getGrade());
+        if (administrateurEntrerDTO.getGrade() != null && !administrateurEntrerDTO.getGrade().trim().isEmpty()) {
+            adminAModifier.setGrade(administrateurEntrerDTO.getGrade());
         }
 
        /* if(administrateurDTO.getPassword() != null && !administrateurDTO.getPassword().trim().isEmpty()) {
@@ -163,7 +165,7 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
 
         
         Administrateur administrateurModifie = administrateurRepository.save(adminAModifier);
-        return utilisateursMapper.versAdministrateurDTO(administrateurModifie);
+        return utilisateursMapper.FromAdministrateurVersAdministrateurSortieDTO(administrateurModifie);
     }
 
     @Override
@@ -203,62 +205,62 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
 
 
     @Transactional
-    public ProfesseurDTO creerProfesseur(ProfesseurDTO professeurDTO) throws UtilisateursException {
+    public ProfesseurSortieDTO creerProfesseur(ProfesseurEntrerDTO professeurEntrerDTO) throws UtilisateursException {
 
-        if(professeurDTO == null){
+        if(professeurEntrerDTO == null){
             throw new UtilisateursException("Professeur ne peut pas être nul");
         }
 
-        if (professeurDTO.getPpr() == null || professeurDTO.getPpr().trim().isEmpty()) {
+        if (professeurEntrerDTO.getPpr() == null || professeurEntrerDTO.getPpr().trim().isEmpty()) {
             throw new UtilisateursException("Le PPR de le professeur est obligatoire");
         }
 
-        if (professeurRepository.existsByPpr(professeurDTO.getPpr())) {
+        if (professeurRepository.existsByPpr(professeurEntrerDTO.getPpr())) {
             throw new UtilisateursException("Un professeur avec ce PPR existe déjà");
         }
 
-        if (professeurDTO.getEmail() == null || professeurDTO.getEmail().trim().isEmpty()) {
+        if (professeurEntrerDTO.getEmail() == null || professeurEntrerDTO.getEmail().trim().isEmpty()) {
             throw new UtilisateursException("L'email de le professeur est obligatoire");
         }
 
-        if (utilisateurRepository.existsByEmail(professeurDTO.getEmail())) {
+        if (utilisateurRepository.existsByEmail(professeurEntrerDTO.getEmail())) {
             throw new UtilisateursException("Un utilisateur avec cet email existe déjà");
         }
 
-        if (professeurDTO.getCin() == null || professeurDTO.getCin().trim().isEmpty()) {
+        if (professeurEntrerDTO.getCin() == null || professeurEntrerDTO.getCin().trim().isEmpty()) {
             throw new UtilisateursException("Le CIN de le professeur est obligatoire");
         }
 
-        if (utilisateurRepository.existsByCin(professeurDTO.getCin())) {
+        if (utilisateurRepository.existsByCin(professeurEntrerDTO.getCin())) {
             throw new UtilisateursException("Un utilisateur avec ce CIN existe déjà");
         }
 
-        if (professeurDTO.getPassword() == null || professeurDTO.getPassword().trim().isEmpty()) {
+        if (professeurEntrerDTO.getPassword() == null || professeurEntrerDTO.getPassword().trim().isEmpty()) {
             throw new UtilisateursException("Le mot de passe de le professeur est obligatoire");
         }
 
-        Professeur professeur =  utilisateursMapper.versProfesseur(professeurDTO);
+        Professeur professeur =  utilisateursMapper.FromProfesseurEntrerversProfesseur(professeurEntrerDTO);
 
-        if (professeurDTO.getDepartementDirigeeId() != null) {
-            Departement dep = departementRepository.findById(professeurDTO.getDepartementDirigeeId())
+        if (professeurEntrerDTO.getDepartementDirigeeId() != null) {
+            Departement dep = departementRepository.findById(professeurEntrerDTO.getDepartementDirigeeId())
                     .orElseThrow(() -> new UtilisateursException(
-                            "Département dirigé introuvable: " + professeurDTO.getDepartementDirigeeId()
+                            "Département dirigé introuvable: " + professeurEntrerDTO.getDepartementDirigeeId()
                     ));
             professeur.setDepartementDirigee(dep);
         }
 
-        if (professeurDTO.getDepartementOuTravailId() != null) {
-            Departement dep = departementRepository.findById(professeurDTO.getDepartementOuTravailId())
+        if (professeurEntrerDTO.getDepartementOuTravailId() != null) {
+            Departement dep = departementRepository.findById(professeurEntrerDTO.getDepartementOuTravailId())
                     .orElseThrow(() -> new UtilisateursException(
-                            "Département de travail introuvable: " + professeurDTO.getDepartementOuTravailId()
+                            "Département de travail introuvable: " + professeurEntrerDTO.getDepartementOuTravailId()
                     ));
             professeur.setDepartementOuTravail(dep);
         }
 
-        if (professeurDTO.getFiliereDirigeeId() != null) {
-            Filiere fil = filiereRepository.findById(professeurDTO.getFiliereDirigeeId())
+        if (professeurEntrerDTO.getFiliereDirigeeId() != null) {
+            Filiere fil = filiereRepository.findById(professeurEntrerDTO.getFiliereDirigeeId())
                     .orElseThrow(() -> new UtilisateursException(
-                            "Filière dirigée introuvable: " + professeurDTO.getFiliereDirigeeId()
+                            "Filière dirigée introuvable: " + professeurEntrerDTO.getFiliereDirigeeId()
                     ));
             professeur.setFiliereDirigee(fil);
         }
@@ -269,22 +271,22 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
 
 
 
-        return utilisateursMapper.versProfesseurDTO(professeurRepository.save(professeur));
+        return utilisateursMapper.FromProfesseurVersProfesseurSortirDTO(professeurRepository.save(professeur));
     }
 
     @Override
-    public ProfesseurDTO trouverProfesseurParId(Long id) throws UtilisateursException {
+    public ProfesseurSortieDTO trouverProfesseurParId(Long id) throws UtilisateursException {
         if (id == null) {
             throw new UtilisateursException("id est obligatoire");
         }
         
         Professeur professeur = professeurRepository.findById(id).orElseThrow(() ->
                 new UtilisateursException("Professeur introuvable avec l'identifiant: " + id));
-        return utilisateursMapper.versProfesseurDTO(professeur);
+        return utilisateursMapper.FromProfesseurVersProfesseurSortirDTO(professeur);
     }
 
     @Override
-    public ProfesseurDTO trouverProfesseurParPpr(String ppr) throws UtilisateursException {
+    public ProfesseurSortieDTO trouverProfesseurParPpr(String ppr) throws UtilisateursException {
         if (ppr == null) {
             throw new UtilisateursException("id est obligatoire");
         }
@@ -294,86 +296,86 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
             throw new UtilisateursException("Professeur introuvable avec l'identifiant: " + ppr);
         }
 
-        return utilisateursMapper.versProfesseurDTO(professeur);
+        return utilisateursMapper.FromProfesseurVersProfesseurSortirDTO(professeur);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<ProfesseurDTO> listerTousLesProfesseurs() throws UtilisateursException {
+    public List<ProfesseurSortieDTO> listerTousLesProfesseurs() throws UtilisateursException {
         try {
             List<Professeur> professeurs = professeurRepository.findAll();
-            return professeurs.stream().map(utilisateursMapper::versProfesseurDTO).toList();
+            return professeurs.stream().map(utilisateursMapper::FromProfesseurVersProfesseurSortirDTO).toList();
         } catch (Exception e) {
             throw new UtilisateursException("Erreur lors de la liste des professeurs: " + e.getMessage(), e);
         }
     }
 
     @Override
-    public ProfesseurDTO modifierProfesseur(Long id, ProfesseurDTO professeurDTO) throws UtilisateursException {
+    public ProfesseurSortieDTO modifierProfesseur(Long id, ProfesseurEntrerDTO professeurEntrerDTO) throws UtilisateursException {
         if (id == null) {
             throw new UtilisateursException("L'identifiant du professeur ne peut pas être nul");
         }
         
-        if (professeurDTO == null) {
+        if (professeurEntrerDTO == null) {
             throw new UtilisateursException("Le professeur ne peut pas être nul");
         }
         
         Professeur professeurAModifier = professeurRepository.findById(id).orElseThrow(() ->
                 new UtilisateursException("Professeur introuvable avec l'identifiant: " + id));
 
-        if (professeurDTO.getNom() != null && !professeurDTO.getNom().trim().isEmpty()) {
-            professeurAModifier.setNom(professeurDTO.getNom());
+        if (professeurEntrerDTO.getNom() != null && !professeurEntrerDTO.getNom().trim().isEmpty()) {
+            professeurAModifier.setNom(professeurEntrerDTO.getNom());
         }
         
-        if (professeurDTO.getPrenom() != null && !professeurDTO.getPrenom().trim().isEmpty()) {
-            professeurAModifier.setPrenom(professeurDTO.getPrenom());
+        if (professeurEntrerDTO.getPrenom() != null && !professeurEntrerDTO.getPrenom().trim().isEmpty()) {
+            professeurAModifier.setPrenom(professeurEntrerDTO.getPrenom());
         }
         
-        if (professeurDTO.getEmail() != null && !professeurDTO.getEmail().trim().isEmpty()) {
-            if (!professeurAModifier.getEmail().equals(professeurDTO.getEmail()) && 
-                utilisateurRepository.existsByEmail(professeurDTO.getEmail())) {
+        if (professeurEntrerDTO.getEmail() != null && !professeurEntrerDTO.getEmail().trim().isEmpty()) {
+            if (!professeurAModifier.getEmail().equals(professeurEntrerDTO.getEmail()) &&
+                utilisateurRepository.existsByEmail(professeurEntrerDTO.getEmail())) {
                 throw new UtilisateursException("Un utilisateur avec cet email existe déjà");
             }
-            professeurAModifier.setEmail(professeurDTO.getEmail());
+            professeurAModifier.setEmail(professeurEntrerDTO.getEmail());
         }
         
-        if (professeurDTO.getSpecialite() != null && !professeurDTO.getSpecialite().trim().isEmpty()) {
-            professeurAModifier.setSpecialite(professeurDTO.getSpecialite());
+        if (professeurEntrerDTO.getSpecialite() != null && !professeurEntrerDTO.getSpecialite().trim().isEmpty()) {
+            professeurAModifier.setSpecialite(professeurEntrerDTO.getSpecialite());
         }
         
-        if (professeurDTO.getGrade() != null && !professeurDTO.getGrade().trim().isEmpty()) {
-            professeurAModifier.setGrade(professeurDTO.getGrade());
+        if (professeurEntrerDTO.getGrade() != null && !professeurEntrerDTO.getGrade().trim().isEmpty()) {
+            professeurAModifier.setGrade(professeurEntrerDTO.getGrade());
         }
         
-        if (professeurDTO.getDateRecrutement() != null) {
-            professeurAModifier.setDateRecrutement(professeurDTO.getDateRecrutement());
+        if (professeurEntrerDTO.getDateRecrutement() != null) {
+            professeurAModifier.setDateRecrutement(professeurEntrerDTO.getDateRecrutement());
         }
         
-        if (professeurDTO.getStatut() != null && !professeurDTO.getStatut().trim().isEmpty()) {
-            professeurAModifier.setStatut(professeurDTO.getStatut());
+        if (professeurEntrerDTO.getStatut() != null && !professeurEntrerDTO.getStatut().trim().isEmpty()) {
+            professeurAModifier.setStatut(professeurEntrerDTO.getStatut());
         }
 
         // Relations optionnelles
-        if (professeurDTO.getDepartementDirigeeId() != null) {
-            Departement dep = departementRepository.findById(professeurDTO.getDepartementDirigeeId())
+        if (professeurEntrerDTO.getDepartementDirigeeId() != null) {
+            Departement dep = departementRepository.findById(professeurEntrerDTO.getDepartementDirigeeId())
                     .orElseThrow(() -> new UtilisateursException(
-                            "Département dirigé introuvable: " + professeurDTO.getDepartementDirigeeId()
+                            "Département dirigé introuvable: " + professeurEntrerDTO.getDepartementDirigeeId()
                     ));
             professeurAModifier.setDepartementDirigee(dep);
         }
 
-        if (professeurDTO.getDepartementOuTravailId() != null) {
-            Departement dep = departementRepository.findById(professeurDTO.getDepartementOuTravailId())
+        if (professeurEntrerDTO.getDepartementOuTravailId() != null) {
+            Departement dep = departementRepository.findById(professeurEntrerDTO.getDepartementOuTravailId())
                     .orElseThrow(() -> new UtilisateursException(
-                            "Département de travail introuvable: " + professeurDTO.getDepartementOuTravailId()
+                            "Département de travail introuvable: " + professeurEntrerDTO.getDepartementOuTravailId()
                     ));
             professeurAModifier.setDepartementOuTravail(dep);
         }
 
-        if (professeurDTO.getFiliereDirigeeId() != null) {
-            Filiere fil = filiereRepository.findById(professeurDTO.getFiliereDirigeeId())
+        if (professeurEntrerDTO.getFiliereDirigeeId() != null) {
+            Filiere fil = filiereRepository.findById(professeurEntrerDTO.getFiliereDirigeeId())
                     .orElseThrow(() -> new UtilisateursException(
-                            "Filière dirigée introuvable: " + professeurDTO.getFiliereDirigeeId()
+                            "Filière dirigée introuvable: " + professeurEntrerDTO.getFiliereDirigeeId()
                     ));
             professeurAModifier.setFiliereDirigee(fil);
         }
@@ -383,7 +385,7 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
         }*/
 
         Professeur professeurModifie = professeurRepository.save(professeurAModifier);
-        return utilisateursMapper.versProfesseurDTO(professeurModifie);
+        return utilisateursMapper.FromProfesseurVersProfesseurSortirDTO(professeurModifie);
     }
 
     @Override
@@ -419,70 +421,70 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
     // ==================== ETUDIANT ====================
 
     @Override
-    public EtudiantDTO creerEtudiant(EtudiantDTO etudiantDTO) throws UtilisateursException {
-        if (etudiantDTO == null) {
+    public EtudiantSortieDTO creerEtudiant(EtudiantEntrerDTO etudiantEntrerDTO) throws UtilisateursException {
+        if (etudiantEntrerDTO == null) {
             throw new UtilisateursException("L'étudiant ne peut pas être nul");
         }
 
-        if (etudiantDTO.getEmail() == null || etudiantDTO.getEmail().trim().isEmpty()) {
+        if (etudiantEntrerDTO.getEmail() == null || etudiantEntrerDTO.getEmail().trim().isEmpty()) {
             throw new UtilisateursException("L'email de l'étudiant est obligatoire");
         }
 
-        if (utilisateurRepository.existsByEmail(etudiantDTO.getEmail())) {
+        if (utilisateurRepository.existsByEmail(etudiantEntrerDTO.getEmail())) {
             throw new UtilisateursException("Un utilisateur avec cet email existe déjà");
         }
 
-        if (etudiantDTO.getCin() == null || etudiantDTO.getCin().trim().isEmpty()) {
+        if (etudiantEntrerDTO.getCin() == null || etudiantEntrerDTO.getCin().trim().isEmpty()) {
             throw new UtilisateursException("Le CIN de l'étudiant est obligatoire");
         }
 
-        if (utilisateurRepository.existsByCin(etudiantDTO.getCin())) {
+        if (utilisateurRepository.existsByCin(etudiantEntrerDTO.getCin())) {
             throw new UtilisateursException("Un utilisateur avec ce CIN existe déjà");
         }
 
-        if (etudiantDTO.getPassword() == null || etudiantDTO.getPassword().trim().isEmpty()) {
+        if (etudiantEntrerDTO.getPassword() == null || etudiantEntrerDTO.getPassword().trim().isEmpty()) {
             throw new UtilisateursException("Le mot de passe de l'étudiant est obligatoire");
         }
 
-        if (etudiantDTO.getApogee() == null || etudiantDTO.getApogee().trim().isEmpty()) {
+        if (etudiantEntrerDTO.getApogee() == null || etudiantEntrerDTO.getApogee().trim().isEmpty()) {
             throw new UtilisateursException("Le numéro Apogée de l'étudiant est obligatoire");
         }
 
-        if (etudiantRepository.existsByApogee(etudiantDTO.getApogee())) {
+        if (etudiantRepository.existsByApogee(etudiantEntrerDTO.getApogee())) {
             throw new UtilisateursException("Un étudiant avec ce numéro Apogée existe déjà");
         }
 
-        if (etudiantDTO.getClasseId() == null) {
+        if (etudiantEntrerDTO.getClasseId() == null) {
             throw new UtilisateursException("La classe de l'étudiant est obligatoire");
         }
 
-        Etudiant etudiant = utilisateursMapper.versEtudiant(etudiantDTO);
+        Etudiant etudiant = utilisateursMapper.FromEtudiantEntrerversEtudiant(etudiantEntrerDTO);
 
-        Classe classe = classeRepository.findById(etudiantDTO.getClasseId())
+        Classe classe = classeRepository.findById(etudiantEntrerDTO.getClasseId())
                 .orElseThrow(() -> new UtilisateursException(
-                        "Classe introuvable: " + etudiantDTO.getClasseId()
+                        "Classe introuvable: " + etudiantEntrerDTO.getClasseId()
                 ));
         etudiant.setClasse(classe);
 
         etudiant.setEnabled(true);
         etudiant.setDateCreation(LocalDateTime.now());
 
-        return utilisateursMapper.versEtudiantDTO(etudiantRepository.save(etudiant));
+        return utilisateursMapper.FromEtudientVersEtudiantSortieDTO(etudiantRepository.save(etudiant));
     }
 
     @Override
-    public EtudiantDTO trouverEtudiantParId(Long id) throws UtilisateursException {
+    public EtudiantSortieDTO trouverEtudiantParId(Long id) throws UtilisateursException {
         if (id == null) {
             throw new UtilisateursException("id est obligatoire");
         }
         
         Etudiant etudiant = etudiantRepository.findById(id).orElseThrow(() ->
                 new UtilisateursException("Étudiant introuvable avec l'identifiant: " + id));
-        return utilisateursMapper.versEtudiantDTO(etudiant);
+        return utilisateursMapper.FromEtudientVersEtudiantSortieDTO(etudiant);
     }
 
     @Override
-    public EtudiantDTO trouverEtudiantParApogee(String apogee) throws UtilisateursException {
+    public EtudiantSortieDTO trouverEtudiantParApogee(String apogee) throws UtilisateursException {
         if (apogee == null) {
             throw new UtilisateursException("id est obligatoire");
         }
@@ -492,77 +494,77 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
             throw new UtilisateursException("Étudiant introuvable avec l'identifiant: " + apogee);
         }
 
-        return utilisateursMapper.versEtudiantDTO(etudiant);
+        return utilisateursMapper.FromEtudientVersEtudiantSortieDTO(etudiant);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<EtudiantDTO> listerTousLesEtudiants() throws UtilisateursException {
+    public List<EtudiantSortieDTO> listerTousLesEtudiants() throws UtilisateursException {
         try {
             List<Etudiant> etudiants = etudiantRepository.findAll();
-            return etudiants.stream().map(utilisateursMapper::versEtudiantDTO).toList();
+            return etudiants.stream().map(utilisateursMapper::FromEtudientVersEtudiantSortieDTO).toList();
         } catch (Exception e) {
             throw new UtilisateursException("Erreur lors de la liste des étudiants: " + e.getMessage(), e);
         }
     }
 
     @Override
-    public EtudiantDTO modifierEtudiant(Long id, EtudiantDTO etudiantDTO) throws UtilisateursException {
+    public EtudiantSortieDTO modifierEtudiant(Long id, EtudiantEntrerDTO etudiantEntrerDTO) throws UtilisateursException {
         if (id == null) {
             throw new UtilisateursException("L'identifiant de l'étudiant ne peut pas être nul");
         }
         
-        if (etudiantDTO == null) {
+        if (etudiantEntrerDTO == null) {
             throw new UtilisateursException("L'étudiant ne peut pas être nul");
         }
         
         Etudiant etudiantAModifier = etudiantRepository.findById(id).orElseThrow(() ->
                 new UtilisateursException("Étudiant introuvable avec l'identifiant: " + id));
 
-        if (etudiantDTO.getNom() != null && !etudiantDTO.getNom().trim().isEmpty()) {
-            etudiantAModifier.setNom(etudiantDTO.getNom());
+        if (etudiantEntrerDTO.getNom() != null && !etudiantEntrerDTO.getNom().trim().isEmpty()) {
+            etudiantAModifier.setNom(etudiantEntrerDTO.getNom());
         }
         
-        if (etudiantDTO.getPrenom() != null && !etudiantDTO.getPrenom().trim().isEmpty()) {
-            etudiantAModifier.setPrenom(etudiantDTO.getPrenom());
+        if (etudiantEntrerDTO.getPrenom() != null && !etudiantEntrerDTO.getPrenom().trim().isEmpty()) {
+            etudiantAModifier.setPrenom(etudiantEntrerDTO.getPrenom());
         }
         
-        if (etudiantDTO.getEmail() != null && !etudiantDTO.getEmail().trim().isEmpty()) {
-            if (!etudiantAModifier.getEmail().equals(etudiantDTO.getEmail()) && 
-                utilisateurRepository.existsByEmail(etudiantDTO.getEmail())) {
+        if (etudiantEntrerDTO.getEmail() != null && !etudiantEntrerDTO.getEmail().trim().isEmpty()) {
+            if (!etudiantAModifier.getEmail().equals(etudiantEntrerDTO.getEmail()) &&
+                utilisateurRepository.existsByEmail(etudiantEntrerDTO.getEmail())) {
                 throw new UtilisateursException("Un utilisateur avec cet email existe déjà");
             }
-            etudiantAModifier.setEmail(etudiantDTO.getEmail());
+            etudiantAModifier.setEmail(etudiantEntrerDTO.getEmail());
         }
         
-        if (etudiantDTO.getNiveau() != null && !etudiantDTO.getNiveau().trim().isEmpty()) {
-            etudiantAModifier.setNiveau(etudiantDTO.getNiveau());
+        if (etudiantEntrerDTO.getNiveau() != null && !etudiantEntrerDTO.getNiveau().trim().isEmpty()) {
+            etudiantAModifier.setNiveau(etudiantEntrerDTO.getNiveau());
         }
         
-        if (etudiantDTO.getAnneeInscription() != null) {
-            etudiantAModifier.setAnneeInscription(etudiantDTO.getAnneeInscription());
+        if (etudiantEntrerDTO.getAnneeInscription() != null) {
+            etudiantAModifier.setAnneeInscription(etudiantEntrerDTO.getAnneeInscription());
         }
         
-        if (etudiantDTO.getSemestreActuel() != null) {
-            etudiantAModifier.setSemestreActuel(etudiantDTO.getSemestreActuel());
+        if (etudiantEntrerDTO.getSemestreActuel() != null) {
+            etudiantAModifier.setSemestreActuel(etudiantEntrerDTO.getSemestreActuel());
         }
         
-        if (etudiantDTO.getAnneeFinEtude() != null && !etudiantDTO.getAnneeFinEtude().trim().isEmpty()) {
-            etudiantAModifier.setAnneeFinEtude(etudiantDTO.getAnneeFinEtude());
+        if (etudiantEntrerDTO.getAnneeFinEtude() != null && !etudiantEntrerDTO.getAnneeFinEtude().trim().isEmpty()) {
+            etudiantAModifier.setAnneeFinEtude(etudiantEntrerDTO.getAnneeFinEtude());
         }
         
-        if (etudiantDTO.getDateNaissance() != null) {
-            etudiantAModifier.setDateNaissance(etudiantDTO.getDateNaissance());
+        if (etudiantEntrerDTO.getDateNaissance() != null) {
+            etudiantAModifier.setDateNaissance(etudiantEntrerDTO.getDateNaissance());
         }
         
-        if (etudiantDTO.getEtatInscription() != null) {
-            etudiantAModifier.setEtatInscription(etudiantDTO.getEtatInscription());
+        if (etudiantEntrerDTO.getEtatInscription() != null) {
+            etudiantAModifier.setEtatInscription(etudiantEntrerDTO.getEtatInscription());
         }
 
-        if (etudiantDTO.getClasseId() != null) {
-            Classe classe = classeRepository.findById(etudiantDTO.getClasseId())
+        if (etudiantEntrerDTO.getClasseId() != null) {
+            Classe classe = classeRepository.findById(etudiantEntrerDTO.getClasseId())
                     .orElseThrow(() -> new UtilisateursException(
-                            "Classe introuvable: " + etudiantDTO.getClasseId()
+                            "Classe introuvable: " + etudiantEntrerDTO.getClasseId()
                     ));
             etudiantAModifier.setClasse(classe);
         }
@@ -572,7 +574,7 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
         }*/
 
         Etudiant etudiantModifie = etudiantRepository.save(etudiantAModifier);
-        return utilisateursMapper.versEtudiantDTO(etudiantModifie);
+        return utilisateursMapper.FromEtudientVersEtudiantSortieDTO(etudiantModifie);
     }
 
     @Override
