@@ -1,5 +1,6 @@
 package com.mycampus.backend.dto;
 
+import com.mycampus.backend.enumerations.Semestre;
 import com.mycampus.backend.enumerations.TypeSeance;
 import lombok.*;
 
@@ -11,10 +12,10 @@ public class AffectationEnseignementDTO {
     
     private Long id;
     private String anneeUniversitaire;
-    private String semestre;
-    private TypeSeance typeSeance;
+    private Semestre semestre;
+
     private Boolean active;
-    private Long professeurId;
+    private String professeurPpr;
     private String professeurNom;
     private Long classeId;
     private String classeNom;

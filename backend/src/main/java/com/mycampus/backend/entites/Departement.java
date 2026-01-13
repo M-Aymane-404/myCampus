@@ -30,12 +30,12 @@ public class Departement {
     
     private LocalDate dateCreation;
     
-    @OneToMany(mappedBy = "departement", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "departement")
     private List<Filiere> filieres;
 
-    @OneToMany(mappedBy = "departementOuTravail", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "departementOuTravail")
     private List<Professeur> professeurs;
 
-    @OneToOne(mappedBy = "departementDirigee", fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "departementDirigee")
     private Professeur chefDepartement;
 }

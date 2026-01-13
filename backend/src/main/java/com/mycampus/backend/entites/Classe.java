@@ -37,9 +37,9 @@ public class Classe {
     @JoinColumn(name = "filiere_id", nullable = false)
     private Filiere filiere;
     
-    @OneToMany(mappedBy = "classe", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "classe")
     private List<Etudiant> etudiants;
     
-    @OneToMany(mappedBy = "classe", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "classe")
     private List<AffectationEnseignement> affectationEnseignements;
 }

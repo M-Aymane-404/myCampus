@@ -1,26 +1,9 @@
 package com.mycampus.backend.metier.administrateur.structureAcademique;
 
-import com.mycampus.backend.dto.DepartementDTO;
-import com.mycampus.backend.dto.FiliereDTO;
-import com.mycampus.backend.dto.ClasseDTO;
-import com.mycampus.backend.dto.ModuleDTO;
-import com.mycampus.backend.dto.MatiereDTO;
-import com.mycampus.backend.entites.Departement;
-import com.mycampus.backend.entites.Filiere;
-import com.mycampus.backend.entites.Classe;
+import com.mycampus.backend.dto.*;
+import com.mycampus.backend.entites.*;
 import com.mycampus.backend.entites.Module;
-import com.mycampus.backend.entites.Matiere;
-import com.mycampus.backend.entites.Etudiant;
-import com.mycampus.backend.entites.AffectationEnseignement;
-import com.mycampus.backend.entites.Examen;
-import com.mycampus.backend.repositorys.DepartementRepository;
-import com.mycampus.backend.repositorys.FiliereRepository;
-import com.mycampus.backend.repositorys.ClasseRepository;
-import com.mycampus.backend.repositorys.ModuleRepository;
-import com.mycampus.backend.repositorys.MatiereRepository;
-import com.mycampus.backend.repositorys.EtudiantRepository;
-import com.mycampus.backend.repositorys.AffectationEnseignementRepository;
-import com.mycampus.backend.repositorys.ExamenRepository;
+import com.mycampus.backend.repositorys.*;
 import com.mycampus.backend.mappers.StructureMapper;
 import com.mycampus.backend.exceptions.StructureAcademiqueException;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +27,7 @@ public class GestionStructureAcademiqueMetierImpl implements GestionStructureAca
     private final AffectationEnseignementRepository affectationEnseignementRepository;
     private final ExamenRepository examenRepository;
     private final StructureMapper structureMapper;
+    private final ProfesseurRepository professeurRepository;
 
     // Département management
     @Override
@@ -727,5 +711,230 @@ public class GestionStructureAcademiqueMetierImpl implements GestionStructureAca
         }
         
         matiereRepository.delete(matiere);
+    }
+
+    @Override
+    public AffectationEnseignementDTO creerAffectationEnseignement(AffectationEnseignementDTO affectationEnseignementDTO) throws StructureAcademiqueException {
+        if(affectationEnseignementDTO == null) {
+            throw new StructureAcademiqueException("l'affectation ne peut pas être null ");
+        }
+
+        if (affectationEnseignementDTO.getAnneeUniversitaire() == null || affectationEnseignementDTO.getAnneeUniversitaire().trim().isEmpty()) {
+            throw new StructureAcademiqueException("Année Universitaire est obligatoire");
+        }
+        if(affectationEnseignementDTO.getSemestre() == null){
+            throw new StructureAcademiqueException("Semestre est obligatoire");
+        }
+
+        if(affectationEnseignementDTO.getProfesseurPpr() == null || affectationEnseignementDTO.getProfesseurPpr().trim().isEmpty()) {
+            throw new StructureAcademiqueException("Professeur est obligatoire");
+
+        }
+        if(!professeurRepository.existsByPpr(affectationEnseignementDTO.getProfesseurPpr())) {
+            throw new StructureAcademiqueException("Professeur n'existe pas");
+        }
+        if (affectationEnseignementDTO.getClasseId() == null) {
+            throw new StructureAcademiqueException("Classe est obligatoire");
+        }
+
+        if(!classeRepository.existsById(affectationEnseignementDTO.getClasseId())) {
+            throw new StructureAcademiqueException("Classe n'existe pas");
+        }
+
+        if (affectationEnseignementDTO.getMatiereId() == null) {
+            throw new StructureAcademiqueException("Matiere est obligatoire");
+        }
+
+        if(!matiereRepository.existsById(affectationEnseignementDTO.getMatiereId())) {
+            throw new StructureAcademiqueException("Matiere n'existe pas");
+        }
+
+        AffectationEnseignement affectationEnseignement = structureMapper.versAffectationEnseignement(affectationEnseignementDTO);
+        affectationEnseignement.setActive(true);
+
+        affectationEnseignement.setProfesseur(professeurRepository.findByPpr(affectationEnseignementDTO.getProfesseurPpr()));
+        affectationEnseignement.setClasse(classeRepository.findById(affectationEnseignementDTO.getClasseId()).get());
+        affectationEnseignement.setMatiere(matiereRepository.findById(affectationEnseignementDTO.getMatiereId()).get());
+
+
+        return structureMapper.versAffectationEnseignementDTO(affectationEnseignementRepository.save(affectationEnseignement));
+
+    }
+
+    @Override
+    public AffectationEnseignementDTO modifierAffectationEnseignement(Long id, AffectationEnseignementDTO affectationEnseignementDTO) throws StructureAcademiqueException {
+        if (id == null) {
+            throw new StructureAcademiqueException("L'identifiant de l'affectation est obligatoire");
+        }
+        
+        if (affectationEnseignementDTO == null) {
+            throw new StructureAcademiqueException("L'affectation ne peut pas être nulle");
+        }
+        
+        AffectationEnseignement affectationExistante = affectationEnseignementRepository.findById(id).orElseThrow(() ->
+                new StructureAcademiqueException("Affectation introuvable avec l'identifiant: " + id));
+        
+        // Mise à jour des champs autorisés
+        if (affectationEnseignementDTO.getAnneeUniversitaire() != null && !affectationEnseignementDTO.getAnneeUniversitaire().trim().isEmpty()) {
+            affectationExistante.setAnneeUniversitaire(affectationEnseignementDTO.getAnneeUniversitaire());
+        }
+        
+        if (affectationEnseignementDTO.getSemestre() != null) {
+            affectationExistante.setSemestre(affectationEnseignementDTO.getSemestre());
+        }
+        
+        // Mise à jour du professeur si fourni et différent
+        if (affectationEnseignementDTO.getProfesseurPpr() != null && 
+            (affectationExistante.getProfesseur() == null || !affectationEnseignementDTO.getProfesseurPpr().equals(affectationExistante.getProfesseur().getPpr()))) {
+            
+            Professeur professeur = professeurRepository.findByPpr(affectationEnseignementDTO.getProfesseurPpr());
+            if (professeur == null) {
+                throw new StructureAcademiqueException("Professeur introuvable avec le PPR: " + affectationEnseignementDTO.getProfesseurPpr());
+            }
+            affectationExistante.setProfesseur(professeur);
+        }
+        
+        // Mise à jour de la classe si fournie et différente
+        if (affectationEnseignementDTO.getClasseId() != null && 
+            (affectationExistante.getClasse() == null || !affectationEnseignementDTO.getClasseId().equals(affectationExistante.getClasse().getId()))) {
+            
+            Classe classe = classeRepository.findById(affectationEnseignementDTO.getClasseId()).orElseThrow(() ->
+                    new StructureAcademiqueException("Classe introuvable avec l'identifiant: " + affectationEnseignementDTO.getClasseId()));
+            affectationExistante.setClasse(classe);
+        }
+        
+        // Mise à jour de la matière si fournie et différente
+        if (affectationEnseignementDTO.getMatiereId() != null && 
+            (affectationExistante.getMatiere() == null || !affectationEnseignementDTO.getMatiereId().equals(affectationExistante.getMatiere().getId()))) {
+            
+            Matiere matiere = matiereRepository.findById(affectationEnseignementDTO.getMatiereId()).orElseThrow(() ->
+                    new StructureAcademiqueException("Matière introuvable avec l'identifiant: " + affectationEnseignementDTO.getMatiereId()));
+            affectationExistante.setMatiere(matiere);
+        }
+        
+        // Mise à jour du statut actif si fourni
+        if (affectationEnseignementDTO.getActive() != null) {
+            affectationExistante.setActive(affectationEnseignementDTO.getActive());
+        }
+        
+        return structureMapper.versAffectationEnseignementDTO(affectationEnseignementRepository.save(affectationExistante));
+    }
+
+    @Override
+    public void activerAffectationEnseignement(Long id) throws StructureAcademiqueException {
+        if (id == null) {
+            throw new StructureAcademiqueException("L'identifiant de l'affectation est obligatoire");
+        }
+        
+        AffectationEnseignement affectation = affectationEnseignementRepository.findById(id).orElseThrow(() ->
+                new StructureAcademiqueException("Affectation introuvable avec l'identifiant: " + id));
+        
+        affectation.setActive(true);
+        affectationEnseignementRepository.save(affectation);
+    }
+
+    @Override
+    public void desactiverAffectationEnseignement(Long id) throws StructureAcademiqueException {
+        if (id == null) {
+            throw new StructureAcademiqueException("L'identifiant de l'affectation est obligatoire");
+        }
+        
+        AffectationEnseignement affectation = affectationEnseignementRepository.findById(id).orElseThrow(() ->
+                new StructureAcademiqueException("Affectation introuvable avec l'identifiant: " + id));
+        
+        affectation.setActive(false);
+        affectationEnseignementRepository.save(affectation);
+    }
+
+    @Override
+    public AffectationEnseignementDTO trouverAffectationParId(Long id) throws StructureAcademiqueException {
+        if (id == null) {
+            throw new StructureAcademiqueException("L'identifiant de l'affectation est obligatoire");
+        }
+        
+        AffectationEnseignement affectation = affectationEnseignementRepository.findById(id).orElseThrow(() ->
+                new StructureAcademiqueException("Affectation introuvable avec l'identifiant: " + id));
+        
+        return structureMapper.versAffectationEnseignementDTO(affectation);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AffectationEnseignementDTO> listerToutesLesAffectations() throws StructureAcademiqueException {
+        try {
+            List<AffectationEnseignement> affectations = affectationEnseignementRepository.findAll();
+            return structureMapper.versListeAffectationEnseignementDTO(affectations);
+        } catch (Exception e) {
+            throw new StructureAcademiqueException("Erreur lors de la liste des affectations: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AffectationEnseignementDTO> listerAffectationsParProfesseur(String professeurPpr) throws StructureAcademiqueException {
+        if (professeurPpr == null || professeurPpr.trim().isEmpty()) {
+            throw new StructureAcademiqueException("Le PPR du professeur est obligatoire");
+        }
+        
+        if (!professeurRepository.existsByPpr(professeurPpr)) {
+            throw new StructureAcademiqueException("Professeur introuvable avec le PPR: " + professeurPpr);
+        }
+        
+        try {
+            List<AffectationEnseignement> affectations = affectationEnseignementRepository.findByProfesseur_Ppr(professeurPpr);
+            return structureMapper.versListeAffectationEnseignementDTO(affectations);
+        } catch (Exception e) {
+            throw new StructureAcademiqueException("Erreur lors de la recherche des affectations par professeur: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AffectationEnseignementDTO> listerAffectationsParClasse(Long classeId) throws StructureAcademiqueException {
+        if (classeId == null) {
+            throw new StructureAcademiqueException("L'identifiant de la classe est obligatoire");
+        }
+        
+        if (!classeRepository.existsById(classeId)) {
+            throw new StructureAcademiqueException("Classe introuvable avec l'identifiant: " + classeId);
+        }
+        
+        try {
+            List<AffectationEnseignement> affectations = affectationEnseignementRepository.findByClasseId(classeId);
+            return structureMapper.versListeAffectationEnseignementDTO(affectations);
+        } catch (Exception e) {
+            throw new StructureAcademiqueException("Erreur lors de la recherche des affectations par classe: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AffectationEnseignementDTO> listerAffectationsParMatiere(Long matiereId) throws StructureAcademiqueException {
+        if (matiereId == null) {
+            throw new StructureAcademiqueException("L'identifiant de la matière est obligatoire");
+        }
+        
+        if (!matiereRepository.existsById(matiereId)) {
+            throw new StructureAcademiqueException("Matière introuvable avec l'identifiant: " + matiereId);
+        }
+        
+        try {
+            List<AffectationEnseignement> affectations = affectationEnseignementRepository.findByMatiereId(matiereId);
+            return structureMapper.versListeAffectationEnseignementDTO(affectations);
+        } catch (Exception e) {
+            throw new StructureAcademiqueException("Erreur lors de la recherche des affectations par matière: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void supprimerAffectationEnseignement(Long id) throws StructureAcademiqueException {
+        if (id == null) {
+            throw new StructureAcademiqueException("L'identifiant de l'affectation est obligatoire");
+        }
+        
+        AffectationEnseignement affectation = affectationEnseignementRepository.findById(id).orElseThrow(() ->
+                new StructureAcademiqueException("Affectation introuvable avec l'identifiant: " + id));
+        
+        affectationEnseignementRepository.delete(affectation);
     }
 }

@@ -9,11 +9,17 @@ import java.util.List;
 @Repository
 public interface AffectationEnseignementRepository extends JpaRepository<AffectationEnseignement, Long> {
     
-    List<AffectationEnseignement> findByProfesseurId(Long professeurId);
+   // List<AffectationEnseignement> findByProfesseurId(Long professeurId);
+    
+    List<AffectationEnseignement> findByProfesseur_Ppr(String professeurPpr);
     
     List<AffectationEnseignement> findByClasseId(Long classeId);
     
+   // List<AffectationEnseignement> findByClasse_Id(Long classeId);
+    
     List<AffectationEnseignement> findByMatiereId(Long matiereId);
+    
+    //List<AffectationEnseignement> findByMatiere_Id(Long matiereId);
     
     List<AffectationEnseignement> findByActiveTrue();
     

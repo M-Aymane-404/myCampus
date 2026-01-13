@@ -48,9 +48,9 @@ public class Seance {
     @JoinColumn(name = "affectation_enseignement_id", nullable = false)
     private AffectationEnseignement affectationEnseignement;
     
-    @OneToMany(mappedBy = "seance", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "seance")
     private List<Presence> presences;
     
-    @OneToMany(mappedBy = "seance", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "seance")
     private List<FichierSeance> fichierSeances;
 }

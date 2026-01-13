@@ -45,9 +45,9 @@ public class Etudiant extends Utilisateur {
     @JoinColumn(name = "classe_id", nullable = false)
     private Classe classe;
     
-    @OneToMany(mappedBy = "etudiant", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "etudiant")
     private List<Presence> presences;
 
-    @OneToMany(mappedBy = "etudiant", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "etudiant")
     private List<Resultat> resultats;
 }

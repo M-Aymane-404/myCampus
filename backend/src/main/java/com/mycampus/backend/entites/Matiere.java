@@ -33,9 +33,9 @@ public class Matiere {
     @JoinColumn(name = "module_id", nullable = false)
     private Module module;
     
-    @OneToMany(mappedBy = "matiere", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "matiere")
     private List<AffectationEnseignement> affectationEnseignements;
     
-    @OneToMany(mappedBy = "matiere", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "matiere")
     private List<Examen> examens;
 }

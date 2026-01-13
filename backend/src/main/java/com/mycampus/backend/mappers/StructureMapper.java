@@ -226,7 +226,7 @@ public class StructureMapper {
         BeanUtils.copyProperties(affectation, affectationDTO);
         
         // Manual mapping for nested relations
-        affectationDTO.setProfesseurId(affectation.getProfesseur() != null ? affectation.getProfesseur().getId() : null);
+        affectationDTO.setProfesseurPpr(affectation.getProfesseur() != null ? affectation.getProfesseur().getPpr() : null);
         affectationDTO.setProfesseurNom(affectation.getProfesseur() != null ? 
             affectation.getProfesseur().getPrenom() + " " + affectation.getProfesseur().getNom() : null);
         affectationDTO.setClasseId(affectation.getClasse() != null ? affectation.getClasse().getId() : null);
@@ -234,6 +234,15 @@ public class StructureMapper {
         affectationDTO.setMatiereId(affectation.getMatiere() != null ? affectation.getMatiere().getId() : null);
         affectationDTO.setMatiereNom(affectation.getMatiere() != null ? affectation.getMatiere().getNom() : null);
         
+        return affectationDTO;
+    }
+
+    public AffectationEnseignement versAffectationEnseignement(AffectationEnseignementDTO affectation) {
+        if (affectation == null) {
+            return null;
+        }
+        AffectationEnseignement affectationDTO = new AffectationEnseignement();
+        BeanUtils.copyProperties(affectation, affectationDTO);
         return affectationDTO;
     }
 

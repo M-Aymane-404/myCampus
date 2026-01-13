@@ -31,15 +31,34 @@ public class BackendApplication {
         GestionUtilisateursMetier gestionUtilisateursMetier
     ) {
         return args -> {
-            logger.info("=== DÉMARRAGE DES TESTS DES MÉTIERS ===");
+          //  logger.info("=== DÉMARRAGE DES TESTS DES MÉTIERS ===");
             
           //  Test 1: Gestion Structure Académique
-           testStructureAcademique(gestionStructureAcademiqueMetier);
+          // testStructureAcademique(gestionStructureAcademiqueMetier);
             
            //  Test 2: Gestion Utilisateurs
-          testUtilisateurs(gestionUtilisateursMetier);
+       //   testUtilisateurs(gestionUtilisateursMetier);
             
-            logger.info("=== FIN DES TESTS DES MÉTIERS ===");
+         //   logger.info("=== FIN DES TESTS DES MÉTIERS ===");
+            logger.info("=== DÉMARRAGE DES TESTS DE Affectation ===");
+           AffectationEnseignementDTO affectationEnseignementDTO = AffectationEnseignementDTO.builder()
+                   .anneeUniversitaire("2025/2026")
+                   .semestre(Semestre.S1)
+                   .matiereId(1L)
+                   .professeurPpr("87654321")
+                   .classeId(1L)
+                   .build();
+         //  gestionStructureAcademiqueMetier.creerAffectationEnseignement(affectationEnseignementDTO);
+            AffectationEnseignementDTO affectationEnseignementDTO1 = AffectationEnseignementDTO.builder()
+                    .anneeUniversitaire("2026/2027")
+                    .semestre(Semestre.S2)
+                    .matiereId(1L)
+                    .professeurPpr("87654321")
+                    .classeId(1L)
+                    .build();
+         //   gestionStructureAcademiqueMetier.modifierAffectationEnseignement(1L, affectationEnseignementDTO1);
+
+            gestionStructureAcademiqueMetier.desactiverAffectationEnseignement(1L);
         };
     }
 

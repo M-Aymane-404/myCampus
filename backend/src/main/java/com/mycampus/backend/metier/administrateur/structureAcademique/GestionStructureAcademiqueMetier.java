@@ -1,10 +1,6 @@
 package com.mycampus.backend.metier.administrateur.structureAcademique;
 
-import com.mycampus.backend.dto.DepartementDTO;
-import com.mycampus.backend.dto.FiliereDTO;
-import com.mycampus.backend.dto.ClasseDTO;
-import com.mycampus.backend.dto.ModuleDTO;
-import com.mycampus.backend.dto.MatiereDTO;
+import com.mycampus.backend.dto.*;
 import com.mycampus.backend.exceptions.StructureAcademiqueException;
 
 import java.util.List;
@@ -73,4 +69,24 @@ public interface GestionStructureAcademiqueMetier {
     MatiereDTO modifierMatiere(Long matiereId, MatiereDTO matiereDTO) throws StructureAcademiqueException;
     
     void supprimerMatiere(Long matiereId) throws StructureAcademiqueException;
+
+    AffectationEnseignementDTO creerAffectationEnseignement(AffectationEnseignementDTO affectationEnseignementDTO) throws StructureAcademiqueException;
+    
+    AffectationEnseignementDTO modifierAffectationEnseignement(Long id, AffectationEnseignementDTO affectationEnseignementDTO) throws StructureAcademiqueException;
+    
+    void activerAffectationEnseignement(Long id) throws StructureAcademiqueException;
+    
+    void desactiverAffectationEnseignement(Long id) throws StructureAcademiqueException;
+    
+    AffectationEnseignementDTO trouverAffectationParId(Long id) throws StructureAcademiqueException;
+    
+    List<AffectationEnseignementDTO> listerToutesLesAffectations() throws StructureAcademiqueException;
+    
+    List<AffectationEnseignementDTO> listerAffectationsParProfesseur(String professeurPpr) throws StructureAcademiqueException;
+    
+    List<AffectationEnseignementDTO> listerAffectationsParClasse(Long classeId) throws StructureAcademiqueException;
+    
+    List<AffectationEnseignementDTO> listerAffectationsParMatiere(Long matiereId) throws StructureAcademiqueException;
+    
+    void supprimerAffectationEnseignement(Long id) throws StructureAcademiqueException;
 }

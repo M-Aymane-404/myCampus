@@ -42,10 +42,10 @@ public class Filiere {
     @JoinColumn(name = "departement_id", nullable = false)
     private Departement departement;
     
-    @OneToMany(mappedBy = "filiere", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "filiere")
     private List<Classe> classes;
 
-    @OneToMany(mappedBy = "filiere", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "filiere")
     private List<Module> modules;
 
     @OneToOne(fetch = FetchType.LAZY, optional = true)

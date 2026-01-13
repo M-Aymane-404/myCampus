@@ -28,9 +28,7 @@ public class AffectationEnseignement {
     @Column(nullable = false)
     private Semestre semestre;
     
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private TypeSeance typeSeance;
+
     
     @Column(nullable = false)
     private Boolean active;

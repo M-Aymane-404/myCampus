@@ -48,6 +48,6 @@ public class Utilisateur {
     
     private LocalDateTime dateDerniereConnexion;
     
-    @OneToMany(mappedBy = "utilisateur", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "utilisateur")
     private List<Notification> notifications;
 }

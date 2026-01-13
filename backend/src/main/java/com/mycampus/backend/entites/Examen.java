@@ -49,6 +49,6 @@ public class Examen {
     @JoinColumn(name = "matiere_id", nullable = false)
     private Matiere matiere;
     
-    @OneToMany(mappedBy = "examen" ,fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "examen" )
     private List<Resultat> resultats;
 }

@@ -44,7 +44,7 @@ public class Professeur extends Utilisateur {
     )
     private Departement departementDirigee;
 
-    @OneToOne(fetch = FetchType.LAZY, mappedBy = "chefFiliere")
+    @OneToOne( mappedBy = "chefFiliere")
     private Filiere filiereDirigee;
 
 }
