@@ -1,6 +1,6 @@
 package com.mycampus.backend.exceptions;
 
-public class StructureAcademiqueException extends Exception {
+public class StructureAcademiqueException extends RuntimeException {
     
     public StructureAcademiqueException(String message) {
         super(message);
