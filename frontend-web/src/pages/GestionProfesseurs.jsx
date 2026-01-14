@@ -17,7 +17,9 @@ const GestionProfesseurs = () => {
       email: 'ahmed.alami@univ.ma',
       specialite: 'Informatique',
       grade: 'Professeur',
+      departement: 'Informatique',
       filieres: ['GI-2024', 'GIL-2024'],
+      matieres: ['ALG-101-1', 'BD-201-1'],
       dateRecrutement: '2015-09-01',
       status: 'Actif'
     },
@@ -29,7 +31,9 @@ const GestionProfesseurs = () => {
       email: 'fatima.bennani@univ.ma',
       specialite: 'Mathématiques',
       grade: 'Maître de Conférences',
+      departement: 'Informatique',
       filieres: ['GI-2024'],
+      matieres: ['POO-102-1'],
       dateRecrutement: '2018-09-01',
       status: 'Actif'
     },
@@ -41,7 +45,9 @@ const GestionProfesseurs = () => {
       email: 'mohamed.chraibi@univ.ma',
       specialite: 'Génie Industriel',
       grade: 'Professeur',
+      departement: 'Industriel',
       filieres: ['GIL-2024'],
+      matieres: ['GP-301-1'],
       dateRecrutement: '2010-09-01',
       status: 'Actif'
     }
@@ -52,6 +58,26 @@ const GestionProfesseurs = () => {
     { value: 'GIL-2024', label: 'Génie Industriel et Logistique' },
     { value: 'GC-2024', label: 'Génie Civil' }
   ]);
+
+  const [departements] = useState([
+    { value: 'Informatique', label: 'Informatique' },
+    { value: 'Industriel', label: 'Industriel' },
+    { value: 'Génie Civil', label: 'Génie Civil' },
+    { value: 'Commerce', label: 'Commerce' },
+    { value: 'Marketing', label: 'Marketing' }
+  ]);
+
+  const [matieres] = useState([
+    { value: 'ALG-101-1', label: 'Algorithmique' },
+    { value: 'POO-102-1', label: 'Programmation Orientée Objet' },
+    { value: 'BD-201-1', label: 'Bases de Données' },
+    { value: 'WEB-202-1', label: 'Développement Web' },
+    { value: 'GP-301-1', label: 'Gestion de Production' }
+  ]);
+
+  const [filtreDepartement, setFiltreDepartement] = useState('');
+  const [filtreFiliere, setFiltreFiliere] = useState('');
+  const [filtreMatiere, setFiltreMatiere] = useState('');
 
   const [modalOuvert, setModalOuvert] = useState(false);
   const [modalAttribution, setModalAttribution] = useState(false);
@@ -210,6 +236,23 @@ const GestionProfesseurs = () => {
     }
   ];
 
+  // Filtrer les professeurs selon les critères sélectionnés
+  const professeursFiltres = professeurs.filter(p => {
+    // Filtre par département
+    if (filtreDepartement && p.departement !== filtreDepartement) {
+      return false;
+    }
+    // Filtre par filière
+    if (filtreFiliere && (!p.filieres || !p.filieres.includes(filtreFiliere))) {
+      return false;
+    }
+    // Filtre par matière
+    if (filtreMatiere && (!p.matieres || !p.matieres.includes(filtreMatiere))) {
+      return false;
+    }
+    return true;
+  });
+
   const totalProfesseurs = professeurs.length;
   const professeursActifs = professeurs.filter(p => p.status === 'Actif').length;
   const totalFilieresAttribuees = professeurs.reduce((sum, p) => sum + (p.filieres?.length || 0), 0);
@@ -220,6 +263,8 @@ const GestionProfesseurs = () => {
         <h1 className="gestion-professeurs-titre">Gestion des Professeurs</h1>
         <p className="gestion-professeurs-sous-titre">Gestion et attribution aux filières</p>
       </div>
+
+      
 
       <div className="gestion-professeurs-statistiques">
         <CarteStatistique
@@ -248,10 +293,59 @@ const GestionProfesseurs = () => {
         />
       </div>
 
+      {/* Barre de tri */}
+      <div className="gestion-professeurs-filtres">
+        <div className="filtre-item">
+          <label className="filtre-label">Département:</label>
+          <select 
+            className="filtre-select"
+            value={filtreDepartement}
+            onChange={(e) => setFiltreDepartement(e.target.value)}
+          >
+            <option value="">Tous les départements</option>
+            {departements.map(dep => (
+              <option key={dep.value} value={dep.value}>
+                {dep.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="filtre-item">
+          <label className="filtre-label">Filière:</label>
+          <select 
+            className="filtre-select"
+            value={filtreFiliere}
+            onChange={(e) => setFiltreFiliere(e.target.value)}
+          >
+            <option value="">Toutes les filières</option>
+            {filieres.map(filiere => (
+              <option key={filiere.value} value={filiere.value}>
+                {filiere.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="filtre-item">
+          <label className="filtre-label">Matière:</label>
+          <select 
+            className="filtre-select"
+            value={filtreMatiere}
+            onChange={(e) => setFiltreMatiere(e.target.value)}
+          >
+            <option value="">Toutes les matières</option>
+            {matieres.map(matiere => (
+              <option key={matiere.value} value={matiere.value}>
+                {matiere.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       <TableauDonnees
         titre="Liste des Professeurs"
         colonnes={colonnes}
-        donnees={professeurs}
+        donnees={professeursFiltres}
         surAjouter={ouvrirModalAjout}
         surModifier={ouvrirModalModification}
         surSupprimer={supprimer}

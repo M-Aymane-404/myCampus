@@ -62,6 +62,8 @@ const GestionEtudiants = () => {
     { value: 'GC-2024', label: 'Génie Civil' }
   ]);
 
+  const [filtreFiliere, setFiltreFiliere] = useState('');
+
   const [modalOuvert, setModalOuvert] = useState(false);
   const [etudiantCourant, setEtudiantCourant] = useState(null);
   const [formulaire, setFormulaire] = useState({
@@ -304,6 +306,11 @@ const GestionEtudiants = () => {
     { key: 'anneeInscription', label: 'Année' }
   ];
 
+  // Filtrer les étudiants selon la filière sélectionnée
+  const etudiantsFiltres = filtreFiliere 
+    ? etudiants.filter(e => e.filiere === filtreFiliere)
+    : etudiants;
+
   const totalEtudiants = etudiants.length;
   const etudiantsInscrits = etudiants.filter(e => e.etatInscription === 'INSCRIT').length;
   const etudiantsDiplomes = etudiants.filter(e => e.etatInscription === 'DIPLOME').length;
@@ -314,6 +321,8 @@ const GestionEtudiants = () => {
         <h1 className="gestion-etudiants-titre">Gestion des Étudiants</h1>
         <p className="gestion-etudiants-sous-titre">Gestion et attribution aux filières</p>
       </div>
+
+     
 
       <div className="gestion-etudiants-statistiques">
         <CarteStatistique
@@ -342,10 +351,29 @@ const GestionEtudiants = () => {
         />
       </div>
 
+       {/* Barre de tri */}
+       <div className="gestion-etudiants-filtres">
+        <div className="filtre-item">
+          <label className="filtre-label">Filière:</label>
+          <select 
+            className="filtre-select"
+            value={filtreFiliere}
+            onChange={(e) => setFiltreFiliere(e.target.value)}
+          >
+            <option value="">Toutes les filières</option>
+            {filieres.map(filiere => (
+              <option key={filiere.value} value={filiere.value}>
+                {filiere.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       <TableauDonnees
         titre="Liste des Étudiants"
         colonnes={colonnes}
-        donnees={etudiants}
+        donnees={etudiantsFiltres}
         surAjouter={ouvrirModalAjout}
         surModifier={ouvrirModalModification}
         surSupprimer={supprimer}
