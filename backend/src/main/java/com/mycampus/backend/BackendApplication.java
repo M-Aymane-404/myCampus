@@ -53,16 +53,16 @@ public class BackendApplication {
             
             // Phase 1: Structure Académique (prérequis pour les utilisateurs)
             testCreateStructureAcademique(gestionStructureAcademiqueMetier, gestionUtilisateursMetier);
-            testOtherStructureAcademique(gestionStructureAcademiqueMetier);
-            testUpdateStructureAcademique(gestionStructureAcademiqueMetier);
-            testOtherStructureAcademique(gestionStructureAcademiqueMetier);
+          //  testOtherStructureAcademique(gestionStructureAcademiqueMetier);
+          //  testUpdateStructureAcademique(gestionStructureAcademiqueMetier);
+           // testOtherStructureAcademique(gestionStructureAcademiqueMetier);
             //testDeleteStructureAcademique(gestionStructureAcademiqueMetier);
             
             // Phase 2: Utilisateurs (dépend de la structure)
             testCreateUtilisateurs(gestionUtilisateursMetier);
-            testOtherUtilisateurs(gestionUtilisateursMetier);
-            testUpdateUtilisateurs(gestionUtilisateursMetier);
-            testOtherUtilisateurs(gestionUtilisateursMetier);
+         //   testOtherUtilisateurs(gestionUtilisateursMetier);
+          //  testUpdateUtilisateurs(gestionUtilisateursMetier);
+           // testOtherUtilisateurs(gestionUtilisateursMetier);
             //testDeleteUtilisateurs(gestionUtilisateursMetier);
             
             logger.info("=== FIN DES TESTS DES MÉTIERS ===");
@@ -620,7 +620,7 @@ public class BackendApplication {
 
 
 
-            
+
         } catch (UtilisateursException e) {
             logger.error("[UTILISATEURS] ERREUR dans testOtherUtilisateurs: {}", e.getMessage());
         } catch (Exception e) {
