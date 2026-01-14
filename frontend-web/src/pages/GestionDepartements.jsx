@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Building2, Users, GraduationCap, UserPlus, Plus } from 'lucide-react';
+import { Building2, Users, GraduationCap, UserPlus, Plus, Monitor, Briefcase, BarChart3, Edit, Eye, ArrowLeft, BookOpen, FileText, Trash2 } from 'lucide-react';
 import TableauDonnees from '../composants/communs/TableauDonnees';
 import FormulaireModal from '../composants/communs/FormulaireModal';
 import ChampFormulaire from '../composants/communs/ChampFormulaire';
@@ -89,27 +89,45 @@ const GestionDepartements = () => {
     }
   ]);
 
-  const [filieres] = useState([
+  const [filieres, setFilieres] = useState([
     {
       id: 1,
       codeFiliere: 'GI-2024',
       nom: 'Génie Informatique',
       departement: 'Informatique',
-      etat: 'OUVERTE'
+      etat: 'OUVERTE',
+      chefFiliere: 'Prof. Ahmed Alami',
+      nombreEtudiants: 245,
+      nombreModules: 12,
+      niveauDiplome: 'Licence',
+      dureeFormation: 3,
+      description: 'Formation en informatique et génie logiciel'
     },
     {
       id: 2,
       codeFiliere: 'GIL-2024',
       nom: 'Génie Industriel et Logistique',
       departement: 'Industriel',
-      etat: 'OUVERTE'
+      etat: 'OUVERTE',
+      chefFiliere: 'Prof. Mohamed Chraibi',
+      nombreEtudiants: 180,
+      nombreModules: 10,
+      niveauDiplome: 'Licence',
+      dureeFormation: 3,
+      description: 'Formation en industrie et logistique'
     },
     {
       id: 3,
       codeFiliere: 'GC-2024',
       nom: 'Génie Civil',
       departement: 'Génie Civil',
-      etat: 'FERMEE'
+      etat: 'FERMEE',
+      chefFiliere: 'Prof. Hassan Alaoui',
+      nombreEtudiants: 0,
+      nombreModules: 8,
+      niveauDiplome: 'Licence',
+      dureeFormation: 3,
+      description: 'Formation en génie civil et construction'
     }
   ]);
 
@@ -118,6 +136,180 @@ const GestionDepartements = () => {
   const [modalAjouterFiliere, setModalAjouterFiliere] = useState(false);
   const [departementSelectionne, setDepartementSelectionne] = useState(null);
   const [departementCourant, setDepartementCourant] = useState(null);
+  const [departementDetails, setDepartementDetails] = useState(null);
+  const [filiereDetails, setFiliereDetails] = useState(null);
+  const [moduleDetails, setModuleDetails] = useState(null);
+  
+  // États pour la modification
+  const [modalModifierFiliere, setModalModifierFiliere] = useState(false);
+  const [modalModifierModule, setModalModifierModule] = useState(false);
+  const [modalModifierMatiere, setModalModifierMatiere] = useState(false);
+  const [filiereCourant, setFiliereCourant] = useState(null);
+  const [moduleCourant, setModuleCourant] = useState(null);
+  const [matiereCourante, setMatiereCourante] = useState(null);
+  
+  // États pour l'ajout
+  const [modalAjouterModule, setModalAjouterModule] = useState(false);
+  const [modalAjouterMatiere, setModalAjouterMatiere] = useState(false);
+  const [filierePourModule, setFilierePourModule] = useState(null);
+  const [modulePourMatiere, setModulePourMatiere] = useState(null);
+  
+  // Données des modules
+  const [modules, setModules] = useState([
+    {
+      id: 1,
+      codeModule: 'GI-INFO-101',
+      nom: 'Algorithmique et Structures de Données',
+      description: 'Introduction à l\'algorithmique et aux structures de données',
+      semestre: 'S1',
+      coefficient: 4.0,
+      filiere: 'GI-2024',
+      nombreMatieres: 3,
+      nombreHeures: 60,
+      professeur: 'Prof. Ahmed Alami'
+    },
+    {
+      id: 2,
+      codeModule: 'GI-INFO-102',
+      nom: 'Programmation Orientée Objet',
+      description: 'Concepts de la programmation orientée objet',
+      semestre: 'S2',
+      coefficient: 5.0,
+      filiere: 'GI-2024',
+      nombreMatieres: 2,
+      nombreHeures: 75,
+      professeur: 'Prof. Fatima Bennani'
+    },
+    {
+      id: 3,
+      codeModule: 'GI-INFO-103',
+      nom: 'Bases de Données',
+      description: 'Introduction aux bases de données relationnelles',
+      semestre: 'S2',
+      coefficient: 4.5,
+      filiere: 'GI-2024',
+      nombreMatieres: 3,
+      nombreHeures: 70,
+      professeur: 'Prof. Ahmed Alami'
+    },
+    {
+      id: 4,
+      codeModule: 'GIL-IND-201',
+      nom: 'Gestion de Production',
+      description: 'Techniques de gestion de production industrielle',
+      semestre: 'S3',
+      coefficient: 4.5,
+      filiere: 'GIL-2024',
+      nombreMatieres: 4,
+      nombreHeures: 90,
+      professeur: 'Prof. Mohamed Chraibi'
+    },
+    {
+      id: 5,
+      codeModule: 'GC-CIV-101',
+      nom: 'Mécanique des Sols',
+      description: 'Fondements de la mécanique des sols',
+      semestre: 'S1',
+      coefficient: 5.0,
+      filiere: 'GC-2024',
+      nombreMatieres: 3,
+      nombreHeures: 80,
+      professeur: 'Prof. Hassan Alaoui'
+    }
+  ]);
+
+  // Données des matières
+  const [matieres, setMatieres] = useState([
+    {
+      id: 1,
+      codeMatiere: 'ALG-101-1',
+      nom: 'Algorithmes de base',
+      module: 'GI-INFO-101',
+      nombreHeures: 20,
+      coefficient: 1.5,
+      professeur: 'Prof. Ahmed Alami',
+      type: 'Cours',
+      description: 'Introduction aux algorithmes fondamentaux'
+    },
+    {
+      id: 2,
+      codeMatiere: 'ALG-101-2',
+      nom: 'Structures de données',
+      module: 'GI-INFO-101',
+      nombreHeures: 25,
+      coefficient: 1.5,
+      professeur: 'Prof. Ahmed Alami',
+      type: 'TP',
+      description: 'Les structures de données fondamentales'
+    },
+    {
+      id: 3,
+      codeMatiere: 'ALG-101-3',
+      nom: 'Complexité algorithmique',
+      module: 'GI-INFO-101',
+      nombreHeures: 15,
+      coefficient: 1.0,
+      professeur: 'Prof. Ahmed Alami',
+      type: 'Cours',
+      description: 'Analyse de la complexité des algorithmes'
+    },
+    {
+      id: 4,
+      codeMatiere: 'POO-102-1',
+      nom: 'Classes et objets',
+      module: 'GI-INFO-102',
+      nombreHeures: 40,
+      coefficient: 2.5,
+      professeur: 'Prof. Fatima Bennani',
+      type: 'Cours',
+      description: 'Concepts de base de la POO'
+    },
+    {
+      id: 5,
+      codeMatiere: 'POO-102-2',
+      nom: 'Héritage et polymorphisme',
+      module: 'GI-INFO-102',
+      nombreHeures: 35,
+      coefficient: 2.5,
+      professeur: 'Prof. Fatima Bennani',
+      type: 'TP',
+      description: 'Héritage et polymorphisme en POO'
+    },
+    {
+      id: 6,
+      codeMatiere: 'BD-103-1',
+      nom: 'Modélisation relationnelle',
+      module: 'GI-INFO-103',
+      nombreHeures: 25,
+      coefficient: 1.5,
+      professeur: 'Prof. Ahmed Alami',
+      type: 'Cours',
+      description: 'Concepts de modélisation relationnelle'
+    },
+    {
+      id: 7,
+      codeMatiere: 'BD-103-2',
+      nom: 'SQL et requêtes',
+      module: 'GI-INFO-103',
+      nombreHeures: 30,
+      coefficient: 2.0,
+      professeur: 'Prof. Ahmed Alami',
+      type: 'TP',
+      description: 'Langage SQL et requêtes complexes'
+    },
+    {
+      id: 8,
+      codeMatiere: 'BD-103-3',
+      nom: 'Normalisation',
+      module: 'GI-INFO-103',
+      nombreHeures: 15,
+      coefficient: 1.0,
+      professeur: 'Prof. Ahmed Alami',
+      type: 'Cours',
+      description: 'Normalisation des bases de données'
+    }
+  ]);
+
   const [formulaireDepartement, setFormulaireDepartement] = useState({
     nom: '',
     code: '',
@@ -127,7 +319,31 @@ const GestionDepartements = () => {
   const [formulaireFiliere, setFormulaireFiliere] = useState({
     codeFiliere: '',
     nom: '',
-    etat: 'OUVERTE'
+    etat: 'OUVERTE',
+    chefFiliere: '',
+    niveauDiplome: '',
+    dureeFormation: '',
+    description: ''
+  });
+  const [formulaireModule, setFormulaireModule] = useState({
+    codeModule: '',
+    nom: '',
+    description: '',
+    semestre: '',
+    coefficient: '',
+    filiere: '',
+    nombreHeures: '',
+    professeur: ''
+  });
+  const [formulaireMatiere, setFormulaireMatiere] = useState({
+    codeMatiere: '',
+    nom: '',
+    module: '',
+    nombreHeures: '',
+    coefficient: '',
+    professeur: '',
+    type: '',
+    description: ''
   });
 
   const ouvrirModalAjoutDepartement = () => {
@@ -183,6 +399,16 @@ const GestionDepartements = () => {
     setFormulaireFiliere(prev => ({ ...prev, [name]: value }));
   };
 
+  const gererChangementModule = (e) => {
+    const { name, value } = e.target;
+    setFormulaireModule(prev => ({ ...prev, [name]: value }));
+  };
+
+  const gererChangementMatiere = (e) => {
+    const { name, value } = e.target;
+    setFormulaireMatiere(prev => ({ ...prev, [name]: value }));
+  };
+
   const sauvegarderDepartement = () => {
     if (!formulaireDepartement.nom || !formulaireDepartement.code) {
       alert('Veuillez remplir tous les champs obligatoires');
@@ -232,26 +458,200 @@ const GestionDepartements = () => {
   };
 
   const sauvegarderFiliere = () => {
-    if (!formulaireFiliere.codeFiliere || !formulaireFiliere.nom || !departementSelectionne) {
+    if (!formulaireFiliere.codeFiliere || !formulaireFiliere.nom) {
       alert('Veuillez remplir tous les champs obligatoires');
       return;
     }
 
-    const nouvelleFiliere = {
-      id: filieres.length + 1,
-      ...formulaireFiliere,
-      departement: departementSelectionne.nom
-    };
+    if (filiereCourant) {
+      // Modification
+      setFilieres(prev => prev.map(f => 
+        f.id === filiereCourant.id 
+          ? { ...f, ...formulaireFiliere, dureeFormation: parseInt(formulaireFiliere.dureeFormation) || f.dureeFormation }
+          : f
+      ));
+      setFiliereCourant(null);
+      setModalModifierFiliere(false);
+    } else {
+      // Ajout
+      if (!departementSelectionne) {
+        alert('Veuillez sélectionner un département');
+        return;
+      }
+      const nouvelleFiliere = {
+        id: filieres.length + 1,
+        ...formulaireFiliere,
+        departement: departementSelectionne.nom,
+        dureeFormation: parseInt(formulaireFiliere.dureeFormation) || 3,
+        nombreEtudiants: 0,
+        nombreModules: 0
+      };
+      setFilieres(prev => [...prev, nouvelleFiliere]);
+      // Mettre à jour le nombre de filières du département
+      setDepartements(prev => prev.map(d => 
+        d.id === departementSelectionne.id 
+          ? { ...d, nombreFilieres: d.nombreFilieres + 1 }
+          : d
+      ));
+      setModalAjouterFiliere(false);
+    }
+  };
 
-    // Mettre à jour le nombre de filières du département
-    setDepartements(prev => prev.map(d => 
-      d.id === departementSelectionne.id 
-        ? { ...d, nombreFilieres: d.nombreFilieres + 1 }
-        : d
-    ));
+  const ouvrirModalModifierFiliere = (filiere) => {
+    setFiliereCourant(filiere);
+    const dep = departements.find(d => d.nom === filiere.departement);
+    if (dep) setDepartementSelectionne(dep);
+    setFormulaireFiliere({
+      codeFiliere: filiere.codeFiliere,
+      nom: filiere.nom,
+      etat: filiere.etat,
+      chefFiliere: filiere.chefFiliere || '',
+      niveauDiplome: filiere.niveauDiplome || '',
+      dureeFormation: filiere.dureeFormation?.toString() || '',
+      description: filiere.description || ''
+    });
+    setModalModifierFiliere(true);
+  };
 
-    alert(`Filière ${nouvelleFiliere.nom} ajoutée au département ${departementSelectionne.nom}`);
-    setModalAjouterFiliere(false);
+  const ouvrirModalModifierModule = (module) => {
+    setModuleCourant(module);
+    setFormulaireModule({
+      codeModule: module.codeModule,
+      nom: module.nom,
+      description: module.description || '',
+      semestre: module.semestre || '',
+      coefficient: module.coefficient?.toString() || '',
+      filiere: module.filiere || '',
+      nombreHeures: module.nombreHeures?.toString() || '',
+      professeur: module.professeur || ''
+    });
+    setModalModifierModule(true);
+  };
+
+  const ouvrirModalModifierMatiere = (matiere) => {
+    setMatiereCourante(matiere);
+    setFormulaireMatiere({
+      codeMatiere: matiere.codeMatiere,
+      nom: matiere.nom,
+      module: matiere.module || '',
+      nombreHeures: matiere.nombreHeures?.toString() || '',
+      coefficient: matiere.coefficient?.toString() || '',
+      professeur: matiere.professeur || '',
+      type: matiere.type || '',
+      description: matiere.description || ''
+    });
+    setModalModifierMatiere(true);
+  };
+
+  const sauvegarderModule = () => {
+    if (!formulaireModule.codeModule || !formulaireModule.nom) {
+      alert('Veuillez remplir tous les champs obligatoires');
+      return;
+    }
+
+    if (moduleCourant) {
+      // Modification
+      setModules(prev => prev.map(m => 
+        m.id === moduleCourant.id 
+          ? { ...m, ...formulaireModule, coefficient: parseFloat(formulaireModule.coefficient) || m.coefficient, nombreHeures: parseInt(formulaireModule.nombreHeures) || m.nombreHeures }
+          : m
+      ));
+      setModuleCourant(null);
+      setModalModifierModule(false);
+    } else {
+      // Ajout
+      if (!filierePourModule) {
+        alert('Veuillez sélectionner une filière');
+        return;
+      }
+      const nouveauModule = {
+        id: modules.length + 1,
+        ...formulaireModule,
+        filiere: filierePourModule.codeFiliere,
+        coefficient: parseFloat(formulaireModule.coefficient) || 1,
+        nombreHeures: parseInt(formulaireModule.nombreHeures) || 0,
+        nombreMatieres: 0
+      };
+      setModules(prev => [...prev, nouveauModule]);
+      // Mettre à jour le nombre de modules de la filière
+      setFilieres(prev => prev.map(f => 
+        f.id === filierePourModule.id 
+          ? { ...f, nombreModules: (f.nombreModules || 0) + 1 }
+          : f
+      ));
+      setModalAjouterModule(false);
+    }
+  };
+
+  const sauvegarderMatiere = () => {
+    if (!formulaireMatiere.codeMatiere || !formulaireMatiere.nom) {
+      alert('Veuillez remplir tous les champs obligatoires');
+      return;
+    }
+
+    if (matiereCourante) {
+      // Modification
+      setMatieres(prev => prev.map(m => 
+        m.id === matiereCourante.id 
+          ? { ...m, ...formulaireMatiere, coefficient: parseFloat(formulaireMatiere.coefficient) || m.coefficient, nombreHeures: parseInt(formulaireMatiere.nombreHeures) || m.nombreHeures }
+          : m
+      ));
+      setMatiereCourante(null);
+      setModalModifierMatiere(false);
+    } else {
+      // Ajout
+      if (!modulePourMatiere) {
+        alert('Veuillez sélectionner un module');
+        return;
+      }
+      const nouvelleMatiere = {
+        id: matieres.length + 1,
+        ...formulaireMatiere,
+        module: modulePourMatiere.codeModule,
+        coefficient: parseFloat(formulaireMatiere.coefficient) || 1,
+        nombreHeures: parseInt(formulaireMatiere.nombreHeures) || 0
+      };
+      setMatieres(prev => [...prev, nouvelleMatiere]);
+      // Mettre à jour le nombre de matières du module
+      setModules(prev => prev.map(m => 
+        m.codeModule === modulePourMatiere.codeModule
+          ? { ...m, nombreMatieres: (m.nombreMatieres || 0) + 1 }
+          : m
+      ));
+      setModalAjouterMatiere(false);
+    }
+  };
+
+  const ouvrirModalAjouterModule = (filiere) => {
+    setFilierePourModule(filiere);
+    setFormulaireModule({
+      codeModule: '',
+      nom: '',
+      description: '',
+      semestre: '',
+      coefficient: '',
+      filiere: filiere.codeFiliere,
+      nombreHeures: '',
+      professeur: ''
+    });
+    setModuleCourant(null);
+    setModalAjouterModule(true);
+  };
+
+  const ouvrirModalAjouterMatiere = (module) => {
+    setModulePourMatiere(module);
+    setFormulaireMatiere({
+      codeMatiere: '',
+      nom: '',
+      module: module.codeModule,
+      nombreHeures: '',
+      coefficient: '',
+      professeur: '',
+      type: '',
+      description: ''
+    });
+    setMatiereCourante(null);
+    setModalAjouterMatiere(true);
   };
 
   const obtenirProfesseursDepartement = (departementNom) => {
@@ -260,6 +660,14 @@ const GestionDepartements = () => {
 
   const obtenirFilieresDepartement = (departementNom) => {
     return filieres.filter(f => f.departement === departementNom);
+  };
+
+  const obtenirModulesFiliere = (codeFiliere) => {
+    return modules.filter(m => m.filiere === codeFiliere);
+  };
+
+  const obtenirMatieresModule = (codeModule) => {
+    return matieres.filter(m => m.module === codeModule);
   };
 
   const professeursNonAffectes = professeurs.filter(p => !p.departement);
@@ -289,11 +697,670 @@ const GestionDepartements = () => {
   const totalProfesseurs = departements.reduce((sum, d) => sum + d.nombreProfesseurs, 0);
   const totalFilieres = departements.reduce((sum, d) => sum + d.nombreFilieres, 0);
 
+  // Si on affiche les détails d'un module
+  if (moduleDetails) {
+    const matieresModule = obtenirMatieresModule(moduleDetails.codeModule);
+    
+    return (
+      <div className="gestion-departements">
+        <div className="details-departement-header">
+          <button className="details-departement-btn-retour" onClick={() => {
+            setModuleDetails(null);
+          }}>
+            <ArrowLeft size={20} />
+            Retour
+          </button>
+          <div>
+            <h1 className="details-departement-titre">{moduleDetails.nom}</h1>
+            <p className="details-departement-sous-titre">{moduleDetails.description || `Module ${moduleDetails.nom}`}</p>
+          </div>
+        </div>
+
+        <div className="details-departement-infos">
+          <div className="details-departement-info-card">
+            <h3>Informations du Module</h3>
+            <div className="details-departement-info-grid">
+              <div className="details-departement-info-item">
+                <span className="details-departement-info-label">Code</span>
+                <span className="details-departement-info-value">{moduleDetails.codeModule}</span>
+              </div>
+              <div className="details-departement-info-item">
+                <span className="details-departement-info-label">Professeur</span>
+                <span className="details-departement-info-value">{moduleDetails.professeur || 'Non défini'}</span>
+              </div>
+              <div className="details-departement-info-item">
+                <span className="details-departement-info-label">Semestre</span>
+                <span className="details-departement-info-value">{moduleDetails.semestre || 'Non défini'}</span>
+              </div>
+              <div className="details-departement-info-item">
+                <span className="details-departement-info-label">Coefficient</span>
+                <span className="details-departement-info-value">{moduleDetails.coefficient || 0}</span>
+              </div>
+              <div className="details-departement-info-item">
+                <span className="details-departement-info-label">Nombre d'Heures</span>
+                <span className="details-departement-info-value">{moduleDetails.nombreHeures || 0}</span>
+              </div>
+              <div className="details-departement-info-item">
+                <span className="details-departement-info-label">Nombre de Matières</span>
+                <span className="details-departement-info-value">{moduleDetails.nombreMatieres || 0}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="details-departement-filieres">
+          <div className="details-departement-filieres-header">
+            <h2 className="details-departement-filieres-titre">Matières du Module</h2>
+            <button 
+              className="details-departement-btn-ajouter"
+              onClick={() => ouvrirModalAjouterMatiere(moduleDetails)}
+            >
+              <Plus size={18} />
+              Ajouter une Matière
+            </button>
+          </div>
+          <div className="details-departement-filieres-cartes">
+            {matieresModule.map(matiere => (
+              <div key={matiere.id} className="details-filiere-carte">
+                <div className="details-filiere-carte-header">
+                  <div className="details-filiere-carte-icone">
+                    <FileText size={24} />
+                  </div>
+                  <div className="details-filiere-carte-titre-container">
+                    <h3 className="details-filiere-carte-titre">
+                      {matiere.nom}
+                    </h3>
+                    <p className="details-filiere-carte-code">{matiere.codeMatiere}</p>
+                  </div>
+                </div>
+                
+                <div className="details-filiere-carte-infos">
+                  <div className="details-filiere-carte-info-item-chef">
+                    <span className="details-filiere-carte-info-label">Professeur</span>
+                    <span className="details-filiere-carte-info-value">{matiere.professeur || 'Non défini'}</span>
+                  </div>
+                  <div className="details-filiere-carte-info-item-ligne">
+                    <span className="details-filiere-carte-info-label">Heures</span>
+                    <span className="details-filiere-carte-info-value">{matiere.nombreHeures || 0}</span>
+                  </div>
+                  <div className="details-filiere-carte-info-item-ligne">
+                    <span className="details-filiere-carte-info-label">Type</span>
+                    <span className="details-filiere-carte-info-value">{matiere.type || 'Non défini'}</span>
+                  </div>
+                </div>
+                
+                <div className="details-filiere-carte-contenu">
+                  <div className="details-filiere-carte-details">
+                    <div className="details-filiere-carte-detail-item">
+                      <span className="details-filiere-carte-detail-label">Coefficient</span>
+                      <span className="details-filiere-carte-detail-value">{matiere.coefficient || 0}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="details-filiere-carte-actions">
+                  <button 
+                    className="details-filiere-carte-btn-modifier"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      ouvrirModalModifierMatiere(matiere);
+                    }}
+                  >
+                    Modifier
+                  </button>
+                  <button 
+                    className="details-filiere-carte-btn-supprimer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      supprimerMatiere(matiere);
+                    }}
+                  >
+                    <Trash2 size={16} />
+                    Supprimer
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Modals pour les matières et modules */}
+        <FormulaireModal
+          titre={matiereCourante ? 'Modifier la Matière' : `Ajouter une Matière - ${moduleDetails?.nom || ''}`}
+          estOuvert={modalModifierMatiere || modalAjouterMatiere}
+          surFermer={() => {
+            setModalModifierMatiere(false);
+            setModalAjouterMatiere(false);
+            setMatiereCourante(null);
+            setModulePourMatiere(null);
+          }}
+          surSauvegarder={sauvegarderMatiere}
+        >
+          <ChampFormulaire
+            label="Code Matière"
+            nom="codeMatiere"
+            valeur={formulaireMatiere.codeMatiere}
+            onChange={gererChangementMatiere}
+            placeholder="Ex: ALG-101-1"
+            requis
+          />
+          <ChampFormulaire
+            label="Nom"
+            nom="nom"
+            valeur={formulaireMatiere.nom}
+            onChange={gererChangementMatiere}
+            placeholder="Nom de la matière"
+            requis
+          />
+          <ChampFormulaire
+            label="Module"
+            nom="module"
+            valeur={formulaireMatiere.module}
+            onChange={gererChangementMatiere}
+            placeholder="Code du module"
+          />
+          <ChampFormulaire
+            label="Type"
+            nom="type"
+            type="select"
+            valeur={formulaireMatiere.type}
+            onChange={gererChangementMatiere}
+            options={[
+              { value: 'Cours', label: 'Cours' },
+              { value: 'TP', label: 'TP' },
+              { value: 'TD', label: 'TD' }
+            ]}
+          />
+          <ChampFormulaire
+            label="Nombre d'Heures"
+            nom="nombreHeures"
+            type="number"
+            valeur={formulaireMatiere.nombreHeures}
+            onChange={gererChangementMatiere}
+            placeholder="Ex: 20"
+          />
+          <ChampFormulaire
+            label="Coefficient"
+            nom="coefficient"
+            type="number"
+            step="0.5"
+            valeur={formulaireMatiere.coefficient}
+            onChange={gererChangementMatiere}
+            placeholder="Ex: 1.5"
+          />
+          <ChampFormulaire
+            label="Professeur"
+            nom="professeur"
+            valeur={formulaireMatiere.professeur}
+            onChange={gererChangementMatiere}
+            placeholder="Nom du professeur"
+          />
+          <ChampFormulaire
+            label="Description"
+            nom="description"
+            type="textarea"
+            valeur={formulaireMatiere.description}
+            onChange={gererChangementMatiere}
+            placeholder="Description de la matière"
+          />
+        </FormulaireModal>
+      </div>
+    );
+  }
+
+  // Si on affiche les détails d'une filière
+  if (filiereDetails) {
+    const modulesFiliere = obtenirModulesFiliere(filiereDetails.codeFiliere);
+    
+    return (
+      <div className="gestion-departements">
+        <div className="details-departement-header">
+          <button className="details-departement-btn-retour" onClick={() => {
+            setFiliereDetails(null);
+          }}>
+            <ArrowLeft size={20} />
+            Retour
+          </button>
+          <div>
+            <h1 className="details-departement-titre">{filiereDetails.nom}</h1>
+            <p className="details-departement-sous-titre">{filiereDetails.description || `Filière ${filiereDetails.nom}`}</p>
+          </div>
+        </div>
+
+        <div className="details-departement-infos">
+          <div className="details-departement-info-card">
+            <h3>Informations de la Filière</h3>
+            <div className="details-departement-info-grid">
+              <div className="details-departement-info-item">
+                <span className="details-departement-info-label">Code</span>
+                <span className="details-departement-info-value">{filiereDetails.codeFiliere}</span>
+              </div>
+              <div className="details-departement-info-item">
+                <span className="details-departement-info-label">Chef de Filière</span>
+                <span className="details-departement-info-value">{filiereDetails.chefFiliere || 'Non défini'}</span>
+              </div>
+              <div className="details-departement-info-item">
+                <span className="details-departement-info-label">Niveau</span>
+                <span className="details-departement-info-value">{filiereDetails.niveauDiplome || 'Non défini'}</span>
+              </div>
+              <div className="details-departement-info-item">
+                <span className="details-departement-info-label">Durée</span>
+                <span className="details-departement-info-value">{filiereDetails.dureeFormation || 0} ans</span>
+              </div>
+              <div className="details-departement-info-item">
+                <span className="details-departement-info-label">Nombre d'Étudiants</span>
+                <span className="details-departement-info-value">{filiereDetails.nombreEtudiants || 0}</span>
+              </div>
+              <div className="details-departement-info-item">
+                <span className="details-departement-info-label">Nombre de Modules</span>
+                <span className="details-departement-info-value">{filiereDetails.nombreModules || 0}</span>
+              </div>
+              <div className="details-departement-info-item">
+                <span className="details-departement-info-label">État</span>
+                <BadgeStatut 
+                  statut={filiereDetails.etat === 'OUVERTE' ? 'success' : 'error'} 
+                  texte={filiereDetails.etat === 'OUVERTE' ? 'Ouverte' : 'Fermée'} 
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="details-departement-filieres">
+          <div className="details-departement-filieres-header">
+            <h2 className="details-departement-filieres-titre">Modules de la Filière</h2>
+            <button 
+              className="details-departement-btn-ajouter"
+              onClick={() => ouvrirModalAjouterModule(filiereDetails)}
+            >
+              <Plus size={18} />
+              Ajouter un Module
+            </button>
+          </div>
+          <div className="details-departement-filieres-cartes">
+            {modulesFiliere.map(module => (
+              <div key={module.id} className="details-filiere-carte">
+                <div className="details-filiere-carte-header">
+                  <div className="details-filiere-carte-icone">
+                    <BookOpen size={24} />
+                  </div>
+                  <div className="details-filiere-carte-titre-container">
+                    <h3 className="details-filiere-carte-titre">
+                      {module.nom}
+                    </h3>
+                    <p className="details-filiere-carte-code">{module.codeModule}</p>
+                  </div>
+                </div>
+                
+                <div className="details-filiere-carte-infos">
+                  <div className="details-filiere-carte-info-item-chef">
+                    <span className="details-filiere-carte-info-label">Professeur</span>
+                    <span className="details-filiere-carte-info-value">{module.professeur || 'Non défini'}</span>
+                  </div>
+                  <div className="details-filiere-carte-info-item-ligne">
+                    <span className="details-filiere-carte-info-label">Heures</span>
+                    <span className="details-filiere-carte-info-value">{module.nombreHeures || 0}</span>
+                  </div>
+                  <div className="details-filiere-carte-info-item-ligne">
+                    <span className="details-filiere-carte-info-label">Matières</span>
+                    <span className="details-filiere-carte-info-value">{module.nombreMatieres || 0}</span>
+                  </div>
+                </div>
+                
+                <div className="details-filiere-carte-contenu">
+                  <div className="details-filiere-carte-details">
+                    <div className="details-filiere-carte-detail-item">
+                      <span className="details-filiere-carte-detail-label">Semestre</span>
+                      <span className="details-filiere-carte-detail-value">{module.semestre || 'Non défini'}</span>
+                    </div>
+                    <div className="details-filiere-carte-detail-item">
+                      <span className="details-filiere-carte-detail-label">Coefficient</span>
+                      <span className="details-filiere-carte-detail-value">{module.coefficient || 0}</span>
+                    </div>
+                  </div>
+                  
+                </div>
+                
+                <div className="details-filiere-carte-actions">
+                  <button 
+                    className="details-filiere-carte-btn-modifier"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      ouvrirModalModifierModule(module);
+                    }}
+                  >
+                    Modifier
+                  </button>
+                  <button 
+                    className="details-filiere-carte-btn-details"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setModuleDetails(module);
+                    }}
+                  >
+                    Détails
+                  </button>
+                  <button 
+                    className="details-filiere-carte-btn-supprimer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      supprimerModule(module);
+                    }}
+                  >
+                    <Trash2 size={16} />
+                    Supprimer
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Modals pour les modules */}
+        <FormulaireModal
+          titre={moduleCourant ? 'Modifier le Module' : `Ajouter un Module - ${filiereDetails?.nom || ''}`}
+          estOuvert={modalModifierModule || modalAjouterModule}
+          surFermer={() => {
+            setModalModifierModule(false);
+            setModalAjouterModule(false);
+            setModuleCourant(null);
+            setFilierePourModule(null);
+          }}
+          surSauvegarder={sauvegarderModule}
+        >
+          <ChampFormulaire
+            label="Code Module"
+            nom="codeModule"
+            valeur={formulaireModule.codeModule}
+            onChange={gererChangementModule}
+            placeholder="Ex: GI-INFO-101"
+            requis
+          />
+          <ChampFormulaire
+            label="Nom"
+            nom="nom"
+            valeur={formulaireModule.nom}
+            onChange={gererChangementModule}
+            placeholder="Nom du module"
+            requis
+          />
+          <ChampFormulaire
+            label="Description"
+            nom="description"
+            type="textarea"
+            valeur={formulaireModule.description}
+            onChange={gererChangementModule}
+            placeholder="Description du module"
+          />
+          <ChampFormulaire
+            label="Filière"
+            nom="filiere"
+            valeur={formulaireModule.filiere}
+            onChange={gererChangementModule}
+            placeholder="Code de la filière"
+          />
+          <ChampFormulaire
+            label="Semestre"
+            nom="semestre"
+            valeur={formulaireModule.semestre}
+            onChange={gererChangementModule}
+            placeholder="Ex: S1"
+          />
+          <ChampFormulaire
+            label="Coefficient"
+            nom="coefficient"
+            type="number"
+            step="0.5"
+            valeur={formulaireModule.coefficient}
+            onChange={gererChangementModule}
+            placeholder="Ex: 4.0"
+          />
+          <ChampFormulaire
+            label="Nombre d'Heures"
+            nom="nombreHeures"
+            type="number"
+            valeur={formulaireModule.nombreHeures}
+            onChange={gererChangementModule}
+            placeholder="Ex: 60"
+          />
+          <ChampFormulaire
+            label="Professeur"
+            nom="professeur"
+            valeur={formulaireModule.professeur}
+            onChange={gererChangementModule}
+            placeholder="Nom du professeur"
+          />
+        </FormulaireModal>
+      </div>
+    );
+  }
+
+  // Si on affiche les détails d'un département
+  if (departementDetails) {
+    const filieresDepartement = obtenirFilieresDepartement(departementDetails.nom);
+    
+    return (
+      <div className="gestion-departements">
+        <div className="details-departement-header">
+          <button className="details-departement-btn-retour" onClick={() => setDepartementDetails(null)}>
+            <ArrowLeft size={20} />
+            Retour
+          </button>
+          <div>
+            <h1 className="details-departement-titre">{departementDetails.nom}</h1>
+            <p className="details-departement-sous-titre">{departementDetails.description || `Département ${departementDetails.nom}`}</p>
+          </div>
+        </div>
+
+        <div className="details-departement-infos">
+          <div className="details-departement-info-card">
+            <h3>Informations du Département</h3>
+            <div className="details-departement-info-grid">
+              <div className="details-departement-info-item">
+                <span className="details-departement-info-label">Code</span>
+                <span className="details-departement-info-value">DEPT-{departementDetails.code}</span>
+              </div>
+              <div className="details-departement-info-item">
+                <span className="details-departement-info-label">Chef de Département</span>
+                <span className="details-departement-info-value">{departementDetails.chefDepartement || 'Non défini'}</span>
+              </div>
+              <div className="details-departement-info-item">
+                <span className="details-departement-info-label">Nombre de Professeurs</span>
+                <span className="details-departement-info-value">{departementDetails.nombreProfesseurs}</span>
+              </div>
+              <div className="details-departement-info-item">
+                <span className="details-departement-info-label">Nombre de Filières</span>
+                <span className="details-departement-info-value">{departementDetails.nombreFilieres}</span>
+              </div>
+              <div className="details-departement-info-item">
+                <span className="details-departement-info-label">Nombre d'Étudiants</span>
+                <span className="details-departement-info-value">{departementDetails.nombreEtudiants}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="details-departement-filieres">
+          <div className="details-departement-filieres-header">
+            <h2 className="details-departement-filieres-titre">Filières du Département</h2>
+            <button 
+              className="details-departement-btn-ajouter"
+              onClick={() => ouvrirModalAjouterFiliere(departementDetails)}
+            >
+              <Plus size={18} />
+              Ajouter une Filière
+            </button>
+          </div>
+          <div className="details-departement-filieres-cartes">
+            {filieresDepartement.map(filiere => (
+              <div 
+                key={filiere.id} 
+                className="details-filiere-carte"
+              >
+                <div className="details-filiere-carte-header">
+                  <div className="details-filiere-carte-icone">
+                    <GraduationCap size={24} />
+                  </div>
+                  <div className="details-filiere-carte-titre-container">
+                    <h3 className="details-filiere-carte-titre">
+                      {filiere.nom.split(' ').map((mot, index) => (
+                        <span key={index} className="details-filiere-carte-titre-ligne">
+                          {mot}
+                        </span>
+                      ))}
+                    </h3>
+                    <p className="details-filiere-carte-code">{filiere.codeFiliere}</p>
+                  </div>
+                </div>
+                
+                <div className="details-filiere-carte-infos">
+                  <div className="details-filiere-carte-info-item-chef">
+                    <span className="details-filiere-carte-info-label">Chef de Filière</span>
+                    <span className="details-filiere-carte-info-value">{filiere.chefFiliere || 'Non défini'}</span>
+                  </div>
+                  <div className="details-filiere-carte-info-item-ligne">
+                    <span className="details-filiere-carte-info-label">Étudiants</span>
+                    <span className="details-filiere-carte-info-value">{filiere.nombreEtudiants || 0}</span>
+                  </div>
+                  <div className="details-filiere-carte-info-item-ligne">
+                    <span className="details-filiere-carte-info-label">Modules</span>
+                    <span className="details-filiere-carte-info-value">{filiere.nombreModules || 0}</span>
+                  </div>
+                </div>
+                <div className="details-filiere-carte-contenu">
+                  <div className="details-filiere-carte-details">
+                    <div className="details-filiere-carte-detail-item">
+                      <span className="details-filiere-carte-detail-label">Niveau</span>
+                      <span className="details-filiere-carte-detail-value">{filiere.niveauDiplome || 'Non défini'}</span>
+                    </div>
+                    <div className="details-filiere-carte-detail-item">
+                      <span className="details-filiere-carte-detail-label">Durée</span>
+                      <span className="details-filiere-carte-detail-value">{filiere.dureeFormation || 0} ans</span>
+                    </div>
+                    <div className="details-filiere-carte-detail-item">
+                      <span className="details-filiere-carte-detail-label">État</span>
+                      <BadgeStatut 
+                        statut={filiere.etat === 'OUVERTE' ? 'success' : 'error'} 
+                        texte={filiere.etat === 'OUVERTE' ? 'Ouverte' : 'Fermée'} 
+                      />
+                    </div>
+                  </div>
+                  
+                </div>
+                
+                <div className="details-filiere-carte-actions">
+                  <button 
+                    className="details-filiere-carte-btn-modifier"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      ouvrirModalModifierFiliere(filiere);
+                    }}
+                  >
+                    Modifier
+                  </button>
+                  <button 
+                    className="details-filiere-carte-btn-details"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setFiliereDetails(filiere);
+                    }}
+                  >
+                    Détails
+                  </button>
+                  <button 
+                    className="details-filiere-carte-btn-supprimer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      supprimerFiliere(filiere);
+                    }}
+                  >
+                    <Trash2 size={16} />
+                    Supprimer
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Modal Modifier Filière */}
+        <FormulaireModal
+          titre="Modifier la Filière"
+          estOuvert={modalModifierFiliere}
+          surFermer={() => {
+            setModalModifierFiliere(false);
+            setFiliereCourant(null);
+          }}
+          surSauvegarder={sauvegarderFiliere}
+        >
+          <ChampFormulaire
+            label="Code Filière"
+            nom="codeFiliere"
+            valeur={formulaireFiliere.codeFiliere}
+            onChange={gererChangementFiliere}
+            placeholder="Ex: GI-2024"
+            requis
+          />
+          <ChampFormulaire
+            label="Nom de la Filière"
+            nom="nom"
+            valeur={formulaireFiliere.nom}
+            onChange={gererChangementFiliere}
+            placeholder="Ex: Génie Informatique"
+            requis
+          />
+          <ChampFormulaire
+            label="Chef de Filière"
+            nom="chefFiliere"
+            valeur={formulaireFiliere.chefFiliere}
+            onChange={gererChangementFiliere}
+            placeholder="Nom du chef de filière"
+          />
+          <ChampFormulaire
+            label="Niveau Diplôme"
+            nom="niveauDiplome"
+            valeur={formulaireFiliere.niveauDiplome}
+            onChange={gererChangementFiliere}
+            placeholder="Ex: Licence"
+          />
+          <ChampFormulaire
+            label="Durée de Formation (années)"
+            nom="dureeFormation"
+            type="number"
+            valeur={formulaireFiliere.dureeFormation}
+            onChange={gererChangementFiliere}
+            placeholder="Ex: 3"
+          />
+          <ChampFormulaire
+            label="État"
+            nom="etat"
+            type="select"
+            valeur={formulaireFiliere.etat}
+            onChange={gererChangementFiliere}
+            options={[
+              { value: 'OUVERTE', label: 'Ouverte' },
+              { value: 'FERMEE', label: 'Fermée' }
+            ]}
+            requis
+          />
+          <ChampFormulaire
+            label="Description"
+            nom="description"
+            type="textarea"
+            valeur={formulaireFiliere.description}
+            onChange={gererChangementFiliere}
+            placeholder="Description de la filière"
+          />
+        </FormulaireModal>
+      </div>
+    );
+  }
+
   return (
     <div className="gestion-departements">
       <div className="gestion-departements-header">
         <h1 className="gestion-departements-titre">Gestion des Départements</h1>
-        <p className="gestion-departements-sous-titre">Gestion des départements, affectation des professeurs et filières</p>
+        <p className="gestion-departements-sous-titre">Départements et leurs filières</p>
       </div>
 
       <div className="gestion-departements-statistiques">
@@ -323,96 +1390,82 @@ const GestionDepartements = () => {
         />
       </div>
 
-      <TableauDonnees
-        titre="Liste des Départements"
-        colonnes={colonnes}
-        donnees={departements}
-        surAjouter={ouvrirModalAjoutDepartement}
-        surModifier={ouvrirModalModification}
-        surSupprimer={supprimer}
-        recherche={true}
-        actions={true}
-      />
+      <div className="gestion-departements-header-actions">
+        <BoutonAction
+          libelle="Nouveau département"
+          variante="primaire"
+          taille="moyen"
+          icone={Plus}
+          onClick={ouvrirModalAjoutDepartement}
+        />
+      </div>
 
-      {/* Détails des départements */}
-      <div className="gestion-departements-details">
+      {/* Cartes des départements */}
+      <div className="gestion-departements-cartes">
         {departements.map(departement => {
-          const profsDepartement = obtenirProfesseursDepartement(departement.nom);
           const filieresDepartement = obtenirFilieresDepartement(departement.nom);
+          const iconeMap = {
+            'Informatique': Monitor,
+            'Industriel': Briefcase,
+            'Génie Civil': Building2,
+            'Commerce': Briefcase,
+            'Marketing': BarChart3
+          };
+          const Icone = iconeMap[departement.nom] || Building2;
 
           return (
-            <div key={departement.id} className="departement-carte">
-              <div className="departement-carte-header">
-                <div>
-                  <h3 className="departement-carte-titre">{departement.nom}</h3>
-                  <p className="departement-carte-code">{departement.code}</p>
-                  <p className="departement-carte-description">{departement.description}</p>
+            <div key={departement.id} className="departement-carte-nouveau">
+              <div className="departement-carte-nouveau-header">
+                <div className="departement-carte-nouveau-icone">
+                  <Icone size={24} />
                 </div>
-                <div className="departement-carte-actions">
-                  <BoutonAction
-                    libelle="Affecter Prof"
-                    variante="secondaire"
-                    taille="moyen"
-                    icone={UserPlus}
-                    onClick={() => ouvrirModalAffecterProf(departement)}
-                  />
-                  <BoutonAction
-                    libelle="Ajouter Filière"
-                    variante="primaire"
-                    taille="moyen"
-                    icone={Plus}
-                    onClick={() => ouvrirModalAjouterFiliere(departement)}
-                  />
+                <div className="departement-carte-nouveau-titre-container">
+                  <h3 className="departement-carte-nouveau-titre">{departement.nom}</h3>
+                  <p className="departement-carte-nouveau-code">DEPT-{departement.code}</p>
+                </div>
+              </div>
+              
+              <div className="departement-carte-nouveau-infos">
+                <div className="departement-carte-nouveau-info-item-chef">
+                  <span className="departement-carte-nouveau-info-label">Chef de département</span>
+                  <span className="departement-carte-nouveau-info-value">{departement.chefDepartement || 'Non défini'}</span>
+                </div>
+                <div className="departement-carte-nouveau-info-item-ligne">
+                  <span className="departement-carte-nouveau-info-label">Filières</span>
+                  <span className="departement-carte-nouveau-info-value">{departement.nombreFilieres}</span>
+                </div>
+                <div className="departement-carte-nouveau-info-item-ligne">
+                  <span className="departement-carte-nouveau-info-label">Étudiants</span>
+                  <span className="departement-carte-nouveau-info-value">{departement.nombreEtudiants}</span>
+                </div>
+              </div>
+              
+              <div className="departement-carte-nouveau-separateur"></div>
+              
+              <div className="departement-carte-nouveau-filieres">
+                <span className="departement-carte-nouveau-filieres-label">FILIÈRES :</span>
+                <div className="departement-carte-nouveau-filieres-tags">
+                  {filieresDepartement.map(filiere => (
+                    <span key={filiere.id} className="departement-carte-nouveau-filiere-tag">
+                      {filiere.nom}
+                    </span>
+                  ))}
                 </div>
               </div>
 
-              <div className="departement-carte-contenu">
-                <div className="departement-section">
-                  <h4 className="departement-section-titre">
-                    <Users size={18} />
-                    Professeurs ({profsDepartement.length})
-                  </h4>
-                  {profsDepartement.length > 0 ? (
-                    <div className="departement-liste">
-                      {profsDepartement.map(prof => (
-                        <div key={prof.id} className="departement-item">
-                          <div>
-                            <span className="departement-item-nom">{prof.prenom} {prof.nom}</span>
-                            <span className="departement-item-detail">{prof.grade} - {prof.specialite}</span>
-                          </div>
-                          <BadgeStatut statut={prof.status === 'Actif' ? 'success' : 'error'} texte={prof.status} />
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="departement-vide">Aucun professeur affecté</p>
-                  )}
-                </div>
-
-                <div className="departement-section">
-                  <h4 className="departement-section-titre">
-                    <GraduationCap size={18} />
-                    Filières ({filieresDepartement.length})
-                  </h4>
-                  {filieresDepartement.length > 0 ? (
-                    <div className="departement-liste">
-                      {filieresDepartement.map(filiere => (
-                        <div key={filiere.id} className="departement-item">
-                          <div>
-                            <span className="departement-item-nom">{filiere.nom}</span>
-                            <span className="departement-item-detail">{filiere.codeFiliere}</span>
-                          </div>
-                          <BadgeStatut 
-                            statut={filiere.etat === 'OUVERTE' ? 'success' : 'error'} 
-                            texte={filiere.etat === 'OUVERTE' ? 'Ouverte' : 'Fermée'} 
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="departement-vide">Aucune filière</p>
-                  )}
-                </div>
+              <div className="departement-carte-nouveau-actions">
+                <button 
+                  className="departement-carte-nouveau-btn-modifier"
+                  onClick={() => ouvrirModalModification(departement)}
+                >
+                  Modifier
+                </button>
+                <button 
+                  className="departement-carte-nouveau-btn-details"
+                  onClick={() => setDepartementDetails(departement)}
+                >
+                  Détails
+                </button>
               </div>
             </div>
           );
@@ -527,6 +1580,233 @@ const GestionDepartements = () => {
             { value: 'FERMEE', label: 'Fermée' }
           ]}
           requis
+        />
+      </FormulaireModal>
+
+      {/* Modal Modifier Filière */}
+      <FormulaireModal
+        titre="Modifier la Filière"
+        estOuvert={modalModifierFiliere}
+        surFermer={() => {
+          setModalModifierFiliere(false);
+          setFiliereCourant(null);
+        }}
+        surSauvegarder={sauvegarderFiliere}
+      >
+        <ChampFormulaire
+          label="Code Filière"
+          nom="codeFiliere"
+          valeur={formulaireFiliere.codeFiliere}
+          onChange={gererChangementFiliere}
+          placeholder="Ex: GI-2024"
+          requis
+        />
+        <ChampFormulaire
+          label="Nom de la Filière"
+          nom="nom"
+          valeur={formulaireFiliere.nom}
+          onChange={gererChangementFiliere}
+          placeholder="Ex: Génie Informatique"
+          requis
+        />
+        <ChampFormulaire
+          label="Chef de Filière"
+          nom="chefFiliere"
+          valeur={formulaireFiliere.chefFiliere}
+          onChange={gererChangementFiliere}
+          placeholder="Nom du chef de filière"
+        />
+        <ChampFormulaire
+          label="Niveau Diplôme"
+          nom="niveauDiplome"
+          valeur={formulaireFiliere.niveauDiplome}
+          onChange={gererChangementFiliere}
+          placeholder="Ex: Licence"
+        />
+        <ChampFormulaire
+          label="Durée de Formation (années)"
+          nom="dureeFormation"
+          type="number"
+          valeur={formulaireFiliere.dureeFormation}
+          onChange={gererChangementFiliere}
+          placeholder="Ex: 3"
+        />
+        <ChampFormulaire
+          label="État"
+          nom="etat"
+          type="select"
+          valeur={formulaireFiliere.etat}
+          onChange={gererChangementFiliere}
+          options={[
+            { value: 'OUVERTE', label: 'Ouverte' },
+            { value: 'FERMEE', label: 'Fermée' }
+          ]}
+          requis
+        />
+        <ChampFormulaire
+          label="Description"
+          nom="description"
+          type="textarea"
+          valeur={formulaireFiliere.description}
+          onChange={gererChangementFiliere}
+          placeholder="Description de la filière"
+        />
+      </FormulaireModal>
+
+      {/* Modal Ajouter/Modifier Module */}
+      <FormulaireModal
+        titre={moduleCourant ? 'Modifier le Module' : 'Ajouter un Module'}
+        estOuvert={modalModifierModule || modalAjouterModule}
+        surFermer={() => {
+          setModalModifierModule(false);
+          setModalAjouterModule(false);
+          setModuleCourant(null);
+          setFilierePourModule(null);
+        }}
+        surSauvegarder={sauvegarderModule}
+      >
+        <ChampFormulaire
+          label="Code Module"
+          nom="codeModule"
+          valeur={formulaireModule.codeModule}
+          onChange={gererChangementModule}
+          placeholder="Ex: GI-INFO-101"
+          requis
+        />
+        <ChampFormulaire
+          label="Nom"
+          nom="nom"
+          valeur={formulaireModule.nom}
+          onChange={gererChangementModule}
+          placeholder="Nom du module"
+          requis
+        />
+        <ChampFormulaire
+          label="Description"
+          nom="description"
+          type="textarea"
+          valeur={formulaireModule.description}
+          onChange={gererChangementModule}
+          placeholder="Description du module"
+        />
+        <ChampFormulaire
+          label="Filière"
+          nom="filiere"
+          valeur={formulaireModule.filiere}
+          onChange={gererChangementModule}
+          placeholder="Code de la filière"
+        />
+        <ChampFormulaire
+          label="Semestre"
+          nom="semestre"
+          valeur={formulaireModule.semestre}
+          onChange={gererChangementModule}
+          placeholder="Ex: S1"
+        />
+        <ChampFormulaire
+          label="Coefficient"
+          nom="coefficient"
+          type="number"
+          step="0.5"
+          valeur={formulaireModule.coefficient}
+          onChange={gererChangementModule}
+          placeholder="Ex: 4.0"
+        />
+        <ChampFormulaire
+          label="Nombre d'Heures"
+          nom="nombreHeures"
+          type="number"
+          valeur={formulaireModule.nombreHeures}
+          onChange={gererChangementModule}
+          placeholder="Ex: 60"
+        />
+        <ChampFormulaire
+          label="Professeur"
+          nom="professeur"
+          valeur={formulaireModule.professeur}
+          onChange={gererChangementModule}
+          placeholder="Nom du professeur"
+        />
+      </FormulaireModal>
+
+      {/* Modal Ajouter/Modifier Matière */}
+      <FormulaireModal
+        titre={matiereCourante ? 'Modifier la Matière' : 'Ajouter une Matière'}
+        estOuvert={modalModifierMatiere || modalAjouterMatiere}
+        surFermer={() => {
+          setModalModifierMatiere(false);
+          setModalAjouterMatiere(false);
+          setMatiereCourante(null);
+          setModulePourMatiere(null);
+        }}
+        surSauvegarder={sauvegarderMatiere}
+      >
+        <ChampFormulaire
+          label="Code Matière"
+          nom="codeMatiere"
+          valeur={formulaireMatiere.codeMatiere}
+          onChange={gererChangementMatiere}
+          placeholder="Ex: ALG-101-1"
+          requis
+        />
+        <ChampFormulaire
+          label="Nom"
+          nom="nom"
+          valeur={formulaireMatiere.nom}
+          onChange={gererChangementMatiere}
+          placeholder="Nom de la matière"
+          requis
+        />
+        <ChampFormulaire
+          label="Module"
+          nom="module"
+          valeur={formulaireMatiere.module}
+          onChange={gererChangementMatiere}
+          placeholder="Code du module"
+        />
+        <ChampFormulaire
+          label="Type"
+          nom="type"
+          type="select"
+          valeur={formulaireMatiere.type}
+          onChange={gererChangementMatiere}
+          options={[
+            { value: 'Cours', label: 'Cours' },
+            { value: 'TP', label: 'TP' },
+            { value: 'TD', label: 'TD' }
+          ]}
+        />
+        <ChampFormulaire
+          label="Nombre d'Heures"
+          nom="nombreHeures"
+          type="number"
+          valeur={formulaireMatiere.nombreHeures}
+          onChange={gererChangementMatiere}
+          placeholder="Ex: 20"
+        />
+        <ChampFormulaire
+          label="Coefficient"
+          nom="coefficient"
+          type="number"
+          step="0.5"
+          valeur={formulaireMatiere.coefficient}
+          onChange={gererChangementMatiere}
+          placeholder="Ex: 1.5"
+        />
+        <ChampFormulaire
+          label="Professeur"
+          nom="professeur"
+          valeur={formulaireMatiere.professeur}
+          onChange={gererChangementMatiere}
+          placeholder="Nom du professeur"
+        />
+        <ChampFormulaire
+          label="Description"
+          nom="description"
+          type="textarea"
+          valeur={formulaireMatiere.description}
+          onChange={gererChangementMatiere}
+          placeholder="Description de la matière"
         />
       </FormulaireModal>
     </div>

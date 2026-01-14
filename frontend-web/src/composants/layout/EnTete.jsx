@@ -1,4 +1,4 @@
-import { Moon, Sun, Bell, GraduationCap, LayoutDashboard, Users, UserCheck, BookOpen, Building2, FileText, Calendar, ChevronDown, User, LogOut, Mail, Phone, MapPin, Camera, X, Search } from 'lucide-react';
+import { Bell, GraduationCap, LayoutDashboard, Users, UserCheck, BookOpen, Building2, FileText, Calendar, ChevronDown, User, LogOut, Camera, X } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import FormulaireModal from '../communs/FormulaireModal';
 import ChampFormulaire from '../communs/ChampFormulaire';
@@ -167,16 +167,7 @@ const EnTete = ({ nombreNotifications = 3, elementActif, surChangementElement })
           </div>
         </div>
         
-        <div className="en-tete-centre">
-          <div className="barre-recherche-container">
-            <Search className="recherche-icone" size={20} />
-            <input 
-              type="text" 
-              className="barre-recherche" 
-              placeholder="Rechercher..." 
-            />
-          </div>
-        </div>
+        
 
         <div className="en-tete-actions">
           <div className="notification-container">

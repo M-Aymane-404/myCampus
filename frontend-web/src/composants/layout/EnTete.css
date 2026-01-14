@@ -68,50 +68,6 @@
   opacity: 0.9;
 }
 
-.en-tete-centre {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 0 30px;
-}
-
-.barre-recherche-container {
-  position: relative;
-  width: 100%;
-  max-width: 400px;
-  display: flex;
-  align-items: center;
-}
-
-.recherche-icone {
-  position: absolute;
-  left: 12px;
-  color: #FFFFFF;
-  z-index: 1;
-}
-
-.barre-recherche {
-  width: 100%;
-  padding: 10px 15px 10px 40px;
-  background: #328CC1;
-  opacity: 0.20;
-  border: none;
-  border-radius: 8px;
-  color: #FFFFFF;
-  font-size: 0.9rem;
-  outline: none;
-  transition: background 0.2s ease;
-}
-
-.barre-recherche::placeholder {
-  color: #FFFFFF;
-  opacity: 0.8;
-}
-
-.barre-recherche:focus {
-  background: #3A9DD1;
-}
 
 .en-tete-actions {
   display: flex;

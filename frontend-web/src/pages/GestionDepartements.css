@@ -35,120 +35,180 @@
   justify-content: center;
 }
 
-.gestion-departements-details {
+.gestion-departements-header-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 24px;
+}
+
+.gestion-departements-cartes {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: 24px;
   margin-top: 30px;
 }
 
-.departement-carte {
-  background: var(--white);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+.departement-carte-nouveau {
+  background: #FFFFFF;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #F2F4F7;
   padding: 24px;
-  border: 1px solid var(--gray-200);
-  transition: var(--transition-normal);
-}
-
-.departement-carte:hover {
-  box-shadow: var(--shadow-md);
-}
-
-.departement-carte-header {
+  transition: all 0.3s ease;
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.departement-carte-nouveau:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.departement-carte-nouveau-header {
+  display: flex;
   align-items: flex-start;
-  margin-bottom: 24px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid var(--gray-200);
+  gap: 16px;
+  margin-bottom: 16px;
 }
 
-.departement-carte-titre {
-  font-size: 1.3rem;
-  font-weight: 600;
-  color: var(--dark);
-  margin: 0 0 5px 0;
-}
-
-.departement-carte-code {
-  font-size: 0.85rem;
-  color: var(--gray-500);
-  margin: 0 0 8px 0;
-  font-weight: 500;
-}
-
-.departement-carte-description {
-  font-size: 0.9rem;
-  color: var(--gray-600);
-  margin: 0;
-}
-
-.departement-carte-actions {
-  display: flex;
-  gap: 12px;
-}
-
-.departement-carte-contenu {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-}
-
-.departement-section {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.departement-section-titre {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--dark);
-  margin: 0;
+.departement-carte-nouveau-icone {
+  width: 48px;
+  height: 48px;
+  background: #0B3C5D;
+  border-radius: 8px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  color: #FFFFFF;
+  flex-shrink: 0;
 }
 
-.departement-liste {
+.departement-carte-nouveau-titre-container {
+  flex: 1;
+  min-width: 0;
+}
+
+.departement-carte-nouveau-titre {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #0B3C5D;
+  margin: 0 0 4px 0;
+}
+
+.departement-carte-nouveau-code {
+  font-size: 0.85rem;
+  color: #4A4A4A;
+  opacity: 0.7;
+  margin: 0;
+}
+
+.departement-carte-nouveau-infos {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  margin-bottom: 16px;
 }
 
-.departement-item {
+.departement-carte-nouveau-info-item-chef {
   display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.departement-carte-nouveau-info-item-ligne {
+  display: flex;
+  flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  padding: 12px;
-  background: var(--gray-50);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--gray-200);
 }
 
-.departement-item-nom {
-  display: block;
-  font-weight: 500;
-  color: var(--dark);
-  margin-bottom: 4px;
+.departement-carte-nouveau-info-label {
+  font-size: 0.75rem;
+  color: #4A4A4A;
+  opacity: 0.7;
+  font-weight: 400;
 }
 
-.departement-item-detail {
-  display: block;
+.departement-carte-nouveau-info-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #0B3C5D;
+}
+
+.departement-carte-nouveau-separateur {
+  height: 1px;
+  background: #F2F4F7;
+  margin: 16px 0;
+  width: 100%;
+}
+
+.departement-carte-nouveau-filieres {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.departement-carte-nouveau-filieres-label {
   font-size: 0.85rem;
-  color: var(--gray-600);
+  font-weight: 600;
+  color: #4A4A4A;
 }
 
-.departement-vide {
+.departement-carte-nouveau-filieres-tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.departement-carte-nouveau-filiere-tag {
+  background: #328CC1;
+  color: #FFFFFF;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.departement-carte-nouveau-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.departement-carte-nouveau-btn-modifier {
+  flex: 1;
+  padding: 10px 16px;
+  background: #328CC1;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
   font-size: 0.9rem;
-  color: var(--gray-500);
-  font-style: italic;
-  padding: 20px;
-  text-align: center;
-  background: var(--gray-50);
-  border-radius: var(--radius-md);
-  border: 1px dashed var(--gray-300);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.departement-carte-nouveau-btn-modifier:hover {
+  background: #0B3C5D;
+}
+
+.departement-carte-nouveau-btn-details {
+  flex: 1;
+  padding: 10px 16px;
+  background: #FFFFFF;
+  color: #328CC1;
+  border: 1px solid #328CC1;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.departement-carte-nouveau-btn-details:hover {
+  background: #F2F4F7;
 }
 
 .liste-professeurs {
@@ -198,9 +258,341 @@
     gap: 10px;
   }
 
-  .departement-carte-contenu {
-    grid-template-columns: 1fr;
+  .gestion-departements-cartes {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   }
+}
+
+/* Styles pour la vue de détails */
+.details-departement-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.details-departement-btn-retour {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #FFFFFF;
+  color: #328CC1;
+  border: 1px solid #328CC1;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.details-departement-btn-retour:hover {
+  background: #F2F4F7;
+}
+
+.details-departement-titre {
+  font-family: var(--font-heading), serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #0B3C5D;
+  margin: 0 0 5px 0;
+}
+
+.details-departement-sous-titre {
+  font-size: 1rem;
+  color: #4A4A4A;
+  opacity: 0.7;
+  margin: 0;
+}
+
+.details-departement-infos {
+  margin-bottom: 40px;
+}
+
+.details-departement-info-card {
+  background: #FFFFFF;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #F2F4F7;
+  padding: 24px;
+}
+
+.details-departement-info-card h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #0B3C5D;
+  margin: 0 0 20px 0;
+}
+
+.details-departement-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.details-departement-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.details-departement-info-label {
+  font-size: 0.85rem;
+  color: #4A4A4A;
+  opacity: 0.7;
+  font-weight: 500;
+}
+
+.details-departement-info-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0B3C5D;
+}
+
+.details-departement-filieres-titre {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #0B3C5D;
+  margin: 0 0 24px 0;
+}
+
+.details-departement-filieres-cartes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 24px;
+}
+
+.details-filiere-carte {
+  background: #FFFFFF;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #F2F4F7;
+  padding: 24px;
+  transition: all 0.3s ease;
+}
+
+.details-filiere-carte:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.details-filiere-carte-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.details-filiere-carte-icone {
+  width: 48px;
+  height: 48px;
+  background: #328CC1;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  flex-shrink: 0;
+}
+
+.details-filiere-carte-titre-container {
+  flex: 1;
+  min-width: 0;
+}
+
+.details-filiere-carte-titre {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #0B3C5D;
+  margin: 0 0 4px 0;
+  line-height: 1.4;
+  display: flex;
+  flex-direction: column;
+}
+
+.details-filiere-carte-titre-ligne {
+  display: block;
+  line-height: 1.3;
+}
+
+.details-filiere-carte-code {
+  font-size: 0.85rem;
+  color: #4A4A4A;
+  opacity: 0.7;
+  margin: 0;
+}
+
+.details-filiere-carte-infos {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.details-filiere-carte-info-item-chef {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.details-filiere-carte-info-item-ligne {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.details-filiere-carte-info-label {
+  font-size: 0.75rem;
+  color: #4A4A4A;
+  opacity: 0.7;
+  font-weight: 400;
+}
+
+.details-filiere-carte-info-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #0B3C5D;
+}
+
+.details-filiere-carte-contenu {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #F2F4F7;
+}
+
+.details-filiere-carte-details {
+  display: flex;
+  flex-direction: row;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.details-filiere-carte-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.details-filiere-carte-detail-label {
+  font-size: 0.8rem;
+  color: #4A4A4A;
+  opacity: 0.7;
+}
+
+.details-filiere-carte-detail-value {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #0B3C5D;
+}
+
+.details-filiere-carte-description {
+  font-size: 0.9rem;
+  color: #4A4A4A;
+  line-height: 1.5;
+  margin: 0;
+  margin-top: 8px;
+}
+
+.details-filiere-carte-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #F2F4F7;
+}
+
+.details-filiere-carte-btn-modifier {
+  flex: 1;
+  padding: 10px 16px;
+  background: #328CC1;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.details-filiere-carte-btn-modifier:hover {
+  background: #0B3C5D;
+}
+
+.details-filiere-carte-btn-details {
+  flex: 1;
+  padding: 10px 16px;
+  background: #FFFFFF;
+  color: #328CC1;
+  border: 1px solid #328CC1;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.details-filiere-carte-btn-details:hover {
+  background: #F2F4F7;
+  border-color: #0B3C5D;
+  color: #0B3C5D;
+}
+
+.details-filiere-carte-btn-supprimer {
+  flex: 1;
+  padding: 10px 16px;
+  background: #dc3545;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.details-filiere-carte-btn-supprimer:hover {
+  background: #c82333;
+}
+
+.details-departement-filieres-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.details-departement-btn-ajouter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #328CC1;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.details-departement-btn-ajouter:hover {
+  background: #0B3C5D;
+}
+
+.details-filiere-carte-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  flex-wrap: wrap;
 }
 
 @media (max-width: 768px) {
@@ -208,20 +600,38 @@
     gap: 8px;
   }
 
-  .departement-carte-header {
-    flex-direction: column;
-    gap: 16px;
+  .gestion-departements-cartes {
+    grid-template-columns: 1fr;
   }
 
-  .departement-carte-actions {
+  .departement-carte-nouveau-header {
+    flex-wrap: wrap;
+  }
+
+  .departement-carte-nouveau-infos {
+    flex-direction: row;
+    gap: 16px;
     width: 100%;
-    flex-direction: column;
+    margin-top: 8px;
+  }
+
+  .departement-carte-nouveau-info-item {
+    align-items: flex-start;
   }
 
   .professeur-item-select {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
+  }
+
+  .details-departement-filieres-cartes {
+    grid-template-columns: 1fr;
+  }
+
+  .details-departement-header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 
