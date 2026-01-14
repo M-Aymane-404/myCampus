@@ -4,7 +4,6 @@ import com.mycampus.backend.dto.administrateur.DonneEntrer.EtudiantEntrerDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.EtudiantSortieDTO;
 import com.mycampus.backend.metier.administrateur.utilisateurs.GestionUtilisateursMetier;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,19 +13,14 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/admin/utilisateurs/etudiants")
 @RequiredArgsConstructor
-@Slf4j
 public class EtudiantController {
 
     private final GestionUtilisateursMetier gestionUtilisateursMetier;
 
-
     @PostMapping("")
     public ResponseEntity<EtudiantSortieDTO> creerEtudiant(@RequestBody EtudiantEntrerDTO etudiantEntrerDTO) {
-
         EtudiantSortieDTO etudiant = gestionUtilisateursMetier.creerEtudiant(etudiantEntrerDTO);
-
         return ResponseEntity.status(HttpStatus.CREATED).body(etudiant);
-
     }
 
     @PutMapping("/{id}")
@@ -36,19 +30,19 @@ public class EtudiantController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<EtudiantSortieDTO> trouverEtudiantParId(@PathVariable Long id)  {
+    public ResponseEntity<EtudiantSortieDTO> trouverEtudiantParId(@PathVariable Long id) {
         EtudiantSortieDTO etudiant = gestionUtilisateursMetier.trouverEtudiantParId(id);
         return ResponseEntity.ok(etudiant);
     }
 
     @GetMapping("/apogee/{apogee}")
-    public ResponseEntity<EtudiantSortieDTO> trouverEtudiantParPpr(@PathVariable String apogee)  {
+    public ResponseEntity<EtudiantSortieDTO> trouverEtudiantParApogee(@PathVariable String apogee) {
         EtudiantSortieDTO etudiant = gestionUtilisateursMetier.trouverEtudiantParApogee(apogee);
         return ResponseEntity.ok(etudiant);
     }
 
     @GetMapping("")
-    public ResponseEntity<List<EtudiantSortieDTO>> listerTousLesEtudiants(){
+    public ResponseEntity<List<EtudiantSortieDTO>> listerTousLesEtudiants() {
         List<EtudiantSortieDTO> etudiants = gestionUtilisateursMetier.listerTousLesEtudiants();
         return ResponseEntity.ok(etudiants);
     }
@@ -66,10 +60,8 @@ public class EtudiantController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> supprimerEtudiant(@PathVariable Long id)  {
+    public ResponseEntity<Void> supprimerEtudiant(@PathVariable Long id) {
         gestionUtilisateursMetier.supprimerEtudiant(id);
         return ResponseEntity.noContent().build();
     }
-
-
 }
