@@ -617,6 +617,9 @@ public class BackendApplication {
                 EtudiantSortieDTO etudReactive = metier.trouverEtudiantParId(etudId);
                 logger.info("[UTILISATEURS] Vérification réactivation étudiant: enabled={}", etudReactive.getEnabled());
             }
+
+
+
             
         } catch (UtilisateursException e) {
             logger.error("[UTILISATEURS] ERREUR dans testOtherUtilisateurs: {}", e.getMessage());
