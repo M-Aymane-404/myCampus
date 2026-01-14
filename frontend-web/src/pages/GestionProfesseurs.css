@@ -66,9 +66,78 @@
   }
 }
 
+/* Barre de tri */
+.gestion-professeurs-filtres {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-200);
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.gestion-professeurs-filtres .filtre-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.gestion-professeurs-filtres .filtre-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #0B3C5D;
+  white-space: nowrap;
+}
+
+.gestion-professeurs-filtres .filtre-select {
+  padding: 8px 32px 8px 12px;
+  border: 1px solid #F2F4F7;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #0B3C5D;
+  background: var(--white);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 200px;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234A4A4A' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+
+.gestion-professeurs-filtres .filtre-select:hover {
+  border-color: #328CC1;
+}
+
+.gestion-professeurs-filtres .filtre-select:focus {
+  outline: none;
+  border-color: #328CC1;
+  box-shadow: 0 0 0 3px rgba(50, 140, 193, 0.1);
+}
+
 @media (max-width: 768px) {
   .gestion-professeurs-statistiques {
     gap: 8px;
+  }
+
+  .gestion-professeurs-filtres {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .gestion-professeurs-filtres .filtre-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .gestion-professeurs-filtres .filtre-select {
+    width: 100%;
   }
 }
 

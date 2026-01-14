@@ -57,10 +57,8 @@ const EnTete = ({ nombreNotifications = 3, elementActif, surChangementElement })
   const elementsMenu = [
     { id: 'tableau-de-bord', icone: LayoutDashboard, libelle: 'Dashboard' },
     { id: 'departements', icone: Building2, libelle: 'Departments' },
-    { id: 'filieres', icone: GraduationCap, libelle: 'Filières' },
     { id: 'professeurs', icone: UserCheck, libelle: 'Professors' },
     { id: 'etudiants', icone: Users, libelle: 'Students' },
-    { id: 'modules', icone: BookOpen, libelle: 'Modules' },
     { id: 'emploi-temps', icone: Calendar, libelle: 'Schedule' },
     { id: 'comptes', icone: Users, libelle: 'Accounts' },
   ];
@@ -68,10 +66,8 @@ const EnTete = ({ nombreNotifications = 3, elementActif, surChangementElement })
   const traductionsMenu = {
     'tableau-de-bord': 'Dashboard',
     'departements': 'Departments',
-    'filieres': 'Filières',
     'professeurs': 'Professors',
     'etudiants': 'Students',
-    'modules': 'Modules',
     'emploi-temps': 'Schedule',
     'comptes': 'Accounts',
   };
