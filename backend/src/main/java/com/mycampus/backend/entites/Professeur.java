@@ -36,12 +36,12 @@ public class Professeur extends Utilisateur {
     @ManyToOne(fetch = FetchType.LAZY)
     private Departement departementOuTravail;
 
-    @OneToOne(fetch = FetchType.LAZY, optional = true)
-    @JoinColumn(
+    @OneToOne(mappedBy = "chefDepartement")
+   /* @JoinColumn(
             name = "departement_dirigee_id",
             nullable = true,
             unique = true
-    )
+    )*/
     private Departement departementDirigee;
 
     @OneToOne( mappedBy = "chefFiliere")

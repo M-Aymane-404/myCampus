@@ -12,12 +12,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class AffectationEnseignementEntrerDTO {
     
-    private Long id;
     private String anneeUniversitaire;
     private Semestre semestre;
-
     private Boolean active;
     private String professeurPpr;
-    private Long classeId;
-    private Long matiereId;
+    private String codeClasse;
+    private String codeMatiere;
 }

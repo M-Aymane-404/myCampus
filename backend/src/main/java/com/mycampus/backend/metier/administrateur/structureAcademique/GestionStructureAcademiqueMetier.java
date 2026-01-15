@@ -21,66 +21,67 @@ public interface GestionStructureAcademiqueMetier {
     // Département management
     DepartementSortieDTO creerDepartement(DepartementEntrerDTO departementEntrerDTO) throws StructureAcademiqueException;
     
-    DepartementSortieDTO trouverDepartementParId(Long id) throws StructureAcademiqueException;
+    DepartementSortieDTO trouverDepartementParCode(String codeDepartement) throws StructureAcademiqueException;
     
     List<DepartementSortieDTO> listerTousLesDepartements() throws StructureAcademiqueException;
     
-    DepartementSortieDTO modifierDepartement(Long departementId, DepartementEntrerDTO departementEntrerDTO) throws StructureAcademiqueException;
+    DepartementSortieDTO modifierDepartement(String codeDepartement, DepartementEntrerDTO departementEntrerDTO) throws StructureAcademiqueException;
     
-    void supprimerDepartement(Long departementId) throws StructureAcademiqueException;
+    void supprimerDepartement(String codeDepartement) throws StructureAcademiqueException;
     
     // Filière management
     FiliereSortieDTO creerFiliere(FiliereEntrerDTO filiereEntrerDTO) throws StructureAcademiqueException;
     
-    FiliereSortieDTO trouverFiliereParId(Long id) throws StructureAcademiqueException;
+    FiliereSortieDTO trouverFiliereParCode(String codeFiliere) throws StructureAcademiqueException;
     
     List<FiliereSortieDTO> listerToutesLesFilieres() throws StructureAcademiqueException;
     
-    List<FiliereSortieDTO> trouverFilieresParDepartement(Long departementId) throws StructureAcademiqueException;
+    List<FiliereSortieDTO> trouverFilieresParDepartement(String codeDepartement) throws StructureAcademiqueException;
     
-    FiliereSortieDTO modifierFiliere(Long filiereId, FiliereEntrerDTO filiereEntrerDTO) throws StructureAcademiqueException;
+    FiliereSortieDTO modifierFiliere(String codeFiliere, FiliereEntrerDTO filiereEntrerDTO) throws StructureAcademiqueException;
     
-    void supprimerFiliere(Long filiereId) throws StructureAcademiqueException;
+    void supprimerFiliere(String codeFiliere) throws StructureAcademiqueException;
     
     // Classe management
     ClasseSortieDTO creerClasse(ClasseEntrerDTO classeEntrerDTO) throws StructureAcademiqueException;
     
-    ClasseSortieDTO trouverClasseParId(Long id) throws StructureAcademiqueException;
+    ClasseSortieDTO trouverClasseParCode(String codeClasse) throws StructureAcademiqueException;
     
     List<ClasseSortieDTO> listerToutesLesClasses() throws StructureAcademiqueException;
     
-    List<ClasseSortieDTO> trouverClassesParFiliere(Long filiereId) throws StructureAcademiqueException;
+    List<ClasseSortieDTO> trouverClassesParFiliere(String codeFiliere) throws StructureAcademiqueException;
     
-    ClasseSortieDTO modifierClasse(Long classeId, ClasseEntrerDTO classeEntrerDTO) throws StructureAcademiqueException;
+    ClasseSortieDTO modifierClasse(String codeClasse, ClasseEntrerDTO classeEntrerDTO) throws StructureAcademiqueException;
     
-    void supprimerClasse(Long classeId) throws StructureAcademiqueException;
+    void supprimerClasse(String codeClasse) throws StructureAcademiqueException;
     
     // Module management
     ModuleSortieDTO creerModule(ModuleEntrerDTO moduleEntrerDTO) throws StructureAcademiqueException;
     
-    ModuleSortieDTO trouverModuleParId(Long id) throws StructureAcademiqueException;
+    ModuleSortieDTO trouverModuleParCode(String codeModule) throws StructureAcademiqueException;
     
     List<ModuleSortieDTO> listerTousLesModules() throws StructureAcademiqueException;
     
-    List<ModuleSortieDTO> trouverModulesParFiliere(Long filiereId) throws StructureAcademiqueException;
+    List<ModuleSortieDTO> trouverModulesParFiliere(String codeFiliere) throws StructureAcademiqueException;
     
-    ModuleSortieDTO modifierModule(Long moduleId, ModuleEntrerDTO moduleEntrerDTO) throws StructureAcademiqueException;
+    ModuleSortieDTO modifierModule(String codeModule, ModuleEntrerDTO moduleEntrerDTO) throws StructureAcademiqueException;
     
-    void supprimerModule(Long moduleId) throws StructureAcademiqueException;
+    void supprimerModule(String codeModule) throws StructureAcademiqueException;
     
     // Matière management
     MatiereSortieDTO creerMatiere(MatiereEntrerDTO matiereEntrerDTO) throws StructureAcademiqueException;
     
-    MatiereSortieDTO trouverMatiereParId(Long id) throws StructureAcademiqueException;
+    MatiereSortieDTO trouverMatiereParCode(String codeMatiere) throws StructureAcademiqueException;
     
     List<MatiereSortieDTO> listerToutesLesMatieres() throws StructureAcademiqueException;
     
-    List<MatiereSortieDTO> trouverMatieresParModule(Long moduleId) throws StructureAcademiqueException;
+    List<MatiereSortieDTO> trouverMatieresParModule(String codeModule) throws StructureAcademiqueException;
     
-    MatiereSortieDTO modifierMatiere(Long matiereId, MatiereEntrerDTO matiereEntrerDTO) throws StructureAcademiqueException;
+    MatiereSortieDTO modifierMatiere(String codeMatiere, MatiereEntrerDTO matiereEntrerDTO) throws StructureAcademiqueException;
     
-    void supprimerMatiere(Long matiereId) throws StructureAcademiqueException;
+    void supprimerMatiere(String codeMatiere) throws StructureAcademiqueException;
 
+    // AffectationEnseignement management
     AffectationEnseignementSortieDTO creerAffectationEnseignement(AffectationEnseignementEntrerDTO affectationEnseignementEntrerDTO) throws StructureAcademiqueException;
     
     AffectationEnseignementSortieDTO modifierAffectationEnseignement(Long id, AffectationEnseignementEntrerDTO affectationEnseignementEntrerDTO) throws StructureAcademiqueException;
@@ -95,9 +96,9 @@ public interface GestionStructureAcademiqueMetier {
     
     List<AffectationEnseignementSortieDTO> listerAffectationsParProfesseur(String professeurPpr) throws StructureAcademiqueException;
     
-    List<AffectationEnseignementSortieDTO> listerAffectationsParClasse(Long classeId) throws StructureAcademiqueException;
+    List<AffectationEnseignementSortieDTO> listerAffectationsParClasse(String codeClasse) throws StructureAcademiqueException;
     
-    List<AffectationEnseignementSortieDTO> listerAffectationsParMatiere(Long matiereId) throws StructureAcademiqueException;
+    List<AffectationEnseignementSortieDTO> listerAffectationsParMatiere(String codeMatiere) throws StructureAcademiqueException;
     
     void supprimerAffectationEnseignement(Long id) throws StructureAcademiqueException;
 }

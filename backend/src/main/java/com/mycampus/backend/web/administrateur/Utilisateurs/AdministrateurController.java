@@ -24,13 +24,7 @@ public class AdministrateurController {
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<AdministrateurSortieDTO> trouverAdministrateurParId(@PathVariable Long id) {
-        AdministrateurSortieDTO administrateur = gestionUtilisateursMetier.trouverAdministrateurParId(id);
-        return ResponseEntity.ok(administrateur);
-    }
-
-    @GetMapping("/ppr/{ppr}")
+    @GetMapping("/{ppr}")
     public ResponseEntity<AdministrateurSortieDTO> trouverAdministrateurParPpr(@PathVariable String ppr) {
         AdministrateurSortieDTO administrateur = gestionUtilisateursMetier.trouverAdministrateurParPpr(ppr);
         return ResponseEntity.ok(administrateur);
@@ -42,29 +36,29 @@ public class AdministrateurController {
         return ResponseEntity.ok(administrateurs);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/{ppr}")
     public ResponseEntity<AdministrateurSortieDTO> modifierAdministrateur(
-            @PathVariable Long id,
+            @PathVariable String ppr,
             @RequestBody AdministrateurEntrerDTO administrateurEntrerDTO) {
-        AdministrateurSortieDTO updated = gestionUtilisateursMetier.modifierAdministrateur(id, administrateurEntrerDTO);
+        AdministrateurSortieDTO updated = gestionUtilisateursMetier.modifierAdministrateur(ppr, administrateurEntrerDTO);
         return ResponseEntity.ok(updated);
     }
 
-    @PatchMapping("/{id}/activer")
-    public ResponseEntity<Void> activerAdministrateur(@PathVariable Long id) {
-        gestionUtilisateursMetier.activerAdministrateur(id);
+    @PatchMapping("/{ppr}/activer")
+    public ResponseEntity<Void> activerAdministrateur(@PathVariable String ppr) {
+        gestionUtilisateursMetier.activerAdministrateur(ppr);
         return ResponseEntity.noContent().build();
     }
 
-    @PatchMapping("/{id}/desactiver")
-    public ResponseEntity<Void> desactiverAdministrateur(@PathVariable Long id) {
-        gestionUtilisateursMetier.desactiverAdministrateur(id);
+    @PatchMapping("/{ppr}/desactiver")
+    public ResponseEntity<Void> desactiverAdministrateur(@PathVariable String ppr) {
+        gestionUtilisateursMetier.desactiverAdministrateur(ppr);
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> supprimerAdministrateur(@PathVariable Long id) {
-        gestionUtilisateursMetier.supprimerAdministrateur(id);
+    @DeleteMapping("/{ppr}")
+    public ResponseEntity<Void> supprimerAdministrateur(@PathVariable String ppr) {
+        gestionUtilisateursMetier.supprimerAdministrateur(ppr);
         return ResponseEntity.noContent().build();
     }
 }

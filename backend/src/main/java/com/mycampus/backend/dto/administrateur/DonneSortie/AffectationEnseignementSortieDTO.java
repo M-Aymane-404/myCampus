@@ -16,8 +16,8 @@ public class AffectationEnseignementSortieDTO {
     private Boolean active;
     private String professeurPpr;
     private String professeurNom;
-    private Long classeId;
+    private String codeClasse;
     private String classeNom;
-    private Long matiereId;
+    private String codeMatiere;
     private String matiereNom;
 }

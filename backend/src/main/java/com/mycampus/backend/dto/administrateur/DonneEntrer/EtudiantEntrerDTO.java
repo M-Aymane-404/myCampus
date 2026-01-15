@@ -21,5 +21,5 @@ public class EtudiantEntrerDTO extends UtilisateurEntrerDto {
     private String anneeFinEtude;
     private LocalDate dateNaissance;
     private EtatInscription etatInscription;
-    private Long classeId;
+    private String codeClasse;
 }

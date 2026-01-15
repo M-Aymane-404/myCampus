@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -11,11 +12,10 @@ import lombok.NoArgsConstructor;
 
 public class ClasseEntrerDTO {
     
-    private  Long id;
-    private  String codeClasse;
-    private  String nom;
-    private  String niveau;
-    private  Integer effectifMax;
-    private  Long filiereId;
-    private  String anneeUniversitaire;
+    private String codeClasse;
+    private String nom;
+    private String niveau;
+    private Integer effectifMax;
+    private String codeFiliere;
+    private String anneeUniversitaire;
 }

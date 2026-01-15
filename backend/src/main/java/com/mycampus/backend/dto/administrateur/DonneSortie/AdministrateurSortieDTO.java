@@ -3,6 +3,7 @@ package com.mycampus.backend.dto.administrateur.DonneSortie;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+@EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor
 @NoArgsConstructor
 @SuperBuilder

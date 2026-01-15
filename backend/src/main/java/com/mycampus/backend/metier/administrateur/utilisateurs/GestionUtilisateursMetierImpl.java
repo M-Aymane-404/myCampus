@@ -82,31 +82,13 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
     }
 
     @Override
-    public AdministrateurSortieDTO trouverAdministrateurParId(Long id) throws UtilisateursException {
-        if (id == null) {
-            throw  new UtilisateursException(
-                    "id est obligatoire"
-            );
-        }
-        
-        Administrateur administrateur = administrateurRepository.findById(id).orElseThrow(() ->
-                new UtilisateursException("Administrateur introuvable avec l'identifiant: " + id));
-        return utilisateursMapper.FromAdministrateurVersAdministrateurSortieDTO(administrateur);
-    }
-
-    @Override
     public AdministrateurSortieDTO trouverAdministrateurParPpr(String ppr) throws UtilisateursException {
-        if (ppr == null) {
-            throw  new UtilisateursException(
-                    "id est obligatoire"
-            );
+        if (ppr == null || ppr.trim().isEmpty()) {
+            throw new UtilisateursException("Le PPR de l'administrateur est obligatoire");
         }
         
-        Administrateur administrateur = administrateurRepository.findByPpr(ppr);
-        if(administrateur == null){
-          throw   new UtilisateursException("Administrateur non trouvé avec l'identifiant: " + ppr);
-        }
-
+        Administrateur administrateur = administrateurRepository.findByPpr(ppr).orElseThrow(() ->
+                new UtilisateursException("Administrateur introuvable avec le PPR: " + ppr));
 
         return utilisateursMapper.FromAdministrateurVersAdministrateurSortieDTO(administrateur);
     }
@@ -125,13 +107,17 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
     }
 
     @Override
-    public AdministrateurSortieDTO modifierAdministrateur(Long id, AdministrateurEntrerDTO administrateurEntrerDTO) throws UtilisateursException {
-        if (id == null) {
-            throw new UtilisateursException("L'identifiant de l'administrateur ne peut pas être nul");
+    public AdministrateurSortieDTO modifierAdministrateur(String ppr, AdministrateurEntrerDTO administrateurEntrerDTO) throws UtilisateursException {
+        if (ppr == null || ppr.trim().isEmpty()) {
+            throw new UtilisateursException("Le PPR de l'administrateur ne peut pas être nul");
         }
         
-        Administrateur adminAModifier = administrateurRepository.findById(id).orElseThrow(()->
-                new UtilisateursException("Administrateur introuvable avec l'identifiant: " + id));
+        if (administrateurEntrerDTO == null) {
+            throw new UtilisateursException("Les données de l'administrateur ne peuvent pas être nulles");
+        }
+        
+        Administrateur adminAModifier = administrateurRepository.findByPpr(ppr).orElseThrow(() ->
+                new UtilisateursException("Administrateur introuvable avec le PPR: " + ppr));
 
         
 
@@ -169,13 +155,13 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
     }
 
     @Override
-    public void supprimerAdministrateur(Long id) throws UtilisateursException {
-        if (id == null) {
-            throw new UtilisateursException("L'identifiant de l'administrateur ne peut pas être nul");
+    public void supprimerAdministrateur(String ppr) throws UtilisateursException {
+        if (ppr == null || ppr.trim().isEmpty()) {
+            throw new UtilisateursException("Le PPR de l'administrateur ne peut pas être nul");
         }
 
-        Administrateur administrateur = administrateurRepository.findById(id)
-                .orElseThrow(() -> new UtilisateursException("Administrateur introuvable avec l'identifiant: " + id));
+        Administrateur administrateur = administrateurRepository.findByPpr(ppr)
+                .orElseThrow(() -> new UtilisateursException("Administrateur introuvable avec le PPR: " + ppr));
         
         administrateurRepository.delete(administrateur);
     }
@@ -183,21 +169,26 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
 
 
     @Override
-    public void activerAdministrateur(Long id) throws UtilisateursException {
-        Administrateur administrateur = administrateurRepository.findById(id).orElseThrow(()->
-                new UtilisateursException("Administrateur non trouvé avec l'identifiant: " + id));
-
+    public void activerAdministrateur(String ppr) throws UtilisateursException {
+        if (ppr == null || ppr.trim().isEmpty()) {
+            throw new UtilisateursException("Le PPR de l'administrateur ne peut pas être nul");
+        }
         
+        Administrateur administrateur = administrateurRepository.findByPpr(ppr).orElseThrow(() ->
+                new UtilisateursException("Administrateur introuvable avec le PPR: " + ppr));
+
         administrateur.setEnabled(true);
         administrateurRepository.save(administrateur);
     }
 
     @Override
-    public void desactiverAdministrateur(Long id) throws UtilisateursException {
-        Administrateur administrateur = administrateurRepository.findById(id).orElseThrow(()->
-                new UtilisateursException("Administrateur non trouvé avec l'identifiant: " + id));
-
-
+    public void desactiverAdministrateur(String ppr) throws UtilisateursException {
+        if (ppr == null || ppr.trim().isEmpty()) {
+            throw new UtilisateursException("Le PPR de l'administrateur ne peut pas être nul");
+        }
+        
+        Administrateur administrateur = administrateurRepository.findByPpr(ppr).orElseThrow(() ->
+                new UtilisateursException("Administrateur introuvable avec le PPR: " + ppr));
 
         administrateur.setEnabled(false);
         administrateurRepository.save(administrateur);
@@ -241,26 +232,26 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
 
         Professeur professeur =  utilisateursMapper.FromProfesseurEntrerversProfesseur(professeurEntrerDTO);
 
-        if (professeurEntrerDTO.getDepartementDirigeeId() != null) {
-            Departement dep = departementRepository.findById(professeurEntrerDTO.getDepartementDirigeeId())
+        if (professeurEntrerDTO.getCodeDepartementDirigee() != null) {
+            Departement dep = departementRepository.findByCodeDepartement(professeurEntrerDTO.getCodeDepartementDirigee())
                     .orElseThrow(() -> new UtilisateursException(
-                            "Département dirigé introuvable: " + professeurEntrerDTO.getDepartementDirigeeId()
+                            "Département dirigé introuvable: " + professeurEntrerDTO.getCodeDepartementDirigee()
                     ));
             professeur.setDepartementDirigee(dep);
         }
 
-        if (professeurEntrerDTO.getDepartementOuTravailId() != null) {
-            Departement dep = departementRepository.findById(professeurEntrerDTO.getDepartementOuTravailId())
+        if (professeurEntrerDTO.getCodeDepartementOuTravail() != null) {
+            Departement dep = departementRepository.findByCodeDepartement(professeurEntrerDTO.getCodeDepartementOuTravail())
                     .orElseThrow(() -> new UtilisateursException(
-                            "Département de travail introuvable: " + professeurEntrerDTO.getDepartementOuTravailId()
+                            "Département de travail introuvable: " + professeurEntrerDTO.getCodeDepartementOuTravail()
                     ));
             professeur.setDepartementOuTravail(dep);
         }
 
-        if (professeurEntrerDTO.getFiliereDirigeeId() != null) {
-            Filiere fil = filiereRepository.findById(professeurEntrerDTO.getFiliereDirigeeId())
+        if (professeurEntrerDTO.getCodeFiliereDirigee() != null) {
+            Filiere fil = filiereRepository.findByCodeFiliere(professeurEntrerDTO.getCodeFiliereDirigee())
                     .orElseThrow(() -> new UtilisateursException(
-                            "Filière dirigée introuvable: " + professeurEntrerDTO.getFiliereDirigeeId()
+                            "Filière dirigée introuvable: " + professeurEntrerDTO.getCodeFiliereDirigee()
                     ));
             professeur.setFiliereDirigee(fil);
         }
@@ -275,26 +266,13 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
     }
 
     @Override
-    public ProfesseurSortieDTO trouverProfesseurParId(Long id) throws UtilisateursException {
-        if (id == null) {
-            throw new UtilisateursException("id est obligatoire");
-        }
-        
-        Professeur professeur = professeurRepository.findById(id).orElseThrow(() ->
-                new UtilisateursException("Professeur introuvable avec l'identifiant: " + id));
-        return utilisateursMapper.FromProfesseurVersProfesseurSortirDTO(professeur);
-    }
-
-    @Override
     public ProfesseurSortieDTO trouverProfesseurParPpr(String ppr) throws UtilisateursException {
-        if (ppr == null) {
-            throw new UtilisateursException("id est obligatoire");
+        if (ppr == null || ppr.trim().isEmpty()) {
+            throw new UtilisateursException("Le PPR du professeur est obligatoire");
         }
         
-        Professeur professeur = professeurRepository.findByPpr(ppr);
-        if(professeur == null){
-            throw new UtilisateursException("Professeur introuvable avec l'identifiant: " + ppr);
-        }
+        Professeur professeur = professeurRepository.findByPpr(ppr).orElseThrow(() ->
+                new UtilisateursException("Professeur introuvable avec le PPR: " + ppr));
 
         return utilisateursMapper.FromProfesseurVersProfesseurSortirDTO(professeur);
     }
@@ -311,17 +289,17 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
     }
 
     @Override
-    public ProfesseurSortieDTO modifierProfesseur(Long id, ProfesseurEntrerDTO professeurEntrerDTO) throws UtilisateursException {
-        if (id == null) {
-            throw new UtilisateursException("L'identifiant du professeur ne peut pas être nul");
+    public ProfesseurSortieDTO modifierProfesseur(String ppr, ProfesseurEntrerDTO professeurEntrerDTO) throws UtilisateursException {
+        if (ppr == null || ppr.trim().isEmpty()) {
+            throw new UtilisateursException("Le PPR du professeur ne peut pas être nul");
         }
         
         if (professeurEntrerDTO == null) {
             throw new UtilisateursException("Le professeur ne peut pas être nul");
         }
         
-        Professeur professeurAModifier = professeurRepository.findById(id).orElseThrow(() ->
-                new UtilisateursException("Professeur introuvable avec l'identifiant: " + id));
+        Professeur professeurAModifier = professeurRepository.findByPpr(ppr).orElseThrow(() ->
+                new UtilisateursException("Professeur introuvable avec le PPR: " + ppr));
 
         if (professeurEntrerDTO.getNom() != null && !professeurEntrerDTO.getNom().trim().isEmpty()) {
             professeurAModifier.setNom(professeurEntrerDTO.getNom());
@@ -356,26 +334,26 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
         }
 
         // Relations optionnelles
-        if (professeurEntrerDTO.getDepartementDirigeeId() != null) {
-            Departement dep = departementRepository.findById(professeurEntrerDTO.getDepartementDirigeeId())
+        if (professeurEntrerDTO.getCodeDepartementDirigee() != null) {
+            Departement dep = departementRepository.findByCodeDepartement(professeurEntrerDTO.getCodeDepartementDirigee())
                     .orElseThrow(() -> new UtilisateursException(
-                            "Département dirigé introuvable: " + professeurEntrerDTO.getDepartementDirigeeId()
+                            "Département dirigé introuvable: " + professeurEntrerDTO.getCodeDepartementDirigee()
                     ));
             professeurAModifier.setDepartementDirigee(dep);
         }
 
-        if (professeurEntrerDTO.getDepartementOuTravailId() != null) {
-            Departement dep = departementRepository.findById(professeurEntrerDTO.getDepartementOuTravailId())
+        if (professeurEntrerDTO.getCodeDepartementOuTravail() != null) {
+            Departement dep = departementRepository.findByCodeDepartement(professeurEntrerDTO.getCodeDepartementOuTravail())
                     .orElseThrow(() -> new UtilisateursException(
-                            "Département de travail introuvable: " + professeurEntrerDTO.getDepartementOuTravailId()
+                            "Département de travail introuvable: " + professeurEntrerDTO.getCodeDepartementOuTravail()
                     ));
             professeurAModifier.setDepartementOuTravail(dep);
         }
 
-        if (professeurEntrerDTO.getFiliereDirigeeId() != null) {
-            Filiere fil = filiereRepository.findById(professeurEntrerDTO.getFiliereDirigeeId())
+        if (professeurEntrerDTO.getCodeFiliereDirigee() != null) {
+            Filiere fil = filiereRepository.findByCodeFiliere(professeurEntrerDTO.getCodeFiliereDirigee())
                     .orElseThrow(() -> new UtilisateursException(
-                            "Filière dirigée introuvable: " + professeurEntrerDTO.getFiliereDirigeeId()
+                            "Filière dirigée introuvable: " + professeurEntrerDTO.getCodeFiliereDirigee()
                     ));
             professeurAModifier.setFiliereDirigee(fil);
         }
@@ -389,30 +367,38 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
     }
 
     @Override
-    public void supprimerProfesseur(Long id) throws UtilisateursException {
-        if (id == null) {
-            throw new UtilisateursException("L'identifiant du professeur ne peut pas être nul");
+    public void supprimerProfesseur(String ppr) throws UtilisateursException {
+        if (ppr == null || ppr.trim().isEmpty()) {
+            throw new UtilisateursException("Le PPR du professeur ne peut pas être nul");
         }
 
-        Professeur professeur = professeurRepository.findById(id)
-                .orElseThrow(() -> new UtilisateursException("Professeur introuvable avec l'identifiant: " + id));
+        Professeur professeur = professeurRepository.findByPpr(ppr)
+                .orElseThrow(() -> new UtilisateursException("Professeur introuvable avec le PPR: " + ppr));
         
         professeurRepository.delete(professeur);
     }
 
     @Override
-    public void activerProfesseur(Long id) throws UtilisateursException {
-        Professeur professeur = professeurRepository.findById(id).orElseThrow(() ->
-                new UtilisateursException("Professeur introuvable avec l'identifiant: " + id));
+    public void activerProfesseur(String ppr) throws UtilisateursException {
+        if (ppr == null || ppr.trim().isEmpty()) {
+            throw new UtilisateursException("Le PPR du professeur ne peut pas être nul");
+        }
+        
+        Professeur professeur = professeurRepository.findByPpr(ppr).orElseThrow(() ->
+                new UtilisateursException("Professeur introuvable avec le PPR: " + ppr));
 
         professeur.setEnabled(true);
         professeurRepository.save(professeur);
     }
 
     @Override
-    public void desactiverProfesseur(Long id) throws UtilisateursException {
-        Professeur professeur = professeurRepository.findById(id).orElseThrow(() ->
-                new UtilisateursException("Professeur introuvable avec l'identifiant: " + id));
+    public void desactiverProfesseur(String ppr) throws UtilisateursException {
+        if (ppr == null || ppr.trim().isEmpty()) {
+            throw new UtilisateursException("Le PPR du professeur ne peut pas être nul");
+        }
+        
+        Professeur professeur = professeurRepository.findByPpr(ppr).orElseThrow(() ->
+                new UtilisateursException("Professeur introuvable avec le PPR: " + ppr));
 
         professeur.setEnabled(false);
         professeurRepository.save(professeur);
@@ -454,15 +440,15 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
             throw new UtilisateursException("Un étudiant avec ce numéro Apogée existe déjà");
         }
 
-        if (etudiantEntrerDTO.getClasseId() == null) {
+        if (etudiantEntrerDTO.getCodeClasse() == null) {
             throw new UtilisateursException("La classe de l'étudiant est obligatoire");
         }
 
         Etudiant etudiant = utilisateursMapper.FromEtudiantEntrerversEtudiant(etudiantEntrerDTO);
 
-        Classe classe = classeRepository.findById(etudiantEntrerDTO.getClasseId())
+        Classe classe = classeRepository.findByCodeClasse(etudiantEntrerDTO.getCodeClasse())
                 .orElseThrow(() -> new UtilisateursException(
-                        "Classe introuvable: " + etudiantEntrerDTO.getClasseId()
+                        "Classe introuvable: " + etudiantEntrerDTO.getCodeClasse()
                 ));
         etudiant.setClasse(classe);
 
@@ -473,26 +459,13 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
     }
 
     @Override
-    public EtudiantSortieDTO trouverEtudiantParId(Long id) throws UtilisateursException {
-        if (id == null) {
-            throw new UtilisateursException("id est obligatoire");
-        }
-        
-        Etudiant etudiant = etudiantRepository.findById(id).orElseThrow(() ->
-                new UtilisateursException("Étudiant introuvable avec l'identifiant: " + id));
-        return utilisateursMapper.FromEtudientVersEtudiantSortieDTO(etudiant);
-    }
-
-    @Override
     public EtudiantSortieDTO trouverEtudiantParApogee(String apogee) throws UtilisateursException {
-        if (apogee == null) {
-            throw new UtilisateursException("id est obligatoire");
+        if (apogee == null || apogee.trim().isEmpty()) {
+            throw new UtilisateursException("L'apogée de l'étudiant est obligatoire");
         }
         
-        Etudiant etudiant = etudiantRepository.findByApogee(apogee);
-        if(etudiant == null){
-            throw new UtilisateursException("Étudiant introuvable avec l'identifiant: " + apogee);
-        }
+        Etudiant etudiant = etudiantRepository.findByApogee(apogee).orElseThrow(() ->
+                new UtilisateursException("Étudiant introuvable avec l'apogée: " + apogee));
 
         return utilisateursMapper.FromEtudientVersEtudiantSortieDTO(etudiant);
     }
@@ -509,17 +482,17 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
     }
 
     @Override
-    public EtudiantSortieDTO modifierEtudiant(Long id, EtudiantEntrerDTO etudiantEntrerDTO) throws UtilisateursException {
-        if (id == null) {
-            throw new UtilisateursException("L'identifiant de l'étudiant ne peut pas être nul");
+    public EtudiantSortieDTO modifierEtudiant(String apogee, EtudiantEntrerDTO etudiantEntrerDTO) throws UtilisateursException {
+        if (apogee == null || apogee.trim().isEmpty()) {
+            throw new UtilisateursException("L'apogée de l'étudiant ne peut pas être nulle");
         }
         
         if (etudiantEntrerDTO == null) {
             throw new UtilisateursException("L'étudiant ne peut pas être nul");
         }
         
-        Etudiant etudiantAModifier = etudiantRepository.findById(id).orElseThrow(() ->
-                new UtilisateursException("Étudiant introuvable avec l'identifiant: " + id));
+        Etudiant etudiantAModifier = etudiantRepository.findByApogee(apogee).orElseThrow(() ->
+                new UtilisateursException("Étudiant introuvable avec l'apogée: " + apogee));
 
         if (etudiantEntrerDTO.getNom() != null && !etudiantEntrerDTO.getNom().trim().isEmpty()) {
             etudiantAModifier.setNom(etudiantEntrerDTO.getNom());
@@ -561,10 +534,10 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
             etudiantAModifier.setEtatInscription(etudiantEntrerDTO.getEtatInscription());
         }
 
-        if (etudiantEntrerDTO.getClasseId() != null) {
-            Classe classe = classeRepository.findById(etudiantEntrerDTO.getClasseId())
+        if (etudiantEntrerDTO.getCodeClasse() != null) {
+            Classe classe = classeRepository.findByCodeClasse(etudiantEntrerDTO.getCodeClasse())
                     .orElseThrow(() -> new UtilisateursException(
-                            "Classe introuvable: " + etudiantEntrerDTO.getClasseId()
+                            "Classe introuvable: " + etudiantEntrerDTO.getCodeClasse()
                     ));
             etudiantAModifier.setClasse(classe);
         }
@@ -578,30 +551,38 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
     }
 
     @Override
-    public void supprimerEtudiant(Long id) throws UtilisateursException {
-        if (id == null) {
-            throw new UtilisateursException("L'identifiant de l'étudiant ne peut pas être nul");
+    public void supprimerEtudiant(String apogee) throws UtilisateursException {
+        if (apogee == null || apogee.trim().isEmpty()) {
+            throw new UtilisateursException("L'apogée de l'étudiant ne peut pas être nulle");
         }
 
-        Etudiant etudiant = etudiantRepository.findById(id)
-                .orElseThrow(() -> new UtilisateursException("Étudiant introuvable avec l'identifiant: " + id));
+        Etudiant etudiant = etudiantRepository.findByApogee(apogee)
+                .orElseThrow(() -> new UtilisateursException("Étudiant introuvable avec l'apogée: " + apogee));
         
         etudiantRepository.delete(etudiant);
     }
 
     @Override
-    public void activerEtudiant(Long id) throws UtilisateursException {
-        Etudiant etudiant = etudiantRepository.findById(id).orElseThrow(() ->
-                new UtilisateursException("Étudiant introuvable avec l'identifiant: " + id));
+    public void activerEtudiant(String apogee) throws UtilisateursException {
+        if (apogee == null || apogee.trim().isEmpty()) {
+            throw new UtilisateursException("L'apogée de l'étudiant ne peut pas être nulle");
+        }
+        
+        Etudiant etudiant = etudiantRepository.findByApogee(apogee).orElseThrow(() ->
+                new UtilisateursException("Étudiant introuvable avec l'apogée: " + apogee));
 
         etudiant.setEnabled(true);
         etudiantRepository.save(etudiant);
     }
 
     @Override
-    public void desactiverEtudiant(Long id) throws UtilisateursException {
-        Etudiant etudiant = etudiantRepository.findById(id).orElseThrow(() ->
-                new UtilisateursException("Étudiant introuvable avec l'identifiant: " + id));
+    public void desactiverEtudiant(String apogee) throws UtilisateursException {
+        if (apogee == null || apogee.trim().isEmpty()) {
+            throw new UtilisateursException("L'apogée de l'étudiant ne peut pas être nulle");
+        }
+        
+        Etudiant etudiant = etudiantRepository.findByApogee(apogee).orElseThrow(() ->
+                new UtilisateursException("Étudiant introuvable avec l'apogée: " + apogee));
 
         etudiant.setEnabled(false);
         etudiantRepository.save(etudiant);

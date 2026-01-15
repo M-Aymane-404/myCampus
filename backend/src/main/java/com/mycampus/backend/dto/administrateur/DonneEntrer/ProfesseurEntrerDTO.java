@@ -25,12 +25,12 @@ public class ProfesseurEntrerDTO extends UtilisateurEntrerDto {
 
 
 
-    private Long departementOuTravailId;
+    private String codeDepartementOuTravail;
 
 
-    private Long departementDirigeeId;
+    private String codeDepartementDirigee;
 
 
-    private Long filiereDirigeeId;
+    private String codeFiliereDirigee;
 
 }

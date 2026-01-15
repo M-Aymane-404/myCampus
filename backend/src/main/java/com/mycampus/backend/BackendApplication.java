@@ -1,25 +1,10 @@
 package com.mycampus.backend;
 
-import com.mycampus.backend.dto.administrateur.DonneEntrer.DepartementEntrerDTO;
-import com.mycampus.backend.dto.administrateur.DonneEntrer.FiliereEntrerDTO;
-import com.mycampus.backend.dto.administrateur.DonneEntrer.ClasseEntrerDTO;
-import com.mycampus.backend.dto.administrateur.DonneEntrer.ModuleEntrerDTO;
-import com.mycampus.backend.dto.administrateur.DonneEntrer.MatiereEntrerDTO;
-import com.mycampus.backend.dto.administrateur.DonneEntrer.AffectationEnseignementEntrerDTO;
-import com.mycampus.backend.dto.administrateur.DonneEntrer.AdministrateurEntrerDTO;
-import com.mycampus.backend.dto.administrateur.DonneEntrer.ProfesseurEntrerDTO;
-import com.mycampus.backend.dto.administrateur.DonneEntrer.EtudiantEntrerDTO;
-import com.mycampus.backend.dto.administrateur.DonneSortie.DepartementSortieDTO;
-import com.mycampus.backend.dto.administrateur.DonneSortie.FiliereSortieDTO;
-import com.mycampus.backend.dto.administrateur.DonneSortie.ClasseSortieDTO;
-import com.mycampus.backend.dto.administrateur.DonneSortie.ModuleSortieDTO;
-import com.mycampus.backend.dto.administrateur.DonneSortie.MatiereSortieDTO;
-import com.mycampus.backend.dto.administrateur.DonneSortie.AffectationEnseignementSortieDTO;
-import com.mycampus.backend.dto.administrateur.DonneSortie.AdministrateurSortieDTO;
-import com.mycampus.backend.dto.administrateur.DonneSortie.ProfesseurSortieDTO;
-import com.mycampus.backend.dto.administrateur.DonneSortie.EtudiantSortieDTO;
-import com.mycampus.backend.enumerations.*;
-
+import com.mycampus.backend.dto.administrateur.DonneEntrer.*;
+import com.mycampus.backend.dto.administrateur.DonneSortie.*;
+import com.mycampus.backend.enumerations.EtatInscription;
+import com.mycampus.backend.enumerations.EtatStructure;
+import com.mycampus.backend.enumerations.Semestre;
 import com.mycampus.backend.exceptions.StructureAcademiqueException;
 import com.mycampus.backend.exceptions.UtilisateursException;
 import com.mycampus.backend.metier.administrateur.structureAcademique.GestionStructureAcademiqueMetier;
@@ -30,104 +15,145 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 import java.time.LocalDate;
 import java.util.List;
 
 @SpringBootApplication
+@EnableJpaAuditing
 public class BackendApplication {
 
     private static final Logger logger = LoggerFactory.getLogger(BackendApplication.class);
+
+    // Codes fixes pour les tests
+    private static final String CODE_DEP = "INFO";
+    private static final String CODE_FIL = "ILCS";
+    private static final String CODE_CLS = "ILCS1";
+    private static final String CODE_MOD = "MATH101";
+    private static final String CODE_MAT = "ALGEBRE";
+
+    private static final String ADMIN_PPR = "12345678";
+    private static final String PROF_PPR  = "87654321";
+    private static final String ETUD_APOG = "202300123";
 
     public static void main(String[] args) {
         SpringApplication.run(BackendApplication.class, args);
     }
 
     @Bean
-    CommandLineRunner testMetierLayers(
-        GestionStructureAcademiqueMetier gestionStructureAcademiqueMetier,
-        GestionUtilisateursMetier gestionUtilisateursMetier
+    CommandLineRunner commandLineRunner(
+            GestionStructureAcademiqueMetier structureMetier,
+            GestionUtilisateursMetier utilisateursMetier
     ) {
         return args -> {
-            logger.info("=== DÉMARRAGE DES TESTS DES MÉTIERS ===");
-            
-            // Phase 1: Structure Académique (prérequis pour les utilisateurs)
-            testCreateStructureAcademique(gestionStructureAcademiqueMetier, gestionUtilisateursMetier);
-            testOtherStructureAcademique(gestionStructureAcademiqueMetier);
-            testUpdateStructureAcademique(gestionStructureAcademiqueMetier);
-            testOtherStructureAcademique(gestionStructureAcademiqueMetier);
-            //testDeleteStructureAcademique(gestionStructureAcademiqueMetier);
-            
-            // Phase 2: Utilisateurs (dépend de la structure)
-            testCreateUtilisateurs(gestionUtilisateursMetier);
-            testOtherUtilisateurs(gestionUtilisateursMetier);
-            testUpdateUtilisateurs(gestionUtilisateursMetier);
-            testOtherUtilisateurs(gestionUtilisateursMetier);
-            //testDeleteUtilisateurs(gestionUtilisateursMetier);
-            
-            logger.info("=== FIN DES TESTS DES MÉTIERS ===");
+            logger.info("=== DÉMARRAGE DES TESTS (CODES MÉTIERS) ===");
+
+            createStructure(structureMetier);
+            createUsers(utilisateursMetier);
+            Long affectationId = createAffectation(structureMetier);
+
+            readAll(structureMetier, utilisateursMetier);
+            updateAll(structureMetier, utilisateursMetier, affectationId);
+
+            activateDeactivateAll(utilisateursMetier, structureMetier, affectationId);
+
+            logger.info("=== FIN DES TESTS (CODES MÉTIERS) ===");
         };
     }
 
-    // Structure Académique Tests
-    private void testCreateStructureAcademique(GestionStructureAcademiqueMetier metier, GestionUtilisateursMetier utilisateursMetier) {
-        logger.info("[STRUCTURE] === CRÉATION DES ENTITÉS ===");
-        
+    // ----------------------------
+    // CREATE
+    // ----------------------------
+    private void createStructure(GestionStructureAcademiqueMetier metier) {
+        logger.info("[STRUCTURE] Création structure académique...");
+
         try {
-            // Créer département
+            // Département
             DepartementEntrerDTO depIn = DepartementEntrerDTO.builder()
-                .codeDepartement("INFO")
-                .typeDepartement("Informatique")
-                .description("Département d'informatique")
-                .build();
-            DepartementSortieDTO depOut = metier.creerDepartement(depIn);
-            logger.info("[STRUCTURE] Création département OK: id={}, code={}", depOut.getId(), depOut.getCodeDepartement());
-
-            // Créer filière
-            FiliereEntrerDTO filIn = FiliereEntrerDTO.builder()
-                .codeFiliere("ILCS")
-                .nom("Informatique Licence Cyber Sécurité")
-                .description("Formation en cybersécurité")
-                .dureeFormation("3 Ans")
-                .niveauDiplome("Licence")
-                .etat(EtatStructure.OUVERTE)
-                .departementId(depOut.getId())
-                .build();
-            FiliereSortieDTO filOut = metier.creerFiliere(filIn);
-            logger.info("[STRUCTURE] Création filière OK: id={}, nom={}", filOut.getId(), filOut.getNom());
-
-            // Créer classe
-            ClasseEntrerDTO clsIn = ClasseEntrerDTO.builder()
-                .codeClasse("ILCS1")
-                .nom("ILCS Semestre 1")
-                .niveau("1ère année")
-                .anneeUniversitaire("2025/2026")
-                .effectifMax(30)
-                .filiereId(filOut.getId())
-                .build();
-            ClasseSortieDTO clsOut = metier.creerClasse(clsIn);
-            logger.info("[STRUCTURE] Création classe OK: id={}, nom={}", clsOut.getId(), clsOut.getNom());
-            // Créer étudiant (après création de la classe)
-            EtudiantEntrerDTO etudIn = EtudiantEntrerDTO.builder()
-                    .apogee("202300123")
-                    .nom("Bernard")
-                    .prenom("Sophie")
-                    .email("sophie.bernard@mycampus.ma")
-                    .cin("CC123789")
-                    .password("password789")
-                    .tel("0634567890")
-                    .niveau("1ère année")
-                    .anneeInscription(2025)
-                    .semestreActuel(Semestre.S1)
-                    .classeId(clsOut.getId())
-                    .dateNaissance(LocalDate.of(2002, 5, 15))
-                    .etatInscription(EtatInscription.INSCRIT)
+                    .codeDepartement(CODE_DEP)
+                    .typeDepartement("Informatique")
+                    .description("Département d'informatique")
                     .build();
-            EtudiantSortieDTO etudOut = utilisateursMetier.creerEtudiant(etudIn);
-            logger.info("[UTILISATEURS] Création étudiant OK: id={}, prenom={}, nom={}, apogee={}, classeId={}", etudOut.getId(), etudOut.getPrenom(), etudOut.getNom(), etudOut.getApogee(), etudOut.getClasseId());
-            // Créer professeur
+            DepartementSortieDTO depOut = metier.creerDepartement(depIn);
+            logger.info("[STRUCTURE] Département OK: {}", depOut.getCodeDepartement());
+
+            // Filière
+            FiliereEntrerDTO filIn = FiliereEntrerDTO.builder()
+                    .codeFiliere(CODE_FIL)
+                    .nom("Informatique Licence Cyber Sécurité")
+                    .description("Formation en cybersécurité")
+                    .dureeFormation("3 Ans")
+                    .niveauDiplome("Licence")
+                    .etat(EtatStructure.OUVERTE)
+                    .codeDepartement(CODE_DEP)
+                    .build();
+            FiliereSortieDTO filOut = metier.creerFiliere(filIn);
+            logger.info("[STRUCTURE] Filière OK: {}", filOut.getCodeFiliere());
+
+            // Classe
+            ClasseEntrerDTO clsIn = ClasseEntrerDTO.builder()
+                    .codeClasse(CODE_CLS)
+                    .nom("ILCS Semestre 1")
+                    .niveau("1ère année")
+                    .anneeUniversitaire("2025/2026")
+                    .effectifMax(30)
+                    .codeFiliere(CODE_FIL)
+                    .build();
+            ClasseSortieDTO clsOut = metier.creerClasse(clsIn);
+            logger.info("[STRUCTURE] Classe OK: {}", clsOut.getCodeClasse());
+
+            // Module
+            ModuleEntrerDTO modIn = ModuleEntrerDTO.builder()
+                    .codeModule(CODE_MOD)
+                    .nom("Mathématiques Fondamentales")
+                    .description("Module de mathématiques de base")
+                    .semestre(Semestre.S1)
+                    .coefficient(3)
+                    .codeFiliere(CODE_FIL)
+                    .build();
+            ModuleSortieDTO modOut = metier.creerModule(modIn);
+            logger.info("[STRUCTURE] Module OK: {}", modOut.getCodeModule());
+
+            // Matière
+            MatiereEntrerDTO matIn = MatiereEntrerDTO.builder()
+                    .codeMatiere(CODE_MAT)
+                    .nom("Algèbre Linéaire")
+                    .description("Cours d'algèbre linéaire")
+                    .coefficient(2)
+                    .codeModule(CODE_MOD)
+                    .build();
+            MatiereSortieDTO matOut = metier.creerMatiere(matIn);
+            logger.info("[STRUCTURE] Matière OK: {}", matOut.getCodeMatiere());
+
+        } catch (StructureAcademiqueException e) {
+            logger.error("[STRUCTURE] Erreur création structure: {}", e.getMessage());
+        } catch (Exception e) {
+            logger.error("[STRUCTURE] Erreur inattendue création structure", e);
+        }
+    }
+
+    private void createUsers(GestionUtilisateursMetier metier) {
+        logger.info("[UTILISATEURS] Création utilisateurs...");
+
+        try {
+            // Admin
+            AdministrateurEntrerDTO adminIn = AdministrateurEntrerDTO.builder()
+                    .ppr(ADMIN_PPR)
+                    .nom("Dupont")
+                    .prenom("Jean")
+                    .email("jean.dupont@mycampus.ma")
+                    .cin("AA123456")
+                    .password("password123")
+                    .tel("0612345678")
+                    .grade("Fes")
+                    .build();
+            AdministrateurSortieDTO adminOut = metier.creerAdministrateur(adminIn);
+            logger.info("[UTILISATEURS] Admin OK: {}", adminOut.getPpr());
+
+            // Prof
             ProfesseurEntrerDTO profIn = ProfesseurEntrerDTO.builder()
-                    .ppr("87654321")
+                    .ppr(PROF_PPR)
                     .nom("Martin")
                     .prenom("Pierre")
                     .email("pierre.martin@mycampus.ma")
@@ -139,489 +165,274 @@ public class BackendApplication {
                     .statut("Titulaire")
                     .dateRecrutement(LocalDate.of(2020, 9, 1))
                     .build();
-            ProfesseurSortieDTO profOut = utilisateursMetier.creerProfesseur(profIn);
-            logger.info("[UTILISATEURS] Création professeur OK: id={}, prenom={}, nom={}, specialite={}", profOut.getId(), profOut.getPrenom(), profOut.getNom(), profOut.getSpecialite());
+            ProfesseurSortieDTO profOut = metier.creerProfesseur(profIn);
+            logger.info("[UTILISATEURS] Prof OK: {}", profOut.getPpr());
 
-            // Créer module
-            ModuleEntrerDTO modIn = ModuleEntrerDTO.builder()
-                .codeModule("MATH101")
-                .nom("Mathématiques Fondamentales")
-                .description("Module de mathématiques de base")
-                .semestre(Semestre.S1)
-                .coefficient(3)
-                .filiereId(filOut.getId())
-                .build();
-            ModuleSortieDTO modOut = metier.creerModule(modIn);
-            logger.info("[STRUCTURE] Création module OK: id={}, nom={}", modOut.getId(), modOut.getNom());
-            
-            // Créer matière
-            MatiereEntrerDTO matIn = MatiereEntrerDTO.builder()
-                .codeMatiere("ALGEBRE")
-                .nom("Algèbre Linéaire")
-                .description("Cours d'algèbre linéaire")
-                .coefficient(2)
-                .moduleId(modOut.getId())
-                .build();
-            MatiereSortieDTO matOut = metier.creerMatiere(matIn);
-            logger.info("[STRUCTURE] Création matière OK: id={}, nom={}", matOut.getId(), matOut.getNom());
-            
-            // Créer affectation enseignement
-            AffectationEnseignementEntrerDTO affIn = AffectationEnseignementEntrerDTO.builder()
-                .anneeUniversitaire("2025/2026")
-                .semestre(Semestre.S1)
-                .matiereId(matOut.getId())
-                .professeurPpr("87654321")
-                .classeId(clsOut.getId())
-                .build();
-            AffectationEnseignementSortieDTO affOut = metier.creerAffectationEnseignement(affIn);
-            logger.info("[STRUCTURE] Création affectation OK: id={}, annee={}", affOut.getId(), affOut.getAnneeUniversitaire());
-            
-        } catch (StructureAcademiqueException e) {
-            logger.error("[STRUCTURE] ERREUR dans testCreateStructureAcademique: {}", e.getMessage());
-        } catch (Exception e) {
-            logger.error("[STRUCTURE] ERREUR INATTENDUE dans testCreateStructureAcademique: {}", e.getMessage(), e);
-        }
-    }
-    
-    private void testUpdateStructureAcademique(GestionStructureAcademiqueMetier metier) {
-        logger.info("[STRUCTURE] === MISE À JOUR DES ENTITÉS ===");
-        
-        try {
-            // Obtenir les IDs depuis les listes existantes
-            List<DepartementSortieDTO> departements = metier.listerTousLesDepartements();
-            List<FiliereSortieDTO> filieres = metier.listerToutesLesFilieres();
-            List<ClasseSortieDTO> classes = metier.listerToutesLesClasses();
-            List<ModuleSortieDTO> modules = metier.listerTousLesModules();
-            List<MatiereSortieDTO> matieres = metier.listerToutesLesMatieres();
-            List<AffectationEnseignementSortieDTO> affectations = metier.listerToutesLesAffectations();
-            
-            if (!departements.isEmpty()) {
-                Long depId = departements.get(0).getId();
-                DepartementEntrerDTO depUp = DepartementEntrerDTO.builder()
-                    .codeDepartement("INFO")
-                    .typeDepartement("Informatique et Réseaux")
-                    .description("Département d'informatique et réseaux")
-                    .build();
-                DepartementSortieDTO depMod = metier.modifierDepartement(depId, depUp);
-                logger.info("[STRUCTURE] Mise à jour département OK: id={}, description={}", depMod.getId(), depMod.getDescription());
-            }
-            
-            if (!filieres.isEmpty()) {
-                Long filId = filieres.get(0).getId();
-                FiliereEntrerDTO filUp = FiliereEntrerDTO.builder()
-                    .codeFiliere("ILCS")
-                    .nom("Informatique Licence Cybersécurité Spécialisée")
-                    .description("Formation spécialisée en cybersécurité")
-                    .dureeFormation("3 Ans")
-                    .niveauDiplome("Licence")
-                    .etat(EtatStructure.OUVERTE)
-                    .departementId(departements.get(0).getId())
-                    .build();
-                FiliereSortieDTO filMod = metier.modifierFiliere(filId, filUp);
-                logger.info("[STRUCTURE] Mise à jour filière OK: id={}, nom={}", filMod.getId(), filMod.getNom());
-            }
-            
-            if (!classes.isEmpty()) {
-                Long clsId = classes.get(0).getId();
-                ClasseEntrerDTO clsUp = ClasseEntrerDTO.builder()
-                    .codeClasse("ILCS1")
-                    .nom("ILCS Semestre 1 - Groupe A")
-                    .niveau("1ère année")
-                    .anneeUniversitaire("2025/2026")
-                    .effectifMax(35)
-                    .filiereId(filieres.get(0).getId())
-                    .build();
-                ClasseSortieDTO clsMod = metier.modifierClasse(clsId, clsUp);
-                logger.info("[STRUCTURE] Mise à jour classe OK: id={}, nom={}, effectif={}", clsMod.getId(), clsMod.getNom(), clsMod.getEffectifMax());
-            }
-            
-            if (!modules.isEmpty()) {
-                Long modId = modules.get(0).getId();
-                ModuleEntrerDTO modUp = ModuleEntrerDTO.builder()
-                    .codeModule("MATH101")
-                    .nom("Mathématiques Appliquées")
-                    .description("Module de mathématiques appliquées")
-                    .semestre(Semestre.S1)
-                    .coefficient(4)
-                    .filiereId(filieres.get(0).getId())
-                    .build();
-                ModuleSortieDTO modMod = metier.modifierModule(modId, modUp);
-                logger.info("[STRUCTURE] Mise à jour module OK: id={}, nom={}, coefficient={}", modMod.getId(), modMod.getNom(), modMod.getCoefficient());
-            }
-            
-            if (!matieres.isEmpty()) {
-                Long matId = matieres.get(0).getId();
-                MatiereEntrerDTO matUp = MatiereEntrerDTO.builder()
-                    .codeMatiere("ALGEBRE")
-                    .nom("Algèbre Linéaire Avancée")
-                    .description("Cours avancé d'algèbre linéaire")
-                    .coefficient(3)
-                    .moduleId(modules.get(0).getId())
-                    .build();
-                MatiereSortieDTO matMod = metier.modifierMatiere(matId, matUp);
-                logger.info("[STRUCTURE] Mise à jour matière OK: id={}, nom={}, coefficient={}", matMod.getId(), matMod.getNom(), matMod.getCoefficient());
-            }
-            
-            if (!affectations.isEmpty()) {
-                Long affId = affectations.get(0).getId();
-                AffectationEnseignementEntrerDTO affUp = AffectationEnseignementEntrerDTO.builder()
-                    .anneeUniversitaire("2025/2026")
-                    .semestre(Semestre.S2)
-                    .matiereId(matieres.get(0).getId())
-                    .professeurPpr("87654321")
-                    .classeId(classes.get(0).getId())
-                    .active(true)
-                    .build();
-                AffectationEnseignementSortieDTO affMod = metier.modifierAffectationEnseignement(affId, affUp);
-                logger.info("[STRUCTURE] Mise à jour affectation OK: id={}, semestre={}", affMod.getId(), affMod.getSemestre());
-            }
-            
-        } catch (StructureAcademiqueException e) {
-            logger.error("[STRUCTURE] ERREUR dans testUpdateStructureAcademique: {}", e.getMessage());
-        } catch (Exception e) {
-            logger.error("[STRUCTURE] ERREUR INATTENDUE dans testUpdateStructureAcademique: {}", e.getMessage(), e);
-        }
-    }
-    
-    private void testDeleteStructureAcademique(GestionStructureAcademiqueMetier metier) {
-        logger.info("[STRUCTURE] === SUPPRESSION DES ENTITÉS ===");
-        
-        try {
-            // Obtenir les IDs depuis les listes existantes
-            List<AffectationEnseignementSortieDTO> affectations = metier.listerToutesLesAffectations();
-            List<MatiereSortieDTO> matieres = metier.listerToutesLesMatieres();
-            List<ModuleSortieDTO> modules = metier.listerTousLesModules();
-            List<ClasseSortieDTO> classes = metier.listerToutesLesClasses();
-            List<FiliereSortieDTO> filieres = metier.listerToutesLesFilieres();
-            List<DepartementSortieDTO> departements = metier.listerTousLesDepartements();
-            
-            // Supprimer dans l'ordre inverse pour respecter les dépendances
-            for (AffectationEnseignementSortieDTO aff : affectations) {
-                metier.supprimerAffectationEnseignement(aff.getId());
-                logger.info("[STRUCTURE] Suppression affectation confirmée: id={}", aff.getId());
-            }
-            
-            for (MatiereSortieDTO mat : matieres) {
-                metier.supprimerMatiere(mat.getId());
-                logger.info("[STRUCTURE] Suppression matière confirmée: id={}", mat.getId());
-            }
-            
-            for (ModuleSortieDTO mod : modules) {
-                metier.supprimerModule(mod.getId());
-                logger.info("[STRUCTURE] Suppression module confirmée: id={}", mod.getId());
-            }
-            
-            for (ClasseSortieDTO cls : classes) {
-                metier.supprimerClasse(cls.getId());
-                logger.info("[STRUCTURE] Suppression classe confirmée: id={}", cls.getId());
-            }
-            
-            for (FiliereSortieDTO fil : filieres) {
-                metier.supprimerFiliere(fil.getId());
-                logger.info("[STRUCTURE] Suppression filière confirmée: id={}", fil.getId());
-            }
-            
-            for (DepartementSortieDTO dep : departements) {
-                metier.supprimerDepartement(dep.getId());
-                logger.info("[STRUCTURE] Suppression département confirmée: id={}", dep.getId());
-            }
-            
-        } catch (StructureAcademiqueException e) {
-            logger.error("[STRUCTURE] ERREUR dans testDeleteStructureAcademique: {}", e.getMessage());
-        } catch (Exception e) {
-            logger.error("[STRUCTURE] ERREUR INATTENDUE dans testDeleteStructureAcademique: {}", e.getMessage(), e);
-        }
-    }
-    
-    private void testOtherStructureAcademique(GestionStructureAcademiqueMetier metier) {
-        logger.info("[STRUCTURE] === OPÉRATIONS DE LECTURE ET VÉRIFICATION ===");
-        
-        try {
-            // Lister toutes les entités
-            List<DepartementSortieDTO> departements = metier.listerTousLesDepartements();
-            logger.info("[STRUCTURE] Total départements: {}", departements.size());
-            
-            List<FiliereSortieDTO> filieres = metier.listerToutesLesFilieres();
-            logger.info("[STRUCTURE] Total filières: {}", filieres.size());
-            
-            List<ClasseSortieDTO> classes = metier.listerToutesLesClasses();
-            logger.info("[STRUCTURE] Total classes: {}", classes.size());
-            
-            List<ModuleSortieDTO> modules = metier.listerTousLesModules();
-            logger.info("[STRUCTURE] Total modules: {}", modules.size());
-            
-            List<MatiereSortieDTO> matieres = metier.listerToutesLesMatieres();
-            logger.info("[STRUCTURE] Total matières: {}", matieres.size());
-            
-            List<AffectationEnseignementSortieDTO> affectations = metier.listerToutesLesAffectations();
-            logger.info("[STRUCTURE] Total affectations: {}", affectations.size());
-            
-            // Tests de recherche par relations
-            if (!departements.isEmpty()) {
-                List<FiliereSortieDTO> filieresParDep = metier.trouverFilieresParDepartement(departements.get(0).getId());
-                logger.info("[STRUCTURE] Filieres par département {}: {}", departements.get(0).getId(), filieresParDep.size());
-            }
-            
-            if (!filieres.isEmpty()) {
-                List<ClasseSortieDTO> classesParFil = metier.trouverClassesParFiliere(filieres.get(0).getId());
-                logger.info("[STRUCTURE] Classes par filière {}: {}", filieres.get(0).getId(), classesParFil.size());
-                
-                List<ModuleSortieDTO> modulesParFil = metier.trouverModulesParFiliere(filieres.get(0).getId());
-                logger.info("[STRUCTURE] Modules par filière {}: {}", filieres.get(0).getId(), modulesParFil.size());
-            }
-            
-            if (!modules.isEmpty()) {
-                List<MatiereSortieDTO> matieresParMod = metier.trouverMatieresParModule(modules.get(0).getId());
-                logger.info("[STRUCTURE] Matières par module {}: {}", modules.get(0).getId(), matieresParMod.size());
-            }
-            
-            if (!affectations.isEmpty()) {
-                List<AffectationEnseignementSortieDTO> affParProf = metier.listerAffectationsParProfesseur(affectations.get(0).getProfesseurPpr());
-                logger.info("[STRUCTURE] Affectations par professeur {}: {}", affectations.get(0).getProfesseurPpr(), affParProf.size());
-                
-                List<AffectationEnseignementSortieDTO> affParClasse = metier.listerAffectationsParClasse(affectations.get(0).getClasseId());
-                logger.info("[STRUCTURE] Affectations par classe {}: {}", affectations.get(0).getClasseId(), affParClasse.size());
-                
-                List<AffectationEnseignementSortieDTO> affParMatiere = metier.listerAffectationsParMatiere(affectations.get(0).getMatiereId());
-                logger.info("[STRUCTURE] Affectations par matière {}: {}", affectations.get(0).getMatiereId(), affParMatiere.size());
-            }
-            
-            // Tests d'activation/désactivation
-            if (!affectations.isEmpty()) {
-                Long affId = affectations.get(0).getId();
-                metier.desactiverAffectationEnseignement(affId);
-                logger.info("[STRUCTURE] Affectation désactivée: id={}", affId);
-                
-                metier.activerAffectationEnseignement(affId);
-                logger.info("[STRUCTURE] Affectation réactivée: id={}", affId);
-            }
-            
-        } catch (StructureAcademiqueException e) {
-            logger.error("[STRUCTURE] ERREUR dans testOtherStructureAcademique: {}", e.getMessage());
-        } catch (Exception e) {
-            logger.error("[STRUCTURE] ERREUR INATTENDUE dans testOtherStructureAcademique: {}", e.getMessage(), e);
-        }
-    }
-
-    // Utilisateurs Tests
-    private void testCreateUtilisateurs(GestionUtilisateursMetier metier) {
-        logger.info("[UTILISATEURS] === CRÉATION DES UTILISATEURS ===");
-        
-        try {
-            // Créer administrateur
-            AdministrateurEntrerDTO adminIn = AdministrateurEntrerDTO.builder()
-                .ppr("12345678")
-                .nom("Dupont")
-                .prenom("Jean")
-                .email("jean.dupont@mycampus.ma")
-                .cin("AA123456")
-                .password("password123")
-                .tel("0612345678")
-                .fonction("Administrateur Système")
-                .grade("A1")
-                .build();
-            AdministrateurSortieDTO adminOut = metier.creerAdministrateur(adminIn);
-            logger.info("[UTILISATEURS] Création administrateur OK: id={}, prenom={}, nom={}", adminOut.getId(), adminOut.getPrenom(), adminOut.getNom());
-            
-
-           
-        } catch (UtilisateursException e) {
-            logger.error("[UTILISATEURS] ERREUR dans testCreateUtilisateurs: {}", e.getMessage());
-        } catch (Exception e) {
-            logger.error("[UTILISATEURS] ERREUR INATTENDUE dans testCreateUtilisateurs: {}", e.getMessage(), e);
-        }
-    }
-    
-    private void testUpdateUtilisateurs(GestionUtilisateursMetier metier) {
-        logger.info("[UTILISATEURS] === MISE À JOUR DES UTILISATEURS ===");
-        
-        try {
-            // Obtenir les IDs depuis les listes existantes
-            List<AdministrateurSortieDTO> admins = metier.listerTousLesAdministrateurs();
-            List<ProfesseurSortieDTO> profs = metier.listerTousLesProfesseurs();
-            List<EtudiantSortieDTO> etuds = metier.listerTousLesEtudiants();
-            
-            if (!admins.isEmpty()) {
-                Long adminId = admins.get(0).getId();
-                AdministrateurEntrerDTO adminUp = AdministrateurEntrerDTO.builder()
-                    .ppr("12345678")
-                    .nom("Dupont")
-                    .prenom("Jean")
-                    .email("jean.dupont.modifie@mycampus.ma")
-                    .cin("AA123456")
-                    .tel("0698765432")
-                    .fonction("Administrateur Principal")
-                    .grade("A2")
-                    .build();
-                AdministrateurSortieDTO adminMod = metier.modifierAdministrateur(adminId, adminUp);
-                logger.info("[UTILISATEURS] Mise à jour administrateur OK: id={}, fonction={}, grade={}", adminMod.getId(), adminMod.getFonction(), adminMod.getGrade());
-            }
-            
-            if (!profs.isEmpty()) {
-                Long profId = profs.get(0).getId();
-                ProfesseurEntrerDTO profUp = ProfesseurEntrerDTO.builder()
-                    .ppr("87654321")
-                    .nom("Martin")
-                    .prenom("Pierre")
-                    .email("pierre.martin.modifie@mycampus.ma")
-                    .cin("BB987654")
-                    .tel("0623456789")
-                    .specialite("Intelligence Artificielle")
-                    .grade("PH")
-                    .statut("Titulaire")
-                    .dateRecrutement(LocalDate.of(2020, 9, 1))
-                    .build();
-                ProfesseurSortieDTO profMod = metier.modifierProfesseur(profId, profUp);
-                logger.info("[UTILISATEURS] Mise à jour professeur OK: id={}, specialite={}, grade={}", profMod.getId(), profMod.getSpecialite(), profMod.getGrade());
-            }
-            
-            if (!etuds.isEmpty()) {
-                Long etudId = etuds.get(0).getId();
-                EtudiantEntrerDTO etudUp = EtudiantEntrerDTO.builder()
-                    .apogee("202300123")
+            // Étudiant (lié par codeClasse)
+            EtudiantEntrerDTO etudIn = EtudiantEntrerDTO.builder()
+                    .apogee(ETUD_APOG)
                     .nom("Bernard")
                     .prenom("Sophie")
-                    .email("sophie.bernard.modifie@mycampus.ma")
+                    .email("sophie.bernard@mycampus.ma")
                     .cin("CC123789")
+                    .password("password789")
                     .tel("0634567890")
-                    .niveau("4ème année")
-                    .anneeInscription(2023)
-                    .semestreActuel(Semestre.S2)
+                    .niveau("1ère année")
+                    .anneeInscription(2025)
+                    .semestreActuel(Semestre.S1)
+                    .codeClasse(CODE_CLS)
                     .dateNaissance(LocalDate.of(2002, 5, 15))
                     .etatInscription(EtatInscription.INSCRIT)
                     .build();
-                EtudiantSortieDTO etudMod = metier.modifierEtudiant(etudId, etudUp);
-                logger.info("[UTILISATEURS] Mise à jour étudiant OK: id={}, niveau={}, semestre={}", etudMod.getId(), etudMod.getNiveau(), etudMod.getSemestreActuel());
-            }
-            
+            EtudiantSortieDTO etudOut = metier.creerEtudiant(etudIn);
+            logger.info("[UTILISATEURS] Étudiant OK: {}", etudOut.getApogee());
+
         } catch (UtilisateursException e) {
-            logger.error("[UTILISATEURS] ERREUR dans testUpdateUtilisateurs: {}", e.getMessage());
+            logger.error("[UTILISATEURS] Erreur création utilisateurs: {}", e.getMessage());
         } catch (Exception e) {
-            logger.error("[UTILISATEURS] ERREUR INATTENDUE dans testUpdateUtilisateurs: {}", e.getMessage(), e);
+            logger.error("[UTILISATEURS] Erreur inattendue création utilisateurs", e);
         }
     }
-    
-    private void testDeleteUtilisateurs(GestionUtilisateursMetier metier) {
-        logger.info("[UTILISATEURS] === SUPPRESSION DES UTILISATEURS ===");
-        
+
+    private Long createAffectation(GestionStructureAcademiqueMetier metier) {
+        logger.info("[AFFECTATION] Création affectation...");
+
         try {
-            // Obtenir les IDs depuis les listes existantes
-            List<EtudiantSortieDTO> etuds = metier.listerTousLesEtudiants();
-            List<ProfesseurSortieDTO> profs = metier.listerTousLesProfesseurs();
-            List<AdministrateurSortieDTO> admins = metier.listerTousLesAdministrateurs();
-            
-            // Supprimer dans l'ordre inverse pour respecter les dépendances
-            for (EtudiantSortieDTO etud : etuds) {
-                metier.supprimerEtudiant(etud.getId());
-                logger.info("[UTILISATEURS] Suppression étudiant confirmée: id={}", etud.getId());
-            }
-            
-            for (ProfesseurSortieDTO prof : profs) {
-                metier.supprimerProfesseur(prof.getId());
-                logger.info("[UTILISATEURS] Suppression professeur confirmée: id={}", prof.getId());
-            }
-            
-            for (AdministrateurSortieDTO admin : admins) {
-                metier.supprimerAdministrateur(admin.getId());
-                logger.info("[UTILISATEURS] Suppression administrateur confirmée: id={}", admin.getId());
-            }
-            
-        } catch (UtilisateursException e) {
-            logger.error("[UTILISATEURS] ERREUR dans testDeleteUtilisateurs: {}", e.getMessage());
+            AffectationEnseignementEntrerDTO affIn = AffectationEnseignementEntrerDTO.builder()
+                    .anneeUniversitaire("2025/2026")
+                    .semestre(Semestre.S1)
+                    .professeurPpr(PROF_PPR)
+                    .codeClasse(CODE_CLS)
+                    .codeMatiere(CODE_MAT)
+                    .build();
+
+            AffectationEnseignementSortieDTO affOut = metier.creerAffectationEnseignement(affIn);
+            logger.info("[AFFECTATION] Affectation OK: id={}, prof={}, classe={}, matiere={}",
+                    affOut.getId(), affOut.getProfesseurPpr(), affOut.getCodeClasse(), affOut.getCodeMatiere());
+
+            return affOut.getId();
+
+        } catch (StructureAcademiqueException e) {
+            logger.error("[AFFECTATION] Erreur création affectation: {}", e.getMessage());
+            return null;
         } catch (Exception e) {
-            logger.error("[UTILISATEURS] ERREUR INATTENDUE dans testDeleteUtilisateurs: {}", e.getMessage(), e);
+            logger.error("[AFFECTATION] Erreur inattendue création affectation", e);
+            return null;
         }
     }
-    
-    private void testOtherUtilisateurs(GestionUtilisateursMetier metier) {
-        logger.info("[UTILISATEURS] === OPÉRATIONS DE LECTURE ET VÉRIFICATION ===");
-        
+
+    // ----------------------------
+    // READ
+    // ----------------------------
+    private void readAll(GestionStructureAcademiqueMetier structureMetier, GestionUtilisateursMetier utilisateursMetier) {
+        logger.info("[READ] Lecture / listing...");
+
         try {
-            // Lister tous les utilisateurs
-            List<AdministrateurSortieDTO> admins = metier.listerTousLesAdministrateurs();
-            logger.info("[UTILISATEURS] Total administrateurs: {}", admins.size());
-            
-            List<ProfesseurSortieDTO> profs = metier.listerTousLesProfesseurs();
-            logger.info("[UTILISATEURS] Total professeurs: {}", profs.size());
-            
-            List<EtudiantSortieDTO> etuds = metier.listerTousLesEtudiants();
-            logger.info("[UTILISATEURS] Total étudiants: {}", etuds.size());
-            
-            // Tests de recherche par identifiants
-            if (!admins.isEmpty()) {
-                AdministrateurSortieDTO adminParPpr = metier.trouverAdministrateurParPpr(admins.get(0).getPpr());
-                logger.info("[UTILISATEURS] Administrateur par PPR {}: email={}", adminParPpr.getPpr(), adminParPpr.getEmail());
-                
-                AdministrateurSortieDTO adminParId = metier.trouverAdministrateurParId(admins.get(0).getId());
-                logger.info("[UTILISATEURS] Administrateur par ID {}: fonction={}", adminParId.getId(), adminParId.getFonction());
-            }
-            
-            if (!profs.isEmpty()) {
-                ProfesseurSortieDTO profParPpr = metier.trouverProfesseurParPpr(profs.get(0).getPpr());
-                logger.info("[UTILISATEURS] Professeur par PPR {}: specialite={}", profParPpr.getPpr(), profParPpr.getSpecialite());
-                
-                ProfesseurSortieDTO profParId = metier.trouverProfesseurParId(profs.get(0).getId());
-                logger.info("[UTILISATEURS] Professeur par ID {}: grade={}", profParId.getId(), profParId.getGrade());
-            }
-            
-            if (!etuds.isEmpty()) {
-                EtudiantSortieDTO etudParApogee = metier.trouverEtudiantParApogee(etuds.get(0).getApogee());
-                logger.info("[UTILISATEURS] Étudiant par Apogée {}: niveau={}", etudParApogee.getApogee(), etudParApogee.getNiveau());
-                
-                EtudiantSortieDTO etudParId = metier.trouverEtudiantParId(etuds.get(0).getId());
-                logger.info("[UTILISATEURS] Étudiant par ID {}: semestre={}", etudParId.getId(), etudParId.getSemestreActuel());
-            }
-            
-            // Tests d'activation/désactivation
-            if (!admins.isEmpty()) {
-                Long adminId = admins.get(0).getId();
-                metier.desactiverAdministrateur(adminId);
-                logger.info("[UTILISATEURS] Administrateur désactivé: id={}", adminId);
-                
-                AdministrateurSortieDTO adminDesactive = metier.trouverAdministrateurParId(adminId);
-                logger.info("[UTILISATEURS] Vérification désactivation admin: enabled={}", adminDesactive.getEnabled());
-                
-                metier.activerAdministrateur(adminId);
-                logger.info("[UTILISATEURS] Administrateur réactivé: id={}", adminId);
-                
-                AdministrateurSortieDTO adminReactive = metier.trouverAdministrateurParId(adminId);
-                logger.info("[UTILISATEURS] Vérification réactivation admin: enabled={}", adminReactive.getEnabled());
-            }
-            
-            if (!profs.isEmpty()) {
-                Long profId = profs.get(0).getId();
-                metier.desactiverProfesseur(profId);
-                logger.info("[UTILISATEURS] Professeur désactivé: id={}", profId);
-                
-                ProfesseurSortieDTO profDesactive = metier.trouverProfesseurParId(profId);
-                logger.info("[UTILISATEURS] Vérification désactivation prof: enabled={}", profDesactive.getEnabled());
-                
-                metier.activerProfesseur(profId);
-                logger.info("[UTILISATEURS] Professeur réactivé: id={}", profId);
-                
-                ProfesseurSortieDTO profReactive = metier.trouverProfesseurParId(profId);
-                logger.info("[UTILISATEURS] Vérification réactivation prof: enabled={}", profReactive.getEnabled());
-            }
-            
-            if (!etuds.isEmpty()) {
-                Long etudId = etuds.get(0).getId();
-                metier.desactiverEtudiant(etudId);
-                logger.info("[UTILISATEURS] Étudiant désactivé: id={}", etudId);
-                
-                EtudiantSortieDTO etudDesactive = metier.trouverEtudiantParId(etudId);
-                logger.info("[UTILISATEURS] Vérification désactivation étudiant: enabled={}", etudDesactive.getEnabled());
-                
-                metier.activerEtudiant(etudId);
-                logger.info("[UTILISATEURS] Étudiant réactivé: id={}", etudId);
-                
-                EtudiantSortieDTO etudReactive = metier.trouverEtudiantParId(etudId);
-                logger.info("[UTILISATEURS] Vérification réactivation étudiant: enabled={}", etudReactive.getEnabled());
-            }
-            
-        } catch (UtilisateursException e) {
-            logger.error("[UTILISATEURS] ERREUR dans testOtherUtilisateurs: {}", e.getMessage());
+            List<DepartementSortieDTO> deps = structureMetier.listerTousLesDepartements();
+            List<FiliereSortieDTO> fils = structureMetier.listerToutesLesFilieres();
+            List<ClasseSortieDTO> clss = structureMetier.listerToutesLesClasses();
+            List<ModuleSortieDTO> mods = structureMetier.listerTousLesModules();
+            List<MatiereSortieDTO> mats = structureMetier.listerToutesLesMatieres();
+            List<AffectationEnseignementSortieDTO> affs = structureMetier.listerToutesLesAffectations();
+
+            logger.info("[READ] Departements={}, Filieres={}, Classes={}, Modules={}, Matieres={}, Affectations={}",
+                    deps.size(), fils.size(), clss.size(), mods.size(), mats.size(), affs.size());
+
+            structureMetier.trouverDepartementParCode(CODE_DEP);
+            structureMetier.trouverFiliereParCode(CODE_FIL);
+            structureMetier.trouverClasseParCode(CODE_CLS);
+            structureMetier.trouverModuleParCode(CODE_MOD);
+            structureMetier.trouverMatiereParCode(CODE_MAT);
+
+        } catch (StructureAcademiqueException e) {
+            logger.error("[READ] Erreur structure: {}", e.getMessage());
         } catch (Exception e) {
-            logger.error("[UTILISATEURS] ERREUR INATTENDUE dans testOtherUtilisateurs: {}", e.getMessage(), e);
+            logger.error("[READ] Erreur inattendue structure", e);
+        }
+
+        try {
+            utilisateursMetier.trouverAdministrateurParPpr(ADMIN_PPR);
+            utilisateursMetier.trouverProfesseurParPpr(PROF_PPR);
+            utilisateursMetier.trouverEtudiantParApogee(ETUD_APOG);
+
+            logger.info("[READ] Utilisateurs trouvés par identifiants métiers (OK).");
+
+        } catch (UtilisateursException e) {
+            logger.error("[READ] Erreur utilisateurs: {}", e.getMessage());
+        } catch (Exception e) {
+            logger.error("[READ] Erreur inattendue utilisateurs", e);
+        }
+    }
+
+    // ----------------------------
+    // UPDATE
+    // ----------------------------
+    private void updateAll(
+            GestionStructureAcademiqueMetier structureMetier,
+            GestionUtilisateursMetier utilisateursMetier,
+            Long affectationId
+    ) {
+        logger.info("[UPDATE] Mise à jour...");
+
+        try {
+            DepartementEntrerDTO depUp = DepartementEntrerDTO.builder()
+                    .codeDepartement(CODE_DEP)
+                    .typeDepartement("Informatique et Réseaux")
+                    .description("Département mis à jour")
+                    .build();
+            structureMetier.modifierDepartement(CODE_DEP, depUp);
+
+            FiliereEntrerDTO filUp = FiliereEntrerDTO.builder()
+                    .codeFiliere(CODE_FIL)
+                    .nom("ILCS - Cybersécurité Spécialisée")
+                    .description("Filière mise à jour")
+                    .dureeFormation("3 Ans")
+                    .niveauDiplome("Licence")
+                    .etat(EtatStructure.OUVERTE)
+                    .codeDepartement(CODE_DEP)
+                    .build();
+            structureMetier.modifierFiliere(CODE_FIL, filUp);
+
+            ClasseEntrerDTO clsUp = ClasseEntrerDTO.builder()
+                    .codeClasse(CODE_CLS)
+                    .nom("ILCS1 - Groupe A")
+                    .niveau("1ère année")
+                    .anneeUniversitaire("2025/2026")
+                    .effectifMax(35)
+                    .codeFiliere(CODE_FIL)
+                    .build();
+            structureMetier.modifierClasse(CODE_CLS, clsUp);
+
+            ModuleEntrerDTO modUp = ModuleEntrerDTO.builder()
+                    .codeModule(CODE_MOD)
+                    .nom("Maths Appliquées")
+                    .description("Module mis à jour")
+                    .semestre(Semestre.S1)
+                    .coefficient(4)
+                    .codeFiliere(CODE_FIL)
+                    .build();
+            structureMetier.modifierModule(CODE_MOD, modUp);
+
+            MatiereEntrerDTO matUp = MatiereEntrerDTO.builder()
+                    .codeMatiere(CODE_MAT)
+                    .nom("Algèbre Avancée")
+                    .description("Matière mise à jour")
+                    .coefficient(3)
+                    .codeModule(CODE_MOD)
+                    .build();
+            structureMetier.modifierMatiere(CODE_MAT, matUp);
+
+            logger.info("[UPDATE] Structure mise à jour (OK).");
+
+        } catch (StructureAcademiqueException e) {
+            logger.error("[UPDATE] Erreur update structure: {}", e.getMessage());
+        } catch (Exception e) {
+            logger.error("[UPDATE] Erreur inattendue update structure", e);
+        }
+
+        try {
+            AdministrateurEntrerDTO adminUp = AdministrateurEntrerDTO.builder()
+                    .ppr(ADMIN_PPR)
+                    .prenom("Jean Michel")
+                    .email("jeanmichel.dupont@mycampus.ma")
+                    .cin("AA123456")
+                    .tel("0612345678")
+                    .build();
+            utilisateursMetier.modifierAdministrateur(ADMIN_PPR, adminUp);
+
+            ProfesseurEntrerDTO profUp = ProfesseurEntrerDTO.builder()
+                    .ppr(PROF_PPR)
+                    .prenom("Pierre Alain")
+                    .email("pierre.alain.martin@mycampus.ma")
+                    .cin("BB987654")
+                    .specialite("Cybersécurité")
+                    .grade("PES")
+                    .statut("Titulaire")
+                    .dateRecrutement(LocalDate.of(2020, 9, 1))
+                    .build();
+            utilisateursMetier.modifierProfesseur(PROF_PPR, profUp);
+
+            EtudiantEntrerDTO etudUp = EtudiantEntrerDTO.builder()
+                    .apogee(ETUD_APOG)
+                    .prenom("Sophie Marie")
+                    .email("sophie.marie.bernard@mycampus.ma")
+                    .cin("CC123789")
+                    .niveau("1ère année")
+                    .anneeInscription(2025)
+                    .semestreActuel(Semestre.S1)
+                    .codeClasse(CODE_CLS)
+                    .etatInscription(EtatInscription.INSCRIT)
+                    .build();
+            utilisateursMetier.modifierEtudiant(ETUD_APOG, etudUp);
+
+            logger.info("[UPDATE] Utilisateurs mis à jour (OK).");
+
+        } catch (UtilisateursException e) {
+            logger.error("[UPDATE] Erreur update utilisateurs: {}", e.getMessage());
+        } catch (Exception e) {
+            logger.error("[UPDATE] Erreur inattendue update utilisateurs", e);
+        }
+
+        if (affectationId != null) {
+            try {
+                AffectationEnseignementEntrerDTO affUp = AffectationEnseignementEntrerDTO.builder()
+                        .anneeUniversitaire("2025/2026")
+                        .semestre(Semestre.S2)
+                        .professeurPpr(PROF_PPR)
+                        .codeClasse(CODE_CLS)
+                        .codeMatiere(CODE_MAT)
+                        .active(true)
+                        .build();
+                structureMetier.modifierAffectationEnseignement(affectationId, affUp);
+                logger.info("[UPDATE] Affectation mise à jour (OK) id={}", affectationId);
+
+            } catch (StructureAcademiqueException e) {
+                logger.error("[UPDATE] Erreur update affectation: {}", e.getMessage());
+            } catch (Exception e) {
+                logger.error("[UPDATE] Erreur inattendue update affectation", e);
+            }
+        }
+    }
+
+    // ----------------------------
+    // ACTIVATE / DEACTIVATE
+    // ----------------------------
+    private void activateDeactivateAll(
+            GestionUtilisateursMetier utilisateursMetier,
+            GestionStructureAcademiqueMetier structureMetier,
+            Long affectationId
+    ) {
+        logger.info("[ACTIVATION] Activation / désactivation...");
+
+        try {
+            utilisateursMetier.desactiverAdministrateur(ADMIN_PPR);
+            utilisateursMetier.activerAdministrateur(ADMIN_PPR);
+
+            utilisateursMetier.desactiverProfesseur(PROF_PPR);
+            utilisateursMetier.activerProfesseur(PROF_PPR);
+
+            utilisateursMetier.desactiverEtudiant(ETUD_APOG);
+            utilisateursMetier.activerEtudiant(ETUD_APOG);
+
+            logger.info("[ACTIVATION] Utilisateurs OK.");
+
+        } catch (UtilisateursException e) {
+            logger.error("[ACTIVATION] Erreur activation utilisateurs: {}", e.getMessage());
+        } catch (Exception e) {
+            logger.error("[ACTIVATION] Erreur inattendue activation utilisateurs", e);
+        }
+
+        if (affectationId != null) {
+            try {
+                structureMetier.desactiverAffectationEnseignement(affectationId);
+                structureMetier.activerAffectationEnseignement(affectationId);
+                logger.info("[ACTIVATION] Affectation OK id={}", affectationId);
+
+            } catch (StructureAcademiqueException e) {
+                logger.error("[ACTIVATION] Erreur activation affectation: {}", e.getMessage());
+            } catch (Exception e) {
+                logger.error("[ACTIVATION] Erreur inattendue activation affectation", e);
+            }
         }
     }
 }

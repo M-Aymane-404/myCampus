@@ -23,19 +23,7 @@ public class EtudiantController {
         return ResponseEntity.status(HttpStatus.CREATED).body(etudiant);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<EtudiantSortieDTO> modifierEtudiant(@PathVariable Long id, @RequestBody EtudiantEntrerDTO etudiantEntrerDTO) {
-        EtudiantSortieDTO etudiant = gestionUtilisateursMetier.modifierEtudiant(id, etudiantEntrerDTO);
-        return ResponseEntity.ok(etudiant);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<EtudiantSortieDTO> trouverEtudiantParId(@PathVariable Long id) {
-        EtudiantSortieDTO etudiant = gestionUtilisateursMetier.trouverEtudiantParId(id);
-        return ResponseEntity.ok(etudiant);
-    }
-
-    @GetMapping("/apogee/{apogee}")
+    @GetMapping("/{apogee}")
     public ResponseEntity<EtudiantSortieDTO> trouverEtudiantParApogee(@PathVariable String apogee) {
         EtudiantSortieDTO etudiant = gestionUtilisateursMetier.trouverEtudiantParApogee(apogee);
         return ResponseEntity.ok(etudiant);
@@ -47,21 +35,27 @@ public class EtudiantController {
         return ResponseEntity.ok(etudiants);
     }
 
-    @PatchMapping("/{id}/activer")
-    public ResponseEntity<Void> activerEtudiant(@PathVariable Long id) {
-        gestionUtilisateursMetier.activerEtudiant(id);
+    @PutMapping("/{apogee}")
+    public ResponseEntity<EtudiantSortieDTO> modifierEtudiant(@PathVariable String apogee, @RequestBody EtudiantEntrerDTO etudiantEntrerDTO) {
+        EtudiantSortieDTO etudiant = gestionUtilisateursMetier.modifierEtudiant(apogee, etudiantEntrerDTO);
+        return ResponseEntity.ok(etudiant);
+    }
+
+    @PatchMapping("/{apogee}/activer")
+    public ResponseEntity<Void> activerEtudiant(@PathVariable String apogee) {
+        gestionUtilisateursMetier.activerEtudiant(apogee);
         return ResponseEntity.noContent().build();
     }
 
-    @PatchMapping("/{id}/desactiver")
-    public ResponseEntity<Void> desactiverEtudiant(@PathVariable Long id) {
-        gestionUtilisateursMetier.desactiverEtudiant(id);
+    @PatchMapping("/{apogee}/desactiver")
+    public ResponseEntity<Void> desactiverEtudiant(@PathVariable String apogee) {
+        gestionUtilisateursMetier.desactiverEtudiant(apogee);
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> supprimerEtudiant(@PathVariable Long id) {
-        gestionUtilisateursMetier.supprimerEtudiant(id);
+    @DeleteMapping("/{apogee}")
+    public ResponseEntity<Void> supprimerEtudiant(@PathVariable String apogee) {
+        gestionUtilisateursMetier.supprimerEtudiant(apogee);
         return ResponseEntity.noContent().build();
     }
 }

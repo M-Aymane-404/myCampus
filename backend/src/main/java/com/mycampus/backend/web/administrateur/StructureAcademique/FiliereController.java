@@ -22,17 +22,9 @@ public class FiliereController {
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<FiliereSortieDTO> modifierFiliere(
-            @PathVariable Long id, 
-            @RequestBody FiliereEntrerDTO filiereDTO) {
-        FiliereSortieDTO result = metier.modifierFiliere(id, filiereDTO);
-        return ResponseEntity.ok(result);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<FiliereSortieDTO> trouverFiliereParId(@PathVariable Long id) {
-        FiliereSortieDTO result = metier.trouverFiliereParId(id);
+    @GetMapping("/{codeFiliere}")
+    public ResponseEntity<FiliereSortieDTO> trouverFiliereParCode(@PathVariable String codeFiliere) {
+        FiliereSortieDTO result = metier.trouverFiliereParCode(codeFiliere);
         return ResponseEntity.ok(result);
     }
 
@@ -42,15 +34,23 @@ public class FiliereController {
         return ResponseEntity.ok(result);
     }
 
-    @GetMapping("/departement/{departementId}")
-    public ResponseEntity<List<FiliereSortieDTO>> trouverFilieresParDepartement(@PathVariable Long departementId) {
-        List<FiliereSortieDTO> result = metier.trouverFilieresParDepartement(departementId);
+    @GetMapping("/departement/{codeDepartement}")
+    public ResponseEntity<List<FiliereSortieDTO>> trouverFilieresParDepartement(@PathVariable String codeDepartement) {
+        List<FiliereSortieDTO> result = metier.trouverFilieresParDepartement(codeDepartement);
         return ResponseEntity.ok(result);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> supprimerFiliere(@PathVariable Long id) {
-        metier.supprimerFiliere(id);
+    @PutMapping("/{codeFiliere}")
+    public ResponseEntity<FiliereSortieDTO> modifierFiliere(
+            @PathVariable String codeFiliere, 
+            @RequestBody FiliereEntrerDTO filiereDTO) {
+        FiliereSortieDTO result = metier.modifierFiliere(codeFiliere, filiereDTO);
+        return ResponseEntity.ok(result);
+    }
+
+    @DeleteMapping("/{codeFiliere}")
+    public ResponseEntity<Void> supprimerFiliere(@PathVariable String codeFiliere) {
+        metier.supprimerFiliere(codeFiliere);
         return ResponseEntity.noContent().build();
     }
 }

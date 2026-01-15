@@ -10,16 +10,17 @@ import lombok.*;
 
 public class FiliereSortieDTO {
 
-    private  Long id;
-    private  String codeFiliere;
+    private String codeFiliere;
     private  String nom;
     private  String description;
     private String emploiTemps;
     private  String dureeFormation;
     private  String niveauDiplome;
     private  EtatStructure etat;
-    private  Long departementId;
+    private  String codeDepartement;
     private  String departementNom;
-    private  Long chef_filiere_id;
+    private  String chefFilierePpr;
+    private  String chefFiliereNom;
+    private  String chefFilierePrenom;
 
 }

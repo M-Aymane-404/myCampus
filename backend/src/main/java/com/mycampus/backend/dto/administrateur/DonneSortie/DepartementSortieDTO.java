@@ -1,6 +1,5 @@
 package com.mycampus.backend.dto.administrateur.DonneSortie;
 
-import com.mycampus.backend.entites.Professeur;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -12,10 +11,11 @@ import java.time.LocalDate;
 
 public class DepartementSortieDTO {
 
-    private  Long id;
-    private  String codeDepartement;
-    private  String typeDepartement;
-    private  String description;
-    private  Professeur chefDepartement;
-    private  LocalDate dateCreation;
+    private String codeDepartement;
+    private String typeDepartement;
+    private String description;
+    private String chefDepartementPpr;
+    private String chefDepartementNom;
+    private String chefDepartementPrenom;
+    private LocalDate dateCreation;
 }

@@ -23,17 +23,9 @@ public class ClasseController {
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<ClasseSortieDTO> modifierClasse(
-            @PathVariable Long id, 
-            @RequestBody ClasseEntrerDTO classeDTO) {
-        ClasseSortieDTO result = metier.modifierClasse(id, classeDTO);
-        return ResponseEntity.ok(result);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<ClasseSortieDTO> trouverClasseParId(@PathVariable Long id) {
-        ClasseSortieDTO result = metier.trouverClasseParId(id);
+    @GetMapping("/{codeClasse}")
+    public ResponseEntity<ClasseSortieDTO> trouverClasseParCode(@PathVariable String codeClasse) {
+        ClasseSortieDTO result = metier.trouverClasseParCode(codeClasse);
         return ResponseEntity.ok(result);
     }
 
@@ -43,15 +35,23 @@ public class ClasseController {
         return ResponseEntity.ok(result);
     }
 
-    @GetMapping("/filiere/{filiereId}")
-    public ResponseEntity<List<ClasseSortieDTO>> trouverClassesParFiliere(@PathVariable Long filiereId) {
-        List<ClasseSortieDTO> result = metier.trouverClassesParFiliere(filiereId);
+    @GetMapping("/filiere/{codeFiliere}")
+    public ResponseEntity<List<ClasseSortieDTO>> trouverClassesParFiliere(@PathVariable String codeFiliere) {
+        List<ClasseSortieDTO> result = metier.trouverClassesParFiliere(codeFiliere);
         return ResponseEntity.ok(result);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> supprimerClasse(@PathVariable Long id) {
-        metier.supprimerClasse(id);
+    @PutMapping("/{codeClasse}")
+    public ResponseEntity<ClasseSortieDTO> modifierClasse(
+            @PathVariable String codeClasse, 
+            @RequestBody ClasseEntrerDTO classeDTO) {
+        ClasseSortieDTO result = metier.modifierClasse(codeClasse, classeDTO);
+        return ResponseEntity.ok(result);
+    }
+
+    @DeleteMapping("/{codeClasse}")
+    public ResponseEntity<Void> supprimerClasse(@PathVariable String codeClasse) {
+        metier.supprimerClasse(codeClasse);
         return ResponseEntity.noContent().build();
     }
 }

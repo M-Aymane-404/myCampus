@@ -5,17 +5,16 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+@Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Data
 
 public class MatiereEntrerDTO {
     
-    private  Long id;
-    private  String codeMatiere;
-    private  String nom;
-    private  String description;
-    private  Integer coefficient;
-    private  Long moduleId;
+    private String codeMatiere;
+    private String nom;
+    private String description;
+    private Integer coefficient;
+    private String codeModule;
 }

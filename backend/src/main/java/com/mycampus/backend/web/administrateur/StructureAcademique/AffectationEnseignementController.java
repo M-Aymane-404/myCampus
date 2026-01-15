@@ -31,7 +31,7 @@ public class AffectationEnseignementController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<AffectationEnseignementSortieDTO> trouverAffectationEnseignementParId(@PathVariable Long id) {
+    public ResponseEntity<AffectationEnseignementSortieDTO> trouverAffectationParId(@PathVariable Long id) {
         AffectationEnseignementSortieDTO result = metier.trouverAffectationParId(id);
         return ResponseEntity.ok(result);
     }
@@ -42,31 +42,31 @@ public class AffectationEnseignementController {
         return ResponseEntity.ok(result);
     }
 
-    @GetMapping("/professeur/{ppr}")
-    public ResponseEntity<List<AffectationEnseignementSortieDTO>> listerAffectationsParProfesseur(@PathVariable String ppr) {
-        List<AffectationEnseignementSortieDTO> result = metier.listerAffectationsParProfesseur(ppr);
+    @GetMapping("/professeur/{professeurPpr}")
+    public ResponseEntity<List<AffectationEnseignementSortieDTO>> listerAffectationsParProfesseur(@PathVariable String professeurPpr) {
+        List<AffectationEnseignementSortieDTO> result = metier.listerAffectationsParProfesseur(professeurPpr);
         return ResponseEntity.ok(result);
     }
 
-    @GetMapping("/classe/{classeId}")
-    public ResponseEntity<List<AffectationEnseignementSortieDTO>> listerAffectationsParClasse(@PathVariable Long classeId) {
-        List<AffectationEnseignementSortieDTO> result = metier.listerAffectationsParClasse(classeId);
+    @GetMapping("/classe/{codeClasse}")
+    public ResponseEntity<List<AffectationEnseignementSortieDTO>> listerAffectationsParClasse(@PathVariable String codeClasse) {
+        List<AffectationEnseignementSortieDTO> result = metier.listerAffectationsParClasse(codeClasse);
         return ResponseEntity.ok(result);
     }
 
-    @GetMapping("/matiere/{matiereId}")
-    public ResponseEntity<List<AffectationEnseignementSortieDTO>> listerAffectationsParMatiere(@PathVariable Long matiereId) {
-        List<AffectationEnseignementSortieDTO> result = metier.listerAffectationsParMatiere(matiereId);
+    @GetMapping("/matiere/{codeMatiere}")
+    public ResponseEntity<List<AffectationEnseignementSortieDTO>> listerAffectationsParMatiere(@PathVariable String codeMatiere) {
+        List<AffectationEnseignementSortieDTO> result = metier.listerAffectationsParMatiere(codeMatiere);
         return ResponseEntity.ok(result);
     }
 
-    @PatchMapping("/{id}/activer")
+    @PatchMapping("/activer/{id}")
     public ResponseEntity<Void> activerAffectationEnseignement(@PathVariable Long id) {
         metier.activerAffectationEnseignement(id);
         return ResponseEntity.noContent().build();
     }
 
-    @PatchMapping("/{id}/desactiver")
+    @PatchMapping("/desactiver/{id}")
     public ResponseEntity<Void> desactiverAffectationEnseignement(@PathVariable Long id) {
         metier.desactiverAffectationEnseignement(id);
         return ResponseEntity.noContent().build();

@@ -22,17 +22,9 @@ public class MatiereController {
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<MatiereSortieDTO> modifierMatiere(
-            @PathVariable Long id, 
-            @RequestBody MatiereEntrerDTO matiereDTO) {
-        MatiereSortieDTO result = metier.modifierMatiere(id, matiereDTO);
-        return ResponseEntity.ok(result);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<MatiereSortieDTO> trouverMatiereParId(@PathVariable Long id) {
-        MatiereSortieDTO result = metier.trouverMatiereParId(id);
+    @GetMapping("/{codeMatiere}")
+    public ResponseEntity<MatiereSortieDTO> trouverMatiereParCode(@PathVariable String codeMatiere) {
+        MatiereSortieDTO result = metier.trouverMatiereParCode(codeMatiere);
         return ResponseEntity.ok(result);
     }
 
@@ -42,15 +34,23 @@ public class MatiereController {
         return ResponseEntity.ok(result);
     }
 
-    @GetMapping("/module/{moduleId}")
-    public ResponseEntity<List<MatiereSortieDTO>> trouverMatieresParModule(@PathVariable Long moduleId) {
-        List<MatiereSortieDTO> result = metier.trouverMatieresParModule(moduleId);
+    @GetMapping("/module/{codeModule}")
+    public ResponseEntity<List<MatiereSortieDTO>> trouverMatieresParModule(@PathVariable String codeModule) {
+        List<MatiereSortieDTO> result = metier.trouverMatieresParModule(codeModule);
         return ResponseEntity.ok(result);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> supprimerMatiere(@PathVariable Long id) {
-        metier.supprimerMatiere(id);
+    @PutMapping("/{codeMatiere}")
+    public ResponseEntity<MatiereSortieDTO> modifierMatiere(
+            @PathVariable String codeMatiere, 
+            @RequestBody MatiereEntrerDTO matiereDTO) {
+        MatiereSortieDTO result = metier.modifierMatiere(codeMatiere, matiereDTO);
+        return ResponseEntity.ok(result);
+    }
+
+    @DeleteMapping("/{codeMatiere}")
+    public ResponseEntity<Void> supprimerMatiere(@PathVariable String codeMatiere) {
+        metier.supprimerMatiere(codeMatiere);
         return ResponseEntity.noContent().build();
     }
 }

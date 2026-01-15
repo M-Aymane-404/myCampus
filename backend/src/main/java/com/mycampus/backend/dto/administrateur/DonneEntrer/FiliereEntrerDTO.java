@@ -13,15 +13,14 @@ import lombok.NoArgsConstructor;
 
 public class FiliereEntrerDTO {
 
-    private  Long id;
-    private  String codeFiliere;
+    private String codeFiliere;
     private  String nom;
     private  String description;
     private String emploiTemps;
     private  String dureeFormation;
     private  String niveauDiplome;
     private  EtatStructure etat;
-    private  Long departementId;
-    private  Long chef_filiere_id;
+    private  String codeDepartement;
+    private  String chefFilierePpr;
 
 }

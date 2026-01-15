@@ -9,4 +9,6 @@ import java.util.List;
 @Repository
 public interface ExamenRepository extends JpaRepository<Examen, Long> {
     List<Examen> findByMatiereId(Long matiereId);
+
+    List<Examen> findByMatiere_CodeMatiere(String codeMatiere);
 }

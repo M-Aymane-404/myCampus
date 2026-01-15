@@ -23,19 +23,7 @@ public class ProfesseurController {
         return ResponseEntity.status(HttpStatus.CREATED).body(professeur);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<ProfesseurSortieDTO> modifierProfesseur(@PathVariable Long id, @RequestBody ProfesseurEntrerDTO professeurEntrerDTO) {
-        ProfesseurSortieDTO professeur = gestionUtilisateursMetier.modifierProfesseur(id, professeurEntrerDTO);
-        return ResponseEntity.ok(professeur);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<ProfesseurSortieDTO> trouverProfesseurParId(@PathVariable Long id) {
-        ProfesseurSortieDTO professeur = gestionUtilisateursMetier.trouverProfesseurParId(id);
-        return ResponseEntity.ok(professeur);
-    }
-
-    @GetMapping("/ppr/{ppr}")
+    @GetMapping("/{ppr}")
     public ResponseEntity<ProfesseurSortieDTO> trouverProfesseurParPpr(@PathVariable String ppr) {
         ProfesseurSortieDTO professeur = gestionUtilisateursMetier.trouverProfesseurParPpr(ppr);
         return ResponseEntity.ok(professeur);
@@ -47,21 +35,27 @@ public class ProfesseurController {
         return ResponseEntity.ok(professeurs);
     }
 
-    @PatchMapping("/{id}/activer")
-    public ResponseEntity<Void> activerProfesseur(@PathVariable Long id) {
-        gestionUtilisateursMetier.activerProfesseur(id);
+    @PutMapping("/{ppr}")
+    public ResponseEntity<ProfesseurSortieDTO> modifierProfesseur(@PathVariable String ppr, @RequestBody ProfesseurEntrerDTO professeurEntrerDTO) {
+        ProfesseurSortieDTO professeur = gestionUtilisateursMetier.modifierProfesseur(ppr, professeurEntrerDTO);
+        return ResponseEntity.ok(professeur);
+    }
+
+    @PatchMapping("/{ppr}/activer")
+    public ResponseEntity<Void> activerProfesseur(@PathVariable String ppr) {
+        gestionUtilisateursMetier.activerProfesseur(ppr);
         return ResponseEntity.noContent().build();
     }
 
-    @PatchMapping("/{id}/desactiver")
-    public ResponseEntity<Void> desactiverProfesseur(@PathVariable Long id) {
-        gestionUtilisateursMetier.desactiverProfesseur(id);
+    @PatchMapping("/{ppr}/desactiver")
+    public ResponseEntity<Void> desactiverProfesseur(@PathVariable String ppr) {
+        gestionUtilisateursMetier.desactiverProfesseur(ppr);
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> supprimerProfesseur(@PathVariable Long id) {
-        gestionUtilisateursMetier.supprimerProfesseur(id);
+    @DeleteMapping("/{ppr}")
+    public ResponseEntity<Void> supprimerProfesseur(@PathVariable String ppr) {
+        gestionUtilisateursMetier.supprimerProfesseur(ppr);
         return ResponseEntity.noContent().build();
     }
 }

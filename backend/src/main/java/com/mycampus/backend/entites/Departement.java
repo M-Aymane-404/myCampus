@@ -36,6 +36,11 @@ public class Departement {
     @OneToMany(mappedBy = "departementOuTravail")
     private List<Professeur> professeurs;
 
-    @OneToOne(mappedBy = "departementDirigee")
+    @OneToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(
+            name = "chef_departement_id",
+            nullable = true,
+            unique = true
+    )
     private Professeur chefDepartement;
 }

@@ -8,15 +8,14 @@ import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor
-@Builder
 @NoArgsConstructor
+@Builder
 public class ModuleEntrerDTO {
     
-    private  Long id;
-    private  String codeModule;
-    private  String nom;
-    private  String description;
-    private  Semestre semestre;
-    private  Integer coefficient;
-    private  Long filiereId;
+    private String codeModule;
+    private String nom;
+    private String description;
+    private Semestre semestre;
+    private Integer coefficient;
+    private String codeFiliere;
 }

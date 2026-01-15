@@ -23,17 +23,9 @@ public class DepartementController {
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<DepartementSortieDTO> modifierDepartement(
-            @PathVariable Long id, 
-            @RequestBody DepartementEntrerDTO departementDTO) {
-        DepartementSortieDTO result = metier.modifierDepartement(id, departementDTO);
-        return ResponseEntity.ok(result);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<DepartementSortieDTO> trouverDepartementParId(@PathVariable Long id) {
-        DepartementSortieDTO result = metier.trouverDepartementParId(id);
+    @GetMapping("/{codeDepartement}")
+    public ResponseEntity<DepartementSortieDTO> trouverDepartementParCode(@PathVariable String codeDepartement) {
+        DepartementSortieDTO result = metier.trouverDepartementParCode(codeDepartement);
         return ResponseEntity.ok(result);
     }
 
@@ -43,9 +35,17 @@ public class DepartementController {
         return ResponseEntity.ok(result);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> supprimerDepartement(@PathVariable Long id) {
-        metier.supprimerDepartement(id);
+    @PutMapping("/{codeDepartement}")
+    public ResponseEntity<DepartementSortieDTO> modifierDepartement(
+            @PathVariable String codeDepartement, 
+            @RequestBody DepartementEntrerDTO departementDTO) {
+        DepartementSortieDTO result = metier.modifierDepartement(codeDepartement, departementDTO);
+        return ResponseEntity.ok(result);
+    }
+
+    @DeleteMapping("/{codeDepartement}")
+    public ResponseEntity<Void> supprimerDepartement(@PathVariable String codeDepartement) {
+        metier.supprimerDepartement(codeDepartement);
         return ResponseEntity.noContent().build();
     }
 }

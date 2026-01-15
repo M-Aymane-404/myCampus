@@ -40,6 +40,20 @@ public class StructureMapper {
         
         DepartementSortieDTO departementSortieDTO = new DepartementSortieDTO();
         BeanUtils.copyProperties(departement, departementSortieDTO);
+        
+        // Mapping des codes métier
+        departementSortieDTO.setCodeDepartement(departement.getCodeDepartement());
+        departementSortieDTO.setTypeDepartement(departement.getTypeDepartement());
+        departementSortieDTO.setDescription(departement.getDescription());
+        departementSortieDTO.setDateCreation(departement.getDateCreation());
+        
+        // Mapping du chef de département
+        if (departement.getChefDepartement() != null) {
+            departementSortieDTO.setChefDepartementPpr(departement.getChefDepartement().getPpr());
+            departementSortieDTO.setChefDepartementNom(departement.getChefDepartement().getNom());
+            departementSortieDTO.setChefDepartementPrenom(departement.getChefDepartement().getPrenom());
+        }
+        
         return departementSortieDTO;
     }
 
@@ -60,6 +74,7 @@ public class StructureMapper {
         
         Departement departement = new Departement();
         BeanUtils.copyProperties(departementEntrerDTO, departement);
+        // Les relations seront gérées dans le service via requireX
         return departement;
     }
 
@@ -73,17 +88,27 @@ public class StructureMapper {
         FiliereSortieDTO filiereSortieDTO = new FiliereSortieDTO();
         BeanUtils.copyProperties(filiere, filiereSortieDTO);
         
-        // Mapping manuel des IDs de relations
+        // Mapping des codes métier
+        filiereSortieDTO.setCodeFiliere(filiere.getCodeFiliere());
+        filiereSortieDTO.setNom(filiere.getNom());
+        filiereSortieDTO.setDescription(filiere.getDescription());
+        filiereSortieDTO.setEmploiTemps(filiere.getEmploiTemps());
+        filiereSortieDTO.setDureeFormation(filiere.getDureeFormation());
+        filiereSortieDTO.setNiveauDiplome(filiere.getNiveauDiplome());
+        filiereSortieDTO.setEtat(filiere.getEtat());
+        
+        // Mapping des relations par codes
         if (filiere.getDepartement() != null) {
-            filiereSortieDTO.setDepartementId(filiere.getDepartement().getId());
+            filiereSortieDTO.setCodeDepartement(filiere.getDepartement().getCodeDepartement());
             filiereSortieDTO.setDepartementNom(filiere.getDepartement().getTypeDepartement());
-        } else {
-            filiereSortieDTO.setDepartementId(null);
-            filiereSortieDTO.setDepartementNom(null);
         }
         
-        filiereSortieDTO.setChef_filiere_id(filiere.getChefFiliere() != null ? filiere.getChefFiliere().getId() : null);
-
+        if (filiere.getChefFiliere() != null) {
+            filiereSortieDTO.setChefFilierePpr(filiere.getChefFiliere().getPpr());
+            filiereSortieDTO.setChefFiliereNom(filiere.getChefFiliere().getNom());
+            filiereSortieDTO.setChefFilierePrenom(filiere.getChefFiliere().getPrenom());
+        }
+        
         return filiereSortieDTO;
     }
 
@@ -104,6 +129,7 @@ public class StructureMapper {
         
         Filiere filiere = new Filiere();
         BeanUtils.copyProperties(filiereEntrerDTO, filiere);
+        // Les relations seront gérées dans le service via requireX
         return filiere;
     }
 
@@ -117,15 +143,19 @@ public class StructureMapper {
         ClasseSortieDTO classeSortieDTO = new ClasseSortieDTO();
         BeanUtils.copyProperties(classe, classeSortieDTO);
         
-        // Mapping manuel de l'ID de la filière
+        // Mapping des codes métier
+        classeSortieDTO.setCodeClasse(classe.getCodeClasse());
+        classeSortieDTO.setNom(classe.getNom());
+        classeSortieDTO.setNiveau(classe.getNiveau());
+        classeSortieDTO.setAnneeUniversitaire(classe.getAnneeUniversitaire());
+        classeSortieDTO.setEffectifMax(classe.getEffectifMax());
+        
+        // Mapping des relations par codes
         if (classe.getFiliere() != null) {
-            classeSortieDTO.setFiliereId(classe.getFiliere().getId());
+            classeSortieDTO.setCodeFiliere(classe.getFiliere().getCodeFiliere());
             classeSortieDTO.setFiliereNom(classe.getFiliere().getNom());
-        } else {
-            classeSortieDTO.setFiliereId(null);
-            classeSortieDTO.setFiliereNom(null);
         }
-
+        
         return classeSortieDTO;
     }
 
@@ -146,6 +176,7 @@ public class StructureMapper {
         
         Classe classe = new Classe();
         BeanUtils.copyProperties(classeEntrerDTO, classe);
+        // Les relations seront gérées dans le service via requireX
         return classe;
     }
 
@@ -159,15 +190,19 @@ public class StructureMapper {
         ModuleSortieDTO moduleSortieDTO = new ModuleSortieDTO();
         BeanUtils.copyProperties(module, moduleSortieDTO);
         
-        // Mapping manuel de l'ID de la filière
+        // Mapping des codes métier
+        moduleSortieDTO.setCodeModule(module.getCodeModule());
+        moduleSortieDTO.setNom(module.getNom());
+        moduleSortieDTO.setDescription(module.getDescription());
+        moduleSortieDTO.setSemestre(module.getSemestre());
+        moduleSortieDTO.setCoefficient(module.getCoefficient());
+        
+        // Mapping des relations par codes
         if (module.getFiliere() != null) {
-            moduleSortieDTO.setFiliereId(module.getFiliere().getId());
+            moduleSortieDTO.setCodeFiliere(module.getFiliere().getCodeFiliere());
             moduleSortieDTO.setFiliereNom(module.getFiliere().getNom());
-        } else {
-            moduleSortieDTO.setFiliereId(null);
-            moduleSortieDTO.setFiliereNom(null);
         }
-
+        
         return moduleSortieDTO;
     }
 
@@ -188,6 +223,7 @@ public class StructureMapper {
         
         Module module = new Module();
         BeanUtils.copyProperties(moduleEntrerDTO, module);
+        // Les relations seront gérées dans le service via requireX
         return module;
     }
 
@@ -201,15 +237,18 @@ public class StructureMapper {
         MatiereSortieDTO matiereSortieDTO = new MatiereSortieDTO();
         BeanUtils.copyProperties(matiere, matiereSortieDTO);
         
-        // Mapping manuel de l'ID du module
+        // Mapping des codes métier
+        matiereSortieDTO.setCodeMatiere(matiere.getCodeMatiere());
+        matiereSortieDTO.setNom(matiere.getNom());
+        matiereSortieDTO.setDescription(matiere.getDescription());
+        matiereSortieDTO.setCoefficient(matiere.getCoefficient());
+        
+        // Mapping des relations par codes
         if (matiere.getModule() != null) {
-            matiereSortieDTO.setModuleId(matiere.getModule().getId());
+            matiereSortieDTO.setCodeModule(matiere.getModule().getCodeModule());
             matiereSortieDTO.setModuleNom(matiere.getModule().getNom());
-        } else {
-            matiereSortieDTO.setModuleId(null);
-            matiereSortieDTO.setModuleNom(null);
         }
-
+        
         return matiereSortieDTO;
     }
 
@@ -230,6 +269,7 @@ public class StructureMapper {
         
         Matiere matiere = new Matiere();
         BeanUtils.copyProperties(matiereEntrerDTO, matiere);
+        // Les relations seront gérées dans le service via requireX
         return matiere;
     }
 
@@ -243,29 +283,20 @@ public class StructureMapper {
         AffectationEnseignementSortieDTO affectationSortieDTO = new AffectationEnseignementSortieDTO();
         BeanUtils.copyProperties(affectation, affectationSortieDTO);
         
-        // Mapping manuel des relations
+        // Mapping des relations par codes
         if (affectation.getProfesseur() != null) {
             affectationSortieDTO.setProfesseurPpr(affectation.getProfesseur().getPpr());
             affectationSortieDTO.setProfesseurNom(affectation.getProfesseur().getPrenom() + " " + affectation.getProfesseur().getNom());
-        } else {
-            affectationSortieDTO.setProfesseurPpr(null);
-            affectationSortieDTO.setProfesseurNom(null);
         }
         
         if (affectation.getClasse() != null) {
-            affectationSortieDTO.setClasseId(affectation.getClasse().getId());
+            affectationSortieDTO.setCodeClasse(affectation.getClasse().getCodeClasse());
             affectationSortieDTO.setClasseNom(affectation.getClasse().getNom());
-        } else {
-            affectationSortieDTO.setClasseId(null);
-            affectationSortieDTO.setClasseNom(null);
         }
         
         if (affectation.getMatiere() != null) {
-            affectationSortieDTO.setMatiereId(affectation.getMatiere().getId());
+            affectationSortieDTO.setCodeMatiere(affectation.getMatiere().getCodeMatiere());
             affectationSortieDTO.setMatiereNom(affectation.getMatiere().getNom());
-        } else {
-            affectationSortieDTO.setMatiereId(null);
-            affectationSortieDTO.setMatiereNom(null);
         }
 
         return affectationSortieDTO;
@@ -288,6 +319,7 @@ public class StructureMapper {
         
         AffectationEnseignement affectation = new AffectationEnseignement();
         BeanUtils.copyProperties(affectationEnseignementEntrerDTO, affectation);
+        // Les relations seront gérées dans le service via requireX
         return affectation;
     }
 

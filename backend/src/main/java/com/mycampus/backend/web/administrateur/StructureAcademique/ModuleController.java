@@ -22,17 +22,9 @@ public class ModuleController {
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<ModuleSortieDTO> modifierModule(
-            @PathVariable Long id, 
-            @RequestBody ModuleEntrerDTO moduleDTO) {
-        ModuleSortieDTO result = metier.modifierModule(id, moduleDTO);
-        return ResponseEntity.ok(result);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<ModuleSortieDTO> trouverModuleParId(@PathVariable Long id) {
-        ModuleSortieDTO result = metier.trouverModuleParId(id);
+    @GetMapping("/{codeModule}")
+    public ResponseEntity<ModuleSortieDTO> trouverModuleParCode(@PathVariable String codeModule) {
+        ModuleSortieDTO result = metier.trouverModuleParCode(codeModule);
         return ResponseEntity.ok(result);
     }
 
@@ -42,15 +34,23 @@ public class ModuleController {
         return ResponseEntity.ok(result);
     }
 
-    @GetMapping("/filiere/{filiereId}")
-    public ResponseEntity<List<ModuleSortieDTO>> trouverModulesParFiliere(@PathVariable Long filiereId) {
-        List<ModuleSortieDTO> result = metier.trouverModulesParFiliere(filiereId);
+    @GetMapping("/filiere/{codeFiliere}")
+    public ResponseEntity<List<ModuleSortieDTO>> trouverModulesParFiliere(@PathVariable String codeFiliere) {
+        List<ModuleSortieDTO> result = metier.trouverModulesParFiliere(codeFiliere);
         return ResponseEntity.ok(result);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> supprimerModule(@PathVariable Long id) {
-        metier.supprimerModule(id);
+    @PutMapping("/{codeModule}")
+    public ResponseEntity<ModuleSortieDTO> modifierModule(
+            @PathVariable String codeModule, 
+            @RequestBody ModuleEntrerDTO moduleDTO) {
+        ModuleSortieDTO result = metier.modifierModule(codeModule, moduleDTO);
+        return ResponseEntity.ok(result);
+    }
+
+    @DeleteMapping("/{codeModule}")
+    public ResponseEntity<Void> supprimerModule(@PathVariable String codeModule) {
+        metier.supprimerModule(codeModule);
         return ResponseEntity.noContent().build();
     }
 }

@@ -1,6 +1,5 @@
 package com.mycampus.backend.dto.administrateur.DonneEntrer;
 
-import com.mycampus.backend.entites.Professeur;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,10 +14,9 @@ import java.time.LocalDate;
 
 public class DepartementEntrerDTO {
 
-    private  Long id;
-    private  String codeDepartement;
-    private  String typeDepartement;
-    private  String description;
-    private  Professeur chefDepartement;
-    private  LocalDate dateCreation;
+    private String codeDepartement;
+    private String typeDepartement;
+    private String description;
+    private String chefDepartementPpr;
+    private LocalDate dateCreation;
 }

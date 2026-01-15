@@ -65,9 +65,9 @@ public class UtilisateursMapper {
         BeanUtils.copyProperties(professeur, professeurSortieDTO);
         
         // Mapping manuel des IDs de relations
-        professeurSortieDTO.setDepartementDirigeeId(professeur.getDepartementDirigee() != null ? professeur.getDepartementDirigee().getId() : null);
-        professeurSortieDTO.setDepartementOuTravailId(professeur.getDepartementOuTravail() != null ? professeur.getDepartementOuTravail().getId() : null);
-        professeurSortieDTO.setFiliereDirigeeId(professeur.getFiliereDirigee() != null ? professeur.getFiliereDirigee().getId() : null);
+        professeurSortieDTO.setCodeDepartementDirigee(professeur.getDepartementDirigee() != null ? professeur.getDepartementDirigee().getCodeDepartement() : null);
+        professeurSortieDTO.setCodeDepartementOuTravail(professeur.getDepartementOuTravail() != null ? professeur.getDepartementOuTravail().getCodeDepartement() : null);
+        professeurSortieDTO.setCodeFiliereDirigee(professeur.getFiliereDirigee() != null ? professeur.getFiliereDirigee().getCodeFiliere() : null);
         
         return professeurSortieDTO;
     }
@@ -106,7 +106,7 @@ public class UtilisateursMapper {
         BeanUtils.copyProperties(etudiant, etudiantSortieDTO);
         
         // Mapping manuel de l'ID de la classe
-        etudiantSortieDTO.setClasseId(etudiant.getClasse() != null ? etudiant.getClasse().getId() : null);
+        etudiantSortieDTO.setCodeClasse(etudiant.getClasse() != null ? etudiant.getClasse().getCodeClasse() : null);
         
         return etudiantSortieDTO;
     }

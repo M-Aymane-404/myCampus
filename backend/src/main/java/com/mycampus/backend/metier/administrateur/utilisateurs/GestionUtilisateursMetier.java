@@ -16,53 +16,47 @@ public interface GestionUtilisateursMetier {
     
     AdministrateurSortieDTO creerAdministrateur(AdministrateurEntrerDTO administrateurEntrerDTO) throws UtilisateursException;
     
-    AdministrateurSortieDTO trouverAdministrateurParId(Long id) throws UtilisateursException;
-    
     AdministrateurSortieDTO trouverAdministrateurParPpr(String ppr) throws UtilisateursException;
     
     List<AdministrateurSortieDTO> listerTousLesAdministrateurs() throws UtilisateursException;
     
-    AdministrateurSortieDTO modifierAdministrateur(Long id, AdministrateurEntrerDTO administrateurEntrerDTO) throws UtilisateursException;
+    AdministrateurSortieDTO modifierAdministrateur(String ppr, AdministrateurEntrerDTO administrateurEntrerDTO) throws UtilisateursException;
     
-    void supprimerAdministrateur(Long id) throws UtilisateursException;
+    void supprimerAdministrateur(String ppr) throws UtilisateursException;
     
-    void activerAdministrateur(Long id) throws UtilisateursException;
+    void activerAdministrateur(String ppr) throws UtilisateursException;
     
-    void desactiverAdministrateur(Long id) throws UtilisateursException;
+    void desactiverAdministrateur(String ppr) throws UtilisateursException;
     
     // ==================== PROFESSEUR ====================
     
     ProfesseurSortieDTO creerProfesseur(ProfesseurEntrerDTO professeurEntrerDTO) throws UtilisateursException;
     
-    ProfesseurSortieDTO trouverProfesseurParId(Long id) throws UtilisateursException;
-    
     ProfesseurSortieDTO trouverProfesseurParPpr(String ppr) throws UtilisateursException;
     
     List<ProfesseurSortieDTO> listerTousLesProfesseurs() throws UtilisateursException;
     
-    ProfesseurSortieDTO modifierProfesseur(Long id, ProfesseurEntrerDTO professeurEntrerDTO) throws UtilisateursException;
+    ProfesseurSortieDTO modifierProfesseur(String ppr, ProfesseurEntrerDTO professeurEntrerDTO) throws UtilisateursException;
     
-    void supprimerProfesseur(Long id) throws UtilisateursException;
+    void supprimerProfesseur(String ppr) throws UtilisateursException;
     
-    void activerProfesseur(Long id) throws UtilisateursException;
+    void activerProfesseur(String ppr) throws UtilisateursException;
     
-    void desactiverProfesseur(Long id) throws UtilisateursException;
+    void desactiverProfesseur(String ppr) throws UtilisateursException;
     
     // ==================== ETUDIANT ====================
     
     EtudiantSortieDTO creerEtudiant(EtudiantEntrerDTO etudiantEntrerDTO) throws UtilisateursException;
     
-    EtudiantSortieDTO trouverEtudiantParId(Long id) throws UtilisateursException;
-    
     EtudiantSortieDTO trouverEtudiantParApogee(String apogee) throws UtilisateursException;
     
     List<EtudiantSortieDTO> listerTousLesEtudiants() throws UtilisateursException;
     
-    EtudiantSortieDTO modifierEtudiant(Long id, EtudiantEntrerDTO etudiantEntrerDTO) throws UtilisateursException;
+    EtudiantSortieDTO modifierEtudiant(String apogee, EtudiantEntrerDTO etudiantEntrerDTO) throws UtilisateursException;
     
-    void supprimerEtudiant(Long id) throws UtilisateursException;
+    void supprimerEtudiant(String apogee) throws UtilisateursException;
     
-    void activerEtudiant(Long id) throws UtilisateursException;
+    void activerEtudiant(String apogee) throws UtilisateursException;
     
-    void desactiverEtudiant(Long id) throws UtilisateursException;
+    void desactiverEtudiant(String apogee) throws UtilisateursException;
 }

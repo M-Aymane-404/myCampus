@@ -14,6 +14,6 @@ public class MatiereSortieDTO {
     private  String nom;
     private  String description;
     private  Integer coefficient;
-    private  Long moduleId;
+    private  String codeModule;
     private  String moduleNom;
 }
