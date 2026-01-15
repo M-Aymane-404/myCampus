@@ -53,10 +53,10 @@ public class BackendApplication {
             createUsers(utilisateursMetier);
             Long affectationId = createAffectation(structureMetier);
 
-            readAll(structureMetier, utilisateursMetier);
-            updateAll(structureMetier, utilisateursMetier, affectationId);
+         //   readAll(structureMetier, utilisateursMetier);
+           updateAll(structureMetier, utilisateursMetier, affectationId);
 
-            activateDeactivateAll(utilisateursMetier, structureMetier, affectationId);
+           // activateDeactivateAll(utilisateursMetier, structureMetier, affectationId);
 
             logger.info("=== FIN DES TESTS (CODES MÉTIERS) ===");
         };
@@ -74,6 +74,7 @@ public class BackendApplication {
                     .codeDepartement(CODE_DEP)
                     .typeDepartement("Informatique")
                     .description("Département d'informatique")
+
                     .build();
             DepartementSortieDTO depOut = metier.creerDepartement(depIn);
             logger.info("[STRUCTURE] Département OK: {}", depOut.getCodeDepartement());
@@ -163,6 +164,7 @@ public class BackendApplication {
                     .specialite("Informatique")
                     .grade("PES")
                     .statut("Titulaire")
+                    .codeDepartementOuTravail(CODE_DEP)
                     .dateRecrutement(LocalDate.of(2020, 9, 1))
                     .build();
             ProfesseurSortieDTO profOut = metier.creerProfesseur(profIn);
@@ -279,6 +281,7 @@ public class BackendApplication {
                     .codeDepartement(CODE_DEP)
                     .typeDepartement("Informatique et Réseaux")
                     .description("Département mis à jour")
+                    .chefDepartementPpr(PROF_PPR)
                     .build();
             structureMetier.modifierDepartement(CODE_DEP, depUp);
 
@@ -290,6 +293,7 @@ public class BackendApplication {
                     .niveauDiplome("Licence")
                     .etat(EtatStructure.OUVERTE)
                     .codeDepartement(CODE_DEP)
+                    .chefFilierePpr(PROF_PPR)
                     .build();
             structureMetier.modifierFiliere(CODE_FIL, filUp);
 
