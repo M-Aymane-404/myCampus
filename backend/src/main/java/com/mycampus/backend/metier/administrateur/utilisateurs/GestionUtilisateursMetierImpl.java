@@ -232,13 +232,7 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
 
         Professeur professeur =  utilisateursMapper.FromProfesseurEntrerversProfesseur(professeurEntrerDTO);
 
-        if (professeurEntrerDTO.getCodeDepartementDirigee() != null) {
-            Departement dep = departementRepository.findByCodeDepartement(professeurEntrerDTO.getCodeDepartementDirigee())
-                    .orElseThrow(() -> new UtilisateursException(
-                            "Département dirigé introuvable: " + professeurEntrerDTO.getCodeDepartementDirigee()
-                    ));
-            professeur.setDepartementDirigee(dep);
-        }
+
 
         if (professeurEntrerDTO.getCodeDepartementOuTravail() != null) {
             Departement dep = departementRepository.findByCodeDepartement(professeurEntrerDTO.getCodeDepartementOuTravail())
@@ -248,13 +242,7 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
             professeur.setDepartementOuTravail(dep);
         }
 
-        if (professeurEntrerDTO.getCodeFiliereDirigee() != null) {
-            Filiere fil = filiereRepository.findByCodeFiliere(professeurEntrerDTO.getCodeFiliereDirigee())
-                    .orElseThrow(() -> new UtilisateursException(
-                            "Filière dirigée introuvable: " + professeurEntrerDTO.getCodeFiliereDirigee()
-                    ));
-            professeur.setFiliereDirigee(fil);
-        }
+
 
         professeur.setEnabled(true);
         professeur.setDateCreation(LocalDateTime.now());
@@ -333,14 +321,7 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
             professeurAModifier.setStatut(professeurEntrerDTO.getStatut());
         }
 
-        // Relations optionnelles
-        if (professeurEntrerDTO.getCodeDepartementDirigee() != null) {
-            Departement dep = departementRepository.findByCodeDepartement(professeurEntrerDTO.getCodeDepartementDirigee())
-                    .orElseThrow(() -> new UtilisateursException(
-                            "Département dirigé introuvable: " + professeurEntrerDTO.getCodeDepartementDirigee()
-                    ));
-            professeurAModifier.setDepartementDirigee(dep);
-        }
+
 
         if (professeurEntrerDTO.getCodeDepartementOuTravail() != null) {
             Departement dep = departementRepository.findByCodeDepartement(professeurEntrerDTO.getCodeDepartementOuTravail())
@@ -350,13 +331,7 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
             professeurAModifier.setDepartementOuTravail(dep);
         }
 
-        if (professeurEntrerDTO.getCodeFiliereDirigee() != null) {
-            Filiere fil = filiereRepository.findByCodeFiliere(professeurEntrerDTO.getCodeFiliereDirigee())
-                    .orElseThrow(() -> new UtilisateursException(
-                            "Filière dirigée introuvable: " + professeurEntrerDTO.getCodeFiliereDirigee()
-                    ));
-            professeurAModifier.setFiliereDirigee(fil);
-        }
+
 
         /* if(professeurDTO.getPassword() != null && !professeurDTO.getPassword().trim().isEmpty()) {
             professeurAModifier.setPassword(passwordEncoder.encode(professeurDTO.getPassword()));
@@ -454,6 +429,7 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
 
         etudiant.setEnabled(true);
         etudiant.setDateCreation(LocalDateTime.now());
+        etudiant.setAnneeFinEtude(null);
 
         return utilisateursMapper.FromEtudientVersEtudiantSortieDTO(etudiantRepository.save(etudiant));
     }

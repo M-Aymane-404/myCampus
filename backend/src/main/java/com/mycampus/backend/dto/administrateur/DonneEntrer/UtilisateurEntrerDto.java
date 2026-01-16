@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
 @Data
 
 public class UtilisateurEntrerDto {
-    private Long id;
 
     private String nom;
 
@@ -31,9 +30,6 @@ public class UtilisateurEntrerDto {
 
     private Boolean enabled ;
 
-
-
-    private LocalDateTime dateDerniereConnexion;
 
 
 }

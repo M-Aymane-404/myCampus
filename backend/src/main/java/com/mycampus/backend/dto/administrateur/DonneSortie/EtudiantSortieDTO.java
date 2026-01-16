@@ -4,11 +4,13 @@ import com.mycampus.backend.enumerations.Semestre;
 import com.mycampus.backend.enumerations.EtatInscription;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
