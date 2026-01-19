@@ -3,11 +3,13 @@ package com.mycampus.backend.dto.administrateur.DonneEntrer;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -28,9 +30,7 @@ public class ProfesseurEntrerDTO extends UtilisateurEntrerDto {
     private String codeDepartementOuTravail;
 
 
-    private String codeDepartementDirigee;
 
 
-    private String codeFiliereDirigee;
 
 }
