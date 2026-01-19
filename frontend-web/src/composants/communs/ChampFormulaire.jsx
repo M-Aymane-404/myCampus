@@ -23,11 +23,11 @@ const ChampFormulaire = ({
           id={nom}
           name={nom}
           className={`champ-formulaire-input ${erreur ? 'champ-formulaire-erreur' : ''}`}
-          value={valeur}
+          value={multiple ? (valeur || []) : (valeur || '')}
           onChange={onChange}
           multiple={multiple}
         >
-          <option value="">Sélectionner...</option>
+          {!multiple && <option value="">Sélectionner...</option>}
           {options.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}

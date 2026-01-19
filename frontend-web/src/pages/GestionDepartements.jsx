@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Building2, Users, GraduationCap, UserPlus, Plus, Monitor, Briefcase, BarChart3, Edit, Eye, ArrowLeft, BookOpen, FileText, Trash2 } from 'lucide-react';
 import TableauDonnees from '../composants/communs/TableauDonnees';
 import FormulaireModal from '../composants/communs/FormulaireModal';
@@ -6,130 +6,18 @@ import ChampFormulaire from '../composants/communs/ChampFormulaire';
 import CarteStatistique from '../composants/tableauDeBord/CarteStatistique';
 import BadgeStatut from '../composants/communs/BadgeStatut';
 import BoutonAction from '../composants/communs/BoutonAction';
+import { apiStructure } from '../services/apiStructure';
+import { apiProfesseurs } from '../services/apiProfesseurs';
 import './GestionDepartements.css';
 
 const GestionDepartements = () => {
-  const [departements, setDepartements] = useState([
-    {
-      id: 1,
-      nom: 'Informatique',
-      code: 'INFO',
-      description: 'Département d\'Informatique et Génie Logiciel',
-      chefDepartement: 'Ahmed Alami',
-      nombreProfesseurs: 15,
-      nombreFilieres: 3,
-      nombreEtudiants: 245
-    },
-    {
-      id: 2,
-      nom: 'Industriel',
-      code: 'IND',
-      description: 'Département de Génie Industriel et Logistique',
-      chefDepartement: 'Mohamed Chraibi',
-      nombreProfesseurs: 12,
-      nombreFilieres: 2,
-      nombreEtudiants: 180
-    },
-    {
-      id: 3,
-      nom: 'Génie Civil',
-      code: 'GC',
-      description: 'Département de Génie Civil et Construction',
-      chefDepartement: 'Hassan Alaoui',
-      nombreProfesseurs: 10,
-      nombreFilieres: 1,
-      nombreEtudiants: 0
-    }
-  ]);
+  const [departements, setDepartements] = useState([]);
+  const [chargement, setChargement] = useState(true);
+  const [erreur, setErreur] = useState(null);
 
-  const [professeurs] = useState([
-    {
-      id: 1,
-      ppr: 'PPR001',
-      nom: 'Alami',
-      prenom: 'Ahmed',
-      email: 'ahmed.alami@univ.ma',
-      specialite: 'Informatique',
-      grade: 'Professeur',
-      departement: 'Informatique',
-      status: 'Actif'
-    },
-    {
-      id: 2,
-      ppr: 'PPR002',
-      nom: 'Bennani',
-      prenom: 'Fatima',
-      email: 'fatima.bennani@univ.ma',
-      specialite: 'Mathématiques',
-      grade: 'Maître de Conférences',
-      departement: 'Informatique',
-      status: 'Actif'
-    },
-    {
-      id: 3,
-      ppr: 'PPR003',
-      nom: 'Chraibi',
-      prenom: 'Mohamed',
-      email: 'mohamed.chraibi@univ.ma',
-      specialite: 'Génie Industriel',
-      grade: 'Professeur',
-      departement: 'Industriel',
-      status: 'Actif'
-    },
-    {
-      id: 4,
-      ppr: 'PPR004',
-      nom: 'El Amrani',
-      prenom: 'Youssef',
-      email: 'youssef.elamrani@univ.ma',
-      specialite: 'Informatique',
-      grade: 'Maître Assistant',
-      departement: null,
-      status: 'Actif'
-    }
-  ]);
+  const [professeurs, setProfesseurs] = useState([]);
 
-  const [filieres, setFilieres] = useState([
-    {
-      id: 1,
-      codeFiliere: 'GI-2024',
-      nom: 'Génie Informatique',
-      departement: 'Informatique',
-      etat: 'OUVERTE',
-      chefFiliere: 'Prof. Ahmed Alami',
-      nombreEtudiants: 245,
-      nombreModules: 12,
-      niveauDiplome: 'Licence',
-      dureeFormation: 3,
-      description: 'Formation en informatique et génie logiciel'
-    },
-    {
-      id: 2,
-      codeFiliere: 'GIL-2024',
-      nom: 'Génie Industriel et Logistique',
-      departement: 'Industriel',
-      etat: 'OUVERTE',
-      chefFiliere: 'Prof. Mohamed Chraibi',
-      nombreEtudiants: 180,
-      nombreModules: 10,
-      niveauDiplome: 'Licence',
-      dureeFormation: 3,
-      description: 'Formation en industrie et logistique'
-    },
-    {
-      id: 3,
-      codeFiliere: 'GC-2024',
-      nom: 'Génie Civil',
-      departement: 'Génie Civil',
-      etat: 'FERMEE',
-      chefFiliere: 'Prof. Hassan Alaoui',
-      nombreEtudiants: 0,
-      nombreModules: 8,
-      niveauDiplome: 'Licence',
-      dureeFormation: 3,
-      description: 'Formation en génie civil et construction'
-    }
-  ]);
+  const [filieres, setFilieres] = useState([]);
 
   const [modalAjoutDepartement, setModalAjoutDepartement] = useState(false);
   const [modalAffecterProf, setModalAffecterProf] = useState(false);
@@ -139,7 +27,7 @@ const GestionDepartements = () => {
   const [departementDetails, setDepartementDetails] = useState(null);
   const [filiereDetails, setFiliereDetails] = useState(null);
   const [moduleDetails, setModuleDetails] = useState(null);
-  
+
   // États pour la modification
   const [modalModifierFiliere, setModalModifierFiliere] = useState(false);
   const [modalModifierModule, setModalModifierModule] = useState(false);
@@ -147,168 +35,16 @@ const GestionDepartements = () => {
   const [filiereCourant, setFiliereCourant] = useState(null);
   const [moduleCourant, setModuleCourant] = useState(null);
   const [matiereCourante, setMatiereCourante] = useState(null);
-  
+
   // États pour l'ajout
   const [modalAjouterModule, setModalAjouterModule] = useState(false);
   const [modalAjouterMatiere, setModalAjouterMatiere] = useState(false);
   const [filierePourModule, setFilierePourModule] = useState(null);
   const [modulePourMatiere, setModulePourMatiere] = useState(null);
-  
-  // Données des modules
-  const [modules, setModules] = useState([
-    {
-      id: 1,
-      codeModule: 'GI-INFO-101',
-      nom: 'Algorithmique et Structures de Données',
-      description: 'Introduction à l\'algorithmique et aux structures de données',
-      semestre: 'S1',
-      coefficient: 4.0,
-      filiere: 'GI-2024',
-      nombreMatieres: 3,
-      nombreHeures: 60,
-      professeur: 'Prof. Ahmed Alami'
-    },
-    {
-      id: 2,
-      codeModule: 'GI-INFO-102',
-      nom: 'Programmation Orientée Objet',
-      description: 'Concepts de la programmation orientée objet',
-      semestre: 'S2',
-      coefficient: 5.0,
-      filiere: 'GI-2024',
-      nombreMatieres: 2,
-      nombreHeures: 75,
-      professeur: 'Prof. Fatima Bennani'
-    },
-    {
-      id: 3,
-      codeModule: 'GI-INFO-103',
-      nom: 'Bases de Données',
-      description: 'Introduction aux bases de données relationnelles',
-      semestre: 'S2',
-      coefficient: 4.5,
-      filiere: 'GI-2024',
-      nombreMatieres: 3,
-      nombreHeures: 70,
-      professeur: 'Prof. Ahmed Alami'
-    },
-    {
-      id: 4,
-      codeModule: 'GIL-IND-201',
-      nom: 'Gestion de Production',
-      description: 'Techniques de gestion de production industrielle',
-      semestre: 'S3',
-      coefficient: 4.5,
-      filiere: 'GIL-2024',
-      nombreMatieres: 4,
-      nombreHeures: 90,
-      professeur: 'Prof. Mohamed Chraibi'
-    },
-    {
-      id: 5,
-      codeModule: 'GC-CIV-101',
-      nom: 'Mécanique des Sols',
-      description: 'Fondements de la mécanique des sols',
-      semestre: 'S1',
-      coefficient: 5.0,
-      filiere: 'GC-2024',
-      nombreMatieres: 3,
-      nombreHeures: 80,
-      professeur: 'Prof. Hassan Alaoui'
-    }
-  ]);
 
-  // Données des matières
-  const [matieres, setMatieres] = useState([
-    {
-      id: 1,
-      codeMatiere: 'ALG-101-1',
-      nom: 'Algorithmes de base',
-      module: 'GI-INFO-101',
-      nombreHeures: 20,
-      coefficient: 1.5,
-      professeur: 'Prof. Ahmed Alami',
-      type: 'Cours',
-      description: 'Introduction aux algorithmes fondamentaux'
-    },
-    {
-      id: 2,
-      codeMatiere: 'ALG-101-2',
-      nom: 'Structures de données',
-      module: 'GI-INFO-101',
-      nombreHeures: 25,
-      coefficient: 1.5,
-      professeur: 'Prof. Ahmed Alami',
-      type: 'TP',
-      description: 'Les structures de données fondamentales'
-    },
-    {
-      id: 3,
-      codeMatiere: 'ALG-101-3',
-      nom: 'Complexité algorithmique',
-      module: 'GI-INFO-101',
-      nombreHeures: 15,
-      coefficient: 1.0,
-      professeur: 'Prof. Ahmed Alami',
-      type: 'Cours',
-      description: 'Analyse de la complexité des algorithmes'
-    },
-    {
-      id: 4,
-      codeMatiere: 'POO-102-1',
-      nom: 'Classes et objets',
-      module: 'GI-INFO-102',
-      nombreHeures: 40,
-      coefficient: 2.5,
-      professeur: 'Prof. Fatima Bennani',
-      type: 'Cours',
-      description: 'Concepts de base de la POO'
-    },
-    {
-      id: 5,
-      codeMatiere: 'POO-102-2',
-      nom: 'Héritage et polymorphisme',
-      module: 'GI-INFO-102',
-      nombreHeures: 35,
-      coefficient: 2.5,
-      professeur: 'Prof. Fatima Bennani',
-      type: 'TP',
-      description: 'Héritage et polymorphisme en POO'
-    },
-    {
-      id: 6,
-      codeMatiere: 'BD-103-1',
-      nom: 'Modélisation relationnelle',
-      module: 'GI-INFO-103',
-      nombreHeures: 25,
-      coefficient: 1.5,
-      professeur: 'Prof. Ahmed Alami',
-      type: 'Cours',
-      description: 'Concepts de modélisation relationnelle'
-    },
-    {
-      id: 7,
-      codeMatiere: 'BD-103-2',
-      nom: 'SQL et requêtes',
-      module: 'GI-INFO-103',
-      nombreHeures: 30,
-      coefficient: 2.0,
-      professeur: 'Prof. Ahmed Alami',
-      type: 'TP',
-      description: 'Langage SQL et requêtes complexes'
-    },
-    {
-      id: 8,
-      codeMatiere: 'BD-103-3',
-      nom: 'Normalisation',
-      module: 'GI-INFO-103',
-      nombreHeures: 15,
-      coefficient: 1.0,
-      professeur: 'Prof. Ahmed Alami',
-      type: 'Cours',
-      description: 'Normalisation des bases de données'
-    }
-  ]);
+  const [modules, setModules] = useState([]);
+
+  const [matieres, setMatieres] = useState([]);
 
   const [formulaireDepartement, setFormulaireDepartement] = useState({
     nom: '',
@@ -345,6 +81,164 @@ const GestionDepartements = () => {
     type: '',
     description: ''
   });
+
+  // Charger toutes les données au démarrage
+  useEffect(() => {
+    chargerDonneesGlobales();
+  }, []);
+
+  const chargerDonneesGlobales = async () => {
+    try {
+      setChargement(true);
+      setErreur(null);
+
+      // 1. Récupération parallèle de TOUTES les données
+      const [
+        departementsData,
+        filieresData,
+        modulesData,
+        matieresData,
+        professeursData,
+        etudiantsData
+      ] = await Promise.all([
+        apiStructure.obtenirTousDepartements(),
+        apiStructure.obtenirToutesFilieres(),
+        apiStructure.obtenirTousModules(),
+        apiStructure.obtenirToutesMatieres(),
+        apiProfesseurs.obtenirTous().catch(() => []),
+        // On pourrait utiliser apiComptes.obtenirTous() mais on filterait, 
+        // ou un endpoint spécifique si disponible. Pour l'instant on suppose un tableau vide si erreur.
+        fetch('http://localhost:8080/api/admin/utilisateurs/etudiants').then(r => r.json()).catch(() => [])
+      ]);
+
+      console.log('--- Données Globales Reçues ---');
+      console.log('Départements:', departementsData);
+      console.log('Filières:', filieresData);
+      console.log('Modules:', modulesData);
+      console.log('Matières:', matieresData);
+      console.log('Professeurs:', professeursData);
+
+      // 2. Création des Maps pour accès rapide
+
+      // Map PPR -> Nom Complet Professeur
+      const professeursMap = {};
+      const professeursParDept = {}; // Code Dept -> Count
+      const matiereResponsableMap = {}; // Nom Matière -> Nom Professeur (Reverse lookup)
+      if (Array.isArray(professeursData)) {
+        setProfesseurs(professeursData); // Mettre à jour l'état des professeurs
+        professeursData.forEach(p => {
+          if (p.ppr) {
+            const nomComplet = `${p.prenom || ''} ${p.nom || ''}`.trim();
+            professeursMap[p.ppr] = nomComplet;
+
+            // Compter profs par département
+            const dept = p.codeDepartementOuTravail || p.departement;
+            if (dept) {
+              professeursParDept[dept] = (professeursParDept[dept] || 0) + 1;
+            }
+
+            // Reverse mapping pour les matières
+            if (Array.isArray(p.matieresEnseignees)) {
+              p.matieresEnseignees.forEach(matiereNom => {
+                matiereResponsableMap[matiereNom] = nomComplet;
+              });
+            }
+          }
+        });
+      }
+
+      // 3. Traitement des Matières
+      const matieresTraitees = matieresData.map(m => ({
+        id: m.id,
+        codeMatiere: m.codeMatiere || '',
+        nom: m.nom,
+        module: m.codeModule || '',
+        nombreHeures: m.volumeHoraire || 0, // Adapter selon DTO
+        coefficient: m.coefficient || 0,
+        // Essayer de trouver le prof via reverse mapping sur le nom de la matière
+        professeur: matiereResponsableMap[m.nom] || 'Non défini',
+        type: 'Cours', // TODO: Typologie à affiner
+        description: m.description || ''
+      }));
+      setMatieres(matieresTraitees);
+
+      // 4. Traitement des Modules
+      const modulesTraites = modulesData.map(m => {
+        // Calcul aggrégats depuis les matières
+        const matieresDuModule = matieresTraitees.filter(mat => mat.module === m.codeModule);
+        const heuresTotales = matieresDuModule.reduce((acc, mat) => acc + (mat.nombreHeures || 0), 0);
+
+        return {
+          id: m.id,
+          codeModule: m.codeModule,
+          nom: m.nom,
+          description: m.description || '',
+          semestre: m.semestre || '',
+          coefficient: m.coefficient || 0,
+          filiere: m.codeFiliere || '',
+          nombreMatieres: matieresDuModule.length,
+          nombreHeures: heuresTotales,
+          professeur: m.pprResponsable ? (professeursMap[m.pprResponsable] || m.pprResponsable) : 'Non défini'
+        };
+      });
+      setModules(modulesTraites);
+
+      // 5. Traitement des Filières
+      const filieresTraitees = filieresData.map(f => {
+        // Calcul aggrégats depuis les modules
+        const modulesDeLaFiliere = modulesTraites.filter(mod => mod.filiere === f.codeFiliere);
+
+        // Est-ce qu'on peut lier étudiants -> filière ?
+        // Supposons que l'étudiant a un champ 'filiere' ou 'codeFiliere'
+        const etudiantsDeLaFiliere = Array.isArray(etudiantsData)
+          ? etudiantsData.filter(e => e.codeFiliere === f.codeFiliere || e.filiere === f.nom).length
+          : 0;
+
+        return {
+          id: f.id,
+          codeFiliere: f.codeFiliere,
+          nom: f.nom,
+          departement: f.codeDepartement || '',
+          etat: f.etat || 'OUVERTE',
+          chefFiliere: f.chefFilierePpr ? (professeursMap[f.chefFilierePpr] || f.chefFilierePpr) : 'Non défini',
+          nombreEtudiants: etudiantsDeLaFiliere,
+          nombreModules: modulesDeLaFiliere.length,
+          niveauDiplome: f.niveauDiplome || 'Licence',
+          dureeFormation: f.dureeFormation || 3,
+          description: f.description || ''
+        };
+      });
+      setFilieres(filieresTraitees);
+
+      // 6. Traitement des Départements (Top Level)
+      const departementsTraites = departementsData.map(d => {
+        const filieresDuDept = filieresTraitees.filter(f => f.departement === d.codeDepartement);
+        const totalEtudiants = filieresDuDept.reduce((acc, f) => acc + f.nombreEtudiants, 0);
+
+        // Essayer de trouver le nombre de profs via map ou nom
+        const nbProfs = professeursParDept[d.codeDepartement] || professeursParDept[d.typeDepartement] || 0;
+
+        return {
+          id: d.id,
+          nom: d.typeDepartement || d.codeDepartement,
+          code: d.codeDepartement,
+          description: d.description || '',
+          chefDepartement: d.chefDepartementPpr ? (professeursMap[d.chefDepartementPpr] || d.chefDepartementPpr) : 'Non défini',
+          nombreProfesseurs: nbProfs,
+          nombreFilieres: filieresDuDept.length,
+          nombreEtudiants: totalEtudiants
+        };
+      });
+      setDepartements(departementsTraites);
+
+    } catch (err) {
+      console.error('Erreur chargement global:', err);
+      setErreur('Erreur lors du chargement des données.');
+    } finally {
+      setChargement(false);
+    }
+  };
+
 
   const ouvrirModalAjoutDepartement = () => {
     setDepartementCourant(null);
@@ -417,8 +311,8 @@ const GestionDepartements = () => {
 
     if (departementCourant) {
       // Modification
-      setDepartements(prev => prev.map(d => 
-        d.id === departementCourant.id 
+      setDepartements(prev => prev.map(d =>
+        d.id === departementCourant.id
           ? { ...d, ...formulaireDepartement }
           : d
       ));
@@ -446,8 +340,8 @@ const GestionDepartements = () => {
     // Dans une vraie application, ceci serait fait via une API
     const departement = departements.find(d => d.id === departementSelectionne.id);
     if (departement) {
-      setDepartements(prev => prev.map(d => 
-        d.id === departement.id 
+      setDepartements(prev => prev.map(d =>
+        d.id === departement.id
           ? { ...d, nombreProfesseurs: d.nombreProfesseurs + 1 }
           : d
       ));
@@ -465,8 +359,8 @@ const GestionDepartements = () => {
 
     if (filiereCourant) {
       // Modification
-      setFilieres(prev => prev.map(f => 
-        f.id === filiereCourant.id 
+      setFilieres(prev => prev.map(f =>
+        f.id === filiereCourant.id
           ? { ...f, ...formulaireFiliere, dureeFormation: parseInt(formulaireFiliere.dureeFormation) || f.dureeFormation }
           : f
       ));
@@ -488,8 +382,8 @@ const GestionDepartements = () => {
       };
       setFilieres(prev => [...prev, nouvelleFiliere]);
       // Mettre à jour le nombre de filières du département
-      setDepartements(prev => prev.map(d => 
-        d.id === departementSelectionne.id 
+      setDepartements(prev => prev.map(d =>
+        d.id === departementSelectionne.id
           ? { ...d, nombreFilieres: d.nombreFilieres + 1 }
           : d
       ));
@@ -551,8 +445,8 @@ const GestionDepartements = () => {
 
     if (moduleCourant) {
       // Modification
-      setModules(prev => prev.map(m => 
-        m.id === moduleCourant.id 
+      setModules(prev => prev.map(m =>
+        m.id === moduleCourant.id
           ? { ...m, ...formulaireModule, coefficient: parseFloat(formulaireModule.coefficient) || m.coefficient, nombreHeures: parseInt(formulaireModule.nombreHeures) || m.nombreHeures }
           : m
       ));
@@ -574,8 +468,8 @@ const GestionDepartements = () => {
       };
       setModules(prev => [...prev, nouveauModule]);
       // Mettre à jour le nombre de modules de la filière
-      setFilieres(prev => prev.map(f => 
-        f.id === filierePourModule.id 
+      setFilieres(prev => prev.map(f =>
+        f.id === filierePourModule.id
           ? { ...f, nombreModules: (f.nombreModules || 0) + 1 }
           : f
       ));
@@ -591,8 +485,8 @@ const GestionDepartements = () => {
 
     if (matiereCourante) {
       // Modification
-      setMatieres(prev => prev.map(m => 
-        m.id === matiereCourante.id 
+      setMatieres(prev => prev.map(m =>
+        m.id === matiereCourante.id
           ? { ...m, ...formulaireMatiere, coefficient: parseFloat(formulaireMatiere.coefficient) || m.coefficient, nombreHeures: parseInt(formulaireMatiere.nombreHeures) || m.nombreHeures }
           : m
       ));
@@ -613,7 +507,7 @@ const GestionDepartements = () => {
       };
       setMatieres(prev => [...prev, nouvelleMatiere]);
       // Mettre à jour le nombre de matières du module
-      setModules(prev => prev.map(m => 
+      setModules(prev => prev.map(m =>
         m.codeModule === modulePourMatiere.codeModule
           ? { ...m, nombreMatieres: (m.nombreMatieres || 0) + 1 }
           : m
@@ -658,8 +552,9 @@ const GestionDepartements = () => {
     return professeurs.filter(p => p.departement === departementNom);
   };
 
-  const obtenirFilieresDepartement = (departementNom) => {
-    return filieres.filter(f => f.departement === departementNom);
+  const obtenirFilieresDepartement = (departementCode) => {
+    // Filtrer par code du département (ex: DEPT-INFO)
+    return filieres.filter(f => f.departement === departementCode);
   };
 
   const obtenirModulesFiliere = (codeFiliere) => {
@@ -676,18 +571,18 @@ const GestionDepartements = () => {
     { key: 'code', label: 'Code' },
     { key: 'nom', label: 'Nom' },
     { key: 'chefDepartement', label: 'Chef de Département' },
-    { 
-      key: 'nombreProfesseurs', 
+    {
+      key: 'nombreProfesseurs',
       label: 'Professeurs',
       render: (item) => `${item.nombreProfesseurs} professeur(s)`
     },
-    { 
-      key: 'nombreFilieres', 
+    {
+      key: 'nombreFilieres',
       label: 'Filières',
       render: (item) => `${item.nombreFilieres} filière(s)`
     },
-    { 
-      key: 'nombreEtudiants', 
+    {
+      key: 'nombreEtudiants',
       label: 'Étudiants',
       render: (item) => `${item.nombreEtudiants} étudiant(s)`
     }
@@ -700,7 +595,7 @@ const GestionDepartements = () => {
   // Si on affiche les détails d'un module
   if (moduleDetails) {
     const matieresModule = obtenirMatieresModule(moduleDetails.codeModule);
-    
+
     return (
       <div className="gestion-departements">
         <div className="details-departement-header">
@@ -724,10 +619,7 @@ const GestionDepartements = () => {
                 <span className="details-departement-info-label">Code</span>
                 <span className="details-departement-info-value">{moduleDetails.codeModule}</span>
               </div>
-              <div className="details-departement-info-item">
-                <span className="details-departement-info-label">Professeur</span>
-                <span className="details-departement-info-value">{moduleDetails.professeur || 'Non défini'}</span>
-              </div>
+
               <div className="details-departement-info-item">
                 <span className="details-departement-info-label">Semestre</span>
                 <span className="details-departement-info-value">{moduleDetails.semestre || 'Non défini'}</span>
@@ -751,7 +643,7 @@ const GestionDepartements = () => {
         <div className="details-departement-filieres">
           <div className="details-departement-filieres-header">
             <h2 className="details-departement-filieres-titre">Matières du Module</h2>
-            <button 
+            <button
               className="details-departement-btn-ajouter"
               onClick={() => ouvrirModalAjouterMatiere(moduleDetails)}
             >
@@ -773,7 +665,7 @@ const GestionDepartements = () => {
                     <p className="details-filiere-carte-code">{matiere.codeMatiere}</p>
                   </div>
                 </div>
-                
+
                 <div className="details-filiere-carte-infos">
                   <div className="details-filiere-carte-info-item-chef">
                     <span className="details-filiere-carte-info-label">Professeur</span>
@@ -788,7 +680,7 @@ const GestionDepartements = () => {
                     <span className="details-filiere-carte-info-value">{matiere.type || 'Non défini'}</span>
                   </div>
                 </div>
-                
+
                 <div className="details-filiere-carte-contenu">
                   <div className="details-filiere-carte-details">
                     <div className="details-filiere-carte-detail-item">
@@ -797,9 +689,9 @@ const GestionDepartements = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="details-filiere-carte-actions">
-                  <button 
+                  <button
                     className="details-filiere-carte-btn-modifier"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -808,7 +700,7 @@ const GestionDepartements = () => {
                   >
                     Modifier
                   </button>
-                  <button 
+                  <button
                     className="details-filiere-carte-btn-supprimer"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -911,7 +803,7 @@ const GestionDepartements = () => {
   // Si on affiche les détails d'une filière
   if (filiereDetails) {
     const modulesFiliere = obtenirModulesFiliere(filiereDetails.codeFiliere);
-    
+
     return (
       <div className="gestion-departements">
         <div className="details-departement-header">
@@ -957,9 +849,9 @@ const GestionDepartements = () => {
               </div>
               <div className="details-departement-info-item">
                 <span className="details-departement-info-label">État</span>
-                <BadgeStatut 
-                  statut={filiereDetails.etat === 'OUVERTE' ? 'success' : 'error'} 
-                  texte={filiereDetails.etat === 'OUVERTE' ? 'Ouverte' : 'Fermée'} 
+                <BadgeStatut
+                  statut={filiereDetails.etat === 'OUVERTE' ? 'success' : 'error'}
+                  texte={filiereDetails.etat === 'OUVERTE' ? 'Ouverte' : 'Fermée'}
                 />
               </div>
             </div>
@@ -969,7 +861,7 @@ const GestionDepartements = () => {
         <div className="details-departement-filieres">
           <div className="details-departement-filieres-header">
             <h2 className="details-departement-filieres-titre">Modules de la Filière</h2>
-            <button 
+            <button
               className="details-departement-btn-ajouter"
               onClick={() => ouvrirModalAjouterModule(filiereDetails)}
             >
@@ -991,7 +883,7 @@ const GestionDepartements = () => {
                     <p className="details-filiere-carte-code">{module.codeModule}</p>
                   </div>
                 </div>
-                
+
                 <div className="details-filiere-carte-infos">
                   <div className="details-filiere-carte-info-item-chef">
                     <span className="details-filiere-carte-info-label">Professeur</span>
@@ -1006,23 +898,20 @@ const GestionDepartements = () => {
                     <span className="details-filiere-carte-info-value">{module.nombreMatieres || 0}</span>
                   </div>
                 </div>
-                
+
                 <div className="details-filiere-carte-contenu">
                   <div className="details-filiere-carte-details">
-                    <div className="details-filiere-carte-detail-item">
-                      <span className="details-filiere-carte-detail-label">Semestre</span>
-                      <span className="details-filiere-carte-detail-value">{module.semestre || 'Non défini'}</span>
-                    </div>
+
                     <div className="details-filiere-carte-detail-item">
                       <span className="details-filiere-carte-detail-label">Coefficient</span>
                       <span className="details-filiere-carte-detail-value">{module.coefficient || 0}</span>
                     </div>
                   </div>
-                  
+
                 </div>
-                
+
                 <div className="details-filiere-carte-actions">
-                  <button 
+                  <button
                     className="details-filiere-carte-btn-modifier"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -1031,7 +920,7 @@ const GestionDepartements = () => {
                   >
                     Modifier
                   </button>
-                  <button 
+                  <button
                     className="details-filiere-carte-btn-details"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -1040,7 +929,7 @@ const GestionDepartements = () => {
                   >
                     Détails
                   </button>
-                  <button 
+                  <button
                     className="details-filiere-carte-btn-supprimer"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -1137,8 +1026,8 @@ const GestionDepartements = () => {
 
   // Si on affiche les détails d'un département
   if (departementDetails) {
-    const filieresDepartement = obtenirFilieresDepartement(departementDetails.nom);
-    
+    const filieresDepartement = obtenirFilieresDepartement(departementDetails.code);
+
     return (
       <div className="gestion-departements">
         <div className="details-departement-header">
@@ -1158,7 +1047,7 @@ const GestionDepartements = () => {
             <div className="details-departement-info-grid">
               <div className="details-departement-info-item">
                 <span className="details-departement-info-label">Code</span>
-                <span className="details-departement-info-value">DEPT-{departementDetails.code}</span>
+                <span className="details-departement-info-value">{departementDetails.code}</span>
               </div>
               <div className="details-departement-info-item">
                 <span className="details-departement-info-label">Chef de Département</span>
@@ -1183,7 +1072,7 @@ const GestionDepartements = () => {
         <div className="details-departement-filieres">
           <div className="details-departement-filieres-header">
             <h2 className="details-departement-filieres-titre">Filières du Département</h2>
-            <button 
+            <button
               className="details-departement-btn-ajouter"
               onClick={() => ouvrirModalAjouterFiliere(departementDetails)}
             >
@@ -1193,8 +1082,8 @@ const GestionDepartements = () => {
           </div>
           <div className="details-departement-filieres-cartes">
             {filieresDepartement.map(filiere => (
-              <div 
-                key={filiere.id} 
+              <div
+                key={filiere.id}
                 className="details-filiere-carte"
               >
                 <div className="details-filiere-carte-header">
@@ -1212,7 +1101,7 @@ const GestionDepartements = () => {
                     <p className="details-filiere-carte-code">{filiere.codeFiliere}</p>
                   </div>
                 </div>
-                
+
                 <div className="details-filiere-carte-infos">
                   <div className="details-filiere-carte-info-item-chef">
                     <span className="details-filiere-carte-info-label">Chef de Filière</span>
@@ -1229,27 +1118,20 @@ const GestionDepartements = () => {
                 </div>
                 <div className="details-filiere-carte-contenu">
                   <div className="details-filiere-carte-details">
-                    <div className="details-filiere-carte-detail-item">
-                      <span className="details-filiere-carte-detail-label">Niveau</span>
-                      <span className="details-filiere-carte-detail-value">{filiere.niveauDiplome || 'Non défini'}</span>
-                    </div>
-                    <div className="details-filiere-carte-detail-item">
-                      <span className="details-filiere-carte-detail-label">Durée</span>
-                      <span className="details-filiere-carte-detail-value">{filiere.dureeFormation || 0} ans</span>
-                    </div>
+
                     <div className="details-filiere-carte-detail-item">
                       <span className="details-filiere-carte-detail-label">État</span>
-                      <BadgeStatut 
-                        statut={filiere.etat === 'OUVERTE' ? 'success' : 'error'} 
-                        texte={filiere.etat === 'OUVERTE' ? 'Ouverte' : 'Fermée'} 
+                      <BadgeStatut
+                        statut={filiere.etat === 'OUVERTE' ? 'success' : 'error'}
+                        texte={filiere.etat === 'OUVERTE' ? 'Ouverte' : 'Fermée'}
                       />
                     </div>
                   </div>
-                  
+
                 </div>
-                
+
                 <div className="details-filiere-carte-actions">
-                  <button 
+                  <button
                     className="details-filiere-carte-btn-modifier"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -1258,7 +1140,7 @@ const GestionDepartements = () => {
                   >
                     Modifier
                   </button>
-                  <button 
+                  <button
                     className="details-filiere-carte-btn-details"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -1267,7 +1149,7 @@ const GestionDepartements = () => {
                   >
                     Détails
                   </button>
-                  <button 
+                  <button
                     className="details-filiere-carte-btn-supprimer"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -1421,10 +1303,10 @@ const GestionDepartements = () => {
                 </div>
                 <div className="departement-carte-nouveau-titre-container">
                   <h3 className="departement-carte-nouveau-titre">{departement.nom}</h3>
-                  <p className="departement-carte-nouveau-code">DEPT-{departement.code}</p>
+                  <p className="departement-carte-nouveau-code">{departement.code}</p>
                 </div>
               </div>
-              
+
               <div className="departement-carte-nouveau-infos">
                 <div className="departement-carte-nouveau-info-item-chef">
                   <span className="departement-carte-nouveau-info-label">Chef de département</span>
@@ -1439,28 +1321,19 @@ const GestionDepartements = () => {
                   <span className="departement-carte-nouveau-info-value">{departement.nombreEtudiants}</span>
                 </div>
               </div>
-              
+
               <div className="departement-carte-nouveau-separateur"></div>
-              
-              <div className="departement-carte-nouveau-filieres">
-                <span className="departement-carte-nouveau-filieres-label">FILIÈRES :</span>
-                <div className="departement-carte-nouveau-filieres-tags">
-                  {filieresDepartement.map(filiere => (
-                    <span key={filiere.id} className="departement-carte-nouveau-filiere-tag">
-                      {filiere.nom}
-                    </span>
-                  ))}
-                </div>
-              </div>
+
+
 
               <div className="departement-carte-nouveau-actions">
-                <button 
+                <button
                   className="departement-carte-nouveau-btn-modifier"
                   onClick={() => ouvrirModalModification(departement)}
                 >
                   Modifier
                 </button>
-                <button 
+                <button
                   className="departement-carte-nouveau-btn-details"
                   onClick={() => setDepartementDetails(departement)}
                 >

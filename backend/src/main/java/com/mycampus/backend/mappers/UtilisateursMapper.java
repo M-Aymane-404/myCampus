@@ -69,6 +69,24 @@ public class UtilisateursMapper {
         professeurSortieDTO.setCodeDepartementOuTravail(professeur.getDepartementOuTravail() != null ? professeur.getDepartementOuTravail().getCodeDepartement() : null);
         professeurSortieDTO.setCodeFiliereDirigee(professeur.getFiliereDirigee() != null ? professeur.getFiliereDirigee().getCodeFiliere() : null);
         
+        // Récupérer les matières enseignées (noms uniques) depuis les affectations actives
+        if (professeur.getAffectationEnseignements() != null) {
+            List<String> matieresEnseignees = professeur.getAffectationEnseignements().stream()
+                .filter(ae -> ae.getActive() != null && ae.getActive()) // Seulement les affectations actives
+                .map(ae -> ae.getMatiere().getNom()) // Récupérer le nom de la matière
+                .distinct() // Éviter les doublons
+                .collect(Collectors.toList());
+            professeurSortieDTO.setMatieresEnseignees(matieresEnseignees);
+            
+            // Récupérer les filières (codes uniques) via classe.filiere
+            List<String> filieres = professeur.getAffectationEnseignements().stream()
+                .filter(ae -> ae.getActive() != null && ae.getActive()) // Seulement les affectations actives
+                .map(ae -> ae.getClasse().getFiliere().getCodeFiliere()) // Récupérer le code de la filière
+                .distinct() // Éviter les doublons
+                .collect(Collectors.toList());
+            professeurSortieDTO.setFilieres(filieres);
+        }
+        
         return professeurSortieDTO;
     }
 

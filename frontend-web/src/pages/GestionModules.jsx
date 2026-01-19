@@ -1,53 +1,67 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BookOpen, GraduationCap, FileText } from 'lucide-react';
 import TableauDonnees from '../composants/communs/TableauDonnees';
 import FormulaireModal from '../composants/communs/FormulaireModal';
 import ChampFormulaire from '../composants/communs/ChampFormulaire';
 import CarteStatistique from '../composants/tableauDeBord/CarteStatistique';
+import { apiStructure } from '../services/apiStructure';
 import './GestionModules.css';
 
 const GestionModules = () => {
-  const [modules, setModules] = useState([
-    {
-      id: 1,
-      codeModule: 'GI-INFO-101',
-      nom: 'Algorithmique et Structures de Données',
-      description: 'Introduction à l\'algorithmique et aux structures de données',
-      semestre: 'S1',
-      coefficient: 4.0,
-      filiere: 'GI-2024',
-      nombreMatieres: 3,
-      nombreHeures: 60
-    },
-    {
-      id: 2,
-      codeModule: 'GI-INFO-102',
-      nom: 'Programmation Orientée Objet',
-      description: 'Concepts de la programmation orientée objet',
-      semestre: 'S2',
-      coefficient: 5.0,
-      filiere: 'GI-2024',
-      nombreMatieres: 2,
-      nombreHeures: 75
-    },
-    {
-      id: 3,
-      codeModule: 'GIL-IND-201',
-      nom: 'Gestion de Production',
-      description: 'Techniques de gestion de production industrielle',
-      semestre: 'S3',
-      coefficient: 4.5,
-      filiere: 'GIL-2024',
-      nombreMatieres: 4,
-      nombreHeures: 90
-    }
-  ]);
+  const [modules, setModules] = useState([]);
+  const [chargement, setChargement] = useState(true);
+  const [erreur, setErreur] = useState(null);
+  const [filieres, setFilieres] = useState([]);
 
-  const [filieres] = useState([
-    { value: 'GI-2024', label: 'Génie Informatique' },
-    { value: 'GIL-2024', label: 'Génie Industriel et Logistique' },
-    { value: 'GC-2024', label: 'Génie Civil' }
-  ]);
+  // Charger les modules depuis l'API
+  const chargerModules = async () => {
+    try {
+      setChargement(true);
+      setErreur(null);
+      const donnees = await apiStructure.obtenirTousModules();
+      console.log('Modules reçus:', donnees);
+
+      // Mapper les données backend vers le format frontend
+      const modulesMapped = donnees.map(m => ({
+        id: m.id,
+        codeModule: m.codeModule,
+        nom: m.nom,
+        description: m.description || '',
+        semestre: m.semestre || '',
+        coefficient: m.coefficient || 0,
+        filiere: m.codeFiliere || '',
+        nombreMatieres: 0, // TODO: compter depuis les matières
+        nombreHeures: 0 // TODO: calculer depuis les matières
+      }));
+
+      setModules(modulesMapped);
+    } catch (err) {
+      console.error('Erreur lors du chargement des modules:', err);
+      setErreur('Erreur lors du chargement des modules');
+    } finally {
+      setChargement(false);
+    }
+  };
+
+  // Charger les filières pour le sélecteur
+  const chargerFilieres = async () => {
+    try {
+      const donnees = await apiStructure.obtenirToutesFilieres();
+      const filieresMapped = donnees.map(f => ({
+        value: f.codeFiliere,
+        label: f.nom || f.codeFiliere
+      }));
+      setFilieres(filieresMapped);
+    } catch (err) {
+      console.error('Erreur lors du chargement des filières:', err);
+      setFilieres([]);
+    }
+  };
+
+  useEffect(() => {
+    chargerModules();
+    chargerFilieres();
+  }, []);
 
   const [modalOuvert, setModalOuvert] = useState(false);
   const [moduleCourant, setModuleCourant] = useState(null);
@@ -111,15 +125,15 @@ const GestionModules = () => {
     }
 
     if (moduleCourant) {
-      setModules(prev => prev.map(m => 
-        m.id === moduleCourant.id 
-          ? { 
-              ...m, 
-              ...formulaire, 
-              coefficient: parseFloat(formulaire.coefficient),
-              nombreHeures: parseInt(formulaire.nombreHeures),
-              nombreMatieres: m.nombreMatieres
-            }
+      setModules(prev => prev.map(m =>
+        m.id === moduleCourant.id
+          ? {
+            ...m,
+            ...formulaire,
+            coefficient: parseFloat(formulaire.coefficient),
+            nombreHeures: parseInt(formulaire.nombreHeures),
+            nombreMatieres: m.nombreMatieres
+          }
           : m
       ));
     } else {
@@ -153,7 +167,7 @@ const GestionModules = () => {
 
   const totalModules = modules.length;
   const totalHeures = modules.reduce((sum, m) => sum + m.nombreHeures, 0);
-  const moyenneCoefficient = modules.length > 0 
+  const moyenneCoefficient = modules.length > 0
     ? (modules.reduce((sum, m) => sum + m.coefficient, 0) / modules.length).toFixed(2)
     : 0;
 
@@ -191,14 +205,23 @@ const GestionModules = () => {
         />
       </div>
 
-      <TableauDonnees
-        titre="Liste des Modules"
-        colonnes={colonnes}
-        donnees={modules}
-        surAjouter={ouvrirModalAjout}
-        surModifier={ouvrirModalModification}
-        surSupprimer={supprimer}
-      />
+      {chargement ? (
+        <div className="chargement-container">Chargement des modules...</div>
+      ) : erreur ? (
+        <div className="erreur-container">
+          <p>{erreur}</p>
+          <button onClick={chargerModules} className="btn-reessayer">Réessayer</button>
+        </div>
+      ) : (
+        <TableauDonnees
+          titre="Liste des Modules"
+          colonnes={colonnes}
+          donnees={modules}
+          surAjouter={ouvrirModalAjout}
+          surModifier={ouvrirModalModification}
+          surSupprimer={supprimer}
+        />
+      )}
 
       <FormulaireModal
         titre={moduleCourant ? 'Modifier le Module' : 'Ajouter un Module'}

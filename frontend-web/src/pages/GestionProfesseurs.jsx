@@ -1,79 +1,127 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { UserCheck, BookOpen, GraduationCap } from 'lucide-react';
 import TableauDonnees from '../composants/communs/TableauDonnees';
 import FormulaireModal from '../composants/communs/FormulaireModal';
 import ChampFormulaire from '../composants/communs/ChampFormulaire';
 import CarteStatistique from '../composants/tableauDeBord/CarteStatistique';
 import BadgeStatut from '../composants/communs/BadgeStatut';
+import { apiProfesseurs } from '../services/apiProfesseurs';
+import { apiStructure } from '../services/apiStructure';
 import './GestionProfesseurs.css';
 
 const GestionProfesseurs = () => {
-  const [professeurs, setProfesseurs] = useState([
-    {
-      id: 1,
-      ppr: 'PPR001',
-      nom: 'Alami',
-      prenom: 'Ahmed',
-      email: 'ahmed.alami@univ.ma',
-      specialite: 'Informatique',
-      grade: 'Professeur',
-      departement: 'Informatique',
-      filieres: ['GI-2024', 'GIL-2024'],
-      matieres: ['ALG-101-1', 'BD-201-1'],
-      dateRecrutement: '2015-09-01',
-      status: 'Actif'
-    },
-    {
-      id: 2,
-      ppr: 'PPR002',
-      nom: 'Bennani',
-      prenom: 'Fatima',
-      email: 'fatima.bennani@univ.ma',
-      specialite: 'Mathématiques',
-      grade: 'Maître de Conférences',
-      departement: 'Informatique',
-      filieres: ['GI-2024'],
-      matieres: ['POO-102-1'],
-      dateRecrutement: '2018-09-01',
-      status: 'Actif'
-    },
-    {
-      id: 3,
-      ppr: 'PPR003',
-      nom: 'Chraibi',
-      prenom: 'Mohamed',
-      email: 'mohamed.chraibi@univ.ma',
-      specialite: 'Génie Industriel',
-      grade: 'Professeur',
-      departement: 'Industriel',
-      filieres: ['GIL-2024'],
-      matieres: ['GP-301-1'],
-      dateRecrutement: '2010-09-01',
-      status: 'Actif'
+  const [professeurs, setProfesseurs] = useState([]);
+  const [chargement, setChargement] = useState(true);
+  const [erreur, setErreur] = useState(null);
+  const [filieres, setFilieres] = useState([]);
+  const [departements, setDepartements] = useState([]);
+  const [matieres, setMatieres] = useState([]);
+  const [chargementDonnees, setChargementDonnees] = useState(true);
+
+  // Charger les professeurs depuis l'API
+  const chargerProfesseurs = async () => {
+    try {
+      setChargement(true);
+      setErreur(null);
+      const donnees = await apiProfesseurs.obtenirTous();
+      console.log('Professeurs reçus:', donnees);
+      // Mapper les données du backend vers le format frontend
+      const professeursMapped = donnees.map(p => ({
+        id: p.id,
+        ppr: p.ppr,
+        nom: p.nom,
+        prenom: p.prenom,
+        email: p.email,
+        cin: p.cin,
+        tel: p.tel,
+        grade: p.grade,
+        departement: p.codeDepartementOuTravail || '', // Utiliser le code du département
+        matieresEnseignees: p.matieresEnseignees || [], // Données venant du backend
+        filieres: p.filieres || [], // Données venant du backend
+        dateRecrutement: p.dateRecrutement,
+        status: p.statut || (p.enabled ? 'Actif' : 'Inactif')
+      }));
+      setProfesseurs(professeursMapped);
+      console.log('Professeurs mappés:', professeursMapped);
+    } catch (err) {
+      console.error('Erreur lors du chargement des professeurs:', err);
+      setErreur('Erreur lors du chargement des professeurs. Vérifiez que le serveur backend est démarré.');
+    } finally {
+      setChargement(false);
     }
-  ]);
+  };
 
-  const [filieres] = useState([
-    { value: 'GI-2024', label: 'Génie Informatique' },
-    { value: 'GIL-2024', label: 'Génie Industriel et Logistique' },
-    { value: 'GC-2024', label: 'Génie Civil' }
-  ]);
+  // Charger les filières depuis l'API
+  const chargerFilieres = async () => {
+    try {
+      const donnees = await apiStructure.obtenirToutesFilieres();
+      console.log('Filieres reçues:', donnees);
+      if (donnees && donnees.length > 0) {
+        const filieresMapped = donnees.map(f => ({
+          value: f.codeFiliere,
+          label: f.nom || f.codeFiliere
+        }));
+        setFilieres(filieresMapped);
+      } else {
+        setFilieres([]);
+      }
+    } catch (err) {
+      console.error('Erreur lors du chargement des filières:', err);
+      setFilieres([]);
+    }
+  };
 
-  const [departements] = useState([
-    { value: 'Informatique', label: 'Informatique' },
-    { value: 'Industriel', label: 'Industriel' },
-    { value: 'Génie Civil', label: 'Génie Civil' },
-    { value: 'Commerce', label: 'Commerce' },
-    { value: 'Marketing', label: 'Marketing' }
-  ]);
+  // Charger les départements depuis l'API
+  const chargerDepartements = async () => {
+    try {
+      const donnees = await apiStructure.obtenirTousDepartements();
+      console.log('Départements reçus:', donnees);
+      if (donnees && donnees.length > 0) {
+        // Le backend attend le codeDepartement, pas le nom
+        const departementsMapped = donnees.map(d => ({
+          value: d.codeDepartement, // Utiliser le code, pas le nom
+          label: d.typeDepartement || d.codeDepartement
+        }));
+        setDepartements(departementsMapped);
+        console.log('Départements mappés:', departementsMapped);
+      } else {
+        setDepartements([]);
+      }
+    } catch (err) {
+      console.error('Erreur lors du chargement des départements:', err);
+      setDepartements([]);
+    } finally {
+      setChargementDonnees(false);
+    }
+  };
 
-  const [matieres] = useState([
-    { value: 'ALG-101-1', label: 'Algorithmique' },
-    { value: 'POO-102-1', label: 'Programmation Orientée Objet' },
-    { value: 'BD-201-1', label: 'Bases de Données' },
-    { value: 'WEB-202-1', label: 'Développement Web' },
-    { value: 'GP-301-1', label: 'Gestion de Production' }
-  ]);
+  // Charger les matières depuis l'API
+  const chargerMatieres = async () => {
+    try {
+      const donnees = await apiStructure.obtenirToutesMatieres();
+      console.log('Matieres reçues:', donnees);
+      if (donnees && donnees.length > 0) {
+        const matieresMapped = donnees.map(m => ({
+          value: m.codeMatiere,
+          label: m.nom || m.codeMatiere
+        }));
+        setMatieres(matieresMapped);
+        console.log('Matieres mappées:', matieresMapped);
+      } else {
+        setMatieres([]);
+      }
+    } catch (err) {
+      console.error('Erreur lors du chargement des matières:', err);
+      setMatieres([]);
+    }
+  };
+
+  useEffect(() => {
+    chargerProfesseurs();
+    chargerFilieres();
+    chargerDepartements();
+    chargerMatieres();
+  }, []);
 
   const [filtreDepartement, setFiltreDepartement] = useState('');
   const [filtreFiliere, setFiltreFiliere] = useState('');
@@ -87,10 +135,14 @@ const GestionProfesseurs = () => {
     nom: '',
     prenom: '',
     email: '',
-    specialite: '',
+    password: '',
+    cin: '',
+    tel: '',
+    matieresEnseignees: [], // Matières enseignées (multi-sélection)
     grade: '',
     dateRecrutement: '',
-    status: 'Actif'
+    statut: 'Actif',
+    codeDepartementOuTravail: ''
   });
 
   const [filieresSelectionnees, setFilieresSelectionnees] = useState([]);
@@ -117,10 +169,14 @@ const GestionProfesseurs = () => {
       nom: '',
       prenom: '',
       email: '',
-      specialite: '',
+      password: '',
+      cin: '',
+      tel: '',
+      matieresEnseignees: [],
       grade: '',
       dateRecrutement: '',
-      status: 'Actif'
+      statut: 'Actif',
+      codeDepartementOuTravail: ''
     });
     setModalOuvert(true);
   };
@@ -132,10 +188,14 @@ const GestionProfesseurs = () => {
       nom: professeur.nom,
       prenom: professeur.prenom,
       email: professeur.email,
-      specialite: professeur.specialite,
-      grade: professeur.grade,
+      password: '', // Ne pas pré-remplir le mot de passe en modification
+      cin: professeur.cin || '',
+      tel: professeur.tel || '',
+      matieresEnseignees: professeur.matieresEnseignees || [],
+      grade: professeur.grade || '',
       dateRecrutement: professeur.dateRecrutement,
-      status: professeur.status
+      statut: professeur.status,
+      codeDepartementOuTravail: professeur.departement || ''
     });
     setModalOuvert(true);
   };
@@ -151,19 +211,31 @@ const GestionProfesseurs = () => {
     setFormulaire(prev => ({ ...prev, [name]: value }));
   };
 
+  const gererSelectionMatieres = (e) => {
+    const options = Array.from(e.target.selectedOptions, option => option.value);
+    setFormulaire(prev => ({ ...prev, matieresEnseignees: options }));
+  };
+
   const gererSelectionFilieres = (e) => {
     const options = Array.from(e.target.selectedOptions, option => option.value);
     setFilieresSelectionnees(options);
   };
 
-  const sauvegarder = () => {
+  const sauvegarder = async () => {
     // Validation basique
-    if (!modalAttribution && (!formulaire.ppr || !formulaire.nom || !formulaire.prenom || !formulaire.email)) {
+    if (!modalAttribution && (!formulaire.ppr || !formulaire.nom || !formulaire.prenom || !formulaire.email || !formulaire.cin)) {
       alert('Veuillez remplir tous les champs obligatoires');
       return;
     }
 
+    // Le mot de passe est obligatoire uniquement pour la création
+    if (!modalAttribution && !professeurCourant && !formulaire.password) {
+      alert('Le mot de passe est obligatoire pour créer un nouveau professeur');
+      return;
+    }
+
     if (modalAttribution) {
+      // TODO: Implémenter l'attribution de filières via API si nécessaire
       setProfesseurs(prev => prev.map(p => 
         p.id === professeurCourant.id 
           ? { ...p, filieres: filieresSelectionnees }
@@ -173,28 +245,62 @@ const GestionProfesseurs = () => {
       return;
     }
 
-    if (professeurCourant) {
-      // Modification
-      setProfesseurs(prev => prev.map(p => 
-        p.id === professeurCourant.id 
-          ? { ...p, ...formulaire }
-          : p
-      ));
-    } else {
-      // Ajout
-      const nouveauProfesseur = {
-        id: professeurs.length + 1,
-        ...formulaire,
-        filieres: []
+    try {
+      // Préparer les données pour l'API backend
+      const donneesAPI = {
+        ppr: formulaire.ppr.trim(),
+        nom: formulaire.nom.trim(),
+        prenom: formulaire.prenom.trim(),
+        email: formulaire.email.trim(),
+        cin: formulaire.cin.trim(),
+        tel: formulaire.tel && formulaire.tel.trim() ? formulaire.tel.trim() : '',
+        grade: formulaire.grade.trim(), // Grade est maintenant un champ texte manuel
+        dateRecrutement: formulaire.dateRecrutement || null,
+        statut: formulaire.statut,
+        // Specialite n'est plus utilisé, mais gardé pour compatibilité backend (optionnel)
+        specialite: formulaire.matieresEnseignees.length > 0 
+          ? formulaire.matieresEnseignees.join(', ') 
+          : ''
       };
-      setProfesseurs(prev => [...prev, nouveauProfesseur]);
+
+      // Le département doit être envoyé seulement s'il est rempli, et doit être le CODE du département
+      if (formulaire.codeDepartementOuTravail && formulaire.codeDepartementOuTravail.trim()) {
+        donneesAPI.codeDepartementOuTravail = formulaire.codeDepartementOuTravail.trim();
+      } else {
+        // Ne pas envoyer le champ si vide
+        donneesAPI.codeDepartementOuTravail = null;
+      }
+
+      // Ajouter le mot de passe seulement si fourni (création ou modification)
+      if (formulaire.password && formulaire.password.trim()) {
+        donneesAPI.password = formulaire.password.trim();
+      }
+
+      console.log('Données envoyées à l\'API:', JSON.stringify(donneesAPI, null, 2));
+
+      if (professeurCourant) {
+        await apiProfesseurs.modifier(professeurCourant.ppr, donneesAPI);
+      } else {
+        await apiProfesseurs.creer(donneesAPI);
+      }
+      
+      setModalOuvert(false);
+      chargerProfesseurs(); // Recharger la liste
+    } catch (err) {
+      console.error('Erreur détaillée:', err);
+      const messageErreur = err.message || 'Erreur inconnue lors de la sauvegarde';
+      alert('Erreur lors de la sauvegarde: ' + messageErreur);
     }
-    setModalOuvert(false);
   };
 
-  const supprimer = (professeur) => {
-    if (window.confirm(`Êtes-vous sûr de vouloir supprimer le professeur "${professeur.nom} ${professeur.prenom}" ?`)) {
-      setProfesseurs(prev => prev.filter(p => p.id !== professeur.id));
+  const supprimer = async (professeur) => {
+    if (window.confirm(`Êtes-vous sûr de vouloir supprimer le professeur "${professeur.prenom} ${professeur.nom}" ?`)) {
+      try {
+        await apiProfesseurs.supprimer(professeur.ppr);
+        chargerProfesseurs(); // Recharger la liste
+      } catch (err) {
+        alert('Erreur lors de la suppression: ' + err.message);
+      }
     }
   };
 
@@ -206,7 +312,22 @@ const GestionProfesseurs = () => {
       render: (item) => `${item.prenom} ${item.nom}`
     },
     { key: 'email', label: 'Email' },
-    { key: 'specialite', label: 'Spécialité' },
+    { 
+      key: 'matieresEnseignees', 
+      label: 'Matières Enseignées',
+      render: (item) => (
+        <div className="cellule-filieres">
+          {item.matieresEnseignees && item.matieresEnseignees.length > 0 ? (
+            <>
+              <BookOpen size={14} />
+              <span>{item.matieresEnseignees.length} matière(s)</span>
+            </>
+          ) : (
+            <span className="texte-secondaire">Aucune</span>
+          )}
+        </div>
+      )
+    },
     { key: 'grade', label: 'Grade' },
     { 
       key: 'filieres', 
@@ -230,7 +351,7 @@ const GestionProfesseurs = () => {
       render: (item) => (
         <BadgeStatut 
           statut={item.status === 'Actif' ? 'success' : 'error'}
-          texte={item.status}
+          texte={item.status || 'Inactif'}
         />
       )
     }
@@ -238,18 +359,12 @@ const GestionProfesseurs = () => {
 
   // Filtrer les professeurs selon les critères sélectionnés
   const professeursFiltres = professeurs.filter(p => {
-    // Filtre par département
+    // Filtre par département - comparer avec le code du département
     if (filtreDepartement && p.departement !== filtreDepartement) {
       return false;
     }
-    // Filtre par filière
-    if (filtreFiliere && (!p.filieres || !p.filieres.includes(filtreFiliere))) {
-      return false;
-    }
-    // Filtre par matière
-    if (filtreMatiere && (!p.matieres || !p.matieres.includes(filtreMatiere))) {
-      return false;
-    }
+    // Note: Les filtres par filière et matière nécessiteraient des données supplémentaires
+    // qui ne sont pas disponibles dans ProfesseurSortieDTO pour l'instant
     return true;
   });
 
@@ -303,11 +418,17 @@ const GestionProfesseurs = () => {
             onChange={(e) => setFiltreDepartement(e.target.value)}
           >
             <option value="">Tous les départements</option>
-            {departements.map(dep => (
-              <option key={dep.value} value={dep.value}>
-                {dep.label}
-              </option>
-            ))}
+            {chargementDonnees ? (
+              <option value="" disabled>Chargement...</option>
+            ) : departements.length > 0 ? (
+              departements.map(dep => (
+                <option key={dep.value} value={dep.value}>
+                  {dep.label}
+                </option>
+              ))
+            ) : (
+              <option value="" disabled>Aucun département disponible</option>
+            )}
           </select>
         </div>
         <div className="filtre-item">
@@ -318,11 +439,17 @@ const GestionProfesseurs = () => {
             onChange={(e) => setFiltreFiliere(e.target.value)}
           >
             <option value="">Toutes les filières</option>
-            {filieres.map(filiere => (
-              <option key={filiere.value} value={filiere.value}>
-                {filiere.label}
-              </option>
-            ))}
+            {chargementDonnees ? (
+              <option value="" disabled>Chargement...</option>
+            ) : filieres.length > 0 ? (
+              filieres.map(filiere => (
+                <option key={filiere.value} value={filiere.value}>
+                  {filiere.label}
+                </option>
+              ))
+            ) : (
+              <option value="" disabled>Aucune filière disponible</option>
+            )}
           </select>
         </div>
         <div className="filtre-item">
@@ -333,24 +460,39 @@ const GestionProfesseurs = () => {
             onChange={(e) => setFiltreMatiere(e.target.value)}
           >
             <option value="">Toutes les matières</option>
-            {matieres.map(matiere => (
-              <option key={matiere.value} value={matiere.value}>
-                {matiere.label}
-              </option>
-            ))}
+            {chargementDonnees ? (
+              <option value="" disabled>Chargement...</option>
+            ) : matieres.length > 0 ? (
+              matieres.map(matiere => (
+                <option key={matiere.value} value={matiere.value}>
+                  {matiere.label}
+                </option>
+              ))
+            ) : (
+              <option value="" disabled>Aucune matière disponible</option>
+            )}
           </select>
         </div>
       </div>
 
-      <TableauDonnees
-        titre="Liste des Professeurs"
-        colonnes={colonnes}
-        donnees={professeursFiltres}
-        surAjouter={ouvrirModalAjout}
-        surModifier={ouvrirModalModification}
-        surSupprimer={supprimer}
-        surVoir={(prof) => ouvrirModalAttribution(prof)}
-      />
+      {chargement ? (
+        <div className="chargement-container">Chargement des professeurs...</div>
+      ) : erreur ? (
+        <div className="erreur-container">
+          <p>{erreur}</p>
+          <button onClick={chargerProfesseurs} className="btn-reessayer">Réessayer</button>
+        </div>
+      ) : (
+        <TableauDonnees
+          titre="Liste des Professeurs"
+          colonnes={colonnes}
+          donnees={professeursFiltres}
+          surAjouter={ouvrirModalAjout}
+          surModifier={ouvrirModalModification}
+          surSupprimer={supprimer}
+          surVoir={(prof) => ouvrirModalAttribution(prof)}
+        />
+      )}
 
       <FormulaireModal
         titre={professeurCourant ? 'Modifier le Professeur' : 'Ajouter un Professeur'}
@@ -391,22 +533,62 @@ const GestionProfesseurs = () => {
           placeholder="email@univ.ma"
           requis
         />
+        {!professeurCourant && (
+          <ChampFormulaire
+            label="Mot de passe"
+            nom="password"
+            type="password"
+            valeur={formulaire.password}
+            onChange={gererChangement}
+            placeholder="Mot de passe"
+            requis
+          />
+        )}
         <ChampFormulaire
-          label="Spécialité"
-          nom="specialite"
-          type="select"
-          valeur={formulaire.specialite}
+          label="CIN"
+          nom="cin"
+          valeur={formulaire.cin}
           onChange={gererChangement}
-          options={specialites}
+          placeholder="AB123456"
           requis
         />
         <ChampFormulaire
+          label="Téléphone"
+          nom="tel"
+          type="tel"
+          valeur={formulaire.tel}
+          onChange={gererChangement}
+          placeholder="0612345678"
+        />
+        <ChampFormulaire
+          label="Département"
+          nom="codeDepartementOuTravail"
+          type="select"
+          valeur={formulaire.codeDepartementOuTravail}
+          onChange={gererChangement}
+          options={departements}
+          placeholder={departements.length === 0 ? "Chargement des départements..." : "Sélectionner un département (optionnel)"}
+        />
+        <ChampFormulaire
+          label="Matières Enseignées"
+          nom="matieresEnseignees"
+          type="select"
+          valeur={formulaire.matieresEnseignees}
+          onChange={gererSelectionMatieres}
+          options={matieres}
+          multiple
+          requis={false}
+        />
+        <div style={{ fontSize: '0.85rem', color: '#666', marginTop: '-10px', marginBottom: '10px', paddingLeft: '4px' }}>
+          Maintenez Ctrl (ou Cmd sur Mac) pour sélectionner plusieurs matières. Matières sélectionnées : {formulaire.matieresEnseignees.length}
+        </div>
+        <ChampFormulaire
           label="Grade"
           nom="grade"
-          type="select"
+          type="text"
           valeur={formulaire.grade}
           onChange={gererChangement}
-          options={grades}
+          placeholder="Ex: Professeur, Maître de Conférences, Maître Assistant, Assistant"
           requis
         />
         <ChampFormulaire
@@ -419,9 +601,9 @@ const GestionProfesseurs = () => {
         />
         <ChampFormulaire
           label="Statut"
-          nom="status"
+          nom="statut"
           type="select"
-          valeur={formulaire.status}
+          valeur={formulaire.statut}
           onChange={gererChangement}
           options={[
             { value: 'Actif', label: 'Actif' },

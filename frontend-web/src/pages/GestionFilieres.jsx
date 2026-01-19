@@ -1,51 +1,69 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { GraduationCap, Building2 } from 'lucide-react';
 import TableauDonnees from '../composants/communs/TableauDonnees';
 import FormulaireModal from '../composants/communs/FormulaireModal';
 import ChampFormulaire from '../composants/communs/ChampFormulaire';
 import CarteStatistique from '../composants/tableauDeBord/CarteStatistique';
 import BadgeStatut from '../composants/communs/BadgeStatut';
+import { apiStructure } from '../services/apiStructure';
 import './GestionFilieres.css';
 
 const GestionFilieres = () => {
-  const [filieres, setFilieres] = useState([
-    {
-      id: 1,
-      codeFiliere: 'GI-2024',
-      nom: 'Génie Informatique',
-      description: 'Formation en informatique et génie logiciel',
-      dureeFormation: 3,
-      niveauDiplome: 'Licence',
-      etat: 'OUVERTE',
-      departement: 'Informatique',
-      nombreEtudiants: 245,
-      nombreModules: 12
-    },
-    {
-      id: 2,
-      codeFiliere: 'GIL-2024',
-      nom: 'Génie Industriel et Logistique',
-      description: 'Formation en industrie et logistique',
-      dureeFormation: 3,
-      niveauDiplome: 'Licence',
-      etat: 'OUVERTE',
-      departement: 'Industriel',
-      nombreEtudiants: 180,
-      nombreModules: 10
-    },
-    {
-      id: 3,
-      codeFiliere: 'GC-2024',
-      nom: 'Génie Civil',
-      description: 'Formation en génie civil et construction',
-      dureeFormation: 3,
-      niveauDiplome: 'Licence',
-      etat: 'FERMEE',
-      departement: 'Civil',
-      nombreEtudiants: 0,
-      nombreModules: 8
+  const [filieres, setFilieres] = useState([]);
+  const [chargement, setChargement] = useState(true);
+  const [erreur, setErreur] = useState(null);
+  const [departements, setDepartements] = useState([]);
+
+  // Charger les filières depuis l'API
+  const chargerFilieres = async () => {
+    try {
+      setChargement(true);
+      setErreur(null);
+      const donnees = await apiStructure.obtenirToutesFilieres();
+      console.log('Filières reçues:', donnees);
+
+      // Mapper les données backend vers le format frontend
+      const filieresMapped = donnees.map(f => ({
+        id: f.id,
+        codeFiliere: f.codeFiliere,
+        nom: f.nom,
+        description: f.description || '',
+        dureeFormation: f.dureeFormation || 3,
+        niveauDiplome: f.niveauDiplome || 'Licence',
+        etat: f.etat || 'OUVERTE',
+        departement: f.codeDepartement || '',
+        nombreEtudiants: 0, // TODO: compter depuis les classes
+        nombreModules: 0 // TODO: compter depuis les modules
+      }));
+
+      setFilieres(filieresMapped);
+    } catch (err) {
+      console.error('Erreur lors du chargement des filières:', err);
+      setErreur('Erreur lors du chargement des filières');
+    } finally {
+      setChargement(false);
     }
-  ]);
+  };
+
+  // Charger les départements pour le sélecteur
+  const chargerDepartements = async () => {
+    try {
+      const donnees = await apiStructure.obtenirTousDepartements();
+      const departementsMapped = donnees.map(d => ({
+        value: d.codeDepartement,
+        label: d.typeDepartement || d.codeDepartement
+      }));
+      setDepartements(departementsMapped);
+    } catch (err) {
+      console.error('Erreur lors du chargement des départements:', err);
+      setDepartements([]);
+    }
+  };
+
+  useEffect(() => {
+    chargerFilieres();
+    chargerDepartements();
+  }, []);
 
   const [modalOuvert, setModalOuvert] = useState(false);
   const [filiereCourante, setFiliereCourante] = useState(null);
@@ -58,13 +76,6 @@ const GestionFilieres = () => {
     etat: 'OUVERTE',
     departement: ''
   });
-
-  const departements = [
-    { value: 'Informatique', label: 'Informatique' },
-    { value: 'Industriel', label: 'Industriel' },
-    { value: 'Civil', label: 'Génie Civil' },
-    { value: 'Mecanique', label: 'Mécanique' }
-  ];
 
   const niveauxDiplome = [
     { value: 'Licence', label: 'Licence' },
@@ -119,8 +130,8 @@ const GestionFilieres = () => {
 
     if (filiereCourante) {
       // Modification
-      setFilieres(prev => prev.map(f => 
-        f.id === filiereCourante.id 
+      setFilieres(prev => prev.map(f =>
+        f.id === filiereCourante.id
           ? { ...f, ...formulaire, dureeFormation: parseInt(formulaire.dureeFormation) }
           : f
       ));
@@ -147,8 +158,8 @@ const GestionFilieres = () => {
   const colonnes = [
     { key: 'codeFiliere', label: 'Code' },
     { key: 'nom', label: 'Nom' },
-    { 
-      key: 'departement', 
+    {
+      key: 'departement',
       label: 'Département',
       render: (item) => (
         <div className="cellule-departement">
@@ -159,11 +170,11 @@ const GestionFilieres = () => {
     },
     { key: 'niveauDiplome', label: 'Niveau' },
     { key: 'dureeFormation', label: 'Durée (ans)' },
-    { 
-      key: 'etat', 
+    {
+      key: 'etat',
       label: 'État',
       render: (item) => (
-        <BadgeStatut 
+        <BadgeStatut
           statut={item.etat === 'OUVERTE' ? 'success' : 'error'}
           texte={item.etat}
         />
@@ -211,14 +222,23 @@ const GestionFilieres = () => {
         />
       </div>
 
-      <TableauDonnees
-        titre="Liste des Filières"
-        colonnes={colonnes}
-        donnees={filieres}
-        surAjouter={ouvrirModalAjout}
-        surModifier={ouvrirModalModification}
-        surSupprimer={supprimer}
-      />
+      {chargement ? (
+        <div className="chargement-container">Chargement des filières...</div>
+      ) : erreur ? (
+        <div className="erreur-container">
+          <p>{erreur}</p>
+          <button onClick={chargerFilieres} className="btn-reessayer">Réessayer</button>
+        </div>
+      ) : (
+        <TableauDonnees
+          titre="Liste des Filières"
+          colonnes={colonnes}
+          donnees={filieres}
+          surAjouter={ouvrirModalAjout}
+          surModifier={ouvrirModalModification}
+          surSupprimer={supprimer}
+        />
+      )}
 
       <FormulaireModal
         titre={filiereCourante ? 'Modifier la Filière' : 'Ajouter une Filière'}

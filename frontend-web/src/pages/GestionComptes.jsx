@@ -1,55 +1,51 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Users, UserCheck, Shield } from 'lucide-react';
 import TableauDonnees from '../composants/communs/TableauDonnees';
 import FormulaireModal from '../composants/communs/FormulaireModal';
 import ChampFormulaire from '../composants/communs/ChampFormulaire';
 import CarteStatistique from '../composants/tableauDeBord/CarteStatistique';
 import BadgeStatut from '../composants/communs/BadgeStatut';
+import { apiComptes } from '../services/apiComptes';
 import './GestionComptes.css';
 
 const GestionComptes = () => {
-  const [comptes, setComptes] = useState([
-    {
-      id: 1,
-      nom: 'Alami',
-      prenom: 'Ahmed',
-      email: 'ahmed.alami@univ.ma',
-      role: 'Professeur',
-      enabled: true,
-      dateCreation: '2015-09-01',
-      dateDerniereConnexion: '2024-02-10'
-    },
-    {
-      id: 2,
-      nom: 'Bennani',
-      prenom: 'Fatima',
-      email: 'fatima.bennani@univ.ma',
-      role: 'Professeur',
-      enabled: true,
-      dateCreation: '2018-09-01',
-      dateDerniereConnexion: '2024-02-12'
-    },
-    {
-      id: 3,
-      nom: 'Alaoui',
-      prenom: 'Hassan',
-      email: 'hassan.alaoui@student.univ.ma',
-      role: 'Étudiant',
-      enabled: true,
-      dateCreation: '2022-09-01',
-      dateDerniereConnexion: '2024-02-14'
-    },
-    {
-      id: 4,
-      nom: 'Admin',
-      prenom: 'System',
-      email: 'admin@univ.ma',
-      role: 'Administrateur',
-      enabled: true,
-      dateCreation: '2010-01-01',
-      dateDerniereConnexion: '2024-02-15'
+  const [comptes, setComptes] = useState([]);
+  const [chargement, setChargement] = useState(true);
+  const [erreur, setErreur] = useState(null);
+
+  // Charger les comptes depuis l'API
+  const chargerComptes = async () => {
+    try {
+      setChargement(true);
+      setErreur(null);
+      const donnees = await apiComptes.obtenirTous();
+      console.log('Comptes reçus:', donnees);
+
+      // Mapper les données du backend vers le format frontend
+      const comptesMapped = donnees.map(c => ({
+        id: c.id,
+        nom: c.nom,
+        prenom: c.prenom,
+        email: c.email,
+        role: c.role, // Déjà ajouté par apiComptes (Professeur, Étudiant, Administrateur)
+        enabled: c.enabled !== undefined ? c.enabled : true,
+        dateCreation: c.dateCreation ? new Date(c.dateCreation).toISOString().split('T')[0] : 'N/A',
+        dateDerniereConnexion: c.dateDerniereConnexion ? new Date(c.dateDerniereConnexion).toISOString().split('T')[0] : 'Jamais'
+      }));
+
+      setComptes(comptesMapped);
+      console.log('Comptes mappés:', comptesMapped);
+    } catch (err) {
+      console.error('Erreur lors du chargement des comptes:', err);
+      setErreur('Erreur lors du chargement des comptes. Vérifiez que le serveur backend est démarré.');
+    } finally {
+      setChargement(false);
     }
-  ]);
+  };
+
+  useEffect(() => {
+    chargerComptes();
+  }, []);
 
   const [modalOuvert, setModalOuvert] = useState(false);
   const [compteCourant, setCompteCourant] = useState(null);
@@ -96,22 +92,22 @@ const GestionComptes = () => {
 
   const gererChangement = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormulaire(prev => ({ 
-      ...prev, 
-      [name]: type === 'checkbox' ? checked : value 
+    setFormulaire(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
     }));
   };
 
   const sauvegarder = () => {
     if (compteCourant) {
-      setComptes(prev => prev.map(c => 
-        c.id === compteCourant.id 
-          ? { 
-              ...c, 
-              ...formulaire,
-              dateCreation: c.dateCreation,
-              dateDerniereConnexion: c.dateDerniereConnexion
-            }
+      setComptes(prev => prev.map(c =>
+        c.id === compteCourant.id
+          ? {
+            ...c,
+            ...formulaire,
+            dateCreation: c.dateCreation,
+            dateDerniereConnexion: c.dateDerniereConnexion
+          }
           : c
       ));
     } else {
@@ -133,27 +129,27 @@ const GestionComptes = () => {
   };
 
   const colonnes = [
-    { 
-      key: 'nom', 
+    {
+      key: 'nom',
       label: 'Nom Complet',
       render: (item) => `${item.prenom} ${item.nom}`
     },
     { key: 'email', label: 'Email' },
-    { 
-      key: 'role', 
+    {
+      key: 'role',
       label: 'Rôle',
       render: (item) => (
-        <BadgeStatut 
+        <BadgeStatut
           statut={item.role === 'Administrateur' ? 'error' : item.role === 'Professeur' ? 'info' : 'success'}
           texte={item.role}
         />
       )
     },
-    { 
-      key: 'enabled', 
+    {
+      key: 'enabled',
       label: 'Statut',
       render: (item) => (
-        <BadgeStatut 
+        <BadgeStatut
           statut={item.enabled ? 'success' : 'error'}
           texte={item.enabled ? 'Actif' : 'Inactif'}
         />
@@ -201,14 +197,23 @@ const GestionComptes = () => {
         />
       </div>
 
-      <TableauDonnees
-        titre="Liste des Comptes"
-        colonnes={colonnes}
-        donnees={comptes}
-        surAjouter={ouvrirModalAjout}
-        surModifier={ouvrirModalModification}
-        surSupprimer={supprimer}
-      />
+      {chargement ? (
+        <div className="chargement-container">Chargement des comptes...</div>
+      ) : erreur ? (
+        <div className="erreur-container">
+          <p>{erreur}</p>
+          <button onClick={chargerComptes} className="btn-reessayer">Réessayer</button>
+        </div>
+      ) : (
+        <TableauDonnees
+          titre="Liste des Comptes"
+          colonnes={colonnes}
+          donnees={comptes}
+          surAjouter={ouvrirModalAjout}
+          surModifier={ouvrirModalModification}
+          surSupprimer={supprimer}
+        />
+      )}
 
       <FormulaireModal
         titre={compteCourant ? 'Modifier le Compte' : 'Créer un Compte'}

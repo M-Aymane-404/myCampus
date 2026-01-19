@@ -1,66 +1,138 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Users, GraduationCap, UserCheck } from 'lucide-react';
 import TableauDonnees from '../composants/communs/TableauDonnees';
 import FormulaireModal from '../composants/communs/FormulaireModal';
 import ChampFormulaire from '../composants/communs/ChampFormulaire';
 import CarteStatistique from '../composants/tableauDeBord/CarteStatistique';
 import BadgeStatut from '../composants/communs/BadgeStatut';
+import { apiEtudiants } from '../services/apiEtudiants';
+import { apiStructure } from '../services/apiStructure';
 import './GestionEtudiants.css';
 
 const GestionEtudiants = () => {
-  const [etudiants, setEtudiants] = useState([
-    {
-      id: 1,
-      apogee: 'APG001',
-      nom: 'Alaoui',
-      prenom: 'Hassan',
-      email: 'hassan.alaoui@student.univ.ma',
-      cin: 'AB123456',
-      tel: '0612345678',
-      niveau: 'L3',
-      filiere: 'GI-2024',
-      anneeInscription: 2022,
-      semestreActuel: 'S6',
-      etatInscription: 'INSCRIT',
-      dateNaissance: '2000-05-15'
-    },
-    {
-      id: 2,
-      apogee: 'APG002',
-      nom: 'Bennani',
-      prenom: 'Sara',
-      email: 'sara.bennani@student.univ.ma',
-      cin: 'CD789012',
-      tel: '0698765432',
-      niveau: 'M1',
-      filiere: 'GI-2024',
-      anneeInscription: 2021,
-      semestreActuel: 'S2',
-      etatInscription: 'INSCRIT',
-      dateNaissance: '1999-08-20'
-    },
-    {
-      id: 3,
-      apogee: 'APG003',
-      nom: 'Chraibi',
-      prenom: 'Omar',
-      email: 'omar.chraibi@student.univ.ma',
-      cin: 'EF345678',
-      tel: '0654321098',
-      niveau: 'L2',
-      filiere: 'GIL-2024',
-      anneeInscription: 2023,
-      semestreActuel: 'S4',
-      etatInscription: 'SUSPENDU',
-      dateNaissance: '2001-12-10'
-    }
-  ]);
+  const [etudiants, setEtudiants] = useState([]);
+  const [chargement, setChargement] = useState(true);
+  const [erreur, setErreur] = useState(null);
 
-  const [filieres] = useState([
-    { value: 'GI-2024', label: 'Génie Informatique' },
-    { value: 'GIL-2024', label: 'Génie Industriel et Logistique' },
-    { value: 'GC-2024', label: 'Génie Civil' }
-  ]);
+  // Charger les étudiants depuis l'API
+  const chargerEtudiants = async () => {
+    try {
+      setChargement(true);
+      setErreur(null);
+      const donnees = await apiEtudiants.obtenirTous();
+      // Mapper les données du backend vers le format frontend
+      const etudiantsMapped = donnees.map(e => ({
+        id: e.id,
+        apogee: e.apogee,
+        nom: e.nom,
+        prenom: e.prenom,
+        email: e.email,
+        cin: e.cin,
+        tel: e.tel,
+        niveau: e.niveau,
+        codeClasse: e.codeClasse || '', // Stocker le codeClasse pour le filtrage
+        filiere: e.codeClasse || '', // Pour l'affichage (temporaire, on pourrait améliorer)
+        anneeInscription: e.anneeInscription,
+        semestreActuel: e.semestreActuel,
+        etatInscription: e.etatInscription,
+        dateNaissance: e.dateNaissance
+      }));
+      setEtudiants(etudiantsMapped);
+    } catch (err) {
+      console.error('Erreur lors du chargement des étudiants:', err);
+      setErreur('Erreur lors du chargement des étudiants. Vérifiez que le serveur backend est démarré.');
+    } finally {
+      setChargement(false);
+    }
+  };
+
+  const [filieres, setFilieres] = useState([]);
+  const [toutesLesClasses, setToutesLesClasses] = useState([]); // Toutes les classes avec leur filière
+  const [classesFiltrees, setClassesFiltrees] = useState([]); // Classes filtrées par filière sélectionnée
+  const [chargementFilieres, setChargementFilieres] = useState(true);
+  const [filiereSelectionnee, setFiliereSelectionnee] = useState(''); // Filière sélectionnée dans le formulaire
+
+  // Charger les filières depuis l'API
+  const chargerFilieres = async () => {
+    try {
+      setChargementFilieres(true);
+      const donnees = await apiStructure.obtenirToutesFilieres();
+      console.log('Filieres reçues:', donnees);
+      if (donnees && donnees.length > 0) {
+        const filieresMapped = donnees.map(f => ({
+          value: f.codeFiliere,
+          label: f.nom || f.codeFiliere
+        }));
+        setFilieres(filieresMapped);
+        console.log('Filieres mappées:', filieresMapped);
+      } else {
+        console.warn('Aucune filière trouvée dans la base de données');
+        setFilieres([]);
+      }
+    } catch (err) {
+      console.error('Erreur lors du chargement des filières:', err);
+      alert('Erreur lors du chargement des filières: ' + err.message);
+      setFilieres([]);
+    } finally {
+      setChargementFilieres(false);
+    }
+  };
+
+  // Charger les classes depuis l'API
+  const chargerClasses = async () => {
+    try {
+      const donnees = await apiStructure.obtenirToutesClasses();
+      console.log('Classes reçues:', donnees);
+      if (donnees && donnees.length > 0) {
+        // Stocker toutes les classes avec leur codeFiliere pour le filtrage
+        const classesAvecFiliere = donnees.map(c => ({
+          value: c.codeClasse,
+          label: `${c.codeClasse} - ${c.nom || ''}`,
+          codeFiliere: c.codeFiliere // Pour le filtrage
+        }));
+        setToutesLesClasses(classesAvecFiliere);
+        console.log('Classes mappées:', classesAvecFiliere);
+      } else {
+        console.warn('Aucune classe trouvée dans la base de données');
+        setToutesLesClasses([]);
+        setClassesFiltrees([]);
+      }
+    } catch (err) {
+      console.error('Erreur lors du chargement des classes:', err);
+      alert('Erreur lors du chargement des classes: ' + err.message);
+      setToutesLesClasses([]);
+      setClassesFiltrees([]);
+    }
+  };
+
+  // Charger les classes d'une filière spécifique
+  const chargerClassesParFiliere = async (codeFiliere) => {
+    if (!codeFiliere) {
+      setClassesFiltrees([]);
+      return;
+    }
+    try {
+      const donnees = await apiStructure.obtenirClassesParFiliere(codeFiliere);
+      if (donnees && donnees.length > 0) {
+        const classesMapped = donnees.map(c => ({
+          value: c.codeClasse,
+          label: `${c.codeClasse} - ${c.nom || ''}`
+        }));
+        setClassesFiltrees(classesMapped);
+      } else {
+        setClassesFiltrees([]);
+      }
+    } catch (err) {
+      console.error('Erreur lors du chargement des classes par filière:', err);
+      setClassesFiltrees([]);
+    }
+  };
+
+  useEffect(() => {
+    chargerEtudiants();
+    chargerFilieres();
+    chargerClasses();
+  }, []);
 
   const [filtreFiliere, setFiltreFiliere] = useState('');
 
@@ -71,10 +143,11 @@ const GestionEtudiants = () => {
     nom: '',
     prenom: '',
     email: '',
+    password: '',
     cin: '',
     tel: '',
     niveau: '',
-    filiere: '',
+    codeClasse: '',
     anneeInscription: '',
     semestreActuel: '',
     etatInscription: 'INSCRIT',
@@ -82,11 +155,8 @@ const GestionEtudiants = () => {
   });
 
   const niveaux = [
-    { value: 'L1', label: 'Licence 1' },
-    { value: 'L2', label: 'Licence 2' },
-    { value: 'L3', label: 'Licence 3' },
-    { value: 'M1', label: 'Master 1' },
-    { value: 'M2', label: 'Master 2' }
+    { value: 'DUT', label: 'Diplôme Universitaire de Technologie' },
+    { value: 'BUT', label: 'Bachelor Universitaire de Technologie' }
   ];
 
   const semestres = [
@@ -106,15 +176,19 @@ const GestionEtudiants = () => {
 
   const ouvrirModalAjout = () => {
     setEtudiantCourant(null);
+    setFiliereSelectionnee('');
+    setClassesFiltrees([]);
     setFormulaire({
       apogee: '',
       nom: '',
       prenom: '',
       email: '',
+      password: '',
       cin: '',
       tel: '',
       niveau: '',
-      filiere: '',
+      codeFiliere: '',
+      codeClasse: '',
       anneeInscription: new Date().getFullYear().toString(),
       semestreActuel: '',
       etatInscription: 'INSCRIT',
@@ -123,17 +197,32 @@ const GestionEtudiants = () => {
     setModalOuvert(true);
   };
 
-  const ouvrirModalModification = (etudiant) => {
+  const ouvrirModalModification = async (etudiant) => {
     setEtudiantCourant(etudiant);
+    
+    // Trouver la filière de la classe de l'étudiant
+    const classeEtudiant = toutesLesClasses.find(c => c.value === etudiant.codeClasse);
+    const codeFiliereEtudiant = classeEtudiant ? classeEtudiant.codeFiliere : '';
+    
+    if (codeFiliereEtudiant) {
+      setFiliereSelectionnee(codeFiliereEtudiant);
+      // Charger les classes de cette filière
+      await chargerClassesParFiliere(codeFiliereEtudiant);
+    } else {
+      setClassesFiltrees([]);
+    }
+    
     setFormulaire({
       apogee: etudiant.apogee,
       nom: etudiant.nom,
       prenom: etudiant.prenom,
       email: etudiant.email,
+      password: '', // Ne pas pré-remplir le mot de passe en modification
       cin: etudiant.cin,
       tel: etudiant.tel,
       niveau: etudiant.niveau,
-      filiere: etudiant.filiere,
+      codeFiliere: codeFiliereEtudiant,
+      codeClasse: etudiant.codeClasse,
       anneeInscription: etudiant.anneeInscription.toString(),
       semestreActuel: etudiant.semestreActuel,
       etatInscription: etudiant.etatInscription,
@@ -142,38 +231,105 @@ const GestionEtudiants = () => {
     setModalOuvert(true);
   };
 
-  const gererChangement = (e) => {
+  const gererChangement = async (e) => {
     const { name, value } = e.target;
-    setFormulaire(prev => ({ ...prev, [name]: value }));
+    
+    // Si on change la filière, charger les classes de cette filière et réinitialiser la classe
+    if (name === 'codeFiliere') {
+      setFiliereSelectionnee(value);
+      if (value) {
+        await chargerClassesParFiliere(value);
+        setFormulaire(prev => ({ ...prev, [name]: value, codeClasse: '' }));
+      } else {
+        setClassesFiltrees([]);
+        setFormulaire(prev => ({ ...prev, [name]: value, codeClasse: '' }));
+      }
+    } else {
+      setFormulaire(prev => ({ ...prev, [name]: value }));
+    }
   };
 
-  const sauvegarder = () => {
+  const sauvegarder = async () => {
     // Validation basique
-    if (!formulaire.apogee || !formulaire.nom || !formulaire.prenom || !formulaire.email || !formulaire.filiere) {
-      alert('Veuillez remplir tous les champs obligatoires');
+    if (!formulaire.apogee || !formulaire.nom || !formulaire.prenom || !formulaire.email || !formulaire.codeFiliere || !formulaire.codeClasse) {
+      alert('Veuillez remplir tous les champs obligatoires (y compris Filière et Classe)');
       return;
     }
 
-    if (etudiantCourant) {
-      setEtudiants(prev => prev.map(e => 
-        e.id === etudiantCourant.id 
-          ? { ...e, ...formulaire, anneeInscription: parseInt(formulaire.anneeInscription) }
-          : e
-      ));
-    } else {
-      const nouvelEtudiant = {
-        id: etudiants.length + 1,
-        ...formulaire,
-        anneeInscription: parseInt(formulaire.anneeInscription)
-      };
-      setEtudiants(prev => [...prev, nouvelEtudiant]);
+    // Le mot de passe est obligatoire uniquement pour la création
+    if (!etudiantCourant && !formulaire.password) {
+      alert('Le mot de passe est obligatoire pour créer un nouvel étudiant');
+      return;
     }
-    setModalOuvert(false);
+
+    try {
+      // Validation des champs obligatoires
+      if (!formulaire.semestreActuel) {
+        alert('Veuillez sélectionner un semestre');
+        return;
+      }
+      
+      if (!formulaire.dateNaissance) {
+        alert('Veuillez sélectionner une date de naissance');
+        return;
+      }
+
+      // Préparer les données pour l'API backend (format exact attendu par le backend)
+      const donneesAPI = {
+        apogee: formulaire.apogee.trim(),
+        nom: formulaire.nom.trim(),
+        prenom: formulaire.prenom.trim(),
+        email: formulaire.email.trim(),
+        cin: formulaire.cin.trim(),
+        niveau: formulaire.niveau ? formulaire.niveau.trim() : null,
+        codeClasse: formulaire.codeClasse.trim(),
+        anneeInscription: parseInt(formulaire.anneeInscription),
+        semestreActuel: formulaire.semestreActuel, // Enum: S1, S2, S3, etc.
+        etatInscription: formulaire.etatInscription, // Enum: INSCRIT, SUSPENDU, DIPLOME
+        dateNaissance: formulaire.dateNaissance, // Format: YYYY-MM-DD
+        password: formulaire.password.trim() // Obligatoire pour création
+      };
+
+      // Le téléphone est optionnel - on l'envoie seulement s'il est rempli
+      if (formulaire.tel && formulaire.tel.trim()) {
+        donneesAPI.tel = formulaire.tel.trim();
+      }
+
+      // L'année de fin d'étude est optionnelle
+      if (formulaire.anneeFinEtude) {
+        donneesAPI.anneeFinEtude = formulaire.anneeFinEtude;
+      }
+
+      console.log('Données envoyées à l\'API:', JSON.stringify(donneesAPI, null, 2));
+
+      if (etudiantCourant) {
+        // Pour la modification, le mot de passe n'est pas obligatoire
+        if (!formulaire.password || !formulaire.password.trim()) {
+          delete donneesAPI.password;
+        }
+        await apiEtudiants.modifier(etudiantCourant.apogee, donneesAPI);
+      } else {
+        // Pour la création, le mot de passe est obligatoire (déjà ajouté ci-dessus)
+        await apiEtudiants.creer(donneesAPI);
+      }
+      
+      setModalOuvert(false);
+      chargerEtudiants(); // Recharger la liste
+    } catch (err) {
+      console.error('Erreur détaillée:', err);
+      const messageErreur = err.message || 'Erreur inconnue lors de la sauvegarde';
+      alert('Erreur lors de la sauvegarde: ' + messageErreur);
+    }
   };
 
-  const supprimer = (etudiant) => {
+  const supprimer = async (etudiant) => {
     if (window.confirm(`Êtes-vous sûr de vouloir supprimer l'étudiant "${etudiant.prenom} ${etudiant.nom}" ?`)) {
-      setEtudiants(prev => prev.filter(e => e.id !== etudiant.id));
+      try {
+        await apiEtudiants.supprimer(etudiant.apogee);
+        chargerEtudiants(); // Recharger la liste
+      } catch (err) {
+        alert('Erreur lors de la suppression: ' + err.message);
+      }
     }
   };
 
@@ -308,7 +464,12 @@ const GestionEtudiants = () => {
 
   // Filtrer les étudiants selon la filière sélectionnée
   const etudiantsFiltres = filtreFiliere 
-    ? etudiants.filter(e => e.filiere === filtreFiliere)
+    ? etudiants.filter(e => {
+        // Trouver la classe de l'étudiant dans toutesLesClasses
+        const classeEtudiant = toutesLesClasses.find(c => c.value === e.codeClasse);
+        // Vérifier si cette classe appartient à la filière sélectionnée
+        return classeEtudiant && classeEtudiant.codeFiliere === filtreFiliere;
+      })
     : etudiants;
 
   const totalEtudiants = etudiants.length;
@@ -359,26 +520,44 @@ const GestionEtudiants = () => {
             className="filtre-select"
             value={filtreFiliere}
             onChange={(e) => setFiltreFiliere(e.target.value)}
+            disabled={chargementFilieres}
           >
             <option value="">Toutes les filières</option>
-            {filieres.map(filiere => (
-              <option key={filiere.value} value={filiere.value}>
-                {filiere.label}
-              </option>
-            ))}
+            {filieres.length > 0 ? (
+              filieres.map(filiere => (
+                <option key={filiere.value} value={filiere.value}>
+                  {filiere.label}
+                </option>
+              ))
+            ) : (
+              !chargementFilieres && <option value="" disabled>Aucune filière disponible</option>
+            )}
           </select>
+          {chargementFilieres && <span style={{ marginLeft: '10px', fontSize: '0.9rem', color: '#666' }}>Chargement des filières...</span>}
+          {!chargementFilieres && filieres.length === 0 && (
+            <span style={{ marginLeft: '10px', fontSize: '0.9rem', color: '#dc2626' }}>Aucune filière trouvée</span>
+          )}
         </div>
       </div>
 
-      <TableauDonnees
-        titre="Liste des Étudiants"
-        colonnes={colonnes}
-        donnees={etudiantsFiltres}
-        surAjouter={ouvrirModalAjout}
-        surModifier={ouvrirModalModification}
-        surSupprimer={supprimer}
-        surImporterCSV={importerCSV}
-      />
+      {chargement ? (
+        <div className="chargement-container">Chargement des étudiants...</div>
+      ) : erreur ? (
+        <div className="erreur-container">
+          <p>{erreur}</p>
+          <button onClick={chargerEtudiants} className="btn-reessayer">Réessayer</button>
+        </div>
+      ) : (
+        <TableauDonnees
+          titre="Liste des Étudiants"
+          colonnes={colonnes}
+          donnees={etudiantsFiltres}
+          surAjouter={ouvrirModalAjout}
+          surModifier={ouvrirModalModification}
+          surSupprimer={supprimer}
+          surImporterCSV={importerCSV}
+        />
+      )}
 
       <FormulaireModal
         titre={etudiantCourant ? 'Modifier l\'Étudiant' : 'Ajouter un Étudiant'}
@@ -419,6 +598,17 @@ const GestionEtudiants = () => {
           placeholder="email@student.univ.ma"
           requis
         />
+        {!etudiantCourant && (
+          <ChampFormulaire
+            label="Mot de passe"
+            nom="password"
+            type="password"
+            valeur={formulaire.password}
+            onChange={gererChangement}
+            placeholder="Mot de passe"
+            requis
+          />
+        )}
         <ChampFormulaire
           label="CIN"
           nom="cin"
@@ -445,12 +635,23 @@ const GestionEtudiants = () => {
         />
         <ChampFormulaire
           label="Filière"
-          nom="filiere"
+          nom="codeFiliere"
           type="select"
-          valeur={formulaire.filiere}
+          valeur={filiereSelectionnee || formulaire.codeFiliere || ''}
           onChange={gererChangement}
           options={filieres}
           requis
+        />
+        <ChampFormulaire
+          label="Classe"
+          nom="codeClasse"
+          type="select"
+          valeur={formulaire.codeClasse}
+          onChange={gererChangement}
+          options={classesFiltrees}
+          requis
+          disabled={!filiereSelectionnee && !formulaire.codeFiliere}
+          placeholder={!filiereSelectionnee && !formulaire.codeFiliere ? "Sélectionnez d'abord une filière" : "Sélectionner..."}
         />
         <ChampFormulaire
           label="Niveau"
