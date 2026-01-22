@@ -16,6 +16,8 @@ public class DepartementSortieDTO {
     private String description;
     private String chefDepartementPpr;
     private String chefDepartementNom;
+    private Integer nbFilieres;
     private String chefDepartementPrenom;
     private LocalDate dateCreation;
+    private Integer nbEtudiants;
 }

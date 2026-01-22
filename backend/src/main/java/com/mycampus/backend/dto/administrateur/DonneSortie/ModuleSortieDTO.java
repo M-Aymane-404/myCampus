@@ -17,4 +17,5 @@ public class ModuleSortieDTO {
     private  Integer coefficient;
     private  String codeFiliere;
     private  String filiereNom;
+    private String nbMatieres;
 }

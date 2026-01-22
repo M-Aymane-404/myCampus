@@ -19,7 +19,10 @@ import com.mycampus.backend.dto.administrateur.DonneSortie.ClasseSortieDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.ModuleSortieDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.MatiereSortieDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.AffectationEnseignementSortieDTO;
-import com.mycampus.backend.dto.SeanceDTO;
+import com.mycampus.backend.dto.etudient.DonneeEntrer.SeanceDTO;
+import com.mycampus.backend.repositorys.DepartementRepository;
+import com.mycampus.backend.repositorys.EtudiantRepository;
+import com.mycampus.backend.repositorys.FiliereRepository;
 import org.springframework.beans.BeanUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -29,7 +32,12 @@ import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
+
 public class StructureMapper {
+
+    private final DepartementRepository departementRepository;
+    private final FiliereRepository filiereRepository;
+    private final EtudiantRepository etudiantRepository;
 
     // ==================== DEPARTEMENT ====================
 
@@ -46,7 +54,10 @@ public class StructureMapper {
         departementSortieDTO.setTypeDepartement(departement.getTypeDepartement());
         departementSortieDTO.setDescription(departement.getDescription());
         departementSortieDTO.setDateCreation(departement.getDateCreation());
-        
+        departementSortieDTO.setNbFilieres( filiereRepository.countByDepartement_CodeDepartement(departement.getCodeDepartement()));
+        departementSortieDTO.setNbEtudiants(etudiantRepository.countEtudiantsByCodeDepartement(departement.getCodeDepartement()));
+
+
         // Mapping du chef de département
         if (departement.getChefDepartement() != null) {
             departementSortieDTO.setChefDepartementPpr(departement.getChefDepartement().getPpr());

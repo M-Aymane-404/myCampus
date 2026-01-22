@@ -1,4 +1,4 @@
-package com.mycampus.backend.dto;
+package com.mycampus.backend.dto.etudient.DonneeEntrer;
 
 import com.mycampus.backend.enumerations.TypeSeance;
 import lombok.*;

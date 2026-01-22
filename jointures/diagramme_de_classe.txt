@@ -1,0 +1,258 @@
+---
+config:
+  layout: elk
+---
+classDiagram
+direction LR
+    class TypeSeance {
+	    TD
+	    TP
+	    COURS
+    }
+
+    class StatusPresence {
+	    PRESENT
+	    ABSENT
+    }
+
+    class TypeNotification {
+	    SEANCE_AJOUTEE
+	    RESULTAT_PUBLIE
+	    COURS_UPLOADE
+	    EXAMEN_DEMAIN
+    }
+
+    class EtatExamen {
+	    PROGRAMME
+	    PASSE
+	    CORRIGE
+    }
+
+    class EtatStructure {
+	    OUVERTE
+	    FERMEE
+    }
+
+    class EtatInscription {
+	    INSCRIT
+	    SUSPENDU
+	    DIPLOME
+    }
+
+    class Semestre {
+	    S1
+	    S2
+	    S3
+	    S4
+	    S5
+	    S6
+    }
+
+    class TypeExamen {
+	    NORMAL
+	    RATTRAPAGE
+    }
+
+    class EtatSeance {
+	    PLANIFIEE
+	    ANNULEE
+	    TERMINEE
+    }
+
+    class Utilisateur {
+	    -id: Long
+	    -nom: String
+	    -prenom: String
+	    -email: String
+	    -password: String
+	    -cin: String
+	    -tel: String
+	    -photo: String
+	    -enabled: boolean
+	    -dateCreation: LocalDate
+	    -dateDerniereConnexion: LocalDate
+    }
+
+    class Professeur {
+	    -ppr: String
+	    -specialite: String
+	    -grade: String
+	    -dateRecrutement: LocalDate
+	    -statut: String
+    }
+
+    class Etudiant {
+	    -apogee: String
+	    -niveau: String
+	    -anneeInscription: int
+	    -semestreActuel: Semester
+	    -anneeFinEtude: String
+	    -dateNaissance: LocalDate
+	    -etatInscription: EtatInscription
+    }
+
+    class Administrateur {
+	    -ppr: String
+	    -grade: String
+	    -fonction: String
+    }
+
+    class Departement {
+	    -id: Long
+	    -codeDepartement: String
+	    -typeDepartement: String
+	    -description: String
+	    -dateCreation: LocalDate
+    }
+
+    class Filiere {
+	    -id: Long
+	    -codeFiliere: String
+	    -nom: String
+	    -description: String
+	    -emploiTemps: String
+	    -dureeFormation: int
+	    -niveauDiplome: String
+	    -etat: EtatStructure
+    }
+
+    class Classe {
+	    -id: Long
+	    -codeClasse: String
+	    -nom: String
+	    -niveau: String
+	    -anneeUniversitaire: String
+	    -effectifMax: int
+    }
+
+    class Module {
+	    -id: Long
+	    -codeModule: String
+	    -nom: String
+	    -description: String
+	    -semestre: Semestre
+	    -coefficient: double
+    }
+
+    class Matiere {
+	    -id: Long
+	    -codeMatiere: String
+	    -nom: String
+	    -description: String
+	    -coefficient: double
+    }
+
+    class AffectationEnseignement {
+	    -id: Long
+	    -anneeUniversitaire: String
+	    -semestre: Semestre
+	    -active: boolean
+    }
+
+    class Seance {
+	    -id: Long
+	    -type: TypeSeance
+	    -date: LocalDateTime
+	    -heureDebut: LocalDateTime
+	    -heureFin: LocalDateTime
+	    -salle: String
+	    -etat: EtatSeance
+	    -contenu: String
+    }
+
+    class FichierSeance {
+	    -id: Long
+	    -nomOriginal: String
+	    -chemin: String
+	    -typeMime: String
+	    -taille: Long
+	    -dateUpload: LocalDateTime
+    }
+
+    class Examen {
+	    -id: Long
+	    -semestre: String
+	    -dateExamen: LocalDateTime
+	    -numeroExamen: int
+	    -typeExamen: TypeExamen
+	    -duree: int
+	    -etat: EtatExamen
+	    -feuilleCorrection: String
+    }
+
+    class Resultat {
+	    -id: Long
+	    -note: Double
+	    -datePublication: LocalDateTime
+	    -valide: boolean
+	    -fichierExam: String
+    }
+
+    class Presence {
+	    -id: Long
+	    -status: StatusPresence
+	    -justifiee: boolean
+	    -motif: String
+	    -dateDeclaration: LocalDateTime
+    }
+
+    class Notification {
+	    -id: Long
+	    -titre: String
+	    -message: String
+	    -dateEnvoi: LocalDateTime
+	    -lu: boolean
+	    -dateLecture: LocalDateTime
+	    -type: TypeNotification
+    }
+
+  
+
+   
+
+   
+
+	<<enumeration>> TypeSeance
+	<<enumeration>> StatusPresence
+	<<enumeration>> TypeNotification
+	<<enumeration>> EtatExamen
+	<<enumeration>> EtatStructure
+	<<enumeration>> EtatInscription
+	<<enumeration>> Semestre
+	<<enumeration>> TypeExamen
+	<<enumeration>> EtatSeance
+
+    Professeur --|> Utilisateur
+    Etudiant --|> Utilisateur
+    Administrateur --|> Utilisateur
+    Departement "1" -- "1..*" Filiere : contient
+    Departement "1" -- "1..*" Professeur : travaille
+    Departement "1" -- "0..1" Professeur : chefDepartement
+    Filiere "1" -- "0..1" Professeur : chefFiliere
+    Filiere "1" -- "1..*" Classe : contient
+    Filiere "1" -- "1..*" Module : contient
+    Classe "1" -- "1..*" Etudiant : regroupe
+    Module "1" -- "1..*" Matiere : compose
+    Module ..> Semestre : uses
+    Etudiant ..> Semestre : uses
+    Professeur "1" -- "0..*" AffectationEnseignement : affecte
+    Classe "1" -- "0..*" AffectationEnseignement : concerne
+    Matiere "1" -- "0..*" AffectationEnseignement : porte
+    AffectationEnseignement ..> TypeSeance : uses
+    AffectationEnseignement ..> Semestre : uses
+    Seance "1" -- "0..*" FichierSeance : contient
+    Seance ..> TypeSeance : uses
+    AffectationEnseignement "1" -- "0..*" Seance : planifie
+    Seance ..> EtatSeance : uses
+    Matiere "1" -- "0..*" Examen : a
+    Examen "1" -- "0..*" Resultat : donne
+    Etudiant "1" -- "0..*" Resultat : obtient
+    Seance "1" -- "0..*" Presence : concerne
+    Etudiant "1" -- "0..*" Presence : a
+    Presence ..> StatusPresence : uses
+    Examen ..> EtatExamen : uses
+    Etudiant ..> EtatInscription : uses
+    Filiere ..> EtatStructure : uses
+    Examen ..> TypeExamen : uses
+    Utilisateur "1" -- "0..*" Notification : recoit
+    Notification ..> TypeNotification : uses
