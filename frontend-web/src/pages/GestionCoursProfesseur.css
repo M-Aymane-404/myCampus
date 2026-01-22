@@ -1,0 +1,340 @@
+.gestion-cours-professeur {
+  width: 100%;
+  max-width: 100%;
+  padding: 0;
+}
+
+.gestion-cours-professeur-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+}
+
+.gestion-cours-professeur-titre {
+  font-family: var(--font-heading), serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin: 0 0 5px 0;
+}
+
+.gestion-cours-professeur-sous-titre {
+  font-size: 0.9rem;
+  color: var(--gray-500);
+  margin: 0;
+}
+
+.mes-cours-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 24px;
+}
+
+.cours-card {
+  background: var(--white);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  transition: var(--transition-normal);
+}
+
+.cours-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.cours-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.cours-card-icone {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-md);
+  background: var(--primary);
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cours-card-info {
+  flex: 1;
+}
+
+.cours-card-titre {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin: 0 0 4px 0;
+}
+
+.cours-card-niveau {
+  font-size: 0.9rem;
+  color: var(--gray-600);
+  margin: 0;
+}
+
+.cours-card-statut {
+  flex-shrink: 0;
+}
+
+.badge-statut {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.badge-statut-actif {
+  background: var(--success);
+  color: var(--white);
+}
+
+.cours-card-details {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cours-detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cours-detail-label {
+  font-size: 0.9rem;
+  color: var(--gray-600);
+}
+
+.cours-detail-valeur {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.cours-detail-prochain {
+  color: var(--secondary);
+}
+
+.cours-card-ressources {
+  padding-top: 16px;
+  border-top: 1px solid var(--gray-200);
+}
+
+.ressources-titre {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--gray-600);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 12px 0;
+}
+
+.ressources-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ressource-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  transition: var(--transition-normal);
+}
+
+.ressource-item:hover {
+  background: var(--gray-50);
+}
+
+.ressource-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.ressource-icone {
+  flex-shrink: 0;
+}
+
+.ressource-icone-pdf {
+  color: var(--error);
+}
+
+.ressource-icone-video {
+  color: var(--secondary);
+}
+
+.ressource-nom {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--gray-800);
+  margin-bottom: 2px;
+}
+
+.ressource-date {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--gray-500);
+}
+
+.ressource-menu {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--gray-500);
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  transition: var(--transition-normal);
+}
+
+.ressource-menu:hover {
+  background: var(--gray-100);
+  color: var(--gray-700);
+}
+
+.cours-card-actions {
+  display: flex;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--gray-200);
+}
+
+/* Upload Zone Styles */
+.upload-zone {
+  border: 2px dashed var(--gray-300);
+  border-radius: var(--radius-md);
+  padding: 40px 20px;
+  text-align: center;
+  background: var(--gray-50);
+  transition: var(--transition-normal);
+  cursor: pointer;
+  position: relative;
+}
+
+.upload-zone:hover,
+.upload-zone-active {
+  border-color: var(--primary);
+  background: var(--gray-100);
+}
+
+.upload-zone-has-file {
+  border-color: var(--success);
+  background: var(--white);
+  padding: 20px;
+}
+
+.upload-input-hidden {
+  display: none;
+}
+
+.upload-zone-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.upload-zone-icone {
+  color: var(--primary);
+}
+
+.upload-zone-texte-principal {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--gray-800);
+}
+
+.upload-zone-texte-secondaire {
+  font-size: 0.9rem;
+  color: var(--gray-600);
+}
+
+.upload-zone-formats {
+  font-size: 0.85rem;
+  color: var(--gray-500);
+  margin-top: 4px;
+}
+
+.upload-zone-file-selected {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--gray-50);
+  border-radius: var(--radius-sm);
+}
+
+.upload-zone-file-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  text-align: left;
+}
+
+.upload-zone-file-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--gray-800);
+}
+
+.upload-zone-file-size {
+  font-size: 0.85rem;
+  color: var(--gray-600);
+}
+
+.upload-zone-remove {
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  color: var(--gray-500);
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: var(--transition-normal);
+}
+
+.upload-zone-remove:hover {
+  background: var(--gray-200);
+  color: var(--error);
+}
+
+@media (max-width: 1200px) {
+  .mes-cours-grid {
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .gestion-cours-professeur-titre {
+    font-size: 1.3rem;
+  }
+
+  .gestion-cours-professeur-header {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .mes-cours-grid {
+    grid-template-columns: 1fr;
+  }
+}

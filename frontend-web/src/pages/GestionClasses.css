@@ -1,0 +1,184 @@
+.gestion-classes {
+  width: 100%;
+  max-width: 100%;
+  padding: 0;
+}
+
+.gestion-classes-header {
+  margin-bottom: 2rem;
+}
+
+.gestion-classes-header-gauche {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.gestion-classes-titre {
+  font-family: var(--font-heading), serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin: 0 0 5px 0;
+}
+
+.gestion-classes-sous-titre {
+  font-size: 0.9rem;
+  color: var(--gray-500);
+  margin: 0;
+}
+
+.gestion-classes-statistiques {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  margin-bottom: 30px;
+  align-items: stretch;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.gestion-classes-cartes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.classe-carte {
+  background: var(--white);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--gray-200);
+  padding: 24px;
+  transition: all 0.3s ease;
+}
+
+.classe-carte:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+.classe-carte-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.classe-carte-icone {
+  width: 48px;
+  height: 48px;
+  background: var(--primary);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--white);
+  flex-shrink: 0;
+}
+
+.classe-carte-titre-container {
+  flex: 1;
+  min-width: 0;
+}
+
+.classe-carte-titre {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--dark);
+  margin: 0 0 4px 0;
+  line-height: 1.4;
+}
+
+.classe-carte-code {
+  font-size: 0.85rem;
+  color: var(--gray-500);
+  margin: 0;
+}
+
+.classe-carte-infos {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--gray-200);
+}
+
+.classe-carte-info-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--gray-700);
+}
+
+.classe-carte-info-label {
+  font-size: 0.9rem;
+  color: var(--gray-600);
+  flex: 1;
+}
+
+.classe-carte-info-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--dark);
+}
+
+.classe-carte-actions {
+  display: flex;
+  gap: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--gray-200);
+}
+
+.classe-carte-btn-details {
+  flex: 1;
+  padding: 10px 16px;
+  background: var(--primary);
+  color: var(--white);
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.classe-carte-btn-details:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+}
+
+.no-classes {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--gray-500);
+}
+
+.cellule-etudiants {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--gray-700);
+}
+
+@media (max-width: 768px) {
+  .gestion-classes-titre {
+    font-size: 1.3rem;
+  }
+
+  .gestion-classes-header-gauche {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .gestion-classes-cartes {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}

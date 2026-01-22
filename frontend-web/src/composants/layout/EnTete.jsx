@@ -1,7 +1,8 @@
-import { Bell, GraduationCap, LayoutDashboard, Users, UserCheck, BookOpen, Building2, FileText, Calendar, ChevronDown, User, LogOut, Camera, X } from 'lucide-react';
+import { Bell, GraduationCap, LayoutDashboard, Users, UserCheck, BookOpen, Building2, FileText, Calendar, ChevronDown, User, LogOut, Camera, X, Megaphone } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import FormulaireModal from '../communs/FormulaireModal';
 import ChampFormulaire from '../communs/ChampFormulaire';
+import { apiAuth } from '../../services/apiAuth';
 import './EnTete.css';
 
 const EnTete = ({ nombreNotifications = 3, elementActif, surChangementElement }) => {
@@ -61,6 +62,7 @@ const EnTete = ({ nombreNotifications = 3, elementActif, surChangementElement })
     { id: 'etudiants', icone: Users, libelle: 'Students' },
     { id: 'emploi-temps', icone: Calendar, libelle: 'Schedule' },
     { id: 'comptes', icone: Users, libelle: 'Accounts' },
+    { id: 'annonces-admin', icone: Megaphone, libelle: 'Announcements' },
   ];
 
   const traductionsMenu = {
@@ -70,6 +72,7 @@ const EnTete = ({ nombreNotifications = 3, elementActif, surChangementElement })
     'etudiants': 'Students',
     'emploi-temps': 'Schedule',
     'comptes': 'Accounts',
+    'annonces-admin': 'Announcements',
   };
 
   const gererClicMenu = (id) => {
@@ -138,11 +141,8 @@ const EnTete = ({ nombreNotifications = 3, elementActif, surChangementElement })
 
   const gererLogout = () => {
     if (window.confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
-      // TODO: Implémenter la déconnexion (nettoyage session, redirection, etc.)
-      console.log('Déconnexion...');
-      // Exemple: localStorage.clear();
-      // Exemple: window.location.href = '/login';
-      alert('Déconnexion (à implémenter)');
+      // Use API auth service for proper logout
+      apiAuth.logout();
       setMenuOuvert(false);
     }
   };

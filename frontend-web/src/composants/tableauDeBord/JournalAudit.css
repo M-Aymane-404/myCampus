@@ -1,84 +1,86 @@
-/* Cards */
 .journal-audit {
   background: var(--white);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
   border: 1px solid var(--gray-200);
 }
 
-.journal-audit-titre {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--dark);
-  margin: 0;
-  padding: 20px 25px;
-  border-bottom: 1px solid var(--gray-200);
+.journal-audit-table-container {
+  overflow-x: auto;
 }
 
-.journal-audit-contenu {
-  overflow-x: auto;
-  padding: 25px;
+.journal-audit-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.journal-audit-table thead {
+  background: var(--gray-50);
+  border-bottom: 2px solid var(--gray-200);
+}
+
+.journal-audit-table th {
+  text-align: left;
+  padding: 16px 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--gray-600);
+}
+
+.journal-audit-table td {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--gray-100);
+  font-size: 0.9rem;
+  color: var(--gray-700);
+}
+
+.journal-audit-table tbody tr:hover {
+  background: var(--gray-50);
+  transition: var(--transition-normal);
+}
+
+.journal-audit-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.journal-audit-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.journal-audit-user svg {
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.journal-audit-action {
+  font-weight: 500;
+  color: var(--gray-700);
+}
+
+.journal-audit-date {
+  color: var(--gray-600);
+  font-size: 0.85rem;
 }
 
 .journal-audit-vide {
   text-align: center;
   color: var(--gray-500);
-  padding: 2rem;
-  font-size: 0.9375rem;
-}
-
-/* Table */
-.tableau-audit {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.tableau-audit th {
-  text-align: left;
-  padding: 12px 15px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--gray-500);
-  border-bottom: 2px solid var(--gray-200);
-}
-
-.tableau-audit td {
-  padding: 15px;
-  border-bottom: 1px solid var(--gray-100);
+  padding: 40px 20px;
   font-size: 0.9rem;
 }
 
-.tableau-audit tbody tr:hover {
-  background: var(--gray-100);
-}
-
-.tableau-audit tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.cellule-action {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.cellule-action svg {
-  color: var(--primary);
-  flex-shrink: 0;
-}
-
 @media (max-width: 768px) {
-  .tableau-audit {
-    display: block;
-    overflow-x: auto;
+  .journal-audit-table {
+    font-size: 0.8rem;
   }
 
-  .tableau-audit th,
-  .tableau-audit td {
-    padding: 0.5rem;
-    font-size: 0.75rem;
+  .journal-audit-table th,
+  .journal-audit-table td {
+    padding: 12px 10px;
   }
 }

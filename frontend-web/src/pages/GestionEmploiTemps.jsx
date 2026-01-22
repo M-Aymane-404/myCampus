@@ -170,7 +170,7 @@ const GestionEmploiTemps = () => {
   const importerCSV = (fichier) => {
     const lecteur = new FileReader();
     
-    lecteur.onload = (e) => {
+    lecteur.onload = async (e) => {
       try {
         const texte = e.target.result;
         const seancesImportees = parserCSV(texte);
@@ -200,8 +200,32 @@ const GestionEmploiTemps = () => {
         }
 
         if (seancesValides.length > 0) {
-          setSeances(prev => [...prev, ...seancesValides]);
-          alert(`${seancesValides.length} séance(s) importée(s) avec succès${erreurs.length > 0 ? `, ${erreurs.length} erreur(s) détectée(s)` : ''}`);
+          // Send POST request to backend API
+          try {
+            const response = await fetch('/api/import-csv/emploi-temps', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ seances: seancesValides })
+            });
+
+            if (response.ok) {
+              const result = await response.json();
+              // Reload data from backend to ensure consistency
+              // Note: chargerSeances() should be implemented to fetch from backend
+              // For now, update local state
+              setSeances(prev => [...prev, ...seancesValides]);
+              alert(`${seancesValides.length} séance(s) importée(s) avec succès${erreurs.length > 0 ? `, ${erreurs.length} erreur(s) détectée(s)` : ''}`);
+            } else {
+              throw new Error('Erreur lors de l\'envoi au serveur');
+            }
+          } catch (apiError) {
+            console.error('Erreur API:', apiError);
+            // Fallback: save to local state if API fails
+            setSeances(prev => [...prev, ...seancesValides]);
+            alert(`${seancesValides.length} séance(s) importée(s) localement (erreur serveur: ${apiError.message})${erreurs.length > 0 ? `, ${erreurs.length} erreur(s) détectée(s)` : ''}`);
+          }
         } else {
           alert('Aucune séance valide à importer.');
         }

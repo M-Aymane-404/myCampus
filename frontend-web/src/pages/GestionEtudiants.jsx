@@ -379,7 +379,7 @@ const GestionEtudiants = () => {
   const importerCSV = (fichier) => {
     const lecteur = new FileReader();
     
-    lecteur.onload = (e) => {
+    lecteur.onload = async (e) => {
       try {
         const texte = e.target.result;
         const etudiantsImportes = parserCSV(texte);
@@ -417,8 +417,30 @@ const GestionEtudiants = () => {
         }
 
         if (etudiantsValides.length > 0) {
-          setEtudiants(prev => [...prev, ...etudiantsValides]);
-          alert(`${etudiantsValides.length} étudiant(s) importé(s) avec succès${erreurs.length > 0 ? `, ${erreurs.length} erreur(s) détectée(s)` : ''}`);
+          // Send POST request to backend API
+          try {
+            const response = await fetch('/api/import-csv/etudiants', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ etudiants: etudiantsValides })
+            });
+
+            if (response.ok) {
+              const result = await response.json();
+              // Reload data from backend to ensure consistency
+              chargerEtudiants();
+              alert(`${etudiantsValides.length} étudiant(s) importé(s) avec succès${erreurs.length > 0 ? `, ${erreurs.length} erreur(s) détectée(s)` : ''}`);
+            } else {
+              throw new Error('Erreur lors de l\'envoi au serveur');
+            }
+          } catch (apiError) {
+            console.error('Erreur API:', apiError);
+            // Fallback: save to local state if API fails
+            setEtudiants(prev => [...prev, ...etudiantsValides]);
+            alert(`${etudiantsValides.length} étudiant(s) importé(s) localement (erreur serveur: ${apiError.message})${erreurs.length > 0 ? `, ${erreurs.length} erreur(s) détectée(s)` : ''}`);
+          }
         } else {
           alert('Aucun étudiant valide à importer.');
         }

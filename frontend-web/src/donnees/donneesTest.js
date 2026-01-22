@@ -41,9 +41,12 @@ export const donneesTestTableauDeBord = {
     { nom: 'Robert Taylor', role: 'Professor', departement: 'Arts', date: '2024-01-04' },
   ],
   journauxAudit: [
-    { type: 'utilisateur_créé', action: 'User Created', utilisateurEmail: 'admin@mycampus.edu', cible: 'john.doe@email.com', horodatage: '2024-01-15 14:30', statut: 'success' },
-    { type: 'module_créé', action: 'Module Created', utilisateurEmail: 'admin@mycampus.edu', cible: 'CS401 - AI Fundamentals', horodatage: '2024-01-15 11:00', statut: 'success' },
-    { type: 'connexion_échouée', action: 'Login Attempt Failed', utilisateurEmail: 'unknown@example.com', cible: 'Authentication system', horodatage: '2024-01-15 10:45', statut: 'warning' },
+    { type: 'utilisateur_créé', action: 'User Created', utilisateur: 'admin@mycampus.edu', user: 'admin@mycampus.edu', date: '2024-01-15T14:30:00', timestamp: '2024-01-15T14:30:00', statut: 'success', status: 'success' },
+    { type: 'module_créé', action: 'Module Created', utilisateur: 'admin@mycampus.edu', user: 'admin@mycampus.edu', date: '2024-01-15T11:00:00', timestamp: '2024-01-15T11:00:00', statut: 'success', status: 'success' },
+    { type: 'connexion_échouée', action: 'Login Attempt Failed', utilisateur: 'unknown@example.com', user: 'unknown@example.com', date: '2024-01-15T10:45:00', timestamp: '2024-01-15T10:45:00', statut: 'warning', status: 'warning' },
+    { type: 'login', action: 'Login', utilisateur: 'prof@mycampus.edu', user: 'prof@mycampus.edu', date: '2024-01-15T09:00:00', timestamp: '2024-01-15T09:00:00', statut: 'success', status: 'success' },
+    { type: 'note_mise_à_jour', action: 'Grade Updated', utilisateur: 'prof@mycampus.edu', user: 'prof@mycampus.edu', date: '2024-01-14T16:20:00', timestamp: '2024-01-14T16:20:00', statut: 'success', status: 'success' },
+    { type: 'utilisateur_supprimé', action: 'User Deleted', utilisateur: 'admin@mycampus.edu', user: 'admin@mycampus.edu', date: '2024-01-14T13:15:00', timestamp: '2024-01-14T13:15:00', statut: 'success', status: 'success' },
   ],
 };
 

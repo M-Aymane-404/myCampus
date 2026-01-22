@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
-import { BookOpen, GraduationCap, FileText } from 'lucide-react';
+import { BookOpen, GraduationCap, FileText, ArrowLeft } from 'lucide-react';
 import TableauDonnees from '../composants/communs/TableauDonnees';
 import FormulaireModal from '../composants/communs/FormulaireModal';
 import ChampFormulaire from '../composants/communs/ChampFormulaire';
 import CarteStatistique from '../composants/tableauDeBord/CarteStatistique';
+import BoutonAction from '../composants/communs/BoutonAction';
 import { apiStructure } from '../services/apiStructure';
 import './GestionModules.css';
 
-const GestionModules = () => {
+const GestionModules = ({ classeId, classeNom, onRetour }) => {
   const [modules, setModules] = useState([]);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState(null);
@@ -30,11 +31,18 @@ const GestionModules = () => {
         semestre: m.semestre || '',
         coefficient: m.coefficient || 0,
         filiere: m.codeFiliere || '',
+        classeId: m.classeId || m.codeClasse || null,
+        codeClasse: m.codeClasse || null,
         nombreMatieres: 0, // TODO: compter depuis les matières
         nombreHeures: 0 // TODO: calculer depuis les matières
       }));
 
-      setModules(modulesMapped);
+      // Filter by classeId if provided
+      const modulesFiltres = classeId 
+        ? modulesMapped.filter(m => m.classeId === classeId || m.codeClasse === classeId)
+        : modulesMapped;
+
+      setModules(modulesFiltres);
     } catch (err) {
       console.error('Erreur lors du chargement des modules:', err);
       setErreur('Erreur lors du chargement des modules');
@@ -60,8 +68,10 @@ const GestionModules = () => {
 
   useEffect(() => {
     chargerModules();
-    chargerFilieres();
-  }, []);
+    if (!classeId) {
+      chargerFilieres();
+    }
+  }, [classeId]);
 
   const [modalOuvert, setModalOuvert] = useState(false);
   const [moduleCourant, setModuleCourant] = useState(null);
@@ -165,17 +175,40 @@ const GestionModules = () => {
     { key: 'nombreMatieres', label: 'Matières' }
   ];
 
-  const totalModules = modules.length;
-  const totalHeures = modules.reduce((sum, m) => sum + m.nombreHeures, 0);
-  const moyenneCoefficient = modules.length > 0
-    ? (modules.reduce((sum, m) => sum + m.coefficient, 0) / modules.length).toFixed(2)
-    : 0;
+  // Filter modules by classeId if provided (computed from state)
+  const modulesFiltres = classeId 
+    ? modules.filter(m => {
+        const mClasseId = m.classeId || m.codeClasse;
+        return mClasseId === classeId || mClasseId?.toString() === classeId?.toString();
+      })
+    : modules;
+
+  const totalModules = modulesFiltres.length;
+  const totalHeures = modulesFiltres.reduce((sum, m) => sum + m.nombreHeures, 0);
+  const moyenneCoefficient = modulesFiltres.length > 0
+    ? (modulesFiltres.reduce((sum, m) => sum + m.coefficient, 0) / modulesFiltres.length).toFixed(2)
+    : '0.00';
 
   return (
     <div className="gestion-modules">
       <div className="gestion-modules-header">
-        <h1 className="gestion-modules-titre">Gestion des Modules</h1>
-        <p className="gestion-modules-sous-titre">Gestion des cours et modules académiques</p>
+        <div className="gestion-modules-header-gauche">
+          {onRetour && (
+            <BoutonAction
+              libelle="Retour"
+              variante="secondaire"
+              taille="moyen"
+              icone={ArrowLeft}
+              onClick={onRetour}
+            />
+          )}
+          <div>
+            <h1 className="gestion-modules-titre">Gestion des Modules</h1>
+            <p className="gestion-modules-sous-titre">
+              {classeNom ? `${classeNom} - Modules` : 'Gestion des cours et modules académiques'}
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="gestion-modules-statistiques">
@@ -216,7 +249,7 @@ const GestionModules = () => {
         <TableauDonnees
           titre="Liste des Modules"
           colonnes={colonnes}
-          donnees={modules}
+          donnees={modulesFiltres}
           surAjouter={ouvrirModalAjout}
           surModifier={ouvrirModalModification}
           surSupprimer={supprimer}

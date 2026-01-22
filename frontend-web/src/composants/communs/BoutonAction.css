@@ -43,6 +43,24 @@
   background: #dc2626;
 }
 
+.bouton-action-success {
+  background: var(--success);
+  color: var(--white);
+}
+
+.bouton-action-success:hover:not(:disabled) {
+  background: #059669;
+}
+
+.bouton-action-error {
+  background: var(--error);
+  color: var(--white);
+}
+
+.bouton-action-error:hover:not(:disabled) {
+  background: #dc2626;
+}
+
 .bouton-action-petit {
   padding: 0.375rem 0.75rem;
   font-size: 0.8125rem;

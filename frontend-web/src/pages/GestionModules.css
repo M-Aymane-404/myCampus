@@ -9,6 +9,12 @@
   margin-bottom: 2rem;
 }
 
+.gestion-modules-header-gauche {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
 .gestion-modules-titre {
   font-family: var(--font-heading), serif;
   font-size: 1.6rem;

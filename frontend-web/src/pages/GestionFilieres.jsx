@@ -8,7 +8,7 @@ import BadgeStatut from '../composants/communs/BadgeStatut';
 import { apiStructure } from '../services/apiStructure';
 import './GestionFilieres.css';
 
-const GestionFilieres = () => {
+const GestionFilieres = ({ surVoirClasses }) => {
   const [filieres, setFilieres] = useState([]);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState(null);
@@ -237,6 +237,7 @@ const GestionFilieres = () => {
           surAjouter={ouvrirModalAjout}
           surModifier={ouvrirModalModification}
           surSupprimer={supprimer}
+          surVoir={surVoirClasses}
         />
       )}
 

@@ -1,0 +1,279 @@
+.calendrier-academique-professeur {
+  width: 100%;
+  max-width: 100%;
+  padding: 0;
+}
+
+.calendrier-academique-professeur-header {
+  margin-bottom: 2rem;
+}
+
+.calendrier-academique-professeur-titre {
+  font-family: var(--font-heading), serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin: 0 0 5px 0;
+}
+
+.calendrier-academique-professeur-sous-titre {
+  font-size: 0.9rem;
+  color: var(--gray-500);
+  margin: 0;
+}
+
+.calendrier-container {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+}
+
+.calendrier-vue {
+  background: var(--white);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 24px;
+}
+
+.calendrier-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.calendrier-nav-button {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--gray-300);
+  background: var(--white);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: var(--gray-700);
+  transition: var(--transition-normal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.calendrier-nav-button:hover {
+  background: var(--gray-100);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.calendrier-mois-titre {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin: 0;
+}
+
+.calendrier-grille {
+  display: flex;
+  flex-direction: column;
+}
+
+.calendrier-jours-semaine {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.calendrier-jour-header {
+  padding: 12px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--gray-600);
+  background: var(--gray-100);
+  border-radius: var(--radius-md);
+}
+
+.calendrier-jours {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.calendrier-jour {
+  min-height: 100px;
+  padding: 8px;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  background: var(--white);
+  display: flex;
+  flex-direction: column;
+  transition: var(--transition-normal);
+}
+
+.calendrier-jour:hover {
+  background: var(--gray-50);
+}
+
+.calendrier-jour-vide {
+  background: transparent;
+  border: none;
+}
+
+.calendrier-jour-aujourdhui {
+  background: #e3f2fd;
+  border-color: var(--primary);
+}
+
+.calendrier-jour-numero {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--gray-700);
+  margin-bottom: 4px;
+}
+
+.calendrier-evenements {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  margin-top: 4px;
+}
+
+.calendrier-evenement {
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.calendrier-evenement-academic {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.calendrier-evenement-exam {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.calendrier-evenement-holiday {
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.calendrier-evenement-plus {
+  padding: 2px 6px;
+  font-size: 0.7rem;
+  color: var(--gray-600);
+  font-weight: 600;
+}
+
+.calendrier-evenements-liste {
+  background: var(--white);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 24px;
+}
+
+.calendrier-evenements-titre {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--primary);
+  margin: 0 0 20px 0;
+}
+
+.calendrier-evenements-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.calendrier-evenement-item {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  background: var(--gray-50);
+  border-radius: var(--radius-md);
+  border-left: 4px solid var(--primary);
+  transition: var(--transition-normal);
+}
+
+.calendrier-evenement-item:hover {
+  background: var(--gray-100);
+  transform: translateX(4px);
+}
+
+.calendrier-evenement-indicateur {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.calendrier-evenement-indicateur-academic {
+  background: #1976d2;
+}
+
+.calendrier-evenement-indicateur-exam {
+  background: #f57c00;
+}
+
+.calendrier-evenement-indicateur-holiday {
+  background: #7b1fa2;
+}
+
+.calendrier-evenement-contenu {
+  flex: 1;
+}
+
+.calendrier-evenement-date {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--gray-600);
+  margin-bottom: 6px;
+}
+
+.calendrier-evenement-nom {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--gray-800);
+  margin: 0 0 4px 0;
+}
+
+.calendrier-evenement-description {
+  font-size: 0.85rem;
+  color: var(--gray-600);
+  margin: 0;
+}
+
+@media (max-width: 1200px) {
+  .calendrier-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .calendrier-academique-professeur-titre {
+    font-size: 1.3rem;
+  }
+
+  .calendrier-jour {
+    min-height: 80px;
+    padding: 6px;
+  }
+
+  .calendrier-jour-numero {
+    font-size: 0.8rem;
+  }
+
+  .calendrier-evenement {
+    font-size: 0.7rem;
+    padding: 2px 4px;
+  }
+}

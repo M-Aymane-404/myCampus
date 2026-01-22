@@ -1,4 +1,4 @@
-import { UserPlus, FileEdit, BookOpen, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
+import { UserPlus, FileEdit, BookOpen, AlertCircle, CheckCircle, XCircle, UserCheck, Trash2 } from 'lucide-react';
 import BadgeStatut from '../communs/BadgeStatut';
 import './JournalAudit.css';
 
@@ -13,6 +13,12 @@ const JournalAudit = ({ journaux }) => {
       'Module Created': 'Module Created',
       'Tentative de Connexion Échouée': 'Login Attempt Failed',
       'Login Attempt Failed': 'Login Attempt Failed',
+      'Utilisateur Supprimé': 'User Deleted',
+      'User Deleted': 'User Deleted',
+      'Connexion': 'Login',
+      'Login': 'Login',
+      'Déconnexion': 'Logout',
+      'Logout': 'Logout'
     };
     return traductions[action] || action;
   };
@@ -31,6 +37,12 @@ const JournalAudit = ({ journaux }) => {
       case 'login_failed':
       case 'connexion_échouée':
         return <AlertCircle size={16} />;
+      case 'user_deleted':
+      case 'utilisateur_supprimé':
+        return <Trash2 size={16} />;
+      case 'login':
+      case 'connexion':
+        return <UserCheck size={16} />;
       default:
         return <CheckCircle size={16} />;
     }
@@ -52,8 +64,73 @@ const JournalAudit = ({ journaux }) => {
     }
   };
 
-  
+  const formaterDate = (dateStr) => {
+    if (!dateStr) return 'N/A';
+    const date = new Date(dateStr);
+    return date.toLocaleString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  return (
+    <div className="journal-audit">
+      <div className="journal-audit-table-container">
+        <table className="journal-audit-table">
+          <thead>
+            <tr>
+              <th>User Name</th>
+              <th>Action</th>
+              <th>Date/Time</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {journaux.length === 0 ? (
+              <tr>
+                <td colSpan="4" className="journal-audit-vide">
+                  Aucun log disponible
+                </td>
+              </tr>
+            ) : (
+              journaux.map((journal, index) => {
+                const statut = obtenirStatut(journal.statut || journal.status);
+                return (
+                  <tr key={index}>
+                    <td>
+                      <div className="journal-audit-user">
+                        {obtenirIcone(journal.type || journal.action)}
+                        <span>{journal.utilisateur || journal.user || 'System'}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span className="journal-audit-action">
+                        {traduireAction(journal.action || journal.type)}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="journal-audit-date">
+                        {formaterDate(journal.date || journal.timestamp)}
+                      </span>
+                    </td>
+                    <td>
+                      <BadgeStatut
+                        statut={statut.type}
+                        texte={statut.libelle}
+                      />
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 };
 
 export default JournalAudit;
-
