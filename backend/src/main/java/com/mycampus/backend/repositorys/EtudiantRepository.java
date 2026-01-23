@@ -29,4 +29,15 @@ public interface EtudiantRepository extends JpaRepository<Etudiant, Long> {
 """)
     Integer countEtudiantsByCodeDepartement(@Param("code") String codeDepartement);
 
+    @Query(
+            """
+    select count (e)
+    from Etudiant e
+    join e.classe c
+    join c.filiere f 
+    where f.codeFiliere = :code
+"""
+    )
+    Integer countEtudiantsByCodeFiliere(@Param("code") String codeFiliere);
+
 }

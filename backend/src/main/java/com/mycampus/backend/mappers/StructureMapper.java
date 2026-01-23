@@ -20,9 +20,7 @@ import com.mycampus.backend.dto.administrateur.DonneSortie.ModuleSortieDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.MatiereSortieDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.AffectationEnseignementSortieDTO;
 import com.mycampus.backend.dto.etudient.DonneeEntrer.SeanceDTO;
-import com.mycampus.backend.repositorys.DepartementRepository;
-import com.mycampus.backend.repositorys.EtudiantRepository;
-import com.mycampus.backend.repositorys.FiliereRepository;
+import com.mycampus.backend.repositorys.*;
 import org.springframework.beans.BeanUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -38,6 +36,8 @@ public class StructureMapper {
     private final DepartementRepository departementRepository;
     private final FiliereRepository filiereRepository;
     private final EtudiantRepository etudiantRepository;
+    private final MatiereRepository matiereRepository;
+    private final ModuleRepository moduleRepository;
 
     // ==================== DEPARTEMENT ====================
 
@@ -107,6 +107,8 @@ public class StructureMapper {
         filiereSortieDTO.setDureeFormation(filiere.getDureeFormation());
         filiereSortieDTO.setNiveauDiplome(filiere.getNiveauDiplome());
         filiereSortieDTO.setEtat(filiere.getEtat());
+        filiereSortieDTO.setNbModules(moduleRepository.countByFiliere_CodeFiliere(filiere.getCodeFiliere()));
+        filiereSortieDTO.setNbEtudiants(etudiantRepository.countEtudiantsByCodeFiliere(filiere.getCodeFiliere()));
         
         // Mapping des relations par codes
         if (filiere.getDepartement() != null) {
@@ -207,7 +209,8 @@ public class StructureMapper {
         moduleSortieDTO.setDescription(module.getDescription());
         moduleSortieDTO.setSemestre(module.getSemestre());
         moduleSortieDTO.setCoefficient(module.getCoefficient());
-        
+        moduleSortieDTO.setNbMatieres(matiereRepository.countByModule_CodeModule(moduleSortieDTO.getCodeModule()));
+
         // Mapping des relations par codes
         if (module.getFiliere() != null) {
             moduleSortieDTO.setCodeFiliere(module.getFiliere().getCodeFiliere());

@@ -38,7 +38,7 @@ public class Resultat {
     @Column(nullable = false)
     private Boolean valide = false;
     
-    private String fichierExam;
+    private String copieEtudiantPath;
     
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "examen_id", nullable = false)

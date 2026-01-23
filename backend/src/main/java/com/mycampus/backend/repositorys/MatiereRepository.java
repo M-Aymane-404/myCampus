@@ -17,4 +17,6 @@ public interface MatiereRepository extends JpaRepository<Matiere, Long> {
     List<Matiere> findByModuleId(Long moduleId);
     
     List<Matiere> findByModule_CodeModule(String codeModule);
+
+    String countByModule_CodeModule(String moduleCodeModule);
 }
