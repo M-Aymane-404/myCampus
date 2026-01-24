@@ -17,4 +17,6 @@ public interface ModuleRepository extends JpaRepository<Module, Long> {
     List<Module> findByFiliereId(Long filiereId);
     
     List<Module> findByFiliere_CodeFiliere(String codeFiliere);
+
+    Integer countByFiliere_CodeFiliere(String filiereCodeFiliere);
 }

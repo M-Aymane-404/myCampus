@@ -22,5 +22,8 @@ public class FiliereSortieDTO {
     private  String chefFilierePpr;
     private  String chefFiliereNom;
     private  String chefFilierePrenom;
+    private  Integer nbModules;
+    private  Integer nbEtudiants;
+
 
 }

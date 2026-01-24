@@ -17,4 +17,6 @@ public interface FiliereRepository extends JpaRepository<Filiere, Long> {
     List<Filiere> findByDepartementId(Long departementId);
     
     List<Filiere> findByDepartement_CodeDepartement(String codeDepartement);
+
+    Integer countByDepartement_CodeDepartement(String codeDepartement);
 }

@@ -16,4 +16,5 @@ public class MatiereSortieDTO {
     private  Integer coefficient;
     private  String codeModule;
     private  String moduleNom;
+
 }

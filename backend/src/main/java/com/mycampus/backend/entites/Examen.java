@@ -43,7 +43,7 @@ public class Examen {
     @Column(nullable = false)
     private EtatExamen etat;
     
-    private String feuilleCorrection;
+    private String corrigePath;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "matiere_id", nullable = false)

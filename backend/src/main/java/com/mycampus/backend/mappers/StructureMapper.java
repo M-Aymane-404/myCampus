@@ -19,7 +19,8 @@ import com.mycampus.backend.dto.administrateur.DonneSortie.ClasseSortieDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.ModuleSortieDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.MatiereSortieDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.AffectationEnseignementSortieDTO;
-import com.mycampus.backend.dto.SeanceDTO;
+import com.mycampus.backend.dto.etudient.DonneeEntrer.SeanceDTO;
+import com.mycampus.backend.repositorys.*;
 import org.springframework.beans.BeanUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -29,7 +30,14 @@ import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
+
 public class StructureMapper {
+
+    private final DepartementRepository departementRepository;
+    private final FiliereRepository filiereRepository;
+    private final EtudiantRepository etudiantRepository;
+    private final MatiereRepository matiereRepository;
+    private final ModuleRepository moduleRepository;
 
     // ==================== DEPARTEMENT ====================
 
@@ -46,7 +54,10 @@ public class StructureMapper {
         departementSortieDTO.setTypeDepartement(departement.getTypeDepartement());
         departementSortieDTO.setDescription(departement.getDescription());
         departementSortieDTO.setDateCreation(departement.getDateCreation());
-        
+        departementSortieDTO.setNbFilieres( filiereRepository.countByDepartement_CodeDepartement(departement.getCodeDepartement()));
+        departementSortieDTO.setNbEtudiants(etudiantRepository.countEtudiantsByCodeDepartement(departement.getCodeDepartement()));
+
+
         // Mapping du chef de département
         if (departement.getChefDepartement() != null) {
             departementSortieDTO.setChefDepartementPpr(departement.getChefDepartement().getPpr());
@@ -96,6 +107,8 @@ public class StructureMapper {
         filiereSortieDTO.setDureeFormation(filiere.getDureeFormation());
         filiereSortieDTO.setNiveauDiplome(filiere.getNiveauDiplome());
         filiereSortieDTO.setEtat(filiere.getEtat());
+        filiereSortieDTO.setNbModules(moduleRepository.countByFiliere_CodeFiliere(filiere.getCodeFiliere()));
+        filiereSortieDTO.setNbEtudiants(etudiantRepository.countEtudiantsByCodeFiliere(filiere.getCodeFiliere()));
         
         // Mapping des relations par codes
         if (filiere.getDepartement() != null) {
@@ -196,7 +209,8 @@ public class StructureMapper {
         moduleSortieDTO.setDescription(module.getDescription());
         moduleSortieDTO.setSemestre(module.getSemestre());
         moduleSortieDTO.setCoefficient(module.getCoefficient());
-        
+        moduleSortieDTO.setNbMatieres(matiereRepository.countByModule_CodeModule(moduleSortieDTO.getCodeModule()));
+
         // Mapping des relations par codes
         if (module.getFiliere() != null) {
             moduleSortieDTO.setCodeFiliere(module.getFiliere().getCodeFiliere());
