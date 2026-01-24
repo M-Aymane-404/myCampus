@@ -1,248 +1,145 @@
 import { useState } from 'react';
-import { UserCheck, CheckCircle, XCircle, Save, Calendar } from 'lucide-react';
-import CarteStatistique from '../composants/tableauDeBord/CarteStatistique';
-import BoutonAction from '../composants/communs/BoutonAction';
+import { Save } from 'lucide-react';
 import './GestionPresenceProfesseur.css';
 
 const GestionPresenceProfesseur = () => {
-  const [presences, setPresences] = useState([
-    { id: 1, apogee: 'APG001', nom: 'Alami', prenom: 'Ahmed', present: true, classe: 'L3-A', module: 'GI-INFO-101' },
-    { id: 2, apogee: 'APG002', nom: 'Bennani', prenom: 'Fatima', present: true, classe: 'L3-A', module: 'GI-INFO-101' },
-    { id: 3, apogee: 'APG003', nom: 'Chakir', prenom: 'Youssef', present: false, classe: 'L3-A', module: 'GI-INFO-101' },
-    { id: 4, apogee: 'APG004', nom: 'Daoudi', prenom: 'Sara', present: true, classe: 'L3-A', module: 'GI-INFO-101' },
-    { id: 5, apogee: 'APG005', nom: 'El Amrani', prenom: 'Mohamed', present: null, classe: 'L3-B', module: 'GI-INFO-102' },
-    { id: 6, apogee: 'APG006', nom: 'Fassi', prenom: 'Aicha', present: true, classe: 'L3-B', module: 'GI-INFO-102' },
+  // Mock Data matching screenshot
+  // Students: Alice, Jean, Marie, Thomas, Sophie, Albert, Nikola, Ada
+  const [etudiants, setEtudiants] = useState([
+    { id: 1, prenom: 'Alice', nom: 'Bertrand', id_etudiant: '2023001', initiales: 'AB', color: 'blue', statut: 'present', classe: 'L3-A', module: 'Algorithmique' },
+    { id: 2, prenom: 'Jean', nom: 'Dupont', id_etudiant: '2023012', initiales: 'JD', color: 'pink', statut: 'present', classe: 'L3-A', module: 'Algorithmique' },
+    { id: 3, prenom: 'Marie', nom: 'Curie', id_etudiant: '2023045', initiales: 'MC', color: 'purple', statut: 'absent', classe: 'L3-A', module: 'Algorithmique' },
+    { id: 4, prenom: 'Thomas', nom: 'Edison', id_etudiant: '2023099', initiales: 'TE', color: 'brown', statut: 'present', classe: 'M1-B', module: 'POO' },
+    { id: 5, prenom: 'Sophie', nom: 'Germain', id_etudiant: '2023150', initiales: 'SG', color: 'green', statut: 'present', classe: 'M1-B', module: 'POO' },
+    { id: 6, prenom: 'Albert', nom: 'Einstein', id_etudiant: '2023210', initiales: 'AE', color: 'grey', statut: 'justifie', classe: 'M1-B', module: 'POO' },
+    { id: 7, prenom: 'Nikola', nom: 'Tesla', id_etudiant: '2023255', initiales: 'NT', color: 'green-light', statut: 'present', classe: 'L3-A', module: 'Algorithmique' },
+    { id: 8, prenom: 'Ada', nom: 'Lovelace', id_etudiant: '2023300', initiales: 'AL', color: 'purple-light', statut: 'present', classe: 'M1-B', module: 'POO' }
   ]);
 
-  const [filtreClasse, setFiltreClasse] = useState('');
-  const [filtreModule, setFiltreModule] = useState('');
-  const [dateSeance, setDateSeance] = useState(new Date().toISOString().split('T')[0]);
-  const [modifications, setModifications] = useState({});
+  const [classeSelectionnee, setClasseSelectionnee] = useState('All Classes');
+  const [moduleSelectionne, setModuleSelectionne] = useState('All Modules');
 
-  const classes = [
-    { value: '', label: 'All Classes' },
-    { value: 'L3-A', label: 'L3-A' },
-    { value: 'L3-B', label: 'L3-B' },
-    { value: 'M1-A', label: 'M1-A' }
-  ];
+  const classes = ['All Classes', 'L3-A', 'M1-B'];
+  const modules = ['All Modules', 'Algorithmique', 'POO'];
 
-  const modules = [
-    { value: '', label: 'All Modules' },
-    { value: 'GI-INFO-101', label: 'GI-INFO-101 - Algorithmique' },
-    { value: 'GI-INFO-102', label: 'GI-INFO-102 - Structures de données' },
-    { value: 'GI-INFO-103', label: 'GI-INFO-103 - POO' }
-  ];
+  const handleStatusChange = (id, newStatus) => {
+    setEtudiants(prev => prev.map(etudiant =>
+      etudiant.id === id ? { ...etudiant, statut: newStatus } : etudiant
+    ));
+  };
 
-  const presencesFiltrees = presences.filter(presence => {
-    if (filtreClasse && presence.classe !== filtreClasse) return false;
-    if (filtreModule && presence.module !== filtreModule) return false;
-    return true;
+  const etudiantsFiltres = etudiants.filter(etudiant => {
+    const matchClasse = classeSelectionnee === 'All Classes' || etudiant.classe === classeSelectionnee;
+    const matchModule = moduleSelectionne === 'All Modules' || etudiant.module === moduleSelectionne;
+    return matchClasse && matchModule;
   });
 
-  const gererChangementPresence = (id, nouvellePresence) => {
-    setModifications(prev => ({ ...prev, [id]: nouvellePresence }));
-  };
-
-  const obtenirPresence = (id) => {
-    return modifications[id] !== undefined 
-      ? modifications[id] 
-      : presences.find(p => p.id === id)?.present;
-  };
-
-  const marquerTousPresents = () => {
-    const nouvellesModifications = {};
-    presencesFiltrees.forEach(p => {
-      nouvellesModifications[p.id] = true;
-    });
-    setModifications(prev => ({ ...prev, ...nouvellesModifications }));
-  };
-
-  const marquerTousAbsents = () => {
-    const nouvellesModifications = {};
-    presencesFiltrees.forEach(p => {
-      nouvellesModifications[p.id] = false;
-    });
-    setModifications(prev => ({ ...prev, ...nouvellesModifications }));
-  };
-
-  const sauvegarderPresences = () => {
-    const nouvellesPresences = presences.map(presence => ({
-      ...presence,
-      present: modifications[presence.id] !== undefined ? modifications[presence.id] : presence.present
-    }));
-
-    setPresences(nouvellesPresences);
-    setModifications({});
-    console.log('Attendance saved:', nouvellesPresences);
-    alert('Présences sauvegardées avec succès');
-  };
-
-  const totalEtudiants = presencesFiltrees.length;
-  const presents = presencesFiltrees.filter(p => obtenirPresence(p.id) === true).length;
-  const absents = presencesFiltrees.filter(p => obtenirPresence(p.id) === false).length;
-  const nonMarques = presencesFiltrees.filter(p => obtenirPresence(p.id) === null || obtenirPresence(p.id) === undefined).length;
+  const total = etudiantsFiltres.length;
+  const presents = etudiantsFiltres.filter(e => e.statut === 'present').length;
+  const absents = etudiantsFiltres.filter(e => e.statut === 'absent').length;
 
   return (
-    <div className="gestion-presence-professeur">
-      <div className="gestion-presence-professeur-header">
-        <h1 className="gestion-presence-professeur-titre">Student Attendance</h1>
-        <p className="gestion-presence-professeur-sous-titre">Mark student attendance for your classes</p>
-      </div>
+    <div className="gestion-presence-container">
 
-      <div className="gestion-presence-professeur-statistiques">
-        <CarteStatistique
-          titre="Total Students"
-          valeur={totalEtudiants}
-          variation={{ valeur: totalEtudiants, label: '', positif: true }}
-          icone={UserCheck}
-          couleur="primary"
-          iconeCouleur="dark"
-        />
-        <CarteStatistique
-          titre="Present"
-          valeur={presents}
-          variation={{ valeur: presents, label: '', positif: true }}
-          icone={CheckCircle}
-          couleur="success"
-          iconeCouleur="light"
-        />
-        <CarteStatistique
-          titre="Absent"
-          valeur={absents}
-          variation={{ valeur: absents, label: '', positif: false }}
-          icone={XCircle}
-          couleur="error"
-          iconeCouleur="dark"
-        />
-        <CarteStatistique
-          titre="Not Marked"
-          valeur={nonMarques}
-          variation={{ valeur: nonMarques, label: '', positif: false }}
-          icone={UserCheck}
-          couleur="accent"
-          iconeCouleur="dark"
-        />
-      </div>
+      {/* Top Header & Stats */}
+      <div className="presence-header-row">
+        <div className="presence-title-block">
+          <h1>Appel des Étudiants</h1>
+          <p>Session : 23/01/2026 - 09:00 - Salle B204</p>
+        </div>
 
-      <div className="gestion-presence-professeur-filtres">
-        <div className="filtre-item">
-          <label className="filtre-label">Date:</label>
-          <input
-            type="date"
-            className="filtre-input-date"
-            value={dateSeance}
-            onChange={(e) => setDateSeance(e.target.value)}
-          />
-        </div>
-        <div className="filtre-item">
-          <label className="filtre-label">Class:</label>
-          <select 
-            className="filtre-select"
-            value={filtreClasse}
-            onChange={(e) => setFiltreClasse(e.target.value)}
-          >
-            {classes.map(cl => (
-              <option key={cl.value} value={cl.value}>{cl.label}</option>
-            ))}
-          </select>
-        </div>
-        <div className="filtre-item">
-          <label className="filtre-label">Module:</label>
-          <select 
-            className="filtre-select"
-            value={filtreModule}
-            onChange={(e) => setFiltreModule(e.target.value)}
-          >
-            {modules.map(mod => (
-              <option key={mod.value} value={mod.value}>{mod.label}</option>
-            ))}
-          </select>
+        <div className="stats-box">
+          <div className="stat-item">
+            <span className="stat-label">PRÉSENTS</span>
+            <span className="stat-value text-green">{presents}</span>
+          </div>
+          <div className="stat-divider"></div>
+          <div className="stat-item">
+            <span className="stat-label">ABSENTS</span>
+            <span className="stat-value text-red">{absents}</span>
+          </div>
+          <div className="stat-divider"></div>
+          <div className="stat-item">
+            <span className="stat-label">TOTAL</span>
+            <span className="stat-value text-dark">{total}</span>
+          </div>
         </div>
       </div>
 
-      <div className="gestion-presence-professeur-actions-rapides">
-        <BoutonAction
-          libelle="Mark All Present"
-          variante="success"
-          taille="moyen"
-          icone={CheckCircle}
-          onClick={marquerTousPresents}
-        />
-        <BoutonAction
-          libelle="Mark All Absent"
-          variante="error"
-          taille="moyen"
-          icone={XCircle}
-          onClick={marquerTousAbsents}
-        />
-        <BoutonAction
-          libelle="Save Attendance"
-          variante="primaire"
-          taille="moyen"
-          icone={Save}
-          onClick={sauvegarderPresences}
-          disabled={Object.keys(modifications).length === 0}
-        />
+      {/* Filters */}
+      <div className="filters-row">
+        <div className="filter-group">
+          <label className="filter-label">Class:</label>
+          <div className="select-wrapper-rounded">
+            <select
+              value={classeSelectionnee}
+              onChange={(e) => setClasseSelectionnee(e.target.value)}
+            >
+              {classes.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+        </div>
+        <div className="filter-group">
+          <label className="filter-label">Module:</label>
+          <div className="select-wrapper-rounded">
+            <select
+              value={moduleSelectionne}
+              onChange={(e) => setModuleSelectionne(e.target.value)}
+            >
+              {modules.map(m => <option key={m} value={m}>{m}</option>)}
+            </select>
+          </div>
+        </div>
       </div>
 
-      <div className="gestion-presence-professeur-tableau">
-        <div className="tableau-presence-header">
-          <h2 className="tableau-presence-titre">Attendance List</h2>
-        </div>
-        <div className="tableau-presence-contenu">
-          <table className="tableau-presence-table">
-            <thead>
-              <tr>
-                <th>Apogee</th>
-                <th>Last Name</th>
-                <th>First Name</th>
-                <th>Class</th>
-                <th>Module</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {presencesFiltrees.map((etudiant) => {
-                const presence = obtenirPresence(etudiant.id);
-                const estModifie = modifications[etudiant.id] !== undefined;
-                
-                return (
-                  <tr 
-                    key={etudiant.id} 
-                    className={`${estModifie ? 'ligne-modifiee' : ''} ${presence === true ? 'ligne-presente' : presence === false ? 'ligne-absente' : ''}`}
-                  >
-                    <td>{etudiant.apogee}</td>
-                    <td>{etudiant.nom}</td>
-                    <td>{etudiant.prenom}</td>
-                    <td>{etudiant.classe}</td>
-                    <td>{etudiant.module}</td>
-                    <td>
-                      <div className="presence-boutons">
-                        <button
-                          className={`bouton-presence bouton-present ${presence === true ? 'actif' : ''}`}
-                          onClick={() => gererChangementPresence(etudiant.id, true)}
-                          title="Present"
-                        >
-                          <CheckCircle size={18} />
-                          <span>Present</span>
-                        </button>
-                        <button
-                          className={`bouton-presence bouton-absent ${presence === false ? 'actif' : ''}`}
-                          onClick={() => gererChangementPresence(etudiant.id, false)}
-                          title="Absent"
-                        >
-                          <XCircle size={18} />
-                          <span>Absent</span>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+      {/* Student Grid */}
+      <div className="student-grid">
+        {etudiantsFiltres.map(etudiant => (
+          <div key={etudiant.id} className="student-card">
+
+            {/* Avatar */}
+            <div className={`student-avatar avatar-${etudiant.color}`}>
+              {etudiant.initiales}
+            </div>
+
+            {/* Info */}
+            <h3 className="student-modal-name">{etudiant.prenom} {etudiant.nom}</h3>
+            <span className="student-modal-id">ID: {etudiant.id_etudiant}</span>
+
+            {/* Actions */}
+            <div className="student-actions">
+              <button
+                className={`btn-state btn-present ${etudiant.statut === 'present' ? 'active' : ''}`}
+                onClick={() => handleStatusChange(etudiant.id, 'present')}
+              >
+                Présent
+              </button>
+              <button
+                className={`btn-state btn-absent ${etudiant.statut === 'absent' ? 'active' : ''}`}
+                onClick={() => handleStatusChange(etudiant.id, 'absent')}
+              >
+                Absent
+              </button>
+            </div>
+
+            <button
+              className={`btn-full-width btn-justifie ${etudiant.statut === 'justifie' ? 'active' : ''}`}
+              onClick={() => handleStatusChange(etudiant.id, 'justifie')}
+            >
+              JUSTIFIÉ
+            </button>
+
+          </div>
+        ))}
       </div>
+
+      {/* Footer Submit */}
+      <div className="page-footer">
+        <button className="btn-submit-final">
+          Soumettre l'appel final
+        </button>
+      </div>
+
     </div>
   );
 };

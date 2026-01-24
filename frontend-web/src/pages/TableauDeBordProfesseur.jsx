@@ -1,222 +1,184 @@
 import { useState } from 'react';
-import { Plus, Edit, ClipboardCheck, Calendar, Clock, FileText, Video, MoreVertical, BookOpen, GraduationCap, UserCheck } from 'lucide-react';
-import CarteStatistique from '../composants/tableauDeBord/CarteStatistique';
-import BoutonAction from '../composants/communs/BoutonAction';
+import {
+  BookOpen, Users, CheckCircle, XCircle,
+  Bell, ChevronDown, ChevronRight
+} from 'lucide-react';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
+} from 'recharts';
 import './TableauDeBordProfesseur.css';
 
 const TableauDeBordProfesseur = ({ surNavigation }) => {
-  // Mock data for statistics
-  const [statistiques] = useState({
-    totalCours: 8,
-    totalEtudiants: 145,
-    notesEnAttente: 12,
-    seancesCetteSemaine: 15
+  // Mock Stats Data
+  const stats = [
+    { label: 'COURS ACTIFS', value: 4, icon: BookOpen, color: 'blue' },
+    { label: 'ÉTUDIANTS TOTAL', value: 156, icon: Users, color: 'purple' },
+    { label: 'TAUX DE PRÉSENCE', value: '92%', icon: CheckCircle, color: 'green' },
+    { label: 'ALERTES NOTES', value: 12, icon: XCircle, color: 'orange' },
+  ];
+
+  // Mock Chart Data
+  const dataMoyennes = [
+    { name: 'INF101', moyenne: 14.5 },
+    { name: 'MTH202', moyenne: 12.8 },
+    { name: 'GEN303', moyenne: 15.2 },
+    { name: 'PHY104', moyenne: 13.0 },
+  ];
+
+  // Mock Single Announcement
+  const derniereAnnonce = {
+    id: 1,
+    sujet: 'Maintenance de la plateforme',
+    date: 'Il y a 2 heures',
+    message: 'La plateforme sera en maintenance ce soir de 23h à minuit. Veuillez sauvegarder votre travail.'
+  };
+
+  // Form State
+  const [annonce, setAnnonce] = useState({
+    sujet: '',
+    classe: 'L3 Informatique',
+    message: ''
   });
 
-  // Mock data for courses
-  const [cours] = useState([
-    {
-      id: 1,
-      titre: 'Programmation Java',
-      niveau: 'Licence 3 Informatique',
-      etudiants: 48,
-      ressources: 12,
-      prochainCours: { date: 'Aujourd\'hui', heure: '14:00' },
-      ressourcesRecentes: [
-        { id: 1, nom: 'Chapitre 5 - Héritage.pdf', type: 'PDF', dateAjout: 'Il y a 2 jours' },
-        { id: 2, nom: 'TP4 - Polymorphisme.mp4', type: 'VIDEO', dateAjout: 'Il y a 5 jours' }
-      ],
-      icone: 'code',
-      statut: 'Actif'
-    },
-    {
-      id: 2,
-      titre: 'Bases de données',
-      niveau: 'Master 1 Informatique',
-      etudiants: 32,
-      ressources: 8,
-      prochainCours: { date: 'Demain', heure: '10:00' },
-      ressourcesRecentes: [
-        { id: 1, nom: 'SQL Avancé - Requêtes.pdf', type: 'PDF', dateAjout: 'Il y a 1 jour' }
-      ],
-      icone: 'database',
-      statut: 'Actif'
-    },
-    {
-      id: 3,
-      titre: 'Algorithmique',
-      niveau: 'Licence 2 Informatique',
-      etudiants: 62,
-      ressources: 15,
-      prochainCours: { date: 'Mercredi', heure: '08:30' },
-      ressourcesRecentes: [
-        { id: 1, nom: 'TD3 - Tri et Recherche.pdf', type: 'PDF', dateAjout: 'Il y a 3 jours' }
-      ],
-      icone: 'algorithm',
-      statut: 'Actif'
-    }
-  ]);
-
-  const gererActionRapide = (action) => {
-    if (surNavigation) {
-      switch(action) {
-        case 'publier-cours':
-          surNavigation('cours');
-          break;
-        case 'saisir-notes':
-          surNavigation('notes');
-          break;
-        case 'faire-appel':
-          surNavigation('presence');
-          break;
-        case 'voir-calendrier':
-          surNavigation('calendrier');
-          break;
-        default:
-          break;
-      }
-    }
-  };
-
-  const gererAjouterRessource = (coursId) => {
-    // Navigate to course management with resource modal open
-    if (surNavigation) {
-      surNavigation('cours');
-    }
-  };
-
-  const gererGererCours = (coursId) => {
-    // Navigate to course management
-    if (surNavigation) {
-      surNavigation('cours');
-    }
-  };
-
   return (
-    <div className="tableau-de-bord-professeur">
-      <div className="tableau-de-bord-professeur-header">
-        <h1 className="tableau-de-bord-professeur-titre">Bienvenue professeur</h1>
-        <p className="tableau-de-bord-professeur-sous-titre">
-          Gérez vos cours et suivez la progression de vos étudiants
-        </p>
-      </div>
+    <div className="dashboard-professeur">
+      {/* Header */}
+      <header className="dashboard-header">
+        <h1 className="dashboard-title">Tableau de bord Professeur</h1>
+        <p className="dashboard-subtitle">Gérez vos classes et communiquez avec vos étudiants.</p>
+      </header>
 
-      <div className="tableau-de-bord-professeur-contenu">
-        <div className="tableau-de-bord-statistiques-container">
-        <CarteStatistique
-          titre="My Courses"
-          valeur={statistiques.totalCours}
-          variation={{ valeur: 2, label: 'active', positif: true }}
-          icone={BookOpen}
-          couleur="primary"
-          iconeCouleur="dark"
-        />
-
-        <CarteStatistique
-          titre="Students"
-          valeur={statistiques.totalEtudiants}
-          variation={{ valeur: 5, label: 'new', positif: true }}
-          icone={UserCheck}
-          couleur="primary"
-          iconeCouleur="light"
-        />
-         <CarteStatistique
-          titre="Pending Grades"
-          valeur={statistiques.notesEnAttente}
-          variation={{ valeur: 3, label: '', positif: false }}
-          icone={GraduationCap}
-          couleur="accent"
-          iconeCouleur="dark"
-        />
-        <CarteStatistique
-          titre="This Week"
-          valeur={statistiques.seancesCetteSemaine}
-          variation={{ valeur: statistiques.seancesCetteSemaine, label: 'sessions', positif: true }}
-          icone={Clock}
-          couleur="primary"
-          iconeCouleur="light"
-        />
-
-        </div>
-
-        
-
-        {/* Prochains Cours Section */}
-        <div className="prochains-cours-section">
-          <h2 className="section-titre">Prochains cours</h2>
-          <a href="#" className="voir-tout-link">Voir tout →</a>
-          <div className="prochains-cours-liste">
-            {cours.slice(0, 3).map((coursItem) => (
-              <div 
-                key={coursItem.id} 
-                className={`prochain-cours-item ${coursItem.prochainCours.date === 'Aujourd\'hui' ? 'prochain-cours-aujourdhui' : ''}`}
-              >
-                <div className="prochain-cours-icone">
-                  <Clock size={18} />
-                </div>
-                <div className="prochain-cours-info">
-                  <h3 className="prochain-cours-titre">{coursItem.titre}</h3>
-                  <p className="prochain-cours-details">{coursItem.niveau} • Salle A101</p>
-                </div>
-                <div className="prochain-cours-date">
-                  {coursItem.prochainCours.date === 'Aujourd\'hui' ? (
-                    <span>Aujourd'hui</span>
-                  ) : (
-                    <span>{coursItem.prochainCours.heure} {coursItem.prochainCours.date}</span>
-                  )}
-                </div>
-              </div>
-            ))}
+      {/* Stats Row */}
+      <section className="stats-grid">
+        {stats.map((stat, index) => (
+          <div key={index} className="stat-card">
+            <div className="stat-info">
+              <span className="stat-label">{stat.label}</span>
+              <span className="stat-value">{stat.value}</span>
+            </div>
+            <div className={`stat-icon-wrapper color-${stat.color}`}>
+              <stat.icon size={24} />
+            </div>
           </div>
-        </div>
+        ))}
+      </section>
 
+      {/* Main Content Split */}
+      <section className="content-split">
 
-        {/* Actions Rapides Section */}
-        <div className="actions-rapides-section">
-          <h2 className="section-titre">Actions rapides</h2>
-          <div className="actions-rapides-grid">
-            <button 
-              className="action-rapide-card"
-              onClick={() => gererActionRapide('publier-cours')}
-            >
-              <div className="action-rapide-icone action-rapide-icone-primary">
-                <Plus size={24} />
+        {/* Left Column: Announcement Form */}
+        <div className="announcement-card">
+          <div className="announcement-header">
+            <Bell size={20} />
+            <h2>Publier une Annonce</h2>
+          </div>
+
+          <div className="announcement-form">
+            {/* Subject Input */}
+            <div className="form-group">
+              <label>SUJET DE L'ANNONCE</label>
+              <input
+                type="text"
+                placeholder="Ex: Report du TP..."
+                value={annonce.sujet}
+                onChange={(e) => setAnnonce({ ...annonce, sujet: e.target.value })}
+              />
+            </div>
+
+            {/* Class Select */}
+            <div className="form-group">
+              <label>CLASSE CIBLE</label>
+              <div className="select-wrapper">
+                <select
+                  value={annonce.classe}
+                  onChange={(e) => setAnnonce({ ...annonce, classe: e.target.value })}
+                >
+                  <option>L3 Informatique</option>
+                  <option>M1 Génie Logiciel</option>
+                  <option>L2 Mathématiques</option>
+                </select>
+                <ChevronDown size={16} className="select-icon" />
               </div>
-              <span className="action-rapide-label">Publier un cours</span>
-            </button>
-            <button 
-              className="action-rapide-card"
-              onClick={() => gererActionRapide('saisir-notes')}
-            >
-              <div className="action-rapide-icone action-rapide-icone-secondary">
-                <Edit size={24} />
-              </div>
-              <span className="action-rapide-label">Saisir des notes</span>
-            </button>
-            <button 
-              className="action-rapide-card"
-              onClick={() => gererActionRapide('faire-appel')}
-            >
-              <div className="action-rapide-icone action-rapide-icone-primary">
-                <ClipboardCheck size={24} />
-              </div>
-              <span className="action-rapide-label">Faire l'appel</span>
-            </button>
-            <button 
-              className="action-rapide-card"
-              onClick={() => gererActionRapide('voir-calendrier')}
-            >
-              <div className="action-rapide-icone action-rapide-icone-secondary">
-                <Calendar size={24} />
-              </div>
-              <span className="action-rapide-label">Voir le calendrier</span>
+            </div>
+
+            {/* Message Textarea */}
+            <div className="form-group">
+              <label>MESSAGE</label>
+              <textarea
+                placeholder="Écrivez votre message ici..."
+                rows={5}
+                value={annonce.message}
+                onChange={(e) => setAnnonce({ ...annonce, message: e.target.value })}
+              ></textarea>
+            </div>
+
+            <button className="btn-publish">
+              DIFFUSER MAINTENANT
             </button>
           </div>
         </div>
 
+        {/* Right Column: Charts & Lists */}
+        <div className="analytics-column">
 
-        
-      </div>
+          {/* Chart Card */}
+          <div className="chart-card">
+            <h3>Moyennes par Cours</h3>
+            <div className="chart-wrapper">
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={dataMoyennes} barSize={40}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                  <XAxis
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#64748B', fontSize: 12 }}
+                    dy={10}
+                  />
+                  <YAxis
+                    hide={false}
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#64748B', fontSize: 12 }}
+                    domain={[0, 20]}
+                  />
+                  <Tooltip
+                    cursor={{ fill: 'transparent' }}
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  />
+                  <Bar
+                    dataKey="moyenne"
+                    fill="#4F46E5"
+                    radius={[6, 6, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Recent Activity */}
+          <div className="recent-activity-card">
+            <h3>Vos Annonces Récentes</h3>
+            <div
+              className="announcement-item-card"
+              onClick={() => surNavigation && surNavigation('annonces')}
+            >
+              <div className="announcement-icon-circle">
+                <Bell size={20} />
+              </div>
+              <div className="announcement-content-text">
+                <h4 className="announcement-subject">{derniereAnnonce.sujet}</h4>
+                <span className="announcement-meta">
+                  {annonce.classe.toUpperCase()} • {new Date().toLocaleDateString()}
+                </span>
+              </div>
+              <ChevronRight size={20} className="chevron-icon" />
+            </div>
+          </div>
+
+        </div>
+
+      </section>
     </div>
   );
 };

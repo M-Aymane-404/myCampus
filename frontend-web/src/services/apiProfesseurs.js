@@ -1,4 +1,5 @@
 const BASE_URL = 'http://localhost:8080/api/admin/utilisateurs/professeurs';
+import { apiAuth } from './apiAuth';
 
 export const apiProfesseurs = {
   async obtenirTous() {
@@ -43,11 +44,14 @@ export const apiProfesseurs = {
 
   async creer(professeur) {
     try {
+      const headers = {
+        'Content-Type': 'application/json',
+        ...apiAuth.getAuthHeaders()
+      };
+
       const reponse = await fetch(BASE_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: headers,
         body: JSON.stringify(professeur),
       });
 
@@ -80,11 +84,14 @@ export const apiProfesseurs = {
 
   async modifier(ppr, professeur) {
     try {
+      const headers = {
+        'Content-Type': 'application/json',
+        ...apiAuth.getAuthHeaders()
+      };
+
       const reponse = await fetch(`${BASE_URL}/${ppr}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: headers,
         body: JSON.stringify(professeur),
       });
 
@@ -117,11 +124,14 @@ export const apiProfesseurs = {
 
   async supprimer(ppr) {
     try {
+      const headers = {
+        'Content-Type': 'application/json',
+        ...apiAuth.getAuthHeaders()
+      };
+
       const reponse = await fetch(`${BASE_URL}/${ppr}`, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: headers,
       });
 
       if (!reponse.ok) {

@@ -5,7 +5,7 @@ const ConteneurPrincipal = ({ children, elementActif, surChangementElement }) =>
   return (
     <div className="conteneur-principal">
       <div className="contenu-principal">
-        <EnTete 
+        <EnTete
           elementActif={elementActif}
           surChangementElement={surChangementElement}
         />

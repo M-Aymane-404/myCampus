@@ -6,12 +6,11 @@ import apiAnnonces from '../../services/apiAnnonces';
 import { apiAuth } from '../../services/apiAuth';
 import './EnTete.css';
 
-const EnTeteProfesseur = ({ nombreNotifications, elementActif, surChangementElement }) => {
+const EnTeteProfesseur = ({ elementActif, surChangementElement }) => {
   const [menuOuvert, setMenuOuvert] = useState(false);
   const [modalInfosOuvert, setModalInfosOuvert] = useState(false);
   const [photoProfil, setPhotoProfil] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
-  const [nombreNotificationsReel, setNombreNotificationsReel] = useState(nombreNotifications || 0);
   const menuRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -41,22 +40,6 @@ const EnTeteProfesseur = ({ nombreNotifications, elementActif, surChangementElem
     };
   }, [menuOuvert]);
 
-  // Load unread announcements count
-  useEffect(() => {
-    const chargerNombreNonLus = async () => {
-      try {
-        const count = await apiAnnonces.obtenirNombreNonLus();
-        setNombreNotificationsReel(count);
-      } catch (err) {
-        console.error('Erreur lors du chargement du nombre de notifications:', err);
-      }
-    };
-
-    chargerNombreNonLus();
-    // Refresh every 30 seconds
-    const interval = setInterval(chargerNombreNonLus, 30000);
-    return () => clearInterval(interval);
-  }, []);
 
   const elementsMenu = [
     { id: 'tableau-de-bord-professeur', icone: LayoutDashboard, libelle: 'Dashboard' },
@@ -137,102 +120,17 @@ const EnTeteProfesseur = ({ nombreNotifications, elementActif, surChangementElem
 
   return (
     <header className="en-tete">
-      <div className="en-tete-top">
-        <div className="en-tete-gauche">
-          <div className="logo-container-header">
-            <div className="logo-icone-container-header">
-              <GraduationCap className="logo-icone-header" size={24} />
-            </div>
-            <div className="logo-texte-header">
-              <h1 className="logo-titre-header">École Supérieure</h1>
-              <p className="logo-sous-titre-header">Professor Dashboard</p>
-            </div>
+      {/* 1. Logo Section */}
+      <div className="en-tete-gauche">
+        <div className="logo-container-header">
+          <div className="logo-icone-container-header">
+            <span className="logo-icone-header-span">M</span>
           </div>
-        </div>
-
-        <div className="en-tete-actions">
-                      <div className="notification-container">
-                        <button 
-                          className="bouton-notification" 
-                          aria-label="Notifications"
-                          onClick={() => {
-                            if (surChangementElement) {
-                              surChangementElement('annonces');
-                            }
-                          }}
-                        >
-                          <Bell size={20} />
-                          {nombreNotificationsReel > 0 && (
-                            <span className="badge-notification">{nombreNotificationsReel}</span>
-                          )}
-                        </button>
-                      </div>
-
-          <div className="separateur-vertical"></div>
-
-          <div className="profil-admin-container" ref={menuRef}>
-            <button 
-              className="profil-admin"
-              onClick={() => setMenuOuvert(!menuOuvert)}
-              aria-label="Menu de navigation"
-            >
-              <div className="info-profil">
-                <span className="nom-profil">Professeur</span>
-                <span className="role-profil">{infosUtilisateur.email}</span>
-              </div>
-              <div className="avatar-profil">
-                {photoPreview ? (
-                  <img src={photoPreview} alt="Photo de profil" className="avatar-image-small" />
-                ) : (
-                  <span className="avatar-lettre">{infosUtilisateur.prenom.charAt(0)}{infosUtilisateur.nom.charAt(0)}</span>
-                )}
-              </div>
-              <ChevronDown 
-                size={16} 
-                className={`chevron-menu ${menuOuvert ? 'ouvert' : ''}`}
-              />
-            </button>
-          
-          {menuOuvert && (
-            <div className="menu-deroulant">
-              <div className="menu-deroulant-header">
-                <div className="avatar-profil-menu">
-                  {photoPreview ? (
-                    <img src={photoPreview} alt="Photo de profil" className="avatar-image-menu" />
-                  ) : (
-                    <span className="avatar-lettre">{infosUtilisateur.prenom.charAt(0)}{infosUtilisateur.nom.charAt(0)}</span>
-                  )}
-                </div>
-                <div className="info-profil-menu">
-                  <span className="nom-profil-menu">{infosUtilisateur.prenom} {infosUtilisateur.nom}</span>
-                  <span className="role-profil-menu">Professor</span>
-                </div>
-                <button
-                  className="bouton-infos-utilisateur"
-                  onClick={afficherInfosUtilisateur}
-                  aria-label="Afficher les informations utilisateur"
-                  title="Informations utilisateur"
-                >
-                  <User size={18} />
-                </button>
-              </div>
-              <div className="menu-deroulant-separateur"></div>
-              <div className="menu-deroulant-footer">
-                <button
-                  className="menu-deroulant-item menu-deroulant-logout"
-                  onClick={gererLogout}
-                >
-                  <LogOut size={18} />
-                  <span>Déconnexion</span>
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
         </div>
       </div>
 
-      <nav className="en-tete-nav">
+      {/* 2. Middle Section: Pill Navigation */}
+      <nav className="en-tete-nav-container">
         {elementsMenu.map((element) => {
           const Icone = element.icone;
           const estActif = elementActif === element.id;
@@ -242,12 +140,51 @@ const EnTeteProfesseur = ({ nombreNotifications, elementActif, surChangementElem
               className={`nav-item ${estActif ? 'nav-item-actif' : ''}`}
               onClick={() => gererClicMenu(element.id)}
             >
-              <Icone size={18} />
+              <Icone size={20} />
               <span>{element.libelle}</span>
             </button>
           );
         })}
       </nav>
+
+      {/* 3. Right Section: Notifications & Profile */}
+      <div className="en-tete-actions">
+
+        <div className="profil-admin-container" ref={menuRef} onClick={() => setMenuOuvert(!menuOuvert)}>
+          <div className="info-profil-text">
+            <span className="nom-profil">Dr. {infosUtilisateur.prenom} {infosUtilisateur.nom}</span>
+            <span className="role-badge">Professor</span>
+          </div>
+
+          <div className="avatar-wrapper">
+            <div className="avatar-profil">
+              {photoPreview ? (
+                <img src={photoPreview} alt="Profile" className="avatar-image-small" />
+              ) : (
+                <span className="avatar-lettre">{infosUtilisateur.prenom.charAt(0)}{infosUtilisateur.nom.charAt(0)}</span>
+              )}
+            </div>
+            <div className="status-dot"></div>
+          </div>
+
+          {menuOuvert && (
+            <div className="menu-deroulant" onClick={(e) => e.stopPropagation()}>
+              <ul className="menu-deroulant-liste">
+                <li>
+                  <button className="menu-deroulant-item" onClick={afficherInfosUtilisateur}>
+                    <User size={18} />
+                    <span>Voir le profil</span>
+                  </button>
+                </li>
+              </ul>
+              <button className="menu-deroulant-item menu-deroulant-logout" onClick={gererLogout}>
+                <LogOut size={18} />
+                <span>Déconnexion</span>
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
 
       <FormulaireModal
         titre="Informations Utilisateur"

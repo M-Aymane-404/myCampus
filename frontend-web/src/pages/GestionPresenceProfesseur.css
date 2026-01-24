@@ -1,240 +1,331 @@
-.gestion-presence-professeur {
+/* Layout */
+.gestion-presence-container {
   width: 100%;
-  max-width: 100%;
-  padding: 0;
+  font-family: 'Inter', sans-serif;
+  padding-bottom: 4rem;
+  /* Space for footer/scroll */
 }
 
-.gestion-presence-professeur-header {
+/* Header & Stats */
+.presence-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2.5rem;
+}
+
+.presence-title-block h1 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #0F172A;
+  margin: 0 0 0.5rem 0;
+}
+
+.presence-title-block p {
+  color: #64748B;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.stats-box {
+  background: white;
+  border: 1px solid #F1F5F9;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  border-radius: 16px;
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.stat-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #94A3B8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.text-green {
+  color: #10B981;
+}
+
+.text-red {
+  color: #EF4444;
+}
+
+.text-dark {
+  color: #1E293B;
+}
+
+.stat-divider {
+  width: 1px;
+  height: 32px;
+  background: #E2E8F0;
+}
+
+/* Filters */
+.filters-row {
+  display: flex;
+  align-items: center;
+  gap: 32px;
   margin-bottom: 2rem;
 }
 
-.gestion-presence-professeur-titre {
-  font-family: var(--font-heading), serif;
-  font-size: 1.6rem;
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.filter-label {
+  font-size: 1.1rem;
   font-weight: 700;
-  color: var(--primary);
-  margin: 0 0 5px 0;
+  color: #1E293B;
+  /* Dark blue Slate-800 */
 }
 
-.gestion-presence-professeur-sous-titre {
-  font-size: 0.9rem;
-  color: var(--gray-500);
-  margin: 0;
+.select-wrapper-rounded {
+  position: relative;
+  min-width: 200px;
 }
 
-.gestion-presence-professeur-statistiques {
-  display: flex;
-  flex-direction: row;
-  gap: 12px;
-  margin-bottom: 30px;
-  align-items: stretch;
+.select-wrapper-rounded select {
   width: 100%;
-  flex-wrap: wrap;
-}
-
-.gestion-presence-professeur-filtres {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-}
-
-.filtre-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.filtre-label {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--gray-600);
-  white-space: nowrap;
-}
-
-.filtre-select,
-.filtre-input-date {
-  padding: 10px 14px;
-  border: 1px solid var(--gray-300);
-  border-radius: var(--radius-md);
-  font-size: 0.9rem;
-  background: var(--white);
-  color: var(--gray-700);
-  cursor: pointer;
-  transition: var(--transition-normal);
-  min-width: 180px;
-  font-family: inherit;
-}
-
-.filtre-input-date {
-  cursor: text;
-}
-
-.filtre-select:focus,
-.filtre-input-date:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.1);
-}
-
-.gestion-presence-professeur-actions-rapides {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-}
-
-.gestion-presence-professeur-tableau {
-  background: var(--white);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-}
-
-.tableau-presence-header {
-  padding: 20px;
-  border-bottom: 1px solid var(--gray-200);
-}
-
-.tableau-presence-titre {
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: var(--primary);
-  margin: 0;
-}
-
-.tableau-presence-contenu {
-  overflow-x: auto;
-}
-
-.tableau-presence-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.tableau-presence-table thead {
-  background: var(--gray-100);
-}
-
-.tableau-presence-table th {
-  padding: 14px 16px;
-  text-align: left;
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: var(--gray-700);
-  border-bottom: 2px solid var(--gray-200);
-}
-
-.tableau-presence-table td {
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--gray-200);
-  color: var(--gray-700);
-}
-
-.tableau-presence-table tbody tr:hover {
-  background: var(--gray-50);
-}
-
-.tableau-presence-table tbody tr.ligne-modifiee {
-  background: #fff9e6;
-}
-
-.tableau-presence-table tbody tr.ligne-presente {
-  background: #f0fdf4;
-}
-
-.tableau-presence-table tbody tr.ligne-absente {
-  background: #fef2f2;
-}
-
-.presence-boutons {
-  display: flex;
-  gap: 8px;
-}
-
-.bouton-presence {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  border: 1px solid var(--gray-300);
-  border-radius: var(--radius-md);
-  font-size: 0.85rem;
+  appearance: none;
+  background: white;
+  /* White bg */
+  border: 1px solid #CBD5E1;
+  /* Slate-300 */
+  border-radius: 12px;
+  /* Smooth rounding */
+  padding: 10px 16px;
+  font-size: 1rem;
+  color: #0F172A;
   font-weight: 500;
   cursor: pointer;
-  transition: var(--transition-normal);
-  background: var(--white);
-  color: var(--gray-700);
-  font-family: inherit;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.5rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 2.5rem;
 }
 
-.bouton-presence:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
+.select-wrapper-rounded select:focus {
+  outline: none;
+  border-color: #4F46E5;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
 }
 
-.bouton-present {
-  border-color: var(--success);
-  color: var(--success);
+/* Grid */
+.student-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+  margin-bottom: 2rem;
 }
 
-.bouton-present:hover {
-  background: var(--success);
-  color: var(--white);
+/* Student Card */
+.student-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+  border: 1px solid #F1F5F9;
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.bouton-present.actif {
-  background: var(--success);
-  color: var(--white);
-  border-color: var(--success);
+.student-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
 }
 
-.bouton-absent {
-  border-color: var(--error);
-  color: var(--error);
+/* Avatar */
+.student-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 16px;
 }
 
-.bouton-absent:hover {
-  background: var(--error);
-  color: var(--white);
+.avatar-blue {
+  background: #E0F2FE;
+  color: #0369A1;
 }
 
-.bouton-absent.actif {
-  background: var(--error);
-  color: var(--white);
-  border-color: var(--error);
+.avatar-pink {
+  background: #FCE7F3;
+  color: #BE185D;
+}
+
+.avatar-purple {
+  background: #F3E8FF;
+  color: #7E22CE;
+}
+
+.avatar-brown {
+  background: #5a4b45;
+  color: white;
+}
+
+.avatar-green {
+  background: #DCFCE7;
+  color: #15803D;
+}
+
+.avatar-grey {
+  background: #475569;
+  color: white;
+}
+
+.avatar-green-light {
+  background: #dcfce7;
+  color: #166534;
+}
+
+/* Slightly different green logic for Nikola */
+.avatar-purple-light {
+  background: #e9d5ff;
+  color: #6b21a8;
+}
+
+/* Ada */
+
+
+.student-modal-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0F172A;
+  margin: 0 0 4px 0;
+  text-align: center;
+}
+
+.student-modal-id {
+  font-size: 0.85rem;
+  color: #94A3B8;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+/* Actions */
+.student-actions {
+  display: flex;
+  width: 100%;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.btn-state {
+  flex: 1;
+  border: 1px solid #E2E8F0;
+  background: white;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #64748B;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-state.active {
+  color: white;
+  border-color: transparent;
+}
+
+.btn-present.active,
+.btn-present:hover {
+  background: #059669;
+  color: white;
+  border-color: #059669;
+}
+
+.btn-absent.active,
+.btn-absent:hover {
+  background: #EF4444;
+  color: white;
+  border-color: #EF4444;
+}
+
+/* Justified Button */
+.btn-full-width {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #E2E8F0;
+  background: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #94A3B8;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-justifie:hover {
+  border-color: #6366F1;
+  color: #6366F1;
+}
+
+.btn-justifie.active {
+  background: #4F46E5;
+  color: white;
+  border-color: #4F46E5;
+}
+
+/* Footer */
+.page-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 2rem;
+}
+
+.btn-submit-final {
+  background: #4F46E5;
+  color: white;
+  border: none;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 14px 28px;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
+  transition: background 0.2s;
+}
+
+.btn-submit-final:hover {
+  background: #4338CA;
 }
 
 @media (max-width: 768px) {
-  .gestion-presence-professeur-titre {
-    font-size: 1.3rem;
-  }
-
-  .gestion-presence-professeur-filtres {
+  .presence-header-row {
     flex-direction: column;
-    align-items: stretch;
+    gap: 20px;
   }
 
-  .filtre-select,
-  .filtre-input-date {
+  .stats-box {
     width: 100%;
-  }
-
-  .gestion-presence-professeur-actions-rapides {
-    flex-direction: column;
-  }
-
-  .presence-boutons {
-    flex-direction: column;
-  }
-
-  .tableau-presence-table {
-    font-size: 0.85rem;
-  }
-
-  .tableau-presence-table th,
-  .tableau-presence-table td {
-    padding: 10px 12px;
+    justify-content: space-around;
   }
 }

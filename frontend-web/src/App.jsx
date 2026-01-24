@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
+import { LogOut, GraduationCap } from 'lucide-react';
 import Login from './pages/Login';
 import ConteneurPrincipal from './composants/layout/ConteneurPrincipal';
 import ConteneurProfesseur from './composants/layout/ConteneurProfesseur';
 import TableauDeBordAdmin from './pages/TableauDeBordAdmin';
 import GestionDepartements from './pages/GestionDepartements';
 import GestionFilieres from './pages/GestionFilieres';
-import GestionProfesseurs from './pages/GestionProfesseurs';
-import GestionEtudiants from './pages/GestionEtudiants';
 import GestionModules from './pages/GestionModules';
 import GestionClasses from './pages/GestionClasses';
 import GestionEmploiTemps from './pages/GestionEmploiTemps';
@@ -19,6 +18,7 @@ import GestionNotesProfesseur from './pages/GestionNotesProfesseur';
 import CalendrierAcademiqueProfesseur from './pages/CalendrierAcademiqueProfesseur';
 import GestionPresenceProfesseur from './pages/GestionPresenceProfesseur';
 import GestionAnnoncesProfesseur from './pages/GestionAnnoncesProfesseur';
+import ProfilPage from './pages/ProfilPage';
 import { apiAuth } from './services/apiAuth';
 import './App.css';
 
@@ -33,14 +33,14 @@ function App() {
   const gererLogin = (donneesLogin) => {
     // MOCK MODE: Use role directly from dropdown selection (no normalization needed)
     const role = donneesLogin.role?.toLowerCase() || 'admin';
-    
+
     // User data is already stored by apiAuth.mockLogin()
     const userData = {
       email: donneesLogin.email,
       role: role,
       user: donneesLogin.user
     };
-    
+
     // Set the logged-in user and role
     setUtilisateurConnecte(userData);
 
@@ -48,15 +48,15 @@ function App() {
     // Administrator -> Admin Dashboard
     if (role === 'admin') {
       setElementActif('tableau-de-bord');
-    } 
+    }
     // Professor -> Professor Dashboard
     else if (role === 'professor') {
       setElementActif('tableau-de-bord-professeur');
-    } 
+    }
     // Student -> Student Dashboard (placeholder)
     else if (role === 'student') {
       setElementActif('tableau-de-bord'); // Placeholder - can be updated when student interface is ready
-    } 
+    }
     // Default to admin dashboard if role is unknown
     else {
       setElementActif('tableau-de-bord');
@@ -77,13 +77,13 @@ function App() {
         } else if (role === 'etudiant' || role === 'student' || role === 'etud') {
           role = 'student';
         }
-        
+
         setUtilisateurConnecte({
           email: userData.email,
           role: role,
           user: userData
         });
-        
+
         // Set default active element based on role
         if (role === 'professor') {
           setElementActif('tableau-de-bord-professeur');
@@ -135,7 +135,7 @@ function App() {
   const rendreContenuAdmin = () => {
     switch (elementActif) {
       case 'tableau-de-bord':
-        return <TableauDeBordAdmin />;
+        return <TableauDeBordAdmin surNavigation={gererChangementElement} />;
       case 'departements':
         return <GestionDepartements />;
       case 'filieres':
@@ -157,10 +157,6 @@ function App() {
             onRetour={retourClasses}
           />
         );
-      case 'professeurs':
-        return <GestionProfesseurs />;
-      case 'etudiants':
-        return <GestionEtudiants />;
       case 'emploi-temps':
         return <GestionEmploiTemps />;
       case 'comptes':
@@ -169,6 +165,8 @@ function App() {
         return <GestionAnnoncesAdmin />;
       case 'journal-audit':
         return <JournalAuditPage />;
+      case 'profil':
+        return <ProfilPage />;
       default:
         return <TableauDeBordAdmin />;
     }
@@ -188,6 +186,8 @@ function App() {
         return <GestionPresenceProfesseur />;
       case 'annonces':
         return <GestionAnnoncesProfesseur />;
+      case 'profil':
+        return <ProfilPage />;
       default:
         return <TableauDeBordProfesseur surNavigation={gererChangementElement} />;
     }
@@ -219,11 +219,69 @@ function App() {
     );
   } else {
     // Student dashboard placeholder
+    const gererLogoutEtudiant = () => {
+      if (window.confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
+        apiAuth.logout();
+      }
+    };
+
     return (
-      <div style={{ padding: '50px', textAlign: 'center' }}>
-        <h1>Student Dashboard</h1>
-        <p>Student interface coming soon...</p>
-      </div>
+      <div style={{
+        height: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#F8FAFC',
+        fontFamily: 'Inter, sans-serif'
+      }}>
+        <div style={{
+          background: '#FFFFFF',
+          padding: '40px',
+          borderRadius: '24px',
+          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
+          textAlign: 'center',
+          maxWidth: '400px'
+        }}>
+          <div style={{
+            width: '60px',
+            height: '60px',
+            background: '#EEF2FF',
+            borderRadius: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 24px',
+            color: '#4F46E5'
+          }}>
+            <GraduationCap size={32} />
+          </div>
+          <h1 style={{ color: '#0F172A', fontSize: '24px', marginBottom: '8px' }}>Student Dashboard</h1>
+          <p style={{ color: '#64748B', marginBottom: '32px' }}>Student interface coming soon...</p>
+          <button
+            onClick={gererLogoutEtudiant}
+            style={{
+              background: '#4F46E5',
+              color: '#FFFFFF',
+              border: 'none',
+              padding: '12px 24px',
+              borderRadius: '12px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              margin: '0 auto'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.background = '#4338CA'}
+            onMouseOut={(e) => e.currentTarget.style.background = '#4F46E5'}
+          >
+            <LogOut size={18} />
+            Déconnexion
+          </button>
+        </div>
+      </div >
     );
   }
 }

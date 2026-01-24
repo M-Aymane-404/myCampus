@@ -1,49 +1,273 @@
 .gestion-comptes {
   width: 100%;
-  max-width: 100%;
   padding: 0;
-  overflow-x: hidden;
+  padding-bottom: 2rem;
 }
 
 .gestion-comptes-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
   margin-bottom: 2rem;
+  padding: 0 1rem;
 }
 
 .gestion-comptes-titre {
-  font-family: var(--font-heading), serif;
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: var(--primary);
-  margin: 0 0 5px 0;
+  font-family: 'Inter', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 0.5rem;
 }
 
 .gestion-comptes-sous-titre {
-  font-size: 0.9rem;
-  color: var(--gray-500);
+  color: #64748b;
+  font-size: 0.95rem;
   margin: 0;
 }
 
-.gestion-comptes-statistiques {
+/* Header Controls */
+.header-controls {
   display: flex;
-  flex-direction: row;
-  gap: 12px;
-  margin-bottom: 30px;
-  align-items: stretch;
+  align-items: center;
+  gap: 1rem;
+}
+
+.search-bar-container {
+  display: flex;
+  align-items: center;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 9999px;
+  padding: 6px 16px;
+  gap: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s;
+  width: 250px;
+}
+
+.search-bar-container:focus-within {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.search-icon {
+  color: #94a3b8;
+}
+
+.search-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 0.85rem;
+  color: #0f172a;
   width: 100%;
-  flex-wrap: nowrap;
-  overflow-x: auto;
+}
+
+.search-input::placeholder {
+  color: #cbd5e1;
+}
+
+.filter-pills {
+  background-color: white;
+  border-radius: 9999px;
+  padding: 4px;
+  display: flex;
+  gap: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.filter-btn {
+  background: transparent;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 9999px;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.05em;
+}
+
+.filter-btn:hover {
+  color: #64748b;
+}
+
+.filter-btn.active {
+  background-color: #0f172a;
+  color: white;
+}
+
+.btn-add {
+  background-color: #4f46e5;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.3);
+}
+
+.btn-add:hover {
+  background-color: #4338ca;
+  transform: translateY(-1px);
+}
+
+/* Table */
+.accounts-table-container {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+  border: 1px solid #e2e8f0;
+  /* var(--gray-200) equivalent */
+  overflow: hidden;
+  margin: 0 1rem;
+}
+
+.accounts-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.accounts-table th {
+  text-align: left;
+  padding: 1.5rem 2rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #94A3B8;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-bottom: 1px solid #F8FAFC;
+  background: #F8FAFC;
+}
+
+.accounts-table td {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #F8FAFC;
+  vertical-align: middle;
+}
+
+.accounts-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* User Info Column */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+
+
+.user-name {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.user-email {
+  color: #64748b;
+}
+
+.user-activity {
+  color: #64748b;
+}
+
+/* Role Badges */
+.role-badge {
+  display: inline-block;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  min-width: 80px;
+  text-align: center;
+}
+
+.role-badge-professor {
+  background-color: #ede9fe;
+  color: #6d28d9;
+}
+
+.role-badge-student {
+  background-color: #f1f5f9;
+  color: #475569;
+}
+
+.role-badge-admin {
+  background-color: #fffbeb;
+  color: #b45309;
+}
+
+/* Status Badges */
+.status-badge-active,
+.status-badge-inactive {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.status-badge-active {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.status-badge-inactive {
+  background-color: #f3f4f6;
+  color: #4b5563;
+}
+
+/* Actions */
+.actions-cell {
+  display: flex !important;
+  /* Force flex */
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-icon-action {
+  background: transparent;
+  border: none;
+  padding: 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
   justify-content: center;
 }
 
-@media (max-width: 1200px) {
-  .gestion-comptes-statistiques {
-    gap: 10px;
-  }
+.btn-view {
+  color: #64748b;
 }
 
-@media (max-width: 768px) {
-  .gestion-comptes-statistiques {
-    gap: 8px;
-  }
+.btn-view:hover {
+  background-color: #f1f5f9;
 }
 
+.btn-edit {
+  color: #3b82f6;
+}
+
+.btn-edit:hover {
+  background-color: #eff6ff;
+}
+
+.btn-delete {
+  color: #ef4444;
+}
+
+.btn-delete:hover {
+  background-color: #fef2f2;
+}

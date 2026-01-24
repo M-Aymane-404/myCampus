@@ -1,259 +1,145 @@
-import { Bell, GraduationCap, LayoutDashboard, Users, UserCheck, BookOpen, Building2, FileText, Calendar, ChevronDown, User, LogOut, Camera, X, Megaphone } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
-import FormulaireModal from '../communs/FormulaireModal';
-import ChampFormulaire from '../communs/ChampFormulaire';
+import {
+  Bell, GraduationCap, LayoutDashboard, Users, UserCheck,
+  BookOpen, Building2, FileText, Calendar, ChevronDown,
+  User, LogOut, Megaphone, Shield as ShieldData
+} from 'lucide-react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { apiAuth } from '../../services/apiAuth';
 import './EnTete.css';
 
-const EnTete = ({ nombreNotifications = 3, elementActif, surChangementElement }) => {
-  const [modeSombre, setModeSombre] = useState(false);
+const EnTete = ({ elementActif, surChangementElement }) => {
   const [menuOuvert, setMenuOuvert] = useState(false);
-  const [modalInfosOuvert, setModalInfosOuvert] = useState(false);
-  const [photoProfil, setPhotoProfil] = useState(null);
-  const [photoPreview, setPhotoPreview] = useState(null);
   const menuRef = useRef(null);
-  const fileInputRef = useRef(null);
 
+  // Initial state for user info - will be populated from auth
   const [infosUtilisateur, setInfosUtilisateur] = useState({
-    nom: 'Admin',
-    prenom: 'User',
-    email: 'admin@mycampus.ma',
-    telephone: '+212 6XX XXX XXX',
-    nomUtilisateur: 'admin_user',
-    departement: 'Administration',
-    dateCreation: '01/01/2024'
+    nom: '',
+    prenom: '',
+    email: '',
+    telephone: '',
+    nomUtilisateur: '',
+    departement: '',
+    role: '',
+    dateCreation: ''
   });
 
+  // Load User Data on Mount
   useEffect(() => {
-    const modeEnregistre = localStorage.getItem('modeSombre');
-    if (modeEnregistre === 'true') {
-      setModeSombre(true);
-      document.documentElement.classList.add('mode-sombre');
-    }
+    const chargerUtilisateur = async () => {
+      try {
+        const currentUser = apiAuth.getUser();
+        if (currentUser) {
+          setInfosUtilisateur({
+            nom: currentUser.nom || '',
+            prenom: currentUser.prenom || '',
+            email: currentUser.email || '',
+            telephone: currentUser.telephone || '',
+            nomUtilisateur: currentUser.nomUtilisateur || '',
+            departement: currentUser.departement || '',
+            role: currentUser.role || 'admin',
+            dateCreation: currentUser.dateCreation || new Date().toLocaleDateString(),
+            photoProfile: currentUser.photoProfile || null
+          });
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement de l'utilisateur", error);
+      }
+    };
+
+    chargerUtilisateur();
+
+    // Listen for profile updates
+    const handleUserUpdate = () => chargerUtilisateur();
+    window.addEventListener('user-updated', handleUserUpdate);
+
+    return () => {
+      window.removeEventListener('user-updated', handleUserUpdate);
+    };
   }, []);
 
+  // Format Helper for Role Display
+  const getRoleLabel = (role) => {
+    if (!role) return '';
+    const r = role.toLowerCase();
+    switch (r) {
+      case 'professor': return 'Prof';
+      case 'student': return 'Student';
+      case 'admin': return 'Admin';
+      default: return role.charAt(0).toUpperCase() + role.slice(1);
+    }
+  };
+
+  // Menu Configuration based on Role
+  const currentRole = infosUtilisateur.role ? infosUtilisateur.role.toLowerCase() : 'admin';
+
+  const MENU_ITEMS = useMemo(() => ({
+    admin: [
+      { id: 'tableau-de-bord', icone: LayoutDashboard, libelle: 'Dashboard' },
+      { id: 'departements', icone: Building2, libelle: 'Departments' },
+      { id: 'emploi-temps', icone: Calendar, libelle: 'Schedule' },
+      { id: 'comptes', icone: Users, libelle: 'Accounts' },
+      { id: 'journal-audit', icone: ShieldData, libelle: 'Logs & Security' },
+    ],
+    professor: [
+      { id: 'tableau-de-bord-professeur', icone: LayoutDashboard, libelle: 'Dashboard' },
+      { id: 'cours', icone: BookOpen, libelle: 'Courses' },
+      { id: 'notes', icone: GraduationCap, libelle: 'Grades' },
+      { id: 'calendrier', icone: Calendar, libelle: 'Calendar' },
+      { id: 'presence', icone: UserCheck, libelle: 'Attendance' },
+      { id: 'annonces', icone: Megaphone, libelle: 'Announcements' },
+    ],
+    student: [
+      { id: 'tableau-de-bord', icone: LayoutDashboard, libelle: 'Dashboard' },
+      // Placeholder for Student menu items
+    ]
+  }), []);
+
+  const menuItemsToDisplay = MENU_ITEMS[currentRole] || MENU_ITEMS['admin'];
+
+  // Event Handlers
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
         setMenuOuvert(false);
       }
     };
-
-    if (menuOuvert) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    if (menuOuvert) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [menuOuvert]);
 
-  const basculerModeSombre = () => {
-    const nouveauMode = !modeSombre;
-    setModeSombre(nouveauMode);
-    localStorage.setItem('modeSombre', nouveauMode.toString());
-    document.documentElement.classList.toggle('mode-sombre', nouveauMode);
-  };
-
-  const elementsMenu = [
-    { id: 'tableau-de-bord', icone: LayoutDashboard, libelle: 'Dashboard' },
-    { id: 'departements', icone: Building2, libelle: 'Departments' },
-    { id: 'professeurs', icone: UserCheck, libelle: 'Professors' },
-    { id: 'etudiants', icone: Users, libelle: 'Students' },
-    { id: 'emploi-temps', icone: Calendar, libelle: 'Schedule' },
-    { id: 'comptes', icone: Users, libelle: 'Accounts' },
-    { id: 'annonces-admin', icone: Megaphone, libelle: 'Announcements' },
-  ];
-
-  const traductionsMenu = {
-    'tableau-de-bord': 'Dashboard',
-    'departements': 'Departments',
-    'professeurs': 'Professors',
-    'etudiants': 'Students',
-    'emploi-temps': 'Schedule',
-    'comptes': 'Accounts',
-    'annonces-admin': 'Announcements',
-  };
-
   const gererClicMenu = (id) => {
-    if (surChangementElement) {
-      surChangementElement(id);
-    }
+    if (surChangementElement) surChangementElement(id);
     setMenuOuvert(false);
-  };
-
-  const afficherInfosUtilisateur = () => {
-    setModalInfosOuvert(true);
-    setMenuOuvert(false);
-  };
-
-  const gererChangementInfos = (e) => {
-    const { name, value } = e.target;
-    setInfosUtilisateur(prev => ({ ...prev, [name]: value }));
-  };
-
-  const gererChangementPhoto = (e) => {
-    const fichier = e.target.files[0];
-    if (fichier) {
-      if (fichier.size > 5 * 1024 * 1024) {
-        alert('La taille de l\'image ne doit pas dépasser 5MB');
-        return;
-      }
-      if (!fichier.type.startsWith('image/')) {
-        alert('Veuillez sélectionner un fichier image');
-        return;
-      }
-      setPhotoProfil(fichier);
-      const lecteur = new FileReader();
-      lecteur.onload = (e) => {
-        setPhotoPreview(e.target.result);
-      };
-      lecteur.readAsDataURL(fichier);
-    }
-  };
-
-  const supprimerPhoto = () => {
-    setPhotoProfil(null);
-    setPhotoPreview(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const sauvegarderInfosUtilisateur = () => {
-    // Validation
-    if (!infosUtilisateur.nom || !infosUtilisateur.prenom || !infosUtilisateur.email) {
-      alert('Veuillez remplir tous les champs obligatoires');
-      return;
-    }
-
-    // Ici, vous pouvez envoyer les données à une API
-    // Exemple: await api.updateUserProfile(infosUtilisateur, photoProfil);
-    
-    console.log('Informations utilisateur:', infosUtilisateur);
-    if (photoProfil) {
-      console.log('Photo de profil:', photoProfil);
-    }
-
-    alert('Informations mises à jour avec succès');
-    setModalInfosOuvert(false);
   };
 
   const gererLogout = () => {
     if (window.confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
-      // Use API auth service for proper logout
       apiAuth.logout();
       setMenuOuvert(false);
     }
   };
 
+  // Helper to display name with prefix if needed
+  const getDisplayName = () => {
+    if (!infosUtilisateur.prenom && !infosUtilisateur.nom) return 'Loading...';
+    const prefix = currentRole === 'professor' ? 'Dr. ' : '';
+    return `${prefix}${infosUtilisateur.prenom} ${infosUtilisateur.nom}`;
+  };
+
   return (
     <header className="en-tete">
-      {/* Top Section */}
-      <div className="en-tete-top">
-        <div className="en-tete-gauche">
-          <div className="logo-container-header">
-            <div className="logo-icone-container-header">
-              <GraduationCap className="logo-icone-header" size={24} />
-            </div>
-            <div className="logo-texte-header">
-              <h1 className="logo-titre-header">École Supérieure</h1>
-              <p className="logo-sous-titre-header">Administration Dashboard</p>
-            </div>
+      {/* 1. Left Section: Logo */}
+      <div className="en-tete-gauche">
+        <div className="logo-container-header">
+          <div className="logo-icone-container-header">
+            <span className="logo-icone-header-span">E</span>
           </div>
-        </div>
-        
-        
-
-        <div className="en-tete-actions">
-          <div className="notification-container">
-            <button className="bouton-notification" aria-label="Notifications">
-              <Bell size={20} />
-              {nombreNotifications > 0 && (
-                <span className="badge-notification">{nombreNotifications}</span>
-              )}
-            </button>
-          </div>
-
-          <div className="separateur-vertical"></div>
-
-          <div className="profil-admin-container" ref={menuRef}>
-            <button 
-              className="profil-admin"
-              onClick={() => setMenuOuvert(!menuOuvert)}
-              aria-label="Menu de navigation"
-            >
-              <div className="info-profil">
-                <span className="nom-profil">Administrateur</span>
-                <span className="role-profil">{infosUtilisateur.email}</span>
-              </div>
-              <div className="avatar-profil">
-                {photoPreview ? (
-                  <img src={photoPreview} alt="Photo de profil" className="avatar-image-small" />
-                ) : (
-                  <span className="avatar-lettre">{infosUtilisateur.prenom.charAt(0)}{infosUtilisateur.nom.charAt(0)}</span>
-                )}
-              </div>
-              <ChevronDown 
-                size={16} 
-                className={`chevron-menu ${menuOuvert ? 'ouvert' : ''}`}
-              />
-            </button>
-          
-          {menuOuvert && (
-            <div className="menu-deroulant">
-              <div className="menu-deroulant-header">
-                <div className="avatar-profil-menu">
-                  {photoPreview ? (
-                    <img src={photoPreview} alt="Photo de profil" className="avatar-image-menu" />
-                  ) : (
-                    <span className="avatar-lettre">{infosUtilisateur.prenom.charAt(0)}{infosUtilisateur.nom.charAt(0)}</span>
-                  )}
-                </div>
-                <div className="info-profil-menu">
-                  <span className="nom-profil-menu">{infosUtilisateur.prenom} {infosUtilisateur.nom}</span>
-                  <span className="role-profil-menu">Administrator</span>
-                </div>
-                <button
-                  className="bouton-infos-utilisateur"
-                  onClick={afficherInfosUtilisateur}
-                  aria-label="Afficher les informations utilisateur"
-                  title="Informations utilisateur"
-                >
-                  <User size={18} />
-                </button>
-              </div>
-              <div className="menu-deroulant-separateur"></div>
-              <ul className="menu-deroulant-liste">
-                <li>
-                  <button
-                    className={`menu-deroulant-item ${elementActif === 'journal-audit' ? 'actif' : ''}`}
-                    onClick={() => gererClicMenu('journal-audit')}
-                  >
-                    <FileText size={18} />
-                    <span>Journal d'audit</span>
-                  </button>
-                </li>
-              </ul>
-              <div className="menu-deroulant-separateur"></div>
-              <div className="menu-deroulant-footer">
-                <button
-                  className="menu-deroulant-item menu-deroulant-logout"
-                  onClick={gererLogout}
-                >
-                  <LogOut size={18} />
-                  <span>Déconnexion</span>
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
         </div>
       </div>
 
-      {/* Bottom Navigation Bar */}
-      <nav className="en-tete-nav">
-        {elementsMenu.map((element) => {
+      {/* 2. Middle Section: Pill Navigation */}
+      <nav className="en-tete-nav-container">
+        {menuItemsToDisplay.map((element) => {
           const Icone = element.icone;
           const estActif = elementActif === element.id;
           return (
@@ -262,136 +148,58 @@ const EnTete = ({ nombreNotifications = 3, elementActif, surChangementElement })
               className={`nav-item ${estActif ? 'nav-item-actif' : ''}`}
               onClick={() => gererClicMenu(element.id)}
             >
-              <Icone size={18} />
+              <Icone size={20} />
               <span>{element.libelle}</span>
             </button>
           );
         })}
       </nav>
 
-      {/* Modal Informations Utilisateur */}
-      <FormulaireModal
-        titre="Informations Utilisateur"
-        estOuvert={modalInfosOuvert}
-        surFermer={() => {
-          setModalInfosOuvert(false);
-          setPhotoProfil(null);
-          setPhotoPreview(null);
-        }}
-        surSauvegarder={sauvegarderInfosUtilisateur}
-      >
-        <div className="infos-utilisateur-content">
-          <div className="infos-utilisateur-avatar-section">
-            <div className="infos-utilisateur-avatar-container">
-              <div className="infos-utilisateur-avatar-grand">
-                {photoPreview ? (
-                  <img src={photoPreview} alt="Photo de profil" className="avatar-image" />
-                ) : (
-                  <span className="avatar-lettre">{infosUtilisateur.prenom.charAt(0)}{infosUtilisateur.nom.charAt(0)}</span>
-                )}
-              </div>
-              <button
-                type="button"
-                className="bouton-changer-photo"
-                onClick={() => fileInputRef.current?.click()}
-                title="Changer la photo"
-              >
-                <Camera size={18} />
-              </button>
-              {photoPreview && (
-                <button
-                  type="button"
-                  className="bouton-supprimer-photo"
-                  onClick={supprimerPhoto}
-                  title="Supprimer la photo"
-                >
-                  <X size={16} />
-                </button>
+      {/* 3. Right Section: Profile */}
+      <div className="en-tete-actions">
+        <div className="profil-admin-container" ref={menuRef} onClick={() => setMenuOuvert(!menuOuvert)}>
+          <div className="info-profil-text">
+            <span className="nom-profil">{getDisplayName()}</span>
+            <span className="role-badge">{getRoleLabel(currentRole)}</span>
+          </div>
+
+          <div className="avatar-wrapper">
+            <div className="avatar-profil">
+              {infosUtilisateur.photoProfile ? (
+                <img
+                  src={infosUtilisateur.photoProfile}
+                  alt="Profil"
+                  style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                />
+              ) : (
+                <span className="avatar-lettre">
+                  {infosUtilisateur.prenom ? infosUtilisateur.prenom.charAt(0) : ''}
+                  {infosUtilisateur.nom ? infosUtilisateur.nom.charAt(0) : ''}
+                </span>
               )}
-              <input
-                type="file"
-                ref={fileInputRef}
-                accept="image/*"
-                style={{ display: 'none' }}
-                onChange={gererChangementPhoto}
-              />
-            </div>
-            <div className="infos-utilisateur-nom-section">
-              <h3 className="infos-utilisateur-nom">{infosUtilisateur.prenom} {infosUtilisateur.nom}</h3>
-              <p className="infos-utilisateur-role">Administrator</p>
             </div>
           </div>
 
-          <div className="infos-utilisateur-details">
-            <ChampFormulaire
-              label="Prénom"
-              nom="prenom"
-              valeur={infosUtilisateur.prenom}
-              onChange={gererChangementInfos}
-              placeholder="Prénom"
-              requis
-            />
-            <ChampFormulaire
-              label="Nom"
-              nom="nom"
-              valeur={infosUtilisateur.nom}
-              onChange={gererChangementInfos}
-              placeholder="Nom"
-              requis
-            />
-            <ChampFormulaire
-              label="Email"
-              nom="email"
-              type="email"
-              valeur={infosUtilisateur.email}
-              onChange={gererChangementInfos}
-              placeholder="email@mycampus.ma"
-              requis
-            />
-            <ChampFormulaire
-              label="Téléphone"
-              nom="telephone"
-              type="tel"
-              valeur={infosUtilisateur.telephone}
-              onChange={gererChangementInfos}
-              placeholder="+212 6XX XXX XXX"
-            />
-            <ChampFormulaire
-              label="Nom d'utilisateur"
-              nom="nomUtilisateur"
-              valeur={infosUtilisateur.nomUtilisateur}
-              onChange={gererChangementInfos}
-              placeholder="nom_utilisateur"
-              requis
-            />
-            <ChampFormulaire
-              label="Département"
-              nom="departement"
-              type="select"
-              valeur={infosUtilisateur.departement}
-              onChange={gererChangementInfos}
-              options={[
-                { value: 'Administration', label: 'Administration' },
-                { value: 'Informatique', label: 'Informatique' },
-                { value: 'Industriel', label: 'Industriel' },
-                { value: 'Civil', label: 'Génie Civil' }
-              ]}
-            />
-            <div className="infos-utilisateur-item-readonly">
-              <div className="infos-utilisateur-item-icon">
-                <Calendar size={18} />
-              </div>
-              <div className="infos-utilisateur-item-content">
-                <label className="infos-utilisateur-label">Date de création du compte</label>
-                <p className="infos-utilisateur-value">{infosUtilisateur.dateCreation}</p>
-              </div>
+          {menuOuvert && (
+            <div className="menu-deroulant" onClick={(e) => e.stopPropagation()}>
+              <ul className="menu-deroulant-liste">
+                <li>
+                  <button className="menu-deroulant-item" onClick={() => gererClicMenu('profil')}>
+                    <User size={18} />
+                    <span>Voir le profil</span>
+                  </button>
+                </li>
+              </ul>
+              <button className="menu-deroulant-item menu-deroulant-logout" onClick={gererLogout}>
+                <LogOut size={18} />
+                <span>Déconnexion</span>
+              </button>
             </div>
-          </div>
+          )}
         </div>
-      </FormulaireModal>
+      </div>
     </header>
   );
 };
 
 export default EnTete;
-

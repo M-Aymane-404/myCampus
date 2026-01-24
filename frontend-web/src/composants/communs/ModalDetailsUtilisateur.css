@@ -1,0 +1,211 @@
+/* Modal Overlay & Container */
+.details-user-container {
+    font-family: 'Inter', sans-serif;
+    padding: 2rem 2.5rem;
+    color: #1e293b;
+}
+
+/* --- Header Section --- */
+.profile-header-card {
+    display: flex;
+    align-items: center;
+    gap: 2.5rem;
+    margin-bottom: 3.5rem;
+}
+
+/* Avatar with floating ID */
+.large-avatar-wrapper {
+    position: relative;
+}
+
+.large-avatar {
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    /* Make it round as per standard or maintain rounded square if preferred? Screenshot shows rounded square/image */
+    border-radius: 24px;
+    background-image: url('https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80');
+    background-size: cover;
+    background-position: center;
+    background-color: #e2e8f0;
+    /* Fallback */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.large-avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    font-weight: 700;
+    color: #64748b;
+    background: #f1f5f9;
+    border-radius: 24px;
+
+}
+
+.avatar-floating-id {
+    position: absolute;
+    bottom: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    padding: 4px 12px;
+    border-radius: 9999px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.dot-indicator {
+    width: 8px;
+    height: 8px;
+    background-color: #6366f1;
+    /* Purple dot */
+    border-radius: 50%;
+    display: inline-block;
+}
+
+/* Info Block */
+.profile-info-block {
+    flex: 1;
+}
+
+.profile-name-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.profile-name-row h2 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0;
+    letter-spacing: -0.02em;
+}
+
+.status-badge-capsule {
+    background: #dcfce7;
+    color: #166534;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Header Badges */
+.header-badges-row {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.badge-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.badge-pill.primary {
+    background-color: #4f46e5;
+    /* Purple Blue */
+    color: white;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+}
+
+.badge-pill.dark {
+    background-color: #0f172a;
+    /* Slate 900 */
+    color: white;
+}
+
+/* --- Details Grid Section --- */
+.details-sections-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    /* Space between columns */
+}
+
+.section-header-title {
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.5rem;
+}
+
+.fields-column {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+/* Field Card */
+.detail-field-card {
+    background: #f8fafc;
+    border-radius: 16px;
+    padding: 0.5rem 1rem;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+
+.detail-field-card:hover {
+    background: #f1f5f9;
+    border-color: #e2e8f0;
+}
+
+.field-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.field-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1e293b;
+    padding-left: 2px;
+    /* Slight alignment fix */
+}
+
+/* Icons */
+.field-icon {
+    color: #94a3b8;
+}
+
+/* Footer (Use existing classes from global if needed, but styling specifically here) */
+.modal-details-footer {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid #f1f5f9;
+    display: flex;
+    justify-content: flex-start;
+    gap: 1rem;
+}

@@ -1,53 +1,149 @@
-.journal-audit-page {
+/* Layout */
+.logs-page-container {
   width: 100%;
-  max-width: 100%;
-  padding: 0;
-  overflow-x: hidden;
+  font-family: 'Inter', sans-serif;
+  padding-bottom: 2rem;
 }
 
-.journal-audit-page-header {
+/* Header */
+.logs-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
   margin-bottom: 2rem;
 }
 
-.journal-audit-page-titre {
-  font-family: var(--font-heading), serif;
+.logs-title-block h1 {
   font-size: 1.6rem;
-  font-weight: 700;
-  color: var(--primary);
-  margin: 0 0 5px 0;
+  font-weight: 800;
+  color: #0F172A;
+  margin: 0 0 0.5rem 0;
 }
 
-.journal-audit-page-sous-titre {
-  font-size: 0.9rem;
-  color: var(--gray-500);
+.logs-title-block p {
+  color: #64748B;
+  font-size: 0.95rem;
   margin: 0;
 }
 
-.journal-audit-page-statistiques {
+.btn-export-csv {
   display: flex;
-  flex-direction: row;
-  gap: 12px;
-  margin-bottom: 30px;
-  align-items: stretch;
+  align-items: center;
+  gap: 8px;
+  background: #F1F5F9;
+  color: #475569;
+  border: 1px solid #E2E8F0;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+}
+
+.btn-export-csv:hover {
+  background: #E2E8F0;
+  color: #1E293B;
+}
+
+/* Table Card */
+.logs-table-card {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+  border: 1px solid var(--gray-200);
+  overflow: hidden;
+}
+
+.logs-table {
   width: 100%;
-  flex-wrap: nowrap;
-  overflow-x: auto;
+  border-collapse: collapse;
+}
+
+.logs-table th {
+  text-align: left;
+  padding: 1.5rem 2rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #94A3B8;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-bottom: 1px solid #F8FAFC;
+  background: #F8FAFC;
+}
+
+.logs-table td {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #F8FAFC;
+  vertical-align: middle;
+}
+
+.logs-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Columns */
+.td-time {
+  color: #64748B;
+  font-family: 'Monaco', monospace;
+  /* Monospace for time usually looks techy/log-like */
+  font-size: 0.85rem;
+}
+
+.td-user {
+  font-weight: 600;
+  color: #0F172A;
+  font-size: 0.95rem;
+}
+
+.logs-table .td-action {
+  color: #334155;
+  font-size: 0.95rem;
+  text-align: left;
+}
+
+.td-ip {
+  color: #94A3B8;
+  font-size: 0.85rem;
+  font-family: 'Monaco', monospace;
+}
+
+.td-status {
+  text-align: left;
+  /* Use flex to force alignment if text-align fails */
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+/* Status Badges */
+.status-badge {
+  display: inline-flex;
+  /* Use flex for internal content centering */
+  align-items: center;
   justify-content: center;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  margin: 0;
+  /* Ensure no auto margins */
 }
 
-.journal-audit-page-contenu {
-  width: 100%;
+.badge-success {
+  background: #DCFCE7;
+  color: #15803D;
 }
 
-@media (max-width: 1200px) {
-  .journal-audit-page-statistiques {
-    gap: 10px;
-  }
+.badge-error {
+  background: #FEE2E2;
+  color: #B91C1C;
 }
 
-@media (max-width: 768px) {
-  .journal-audit-page-statistiques {
-    gap: 8px;
-  }
+.badge-warning {
+  background: #FFFBEB;
+  color: #B45309;
 }
-

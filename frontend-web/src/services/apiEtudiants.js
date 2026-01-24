@@ -1,4 +1,5 @@
 const BASE_URL = 'http://localhost:8080/api/admin/utilisateurs/etudiants';
+import { apiAuth } from './apiAuth';
 
 export const apiEtudiants = {
   async obtenirTous() {
@@ -43,11 +44,14 @@ export const apiEtudiants = {
 
   async creer(etudiant) {
     try {
+      const headers = {
+        'Content-Type': 'application/json',
+        ...apiAuth.getAuthHeaders()
+      };
+
       const reponse = await fetch(BASE_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: headers,
         body: JSON.stringify(etudiant),
       });
 
@@ -80,11 +84,14 @@ export const apiEtudiants = {
 
   async modifier(apogee, etudiant) {
     try {
+      const headers = {
+        'Content-Type': 'application/json',
+        ...apiAuth.getAuthHeaders()
+      };
+
       const reponse = await fetch(`${BASE_URL}/${apogee}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: headers,
         body: JSON.stringify(etudiant),
       });
 
@@ -117,11 +124,14 @@ export const apiEtudiants = {
 
   async supprimer(apogee) {
     try {
+      const headers = {
+        'Content-Type': 'application/json',
+        ...apiAuth.getAuthHeaders()
+      };
+
       const reponse = await fetch(`${BASE_URL}/${apogee}`, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: headers,
       });
 
       if (!reponse.ok) {

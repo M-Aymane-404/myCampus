@@ -57,6 +57,71 @@ export const apiClasses = {
       throw err;
     }
   },
+
+  async creer(classe) {
+    try {
+      const response = await fetch(`${BASE_URL}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...apiAuth.getAuthHeaders(),
+        },
+        body: JSON.stringify(classe),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Erreur HTTP: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (err) {
+      console.error('Error creating class:', err);
+      throw err;
+    }
+  },
+
+  async modifier(codeClasse, classe) {
+    try {
+      const response = await fetch(`${BASE_URL}/${codeClasse}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...apiAuth.getAuthHeaders(),
+        },
+        body: JSON.stringify(classe),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Erreur HTTP: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (err) {
+      console.error('Error updating class:', err);
+      throw err;
+    }
+  },
+
+  async supprimer(codeClasse) {
+    try {
+      const response = await fetch(`${BASE_URL}/${codeClasse}`, {
+        method: 'DELETE',
+        headers: apiAuth.getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Erreur HTTP: ${response.status}`);
+      }
+
+      return true;
+    } catch (err) {
+      console.error('Error deleting class:', err);
+      throw err;
+    }
+  },
 };
 
 export default apiClasses;

@@ -1,11 +1,11 @@
-import EnTeteProfesseur from './EnTeteProfesseur';
+import EnTete from './EnTete';
 import './ConteneurPrincipal.css';
 
 const ConteneurProfesseur = ({ children, elementActif, surChangementElement }) => {
   return (
     <div className="conteneur-principal">
       <div className="contenu-principal">
-        <EnTeteProfesseur 
+        <EnTete
           elementActif={elementActif}
           surChangementElement={surChangementElement}
         />
