@@ -1,8 +1,11 @@
 package com.mycampus.backend.mappers.administrateur;
 
-import com.mycampus.backend.dto.administrateur.DonneEntrer.AdministrateurEntrerDTO;
-import com.mycampus.backend.dto.administrateur.DonneEntrer.EtudiantEntrerDTO;
-import com.mycampus.backend.dto.administrateur.DonneEntrer.ProfesseurEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.AdministrateurEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.EtudiantEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.ProfesseurEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.AdministrateurModificationDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.EtudiantModificationDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.ProfesseurModificationDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.ProfesseurSortieDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.EtudiantSortieDTO;
 import com.mycampus.backend.entites.Administrateur;
@@ -47,6 +50,16 @@ public class UtilisateursMapper {
         
         Administrateur administrateur = new Administrateur();
         BeanUtils.copyProperties(administrateurEntrerDTO, administrateur);
+        return administrateur;
+    }
+
+    public Administrateur FromAdministrateurModificationVersAdministrateur(AdministrateurModificationDTO administrateurModificationDTO) {
+        if (administrateurModificationDTO == null) {
+            return null;
+        }
+
+        Administrateur administrateur = new Administrateur();
+        BeanUtils.copyProperties(administrateurModificationDTO, administrateur);
         return administrateur;
     }
 
@@ -110,6 +123,16 @@ public class UtilisateursMapper {
         return professeur;
     }
 
+    public Professeur FromProfesseurModificationversProfesseur(ProfesseurModificationDTO professeurModificationDTO) {
+        if (professeurModificationDTO == null) {
+            return null;
+        }
+
+        Professeur professeur = new Professeur();
+        BeanUtils.copyProperties(professeurModificationDTO, professeur);
+        return professeur;
+    }
+
 
 
 
@@ -146,6 +169,16 @@ public class UtilisateursMapper {
 
         Etudiant etudiant = new Etudiant();
         BeanUtils.copyProperties(etudiantEntrerDTO, etudiant);
+        return etudiant;
+    }
+
+    public Etudiant FromEtudiantModificationversEtudiant(EtudiantModificationDTO etudiantModificationDTO) {
+        if (etudiantModificationDTO == null) {
+            return null;
+        }
+
+        Etudiant etudiant = new Etudiant();
+        BeanUtils.copyProperties(etudiantModificationDTO, etudiant);
         return etudiant;
     }
 

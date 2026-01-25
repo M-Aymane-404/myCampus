@@ -1,18 +1,16 @@
-package com.mycampus.backend.dto.administrateur.DonneEntrer;
+package com.mycampus.backend.dto.administrateur.DonneEntrer.Modification;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-import java.time.LocalDateTime;
-
 @AllArgsConstructor
 @NoArgsConstructor
 @SuperBuilder
 @Data
 
-public class UtilisateurEntrerDto {
+public class UtilisateurModificationDto {
 
     private String nom;
 

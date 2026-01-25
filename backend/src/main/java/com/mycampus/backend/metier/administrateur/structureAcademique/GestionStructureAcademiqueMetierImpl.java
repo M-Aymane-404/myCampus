@@ -1,11 +1,12 @@
     package com.mycampus.backend.metier.administrateur.structureAcademique;
 
-    import com.mycampus.backend.dto.administrateur.DonneEntrer.DepartementEntrerDTO;
-    import com.mycampus.backend.dto.administrateur.DonneEntrer.FiliereEntrerDTO;
-    import com.mycampus.backend.dto.administrateur.DonneEntrer.ClasseEntrerDTO;
-    import com.mycampus.backend.dto.administrateur.DonneEntrer.ModuleEntrerDTO;
-    import com.mycampus.backend.dto.administrateur.DonneEntrer.MatiereEntrerDTO;
-    import com.mycampus.backend.dto.administrateur.DonneEntrer.AffectationEnseignementEntrerDTO;
+    import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.DepartementEntrerDTO;
+    import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.FiliereEntrerDTO;
+    import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.ClasseEntrerDTO;
+    import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.ModuleEntrerDTO;
+    import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.MatiereEntrerDTO;
+    import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.AffectationEnseignementEntrerDTO;
+    import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.*;
     import com.mycampus.backend.dto.administrateur.DonneSortie.DepartementSortieDTO;
     import com.mycampus.backend.dto.administrateur.DonneSortie.FiliereSortieDTO;
     import com.mycampus.backend.dto.administrateur.DonneSortie.ClasseSortieDTO;
@@ -140,39 +141,32 @@
         }
 
         @Override
-        public DepartementSortieDTO modifierDepartement(String codeDepartement, DepartementEntrerDTO departementEntrerDTO) throws StructureAcademiqueException {
+        public DepartementSortieDTO modifierDepartement(String codeDepartement, DepartementModificationDTO departementModificationDTO) throws StructureAcademiqueException {
             if (codeDepartement == null || codeDepartement.trim().isEmpty()) {
                 throw new StructureAcademiqueException("Le code du département est obligatoire");
             }
 
-            if (departementEntrerDTO == null) {
+            if (departementModificationDTO == null) {
                 throw new StructureAcademiqueException("Le département ne peut pas être nul");
             }
 
             Departement departement = requireDepartement(codeDepartement);
 
             // Gérer le chef de département si fourni
-            if (departementEntrerDTO.getChefDepartementPpr() != null && !departementEntrerDTO.getChefDepartementPpr().trim().isEmpty()) {
-                Professeur chefDepartement = requireProfesseur(departementEntrerDTO.getChefDepartementPpr());
+            if (departementModificationDTO.getChefDepartementPpr() != null && !departementModificationDTO.getChefDepartementPpr().trim().isEmpty()) {
+                Professeur chefDepartement = requireProfesseur(departementModificationDTO.getChefDepartementPpr());
                 departement.setChefDepartement(chefDepartement);
             }
 
-            // Valider l'unicité du code si modifié
-            if (departementEntrerDTO.getCodeDepartement() != null &&
-                !departementEntrerDTO.getCodeDepartement().equals(departement.getCodeDepartement()) &&
-                departementRepository.existsByCodeDepartement(departementEntrerDTO.getCodeDepartement())) {
-                throw new StructureAcademiqueException("Un département avec ce code existe déjà");
-            }
+
 
             // Mettre à jour les champs autorisés
-            if (departementEntrerDTO.getCodeDepartement() != null && !departementEntrerDTO.getCodeDepartement().trim().isEmpty()) {
-                departement.setCodeDepartement(departementEntrerDTO.getCodeDepartement());
+
+            if (departementModificationDTO.getTypeDepartement() != null && !departementModificationDTO.getTypeDepartement().trim().isEmpty()) {
+                departement.setTypeDepartement(departementModificationDTO.getTypeDepartement());
             }
-            if (departementEntrerDTO.getTypeDepartement() != null && !departementEntrerDTO.getTypeDepartement().trim().isEmpty()) {
-                departement.setTypeDepartement(departementEntrerDTO.getTypeDepartement());
-            }
-            if (departementEntrerDTO.getDescription() != null) {
-                departement.setDescription(departementEntrerDTO.getDescription());
+            if (departementModificationDTO.getDescription() != null) {
+                departement.setDescription(departementModificationDTO.getDescription());
             }
 
             Departement departementModifie = departementRepository.save(departement);
@@ -269,55 +263,48 @@
         }
 
         @Override
-        public FiliereSortieDTO modifierFiliere(String codeFiliere, FiliereEntrerDTO filiereEntrerDTO) throws StructureAcademiqueException {
+        public FiliereSortieDTO modifierFiliere(String codeFiliere, FiliereModificationDTO filiereModificationDTO) throws StructureAcademiqueException {
             if (codeFiliere == null || codeFiliere.trim().isEmpty()) {
                 throw new StructureAcademiqueException("Le code de la filière est obligatoire");
             }
 
-            if (filiereEntrerDTO == null) {
+            if (filiereModificationDTO == null) {
                 throw new StructureAcademiqueException("La filière ne peut pas être nulle");
             }
 
             Filiere filiere = requireFiliere(codeFiliere);
 
             // Gérer le chef de filière si fourni
-            if (filiereEntrerDTO.getChefFilierePpr() != null && !filiereEntrerDTO.getChefFilierePpr().trim().isEmpty()) {
-                Professeur chefFiliere = requireProfesseur(filiereEntrerDTO.getChefFilierePpr());
+            if (filiereModificationDTO.getChefFilierePpr() != null && !filiereModificationDTO.getChefFilierePpr().trim().isEmpty()) {
+                Professeur chefFiliere = requireProfesseur(filiereModificationDTO.getChefFilierePpr());
                 filiere.setChefFiliere(chefFiliere);
             }
 
-            // Valider l'unicité du code si modifié
-            if (filiereEntrerDTO.getCodeFiliere() != null &&
-                !filiereEntrerDTO.getCodeFiliere().equals(filiere.getCodeFiliere()) &&
-                filiereRepository.existsByCodeFiliere(filiereEntrerDTO.getCodeFiliere())) {
-                throw new StructureAcademiqueException("Une filière avec ce code existe déjà");
-            }
+
 
             // Valider le département si modifié
-            if (filiereEntrerDTO.getCodeDepartement() != null && !filiereEntrerDTO.getCodeDepartement().equals(filiere.getDepartement().getCodeDepartement())) {
-                Departement departement = requireDepartement(filiereEntrerDTO.getCodeDepartement());
+            if (filiereModificationDTO.getCodeDepartement() != null && !filiereModificationDTO.getCodeDepartement().equals(filiere.getDepartement().getCodeDepartement())) {
+                Departement departement = requireDepartement(filiereModificationDTO.getCodeDepartement());
                 filiere.setDepartement(departement);
             }
 
             // Mettre à jour les champs autorisés
-            if (filiereEntrerDTO.getCodeFiliere() != null && !filiereEntrerDTO.getCodeFiliere().trim().isEmpty()) {
-                filiere.setCodeFiliere(filiereEntrerDTO.getCodeFiliere());
+
+            if (filiereModificationDTO.getNom() != null && !filiereModificationDTO.getNom().trim().isEmpty()) {
+                filiere.setNom(filiereModificationDTO.getNom());
             }
-            if (filiereEntrerDTO.getNom() != null && !filiereEntrerDTO.getNom().trim().isEmpty()) {
-                filiere.setNom(filiereEntrerDTO.getNom());
-            }
-            if (filiereEntrerDTO.getDescription() != null) {
-                filiere.setDescription(filiereEntrerDTO.getDescription());
+            if (filiereModificationDTO.getDescription() != null) {
+                filiere.setDescription(filiereModificationDTO.getDescription());
             }
 
-            if (filiereEntrerDTO.getDureeFormation() != null && !filiereEntrerDTO.getDureeFormation().trim().isEmpty()) {
-                filiere.setDureeFormation(filiereEntrerDTO.getDureeFormation());
+            if (filiereModificationDTO.getDureeFormation() != null && !filiereModificationDTO.getDureeFormation().trim().isEmpty()) {
+                filiere.setDureeFormation(filiereModificationDTO.getDureeFormation());
             }
-            if (filiereEntrerDTO.getNiveauDiplome() != null && !filiereEntrerDTO.getNiveauDiplome().trim().isEmpty()) {
-                filiere.setNiveauDiplome(filiereEntrerDTO.getNiveauDiplome());
+            if (filiereModificationDTO.getNiveauDiplome() != null && !filiereModificationDTO.getNiveauDiplome().trim().isEmpty()) {
+                filiere.setNiveauDiplome(filiereModificationDTO.getNiveauDiplome());
             }
-            if (filiereEntrerDTO.getEtat() != null) {
-                filiere.setEtat(filiereEntrerDTO.getEtat());
+            if (filiereModificationDTO.getEtat() != null) {
+                filiere.setEtat(filiereModificationDTO.getEtat());
             }
 
             Filiere filiereModifiee = filiereRepository.save(filiere);
@@ -413,48 +400,41 @@
         }
 
         @Override
-        public ClasseSortieDTO modifierClasse(String codeClasse, ClasseEntrerDTO classeEntrerDTO) throws StructureAcademiqueException {
+        public ClasseSortieDTO modifierClasse(String codeClasse, ClasseModificationDTO classeModificationDTO) throws StructureAcademiqueException {
             if (codeClasse == null || codeClasse.trim().isEmpty()) {
                 throw new StructureAcademiqueException("Le code de la classe est obligatoire");
             }
 
-            if (classeEntrerDTO == null) {
+            if (classeModificationDTO == null) {
                 throw new StructureAcademiqueException("La classe ne peut pas être nulle");
             }
 
             Classe classe = requireClasse(codeClasse);
 
-            // Valider l'unicité du code si modifié
-            if (classeEntrerDTO.getCodeClasse() != null &&
-                !classeEntrerDTO.getCodeClasse().equals(classe.getCodeClasse()) &&
-                classeRepository.existsByCodeClasse(classeEntrerDTO.getCodeClasse())) {
-                throw new StructureAcademiqueException("Une classe avec ce code existe déjà");
-            }
+
 
             // Valider la filière si modifiée
-            if (classeEntrerDTO.getCodeFiliere() != null && !classeEntrerDTO.getCodeFiliere().equals(classe.getFiliere().getCodeFiliere())) {
-                Filiere filiere = requireFiliere(classeEntrerDTO.getCodeFiliere());
+            if (classeModificationDTO.getCodeFiliere() != null && !classeModificationDTO.getCodeFiliere().equals(classe.getFiliere().getCodeFiliere())) {
+                Filiere filiere = requireFiliere(classeModificationDTO.getCodeFiliere());
                 classe.setFiliere(filiere);
             }
 
             // Mettre à jour les champs autorisés
-            if (classeEntrerDTO.getCodeClasse() != null && !classeEntrerDTO.getCodeClasse().trim().isEmpty()) {
-                classe.setCodeClasse(classeEntrerDTO.getCodeClasse());
+
+            if (classeModificationDTO.getNom() != null && !classeModificationDTO.getNom().trim().isEmpty()) {
+                classe.setNom(classeModificationDTO.getNom());
             }
-            if (classeEntrerDTO.getNom() != null && !classeEntrerDTO.getNom().trim().isEmpty()) {
-                classe.setNom(classeEntrerDTO.getNom());
+            if (classeModificationDTO.getNiveau() != null && !classeModificationDTO.getNiveau().trim().isEmpty()) {
+                classe.setNiveau(classeModificationDTO.getNiveau());
             }
-            if (classeEntrerDTO.getNiveau() != null && !classeEntrerDTO.getNiveau().trim().isEmpty()) {
-                classe.setNiveau(classeEntrerDTO.getNiveau());
+            if (classeModificationDTO.getAnneeUniversitaire() != null && !classeModificationDTO.getAnneeUniversitaire().trim().isEmpty()) {
+                classe.setAnneeUniversitaire(classeModificationDTO.getAnneeUniversitaire());
             }
-            if (classeEntrerDTO.getAnneeUniversitaire() != null && !classeEntrerDTO.getAnneeUniversitaire().trim().isEmpty()) {
-                classe.setAnneeUniversitaire(classeEntrerDTO.getAnneeUniversitaire());
+            if (classeModificationDTO.getEffectifMax() != null) {
+                classe.setEffectifMax(classeModificationDTO.getEffectifMax());
             }
-            if (classeEntrerDTO.getEffectifMax() != null) {
-                classe.setEffectifMax(classeEntrerDTO.getEffectifMax());
-            }
-            if (classeEntrerDTO.getEmploiTemps() != null) {
-                classe.setEmploiTemps(classeEntrerDTO.getEmploiTemps());
+            if (classeModificationDTO.getEmploiTemps() != null) {
+                classe.setEmploiTemps(classeModificationDTO.getEmploiTemps());
             }
 
             Classe classeModifiee = classeRepository.save(classe);
@@ -549,45 +529,37 @@
         }
 
         @Override
-        public ModuleSortieDTO modifierModule(String codeModule, ModuleEntrerDTO moduleEntrerDTO) throws StructureAcademiqueException {
+        public ModuleSortieDTO modifierModule(String codeModule, ModuleModificationDTO moduleModificationDTO) throws StructureAcademiqueException {
             if (codeModule == null || codeModule.trim().isEmpty()) {
                 throw new StructureAcademiqueException("Le code du module est obligatoire");
             }
 
-            if (moduleEntrerDTO == null) {
+            if (moduleModificationDTO == null) {
                 throw new StructureAcademiqueException("Le module ne peut pas être nul");
             }
 
             Module module = requireModule(codeModule);
 
-            // Valider l'unicité du code si modifié
-            if (moduleEntrerDTO.getCodeModule() != null &&
-                !moduleEntrerDTO.getCodeModule().equals(module.getCodeModule()) &&
-                moduleRepository.existsByCodeModule(moduleEntrerDTO.getCodeModule())) {
-                throw new StructureAcademiqueException("Un module avec ce code existe déjà");
-            }
+
 
             // Valider la filière si modifiée
-            if (moduleEntrerDTO.getCodeFiliere() != null && !moduleEntrerDTO.getCodeFiliere().equals(module.getFiliere().getCodeFiliere())) {
-                Filiere filiere = requireFiliere(moduleEntrerDTO.getCodeFiliere());
+            if (moduleModificationDTO.getCodeFiliere() != null && !moduleModificationDTO.getCodeFiliere().equals(module.getFiliere().getCodeFiliere())) {
+                Filiere filiere = requireFiliere(moduleModificationDTO.getCodeFiliere());
                 module.setFiliere(filiere);
             }
 
-            // Mettre à jour les champs autorisés
-            if (moduleEntrerDTO.getCodeModule() != null && !moduleEntrerDTO.getCodeModule().trim().isEmpty()) {
-                module.setCodeModule(moduleEntrerDTO.getCodeModule());
+
+            if (moduleModificationDTO.getNom() != null && !moduleModificationDTO.getNom().trim().isEmpty()) {
+                module.setNom(moduleModificationDTO.getNom());
             }
-            if (moduleEntrerDTO.getNom() != null && !moduleEntrerDTO.getNom().trim().isEmpty()) {
-                module.setNom(moduleEntrerDTO.getNom());
+            if (moduleModificationDTO.getDescription() != null) {
+                module.setDescription(moduleModificationDTO.getDescription());
             }
-            if (moduleEntrerDTO.getDescription() != null) {
-                module.setDescription(moduleEntrerDTO.getDescription());
+            if (moduleModificationDTO.getSemestre() != null) {
+                module.setSemestre(moduleModificationDTO.getSemestre());
             }
-            if (moduleEntrerDTO.getSemestre() != null) {
-                module.setSemestre(moduleEntrerDTO.getSemestre());
-            }
-            if (moduleEntrerDTO.getCoefficient() != null) {
-                module.setCoefficient(moduleEntrerDTO.getCoefficient());
+            if (moduleModificationDTO.getCoefficient() != null) {
+                module.setCoefficient(moduleModificationDTO.getCoefficient());
             }
 
             Module moduleModifie = moduleRepository.save(module);
@@ -682,42 +654,36 @@
         }
 
         @Override
-        public MatiereSortieDTO modifierMatiere(String codeMatiere, MatiereEntrerDTO matiereEntrerDTO) throws StructureAcademiqueException {
+        public MatiereSortieDTO modifierMatiere(String codeMatiere, MatiereModificationDTO matiereModificationDTO) throws StructureAcademiqueException {
             if (codeMatiere == null || codeMatiere.trim().isEmpty()) {
                 throw new StructureAcademiqueException("Le code de la matière est obligatoire");
             }
 
-            if (matiereEntrerDTO == null) {
+            if (matiereModificationDTO == null) {
                 throw new StructureAcademiqueException("La matière ne peut pas être nulle");
             }
 
             Matiere matiere = requireMatiere(codeMatiere);
 
             // Valider l'unicité du code si modifié
-            if (matiereEntrerDTO.getCodeMatiere() != null &&
-                !matiereEntrerDTO.getCodeMatiere().equals(matiere.getCodeMatiere()) &&
-                matiereRepository.existsByCodeMatiere(matiereEntrerDTO.getCodeMatiere())) {
-                throw new StructureAcademiqueException("Une matière avec ce code existe déjà");
-            }
+
 
             // Valider le module si modifié
-            if (matiereEntrerDTO.getCodeModule() != null && !matiereEntrerDTO.getCodeModule().equals(matiere.getModule().getCodeModule())) {
-                Module module = requireModule(matiereEntrerDTO.getCodeModule());
+            if (matiereModificationDTO.getCodeModule() != null && !matiereModificationDTO.getCodeModule().equals(matiere.getModule().getCodeModule())) {
+                Module module = requireModule(matiereModificationDTO.getCodeModule());
                 matiere.setModule(module);
             }
 
             // Mettre à jour les champs autorisés
-            if (matiereEntrerDTO.getCodeMatiere() != null && !matiereEntrerDTO.getCodeMatiere().trim().isEmpty()) {
-                matiere.setCodeMatiere(matiereEntrerDTO.getCodeMatiere());
+
+            if (matiereModificationDTO.getNom() != null && !matiereModificationDTO.getNom().trim().isEmpty()) {
+                matiere.setNom(matiereModificationDTO.getNom());
             }
-            if (matiereEntrerDTO.getNom() != null && !matiereEntrerDTO.getNom().trim().isEmpty()) {
-                matiere.setNom(matiereEntrerDTO.getNom());
+            if (matiereModificationDTO.getDescription() != null) {
+                matiere.setDescription(matiereModificationDTO.getDescription());
             }
-            if (matiereEntrerDTO.getDescription() != null) {
-                matiere.setDescription(matiereEntrerDTO.getDescription());
-            }
-            if (matiereEntrerDTO.getCoefficient() != null) {
-                matiere.setCoefficient(matiereEntrerDTO.getCoefficient());
+            if (matiereModificationDTO.getCoefficient() != null) {
+                matiere.setCoefficient(matiereModificationDTO.getCoefficient());
             }
 
             Matiere matiereModifiee = matiereRepository.save(matiere);
@@ -781,12 +747,12 @@
         }
 
         @Override
-        public AffectationEnseignementSortieDTO modifierAffectationEnseignement(Long id, AffectationEnseignementEntrerDTO affectationEnseignementEntrerDTO) throws StructureAcademiqueException {
+        public AffectationEnseignementSortieDTO modifierAffectationEnseignement(Long id, AffectationEnseignementModificationDTO affectationEnseignementModificationDTO) throws StructureAcademiqueException {
             if (id == null) {
                 throw new StructureAcademiqueException("L'identifiant de l'affectation est obligatoire");
             }
 
-            if (affectationEnseignementEntrerDTO == null) {
+            if (affectationEnseignementModificationDTO == null) {
                 throw new StructureAcademiqueException("L'affectation ne peut pas être nulle");
             }
 
@@ -795,41 +761,41 @@
                     new StructureAcademiqueException("Affectation introuvable avec l'identifiant: " + id));
 
             // Mise à jour des champs autorisés (null-safe)
-            if (affectationEnseignementEntrerDTO.getAnneeUniversitaire() != null && !affectationEnseignementEntrerDTO.getAnneeUniversitaire().trim().isEmpty()) {
-                affectationExistante.setAnneeUniversitaire(affectationEnseignementEntrerDTO.getAnneeUniversitaire());
+            if (affectationEnseignementModificationDTO.getAnneeUniversitaire() != null && !affectationEnseignementModificationDTO.getAnneeUniversitaire().trim().isEmpty()) {
+                affectationExistante.setAnneeUniversitaire(affectationEnseignementModificationDTO.getAnneeUniversitaire());
             }
 
-            if (affectationEnseignementEntrerDTO.getSemestre() != null) {
-                affectationExistante.setSemestre(affectationEnseignementEntrerDTO.getSemestre());
+            if (affectationEnseignementModificationDTO.getSemestre() != null) {
+                affectationExistante.setSemestre(affectationEnseignementModificationDTO.getSemestre());
             }
 
             // Mise à jour du professeur si fourni et différent
-            if (affectationEnseignementEntrerDTO.getProfesseurPpr() != null &&
-                (affectationExistante.getProfesseur() == null || !affectationEnseignementEntrerDTO.getProfesseurPpr().equals(affectationExistante.getProfesseur().getPpr()))) {
+            if (affectationEnseignementModificationDTO.getProfesseurPpr() != null &&
+                (affectationExistante.getProfesseur() == null || !affectationEnseignementModificationDTO.getProfesseurPpr().equals(affectationExistante.getProfesseur().getPpr()))) {
 
-                Professeur professeur = requireProfesseur(affectationEnseignementEntrerDTO.getProfesseurPpr());
+                Professeur professeur = requireProfesseur(affectationEnseignementModificationDTO.getProfesseurPpr());
                 affectationExistante.setProfesseur(professeur);
             }
 
             // Mise à jour de la classe si fournie et différente
-            if (affectationEnseignementEntrerDTO.getCodeClasse() != null &&
-                (affectationExistante.getClasse() == null || !affectationEnseignementEntrerDTO.getCodeClasse().equals(affectationExistante.getClasse().getCodeClasse()))) {
+            if (affectationEnseignementModificationDTO.getCodeClasse() != null &&
+                (affectationExistante.getClasse() == null || !affectationEnseignementModificationDTO.getCodeClasse().equals(affectationExistante.getClasse().getCodeClasse()))) {
 
-                Classe classe = requireClasse(affectationEnseignementEntrerDTO.getCodeClasse());
+                Classe classe = requireClasse(affectationEnseignementModificationDTO.getCodeClasse());
                 affectationExistante.setClasse(classe);
             }
 
             // Mise à jour de la matière si fournie et différente
-            if (affectationEnseignementEntrerDTO.getCodeMatiere() != null &&
-                (affectationExistante.getMatiere() == null || !affectationEnseignementEntrerDTO.getCodeMatiere().equals(affectationExistante.getMatiere().getCodeMatiere()))) {
+            if (affectationEnseignementModificationDTO.getCodeMatiere() != null &&
+                (affectationExistante.getMatiere() == null || !affectationEnseignementModificationDTO.getCodeMatiere().equals(affectationExistante.getMatiere().getCodeMatiere()))) {
 
-                Matiere matiere = requireMatiere(affectationEnseignementEntrerDTO.getCodeMatiere());
+                Matiere matiere = requireMatiere(affectationEnseignementModificationDTO.getCodeMatiere());
                 affectationExistante.setMatiere(matiere);
             }
 
             // Mise à jour du statut actif si fourni
-            if (affectationEnseignementEntrerDTO.getActive() != null) {
-                affectationExistante.setActive(affectationEnseignementEntrerDTO.getActive());
+            if (affectationEnseignementModificationDTO.getActive() != null) {
+                affectationExistante.setActive(affectationEnseignementModificationDTO.getActive());
             }
 
             AffectationEnseignement affectationModifiee = affectationEnseignementRepository.save(affectationExistante);

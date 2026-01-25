@@ -1,11 +1,12 @@
 package com.mycampus.backend.metier.administrateur.structureAcademique;
 
-import com.mycampus.backend.dto.administrateur.DonneEntrer.DepartementEntrerDTO;
-import com.mycampus.backend.dto.administrateur.DonneEntrer.FiliereEntrerDTO;
-import com.mycampus.backend.dto.administrateur.DonneEntrer.ClasseEntrerDTO;
-import com.mycampus.backend.dto.administrateur.DonneEntrer.ModuleEntrerDTO;
-import com.mycampus.backend.dto.administrateur.DonneEntrer.MatiereEntrerDTO;
-import com.mycampus.backend.dto.administrateur.DonneEntrer.AffectationEnseignementEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.DepartementEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.FiliereEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.ClasseEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.ModuleEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.MatiereEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.AffectationEnseignementEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.*;
 import com.mycampus.backend.dto.administrateur.DonneSortie.DepartementSortieDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.FiliereSortieDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.ClasseSortieDTO;
@@ -25,7 +26,7 @@ public interface GestionStructureAcademiqueMetier {
     
     List<DepartementSortieDTO> listerTousLesDepartements() throws StructureAcademiqueException;
     
-    DepartementSortieDTO modifierDepartement(String codeDepartement, DepartementEntrerDTO departementEntrerDTO) throws StructureAcademiqueException;
+    DepartementSortieDTO modifierDepartement(String codeDepartement, DepartementModificationDTO departementModificationDTO) throws StructureAcademiqueException;
     
     void supprimerDepartement(String codeDepartement) throws StructureAcademiqueException;
     
@@ -38,7 +39,7 @@ public interface GestionStructureAcademiqueMetier {
     
     List<FiliereSortieDTO> trouverFilieresParDepartement(String codeDepartement) throws StructureAcademiqueException;
     
-    FiliereSortieDTO modifierFiliere(String codeFiliere, FiliereEntrerDTO filiereEntrerDTO) throws StructureAcademiqueException;
+    FiliereSortieDTO modifierFiliere(String codeFiliere, FiliereModificationDTO filiereModificationDTO) throws StructureAcademiqueException;
     
     void supprimerFiliere(String codeFiliere) throws StructureAcademiqueException;
     
@@ -51,7 +52,7 @@ public interface GestionStructureAcademiqueMetier {
     
     List<ClasseSortieDTO> trouverClassesParFiliere(String codeFiliere) throws StructureAcademiqueException;
     
-    ClasseSortieDTO modifierClasse(String codeClasse, ClasseEntrerDTO classeEntrerDTO) throws StructureAcademiqueException;
+    ClasseSortieDTO modifierClasse(String codeClasse, ClasseModificationDTO classeModificationDTO) throws StructureAcademiqueException;
     
     void supprimerClasse(String codeClasse) throws StructureAcademiqueException;
     
@@ -64,7 +65,7 @@ public interface GestionStructureAcademiqueMetier {
     
     List<ModuleSortieDTO> trouverModulesParFiliere(String codeFiliere) throws StructureAcademiqueException;
     
-    ModuleSortieDTO modifierModule(String codeModule, ModuleEntrerDTO moduleEntrerDTO) throws StructureAcademiqueException;
+    ModuleSortieDTO modifierModule(String codeModule, ModuleModificationDTO moduleModificationDTO) throws StructureAcademiqueException;
     
     void supprimerModule(String codeModule) throws StructureAcademiqueException;
     
@@ -77,14 +78,14 @@ public interface GestionStructureAcademiqueMetier {
     
     List<MatiereSortieDTO> trouverMatieresParModule(String codeModule) throws StructureAcademiqueException;
     
-    MatiereSortieDTO modifierMatiere(String codeMatiere, MatiereEntrerDTO matiereEntrerDTO) throws StructureAcademiqueException;
+    MatiereSortieDTO modifierMatiere(String codeMatiere, MatiereModificationDTO matiereModificationDTO) throws StructureAcademiqueException;
     
     void supprimerMatiere(String codeMatiere) throws StructureAcademiqueException;
 
     // AffectationEnseignement management
     AffectationEnseignementSortieDTO creerAffectationEnseignement(AffectationEnseignementEntrerDTO affectationEnseignementEntrerDTO) throws StructureAcademiqueException;
     
-    AffectationEnseignementSortieDTO modifierAffectationEnseignement(Long id, AffectationEnseignementEntrerDTO affectationEnseignementEntrerDTO) throws StructureAcademiqueException;
+    AffectationEnseignementSortieDTO modifierAffectationEnseignement(Long id, AffectationEnseignementModificationDTO affectationEnseignementModificationDTO) throws StructureAcademiqueException;
     
     void activerAffectationEnseignement(Long id) throws StructureAcademiqueException;
     

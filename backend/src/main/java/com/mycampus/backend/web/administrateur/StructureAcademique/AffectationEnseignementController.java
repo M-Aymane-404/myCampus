@@ -1,5 +1,6 @@
 package com.mycampus.backend.web.administrateur.StructureAcademique;
-import com.mycampus.backend.dto.administrateur.DonneEntrer.AffectationEnseignementEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.AffectationEnseignementEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.AffectationEnseignementModificationDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.AffectationEnseignementSortieDTO;
 import com.mycampus.backend.metier.administrateur.structureAcademique.GestionStructureAcademiqueMetier;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +26,7 @@ public class AffectationEnseignementController {
     @PutMapping("/{id}")
     public ResponseEntity<AffectationEnseignementSortieDTO> modifierAffectationEnseignement(
             @PathVariable Long id, 
-            @RequestBody AffectationEnseignementEntrerDTO affectationDTO) {
+            @RequestBody AffectationEnseignementModificationDTO affectationDTO) {
         AffectationEnseignementSortieDTO result = metier.modifierAffectationEnseignement(id, affectationDTO);
         return ResponseEntity.ok(result);
     }

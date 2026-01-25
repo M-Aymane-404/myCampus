@@ -1,4 +1,4 @@
-package com.mycampus.backend.dto.administrateur.DonneEntrer;
+package com.mycampus.backend.dto.administrateur.DonneEntrer.Modification;
 
 import com.mycampus.backend.enumerations.Semestre;
 import lombok.AllArgsConstructor;
@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @NoArgsConstructor
-public class AffectationEnseignementEntrerDTO {
+public class AffectationEnseignementModificationDTO {
     
     private String anneeUniversitaire;
     private Semestre semestre;

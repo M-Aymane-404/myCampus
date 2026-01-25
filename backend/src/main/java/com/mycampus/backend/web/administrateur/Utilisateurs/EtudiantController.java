@@ -1,6 +1,6 @@
 package com.mycampus.backend.web.administrateur.Utilisateurs;
 
-import com.mycampus.backend.dto.administrateur.DonneEntrer.EtudiantEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.EtudiantEntrerDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.EtudiantSortieDTO;
 import com.mycampus.backend.metier.administrateur.utilisateurs.GestionUtilisateursMetier;
 import lombok.RequiredArgsConstructor;

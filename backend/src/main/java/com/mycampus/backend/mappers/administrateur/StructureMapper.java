@@ -1,5 +1,6 @@
 package com.mycampus.backend.mappers.administrateur;
 
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.*;
 import com.mycampus.backend.dto.etudiant.DonneeSortie.SeanceSortieDTO;
 import com.mycampus.backend.entites.Departement;
 import com.mycampus.backend.entites.Filiere;
@@ -8,12 +9,12 @@ import com.mycampus.backend.entites.Module;
 import com.mycampus.backend.entites.Matiere;
 import com.mycampus.backend.entites.AffectationEnseignement;
 import com.mycampus.backend.entites.Seance;
-import com.mycampus.backend.dto.administrateur.DonneEntrer.DepartementEntrerDTO;
-import com.mycampus.backend.dto.administrateur.DonneEntrer.FiliereEntrerDTO;
-import com.mycampus.backend.dto.administrateur.DonneEntrer.ClasseEntrerDTO;
-import com.mycampus.backend.dto.administrateur.DonneEntrer.ModuleEntrerDTO;
-import com.mycampus.backend.dto.administrateur.DonneEntrer.MatiereEntrerDTO;
-import com.mycampus.backend.dto.administrateur.DonneEntrer.AffectationEnseignementEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.DepartementEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.FiliereEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.ClasseEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.ModuleEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.MatiereEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.AffectationEnseignementEntrerDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.DepartementSortieDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.FiliereSortieDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.ClasseSortieDTO;
@@ -89,6 +90,17 @@ public class StructureMapper {
         return departement;
     }
 
+    public Departement FromDepartementModificationVersDepartement(DepartementModificationDTO departementModificationDTO) {
+        if (departementModificationDTO == null) {
+            return null;
+        }
+
+        Departement departement = new Departement();
+        BeanUtils.copyProperties(departementModificationDTO, departement);
+        // Les relations seront gérées dans le service via requireX
+        return departement;
+    }
+
     // ==================== FILIERE ====================
 
     public FiliereSortieDTO FromFiliereVersFiliereSortieDTO(Filiere filiere) {
@@ -145,6 +157,17 @@ public class StructureMapper {
         return filiere;
     }
 
+    public Filiere FromFiliereModificationVersFiliere(FiliereModificationDTO filiereModificationDTO) {
+        if (filiereModificationDTO == null) {
+            return null;
+        }
+
+        Filiere filiere = new Filiere();
+        BeanUtils.copyProperties(filiereModificationDTO, filiere);
+        // Les relations seront gérées dans le service via requireX
+        return filiere;
+    }
+
     // ==================== CLASSE ====================
 
     public ClasseSortieDTO FromClasseVersClasseSortieDTO(Classe classe) {
@@ -190,6 +213,17 @@ public class StructureMapper {
         
         Classe classe = new Classe();
         BeanUtils.copyProperties(classeEntrerDTO, classe);
+        // Les relations seront gérées dans le service via requireX
+        return classe;
+    }
+
+    public Classe FromClasseModificationVersClasse(ClasseModificationDTO classeModificationDTO) {
+        if (classeModificationDTO == null) {
+            return null;
+        }
+
+        Classe classe = new Classe();
+        BeanUtils.copyProperties(classeModificationDTO, classe);
         // Les relations seront gérées dans le service via requireX
         return classe;
     }
@@ -242,6 +276,17 @@ public class StructureMapper {
         return module;
     }
 
+    public Module FromModuleModificationVersModule(ModuleModificationDTO moduleModificationDTO) {
+        if (moduleModificationDTO == null) {
+            return null;
+        }
+
+        Module module = new Module();
+        BeanUtils.copyProperties(moduleModificationDTO, module);
+        // Les relations seront gérées dans le service via requireX
+        return module;
+    }
+
     // ==================== MATIERE ====================
 
     public MatiereSortieDTO FromMatiereVersMatiereSortieDTO(Matiere matiere) {
@@ -284,6 +329,17 @@ public class StructureMapper {
         
         Matiere matiere = new Matiere();
         BeanUtils.copyProperties(matiereEntrerDTO, matiere);
+        // Les relations seront gérées dans le service via requireX
+        return matiere;
+    }
+
+    public Matiere FromMatiereModificationVersMatiere(MatiereModificationDTO matiereModificationDTO) {
+        if (matiereModificationDTO == null) {
+            return null;
+        }
+
+        Matiere matiere = new Matiere();
+        BeanUtils.copyProperties(matiereModificationDTO, matiere);
         // Les relations seront gérées dans le service via requireX
         return matiere;
     }
@@ -334,6 +390,17 @@ public class StructureMapper {
         
         AffectationEnseignement affectation = new AffectationEnseignement();
         BeanUtils.copyProperties(affectationEnseignementEntrerDTO, affectation);
+        // Les relations seront gérées dans le service via requireX
+        return affectation;
+    }
+
+    public AffectationEnseignement FromAffectationEnseignementModificationVersAffectationEnseignement(AffectationEnseignementModificationDTO affectationEnseignementModificationDTO) {
+        if (affectationEnseignementModificationDTO == null) {
+            return null;
+        }
+
+        AffectationEnseignement affectation = new AffectationEnseignement();
+        BeanUtils.copyProperties(affectationEnseignementModificationDTO, affectation);
         // Les relations seront gérées dans le service via requireX
         return affectation;
     }

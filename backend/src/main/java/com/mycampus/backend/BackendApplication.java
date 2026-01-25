@@ -1,6 +1,9 @@
 package com.mycampus.backend;
 
-import com.mycampus.backend.dto.administrateur.DonneEntrer.*;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.*;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.AffectationEnseignementModificationDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.DepartementModificationDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.FiliereModificationDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.*;
 import com.mycampus.backend.enumerations.EtatInscription;
 import com.mycampus.backend.enumerations.EtatStructure;
@@ -450,24 +453,22 @@ public class BackendApplication {
 
         try {
             // Update departement INFO
-            DepartementEntrerDTO depUp = DepartementEntrerDTO.builder()
-                    .codeDepartement("INFO")
-                    .typeDepartement("Informatique & Réseaux")
+            DepartementModificationDTO depUp = DepartementModificationDTO.builder()
+                     .typeDepartement("Informatique & Réseaux")
                     .description("Département INFO mis à jour")
                     .chefDepartementPpr("20000001")
                     .build();
             structureMetier.modifierDepartement("INFO", depUp);
 
-           DepartementEntrerDTO depup1 = DepartementEntrerDTO.builder()
-                    .codeDepartement("INDUS")
-                    .typeDepartement("Génie Industriel")
+            DepartementModificationDTO depup1 = DepartementModificationDTO.builder()
+                     .typeDepartement("Génie Industriel")
                     .description("Département Industriel up")
                    .chefDepartementPpr("20000002")
                     .build();
             structureMetier.modifierDepartement("INDUS", depup1);
 
-            FiliereEntrerDTO fil1 = FiliereEntrerDTO.builder()
-                    .codeFiliere("GL")
+            FiliereModificationDTO fil1 = FiliereModificationDTO.builder()
+
                     .nom("Génie Logiciel")
                     .description("Filière génie logiciel up")
                     .dureeFormation("3 Ans")
@@ -478,9 +479,8 @@ public class BackendApplication {
                     .build();
             structureMetier.modifierFiliere("GL", fil1);
 
-            FiliereEntrerDTO fil2 =     FiliereEntrerDTO.builder()
-                            .codeFiliere("GIND")
-                            .nom("Génie Industriel")
+            FiliereModificationDTO fil2 =     FiliereModificationDTO.builder()
+                             .nom("Génie Industriel")
                             .description("Filière industrielle")
                             .dureeFormation("3 Ans")
                             .niveauDiplome("Licence")
@@ -492,9 +492,8 @@ public class BackendApplication {
 
 
             // Update filiere ILCS
-            FiliereEntrerDTO filUp = FiliereEntrerDTO.builder()
-                    .codeFiliere("ILCS")
-                    .nom("ILCS - Cyber Sécurité Avancée")
+            FiliereModificationDTO filUp = FiliereModificationDTO.builder()
+                     .nom("ILCS - Cyber Sécurité Avancée")
                     .description("Filière ILCS update")
                     .dureeFormation("3 Ans")
                     .niveauDiplome("Licence")
@@ -516,7 +515,7 @@ public class BackendApplication {
         if (affectationIds != null && !affectationIds.isEmpty()) {
             Long firstId = affectationIds.get(0);
             try {
-                AffectationEnseignementEntrerDTO affUp = AffectationEnseignementEntrerDTO.builder()
+                AffectationEnseignementModificationDTO affUp = AffectationEnseignementModificationDTO.builder()
                         .anneeUniversitaire("2025/2026")
                         .semestre(Semestre.S2)
                         .professeurPpr("20000002")

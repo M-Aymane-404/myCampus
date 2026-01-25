@@ -14,10 +14,10 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString(exclude = {"affectationEnseignements", "departementOuTravail", "departementDirigee", "filiereDirigee"})
-@EqualsAndHashCode(exclude = {"affectationEnseignements", "departementOuTravail", "departementDirigee", "filiereDirigee"})
+@EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 public class Professeur extends Utilisateur {
     
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, updatable = false)
     private String ppr;
     
     @Column(nullable = false)

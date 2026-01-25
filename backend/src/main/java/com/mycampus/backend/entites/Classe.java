@@ -11,14 +11,16 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString(exclude = {"filiere", "etudiants", "affectationEnseignements"})
-@EqualsAndHashCode(exclude = {"filiere", "etudiants", "affectationEnseignements"})
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Classe {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+
     private Long id;
-    
-    @Column(nullable = false, unique = true)
+
+    @EqualsAndHashCode.Include
+    @Column(nullable = false, unique = true, updatable = false)
     private String codeClasse;
     
     @Column(nullable = false)

@@ -1,5 +1,6 @@
 package com.mycampus.backend.web.administrateur.StructureAcademique;
-import com.mycampus.backend.dto.administrateur.DonneEntrer.FiliereEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.FiliereEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.FiliereModificationDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.FiliereSortieDTO;
 import com.mycampus.backend.metier.administrateur.structureAcademique.GestionStructureAcademiqueMetier;
 import lombok.RequiredArgsConstructor;
@@ -43,7 +44,7 @@ public class FiliereController {
     @PutMapping("/{codeFiliere}")
     public ResponseEntity<FiliereSortieDTO> modifierFiliere(
             @PathVariable String codeFiliere, 
-            @RequestBody FiliereEntrerDTO filiereDTO) {
+            @RequestBody FiliereModificationDTO filiereDTO) {
         FiliereSortieDTO result = metier.modifierFiliere(codeFiliere, filiereDTO);
         return ResponseEntity.ok(result);
     }

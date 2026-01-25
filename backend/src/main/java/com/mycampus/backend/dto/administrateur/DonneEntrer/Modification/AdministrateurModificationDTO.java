@@ -1,5 +1,6 @@
-package com.mycampus.backend.dto.administrateur.DonneEntrer;
+package com.mycampus.backend.dto.administrateur.DonneEntrer.Modification;
 
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.UtilisateurEntrerDto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -12,7 +13,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @Data
 
-public class AdministrateurEntrerDTO extends UtilisateurEntrerDto {
+public class AdministrateurModificationDTO extends UtilisateurModificationDto {
 
     private String ppr;
 

@@ -16,10 +16,11 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString(exclude = {"classe", "presences", "resultats"})
-@EqualsAndHashCode(exclude = {"classe", "presences", "resultats"})
+@EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
+
 public class Etudiant extends Utilisateur {
-    
-    @Column(nullable = false, unique = true)
+    @EqualsAndHashCode.Include
+    @Column(nullable = false, unique = true, updatable = false)
     private String apogee;
     
     @Column(nullable = false)

@@ -1,6 +1,7 @@
 package com.mycampus.backend.web.administrateur.StructureAcademique;
 
-import com.mycampus.backend.dto.administrateur.DonneEntrer.DepartementEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.DepartementEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.DepartementModificationDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.DepartementSortieDTO;
 import com.mycampus.backend.metier.administrateur.structureAcademique.GestionStructureAcademiqueMetier;
 import lombok.RequiredArgsConstructor;
@@ -38,7 +39,7 @@ public class DepartementController {
     @PutMapping("/{codeDepartement}")
     public ResponseEntity<DepartementSortieDTO> modifierDepartement(
             @PathVariable String codeDepartement, 
-            @RequestBody DepartementEntrerDTO departementDTO) {
+            @RequestBody DepartementModificationDTO departementDTO) {
         DepartementSortieDTO result = metier.modifierDepartement(codeDepartement, departementDTO);
         return ResponseEntity.ok(result);
     }

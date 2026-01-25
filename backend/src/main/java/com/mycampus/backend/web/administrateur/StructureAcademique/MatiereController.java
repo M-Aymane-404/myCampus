@@ -1,5 +1,6 @@
 package com.mycampus.backend.web.administrateur.StructureAcademique;
-import com.mycampus.backend.dto.administrateur.DonneEntrer.MatiereEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.MatiereEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.MatiereModificationDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.MatiereSortieDTO;
 import com.mycampus.backend.metier.administrateur.structureAcademique.GestionStructureAcademiqueMetier;
 import lombok.RequiredArgsConstructor;
@@ -43,7 +44,7 @@ public class MatiereController {
     @PutMapping("/{codeMatiere}")
     public ResponseEntity<MatiereSortieDTO> modifierMatiere(
             @PathVariable String codeMatiere, 
-            @RequestBody MatiereEntrerDTO matiereDTO) {
+            @RequestBody MatiereModificationDTO matiereDTO) {
         MatiereSortieDTO result = metier.modifierMatiere(codeMatiere, matiereDTO);
         return ResponseEntity.ok(result);
     }

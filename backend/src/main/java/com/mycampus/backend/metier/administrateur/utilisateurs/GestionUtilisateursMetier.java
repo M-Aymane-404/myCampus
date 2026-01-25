@@ -1,8 +1,8 @@
 package com.mycampus.backend.metier.administrateur.utilisateurs;
 
-import com.mycampus.backend.dto.administrateur.DonneEntrer.AdministrateurEntrerDTO;
-import com.mycampus.backend.dto.administrateur.DonneEntrer.EtudiantEntrerDTO;
-import com.mycampus.backend.dto.administrateur.DonneEntrer.ProfesseurEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.AdministrateurEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.EtudiantEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.ProfesseurEntrerDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.AdministrateurSortieDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.ProfesseurSortieDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.EtudiantSortieDTO;

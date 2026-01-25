@@ -1,4 +1,4 @@
-package com.mycampus.backend.dto.administrateur.DonneEntrer;
+package com.mycampus.backend.dto.administrateur.DonneEntrer.Modification;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -10,9 +10,9 @@ import lombok.NoArgsConstructor;
 @Builder
 @Data
 
-public class ClasseEntrerDTO {
+public class ClasseModificationDTO {
     
-    private String codeClasse;
+
     private String nom;
     private String niveau;
     private Integer effectifMax;

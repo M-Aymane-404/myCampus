@@ -1,5 +1,6 @@
-package com.mycampus.backend.dto.administrateur.DonneEntrer;
+package com.mycampus.backend.dto.administrateur.DonneEntrer.Modification;
 
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.UtilisateurEntrerDto;
 import com.mycampus.backend.enumerations.EtatInscription;
 import com.mycampus.backend.enumerations.Semestre;
 import lombok.AllArgsConstructor;
@@ -15,7 +16,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-public class EtudiantEntrerDTO extends UtilisateurEntrerDto {
+public class EtudiantModificationDTO extends UtilisateurModificationDto {
     private String apogee;
     private String niveau;
     private Integer anneeInscription;

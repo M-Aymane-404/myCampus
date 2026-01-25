@@ -1,4 +1,4 @@
-package com.mycampus.backend.dto.administrateur.DonneEntrer;
+package com.mycampus.backend.dto.administrateur.DonneEntrer.Modification;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,9 +12,9 @@ import java.time.LocalDate;
 @Builder
 @Data
 
-public class DepartementEntrerDTO {
+public class DepartementModificationDTO {
 
-    private String codeDepartement;
+
     private String typeDepartement;
     private String description;
     private String chefDepartementPpr;

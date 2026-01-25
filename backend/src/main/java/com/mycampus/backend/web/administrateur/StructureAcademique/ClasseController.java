@@ -1,6 +1,7 @@
 package com.mycampus.backend.web.administrateur.StructureAcademique;
 
-import com.mycampus.backend.dto.administrateur.DonneEntrer.ClasseEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.ClasseEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.ClasseModificationDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.ClasseSortieDTO;
 import com.mycampus.backend.metier.administrateur.structureAcademique.GestionStructureAcademiqueMetier;
 import lombok.RequiredArgsConstructor;
@@ -44,7 +45,7 @@ public class ClasseController {
     @PutMapping("/{codeClasse}")
     public ResponseEntity<ClasseSortieDTO> modifierClasse(
             @PathVariable String codeClasse, 
-            @RequestBody ClasseEntrerDTO classeDTO) {
+            @RequestBody ClasseModificationDTO classeDTO) {
         ClasseSortieDTO result = metier.modifierClasse(codeClasse, classeDTO);
         return ResponseEntity.ok(result);
     }

@@ -14,13 +14,12 @@ import java.util.List;
 
 @NoArgsConstructor
 @AllArgsConstructor
-@MappedSuperclass
 @ToString(exclude = {"notifications"})
-@EqualsAndHashCode(exclude = {"notifications"})
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Utilisateur {
-    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
     
     @Column(nullable = false)

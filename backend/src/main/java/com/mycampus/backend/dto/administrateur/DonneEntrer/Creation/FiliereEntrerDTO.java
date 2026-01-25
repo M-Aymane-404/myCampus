@@ -1,4 +1,4 @@
-package com.mycampus.backend.dto.administrateur.DonneEntrer;
+package com.mycampus.backend.dto.administrateur.DonneEntrer.Creation;
 
 import com.mycampus.backend.enumerations.EtatStructure;
 import lombok.AllArgsConstructor;
