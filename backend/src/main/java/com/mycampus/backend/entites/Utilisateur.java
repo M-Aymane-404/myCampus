@@ -10,7 +10,8 @@ import java.util.List;
 
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
-@Data
+@Getter
+@Setter
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -42,7 +43,7 @@ public class Utilisateur {
     private String photo;
     
     @Column(nullable = false)
-    private Boolean enabled = true;
+    private Boolean active = true;
     
     private LocalDateTime dateCreation;
     

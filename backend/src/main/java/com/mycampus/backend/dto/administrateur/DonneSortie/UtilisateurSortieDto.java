@@ -29,7 +29,7 @@ public class UtilisateurSortieDto {
 
     private String photo;
 
-    private Boolean enabled ;
+    private Boolean active ;
 
     private LocalDateTime dateCreation;
 

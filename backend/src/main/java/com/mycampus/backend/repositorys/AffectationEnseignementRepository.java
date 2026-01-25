@@ -28,4 +28,6 @@ public interface AffectationEnseignementRepository extends JpaRepository<Affecta
     List<AffectationEnseignement> findByMatiere_CodeMatiere(String codeMatiere);
 
     List<AffectationEnseignement> findByClasse_CodeClasse(String codeClasse);
+
+    AffectationEnseignement findByMatiere_CodeMatiereAndClasse_CodeClasse(String codeMatiere, String codeClasse);
 }

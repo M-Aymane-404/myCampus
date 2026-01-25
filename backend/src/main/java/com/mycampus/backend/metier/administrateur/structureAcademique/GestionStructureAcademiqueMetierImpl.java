@@ -855,6 +855,9 @@
             }
         }
 
+
+
+
         @Override
         public List<AffectationEnseignementSortieDTO> listerAffectationsParClasse(String codeClasse) throws StructureAcademiqueException {
             if (codeClasse == null || codeClasse.trim().isEmpty()) {
@@ -886,6 +889,9 @@
                 throw new StructureAcademiqueException("Erreur lors de la recherche des affectations par matière: " + e.getMessage(), e);
             }
         }
+
+
+
 
         @Override
         public void desactiverAffectationEnseignement(Long id) throws StructureAcademiqueException {

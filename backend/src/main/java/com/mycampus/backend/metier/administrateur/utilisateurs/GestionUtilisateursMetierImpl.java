@@ -72,7 +72,7 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
         
         Administrateur administrateur = utilisateursMapper.FromAdministrateurEntrerVersAdministrateur(administrateurEntrerDTO);
         administrateur.setDateCreation(LocalDateTime.now());
-        administrateur.setEnabled(true);
+        administrateur.setActive(true);
       //  administrateur.setPassword(passwordEncoder.encode(administrateurDTO.getPassword()));
 
         
@@ -176,7 +176,7 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
         Administrateur administrateur = administrateurRepository.findByPpr(ppr).orElseThrow(() ->
                 new UtilisateursException("Administrateur introuvable avec le PPR: " + ppr));
 
-        administrateur.setEnabled(true);
+        administrateur.setActive(true);
         administrateurRepository.save(administrateur);
     }
 
@@ -189,7 +189,7 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
         Administrateur administrateur = administrateurRepository.findByPpr(ppr).orElseThrow(() ->
                 new UtilisateursException("Administrateur introuvable avec le PPR: " + ppr));
 
-        administrateur.setEnabled(false);
+        administrateur.setActive(false);
         administrateurRepository.save(administrateur);
     }
 
@@ -243,7 +243,7 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
 
 
 
-        professeur.setEnabled(true);
+        professeur.setActive(true);
         professeur.setDateCreation(LocalDateTime.now());
         professeur.setDateDerniereConnexion(null);
 
@@ -361,7 +361,7 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
         Professeur professeur = professeurRepository.findByPpr(ppr).orElseThrow(() ->
                 new UtilisateursException("Professeur introuvable avec le PPR: " + ppr));
 
-        professeur.setEnabled(true);
+        professeur.setActive(true);
         professeurRepository.save(professeur);
     }
 
@@ -374,7 +374,7 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
         Professeur professeur = professeurRepository.findByPpr(ppr).orElseThrow(() ->
                 new UtilisateursException("Professeur introuvable avec le PPR: " + ppr));
 
-        professeur.setEnabled(false);
+        professeur.setActive(false);
         professeurRepository.save(professeur);
     }
 
@@ -426,7 +426,7 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
                 ));
         etudiant.setClasse(classe);
 
-        etudiant.setEnabled(true);
+        etudiant.setActive(true);
         etudiant.setDateCreation(LocalDateTime.now());
         etudiant.setAnneeFinEtude(null);
 
@@ -546,7 +546,7 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
         Etudiant etudiant = etudiantRepository.findByApogee(apogee).orElseThrow(() ->
                 new UtilisateursException("Étudiant introuvable avec l'apogée: " + apogee));
 
-        etudiant.setEnabled(true);
+        etudiant.setActive(true);
         etudiantRepository.save(etudiant);
     }
 
@@ -559,7 +559,7 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
         Etudiant etudiant = etudiantRepository.findByApogee(apogee).orElseThrow(() ->
                 new UtilisateursException("Étudiant introuvable avec l'apogée: " + apogee));
 
-        etudiant.setEnabled(false);
+        etudiant.setActive(false);
         etudiantRepository.save(etudiant);
     }
 }
