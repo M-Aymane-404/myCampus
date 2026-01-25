@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { GraduationCap, Edit2, Trash2, Plus, ChevronRight, Home, Building2, Edit, FileText } from 'lucide-react';
+import { GraduationCap, Edit2, Trash2, Plus, ChevronRight, Home, Building2, Edit, FileText, Hash, User, Tag, Layers as LayersIcon } from 'lucide-react';
 import FormulaireModal from '../composants/communs/FormulaireModal';
 import ChampFormulaire from '../composants/communs/ChampFormulaire';
 import { apiStructure } from '../services/apiStructure';
 import { apiProfesseurs } from '../services/apiProfesseurs';
 import DetailsFiliere from './DetailsFiliere';
 import './DetailsDepartement.css';
+import './ModernAcademicRedesign.css';
 
 const DetailsDepartement = ({ departement, onRetour }) => {
     const [filieres, setFilieres] = useState([]);
@@ -185,19 +186,43 @@ const DetailsDepartement = ({ departement, onRetour }) => {
             </div>
 
             {/* Header Banner */}
-            <div className="details-header-banner">
-                <div className="details-header-content">
-                    <div className="details-header-info">
-                        <div className="details-header-badge">DÉPARTEMENT</div>
-                        <div className="details-header-id">ID: {departement.id || departement.codeDepartement}</div>
-                        <h1 className="details-header-title">
-                            {departement.typeDepartement || departement.codeDepartement}
-                        </h1>
-                        <p className="details-header-description">
-                            {departement.description || 'Informations détaillées sur cet élément structurel. Utilisez l\'explorateur pour naviguer dans les sous-catégories.'}
-                        </p>
-                    </div>
+            <div className="details-header-banner modern-banner">
+                <div className="banner-top">
+                    <div className="banner-badge">DÉPARTEMENT</div>
+                    <h1 className="banner-title">
+                        {departement.typeDepartement || departement.codeDepartement}
+                    </h1>
+                </div>
 
+                <div className="banner-stats-container">
+                    <div className="stat-item">
+                        <div className="stat-header">
+                            <Hash size={16} />
+                            CODE
+                        </div>
+                        <div className="stat-value">{departement.codeDepartement || 'N/A'}</div>
+                    </div>
+                    <div className="stat-item">
+                        <div className="stat-header">
+                            <User size={16} />
+                            CHEF DEPT
+                        </div>
+                        <div className="stat-value">{getProfesseurNom(departement.chefDepartementPpr)}</div>
+                    </div>
+                    <div className="stat-item">
+                        <div className="stat-header">
+                            <Tag size={16} />
+                            TYPE
+                        </div>
+                        <div className="stat-value">{departement.description || 'Scientifique'}</div>
+                    </div>
+                    <div className="stat-item">
+                        <div className="stat-header">
+                            <LayersIcon size={16} />
+                            FILIÈRES
+                        </div>
+                        <div className="stat-value">{filieres.length}</div>
+                    </div>
                 </div>
             </div>
 
@@ -251,7 +276,6 @@ const DetailsDepartement = ({ departement, onRetour }) => {
                                         <h3 className="filiere-card-title">
                                             {filiere.nom}
                                         </h3>
-                                        <p className="filiere-card-label">FILIÈRE (FIELD)</p>
                                     </div>
 
                                     {/* Footer */}

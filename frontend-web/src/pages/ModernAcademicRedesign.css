@@ -1,0 +1,203 @@
+/* Shared styles for Academic Details redesign */
+
+:root {
+    --dark-bg: #1a1b2e;
+    --card-bg-light: #f1f4ff;
+    --accent-blue: #6366f1;
+    --accent-purple: #7c3aed;
+    --text-muted: #94a3b8;
+    --text-light: #cbd5e1;
+}
+
+/* Redesigned Header Banner */
+.details-header-banner.modern-banner {
+    background: var(--dark-bg);
+    border-radius: 50px;
+    padding: 1.5rem;
+    margin-bottom: 3rem;
+    color: white;
+}
+
+.banner-top {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+}
+
+.banner-badge {
+    background: var(--accent-blue);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.banner-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.banner-stats-container {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 24px;
+    padding: 2rem;
+    display: flex;
+    justify-content: space-around;
+    gap: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.stat-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.stat-header svg {
+    color: var(--accent-blue);
+}
+
+.stat-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: white !important;
+}
+
+/* Redesigned Matière Cards */
+.matiere-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 2rem;
+}
+
+.matiere-card-modern {
+    background: white;
+    border-radius: 32px;
+    padding: 1.2rem;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+    position: relative;
+    transition: transform 0.3s ease;
+}
+
+.matiere-card-modern:hover {
+    transform: translateY(-5px);
+}
+
+.card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+}
+
+.card-icon-box {
+    width: 56px;
+    height: 56px;
+    background: var(--card-bg-light);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+}
+
+.card-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.action-btn-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-assign {
+    background: #eef2ff;
+    color: #4f46e5;
+}
+
+.btn-delete {
+    background: #fff1f2;
+    color: #e11d48;
+}
+
+.card-main h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 1rem 0;
+}
+
+.card-meta {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+}
+
+.card-prof {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--accent-blue);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* New Card Placeholder */
+.matiere-card-new {
+    border: 2px dashed #e2e8f0;
+    background: transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    gap: 1rem;
+    min-height: 240px;
+}
+
+.new-icon-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 2px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+}
+
+.new-text {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}

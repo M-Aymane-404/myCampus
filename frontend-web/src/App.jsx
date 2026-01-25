@@ -15,7 +15,6 @@ import GestionAnnoncesAdmin from './pages/GestionAnnoncesAdmin';
 import TableauDeBordProfesseur from './pages/TableauDeBordProfesseur';
 import GestionCoursProfesseur from './pages/GestionCoursProfesseur';
 import GestionNotesProfesseur from './pages/GestionNotesProfesseur';
-import CalendrierAcademiqueProfesseur from './pages/CalendrierAcademiqueProfesseur';
 import GestionPresenceProfesseur from './pages/GestionPresenceProfesseur';
 import GestionAnnoncesProfesseur from './pages/GestionAnnoncesProfesseur';
 import ProfilPage from './pages/ProfilPage';
@@ -181,7 +180,7 @@ function App() {
       case 'notes':
         return <GestionNotesProfesseur />;
       case 'calendrier':
-        return <CalendrierAcademiqueProfesseur />;
+        return <GestionEmploiTemps />;
       case 'presence':
         return <GestionPresenceProfesseur />;
       case 'annonces':

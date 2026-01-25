@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { BookOpen, Edit2, Trash2, Plus, ChevronRight, Home, Building2, GraduationCap, Layers, Edit, FileText } from 'lucide-react';
+import { BookOpen, Edit2, Trash2, Plus, ChevronRight, Home, Building2, GraduationCap, Layers, Edit, FileText, Hash, Calendar, Users, GraduationCap as GraduationCapIcon } from 'lucide-react';
 import FormulaireModal from '../composants/communs/FormulaireModal';
 import ChampFormulaire from '../composants/communs/ChampFormulaire';
 import { apiStructure } from '../services/apiStructure';
 import DetailsModule from './DetailsModule';
 import './DetailsClasse.css';
+import './ModernAcademicRedesign.css';
 
 const DetailsClasse = ({ classe, filiere, departement, onRetour }) => {
     const [modules, setModules] = useState([]);
@@ -181,19 +182,43 @@ const DetailsClasse = ({ classe, filiere, departement, onRetour }) => {
             </div>
 
             {/* Header Banner */}
-            <div className="details-header-banner">
-                <div className="details-header-content">
-                    <div className="details-header-info">
-                        <div className="details-header-badge">CLASSE</div>
-                        <div className="details-header-id">ID: {classe.id || classe.codeClasse}</div>
-                        <h1 className="details-header-title">
-                            {classe.nom}
-                        </h1>
-                        <p className="details-header-description">
-                            Informations détaillées sur cet élément structurel. Utilisez l'explorateur pour naviguer dans les sous-catégories.
-                        </p>
-                    </div>
+            <div className="details-header-banner modern-banner">
+                <div className="banner-top">
+                    <div className="banner-badge">CLASSE</div>
+                    <h1 className="banner-title">
+                        {classe.nom}
+                    </h1>
+                </div>
 
+                <div className="banner-stats-container">
+                    <div className="stat-item">
+                        <div className="stat-header">
+                            <Hash size={16} />
+                            CODE
+                        </div>
+                        <div className="stat-value">{classe.codeClasse || 'N/A'}</div>
+                    </div>
+                    <div className="stat-item">
+                        <div className="stat-header">
+                            <Calendar size={16} />
+                            ANNÉE UNIV
+                        </div>
+                        <div className="stat-value">{classe.anneeUniversitaire || '2023/2024'}</div>
+                    </div>
+                    <div className="stat-item">
+                        <div className="stat-header">
+                            <Users size={16} />
+                            EFFECTIF MAX
+                        </div>
+                        <div className="stat-value">{classe.effectifMax || 35}</div>
+                    </div>
+                    <div className="stat-item">
+                        <div className="stat-header">
+                            <GraduationCapIcon size={16} />
+                            NIVEAU
+                        </div>
+                        <div className="stat-value">{classe.niveau || '3ème Année'}</div>
+                    </div>
                 </div>
             </div>
 
@@ -259,7 +284,6 @@ const DetailsClasse = ({ classe, filiere, departement, onRetour }) => {
                                         <h3 className="module-card-title">
                                             {module.nom}
                                         </h3>
-                                        <p className="module-card-label">MODULE ACADÉMIQUE</p>
                                     </div>
 
                                     {/* Footer */}

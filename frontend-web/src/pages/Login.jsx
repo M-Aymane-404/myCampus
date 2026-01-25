@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { GraduationCap, Eye, EyeOff } from 'lucide-react';
+import { GraduationCap, Eye, EyeOff, LayoutDashboard, ChevronRight } from 'lucide-react';
 import { apiAuth } from '../services/apiAuth';
 import './Login.css';
 
@@ -21,7 +21,7 @@ const Login = ({ onLogin }) => {
 
   const gererSoumission = async (e) => {
     e.preventDefault();
-    
+
     // Validation basique
     if (!formData.email || !formData.password) {
       setErreur('Veuillez remplir tous les champs');
@@ -35,12 +35,12 @@ const Login = ({ onLogin }) => {
       // MOCK LOGIN MODE: Use role from dropdown, bypass backend authentication
       // Call mock login which accepts any credentials
       const data = await apiAuth.mockLogin(formData.email, formData.password, formData.role);
-      
+
       // Use the role selected in the dropdown (not from backend)
       const role = formData.role;
-      
+
       console.log('Login successful with role:', role);
-      
+
       // Call the onLogin callback with the selected role
       if (onLogin) {
         onLogin({
@@ -53,7 +53,7 @@ const Login = ({ onLogin }) => {
       console.error('Login error:', error);
       // Better error message handling
       let errorMessage = 'Erreur de connexion. Vérifiez vos identifiants.';
-      
+
       if (error.message) {
         if (error.message.includes('500') || error.message.includes('Erreur interne')) {
           errorMessage = 'Erreur interne du serveur. Veuillez contacter l\'administrateur.';
@@ -65,7 +65,7 @@ const Login = ({ onLogin }) => {
           errorMessage = error.message;
         }
       }
-      
+
       setErreur(errorMessage);
     } finally {
       setChargement(false);
@@ -73,94 +73,108 @@ const Login = ({ onLogin }) => {
   };
 
   return (
-    <div className="login-container">
-      <div className="login-card">
-        <div className="login-header">
-          <div className="login-logo">
-            <div className="login-logo-icon">
-              <GraduationCap size={40} />
+    <div className="login-screen">
+      <div className="login-main-container">
+        {/* Left Side: Brand & Motto */}
+        <div className="login-left-pane">
+          <div className="brand-header">
+            <div className="brand-logo-m">M</div>
+            <span className="brand-name">MyCampus</span>
+          </div>
+
+          <div className="motto-container">
+            <h1 className="motto-text">
+              L'excellence<br />
+              académique à<br />
+              portée de clic.
+            </h1>
+            <p className="motto-subtext">
+              Une plateforme moderne pour connecter professeurs, étudiants et administration.
+            </p>
+          </div>
+
+          {/* Floating Analytics Card */}
+          <div className="analytics-card-floating">
+            <div className="analytics-icon-box">
+              <LayoutDashboard size={24} />
             </div>
-            <h1 className="login-title">MyCampus</h1>
-            <p className="login-subtitle">University Management System</p>
+            <div className="analytics-info">
+              <h4>Dashboard Analytics</h4>
+              <p>Suivez vos progrès en temps réel.</p>
+            </div>
           </div>
         </div>
 
-        <form className="login-form" onSubmit={gererSoumission}>
-          {erreur && (
-            <div className="login-erreur">
-              {erreur}
+        {/* Right Side: Login Form */}
+        <div className="login-right-pane">
+          <div className="login-form-wrapper">
+            <div className="login-greeting">
+              <h2>Bon retour !</h2>
+              <p>Connectez-vous pour continuer l'aventure MyCampus.</p>
             </div>
-          )}
 
-          <div className="login-form-group">
-            <label htmlFor="email" className="login-label">
-              Email / Username
-            </label>
-            <input
-              type="text"
-              id="email"
-              name="email"
-              className="login-input"
-              value={formData.email}
-              onChange={gererChangement}
-              placeholder="email@univ.ma"
-              required
-            />
-          </div>
+            <form className="modern-login-form" onSubmit={gererSoumission}>
+              {erreur && <div className="modern-error-msg">{erreur}</div>}
 
-          <div className="login-form-group">
-            <label htmlFor="password" className="login-label">
-              Password
-            </label>
-            <div className="login-password-container">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                id="password"
-                name="password"
-                className="login-input"
-                value={formData.password}
-                onChange={gererChangement}
-                placeholder="Enter your password"
-                required
-              />
-              <button
-                type="button"
-                className="login-password-toggle"
-                onClick={() => setShowPassword(!showPassword)}
-                aria-label="Toggle password visibility"
-              >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              <div className="modern-form-group">
+                <label>E-MAIL INSTITUTIONNEL</label>
+                <input
+                  type="text"
+                  name="email"
+                  value={formData.email}
+                  onChange={gererChangement}
+                  placeholder="demo@mycampus.edu"
+                  required
+                />
+              </div>
+
+              <div className="modern-form-group">
+                <label>MOT DE PASSE</label>
+                <div className="modern-password-wrapper">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    name="password"
+                    value={formData.password}
+                    onChange={gererChangement}
+                    placeholder="••••••••"
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="modern-pass-toggle"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="modern-form-group">
+                <label>VOTRE RÔLE</label>
+                <div className="role-selection-group">
+                  {['admin', 'professor', 'student'].map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      className={`role-btn ${formData.role === r ? 'active' : ''}`}
+                      onClick={() => setFormData(prev => ({ ...prev, role: r }))}
+                    >
+                      {r.charAt(0) + r.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <button type="submit" className="modern-submit-btn" disabled={chargement}>
+                <span>{chargement ? 'Connexion en cours...' : 'Se connecter'}</span>
+                {!chargement && <ChevronRight size={20} />}
               </button>
+            </form>
+
+            <div className="login-help-footer">
+              <p>Besoin d'aide ? <a href="#">Accéder au support informatique</a></p>
             </div>
           </div>
-
-          <div className="login-form-group">
-            <label htmlFor="role" className="login-label">
-              Role
-            </label>
-            <select
-              id="role"
-              name="role"
-              className="login-input"
-              value={formData.role}
-              onChange={gererChangement}
-              required
-            >
-              <option value="admin">Administrator</option>
-              <option value="professor">Professor</option>
-              <option value="student">Student</option>
-            </select>
-          </div>
-
-          <button type="submit" className="login-button" disabled={chargement}>
-            {chargement ? 'Connexion...' : 'Sign In'}
-          </button>
-        </form>
-
-        <div className="login-footer">
-          <p className="login-footer-text">
-            Forgot your password? <a href="#" className="login-link">Contact IT Support</a>
-          </p>
         </div>
       </div>
     </div>

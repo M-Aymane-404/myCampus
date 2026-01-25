@@ -116,27 +116,7 @@
     margin: 0;
 }
 
-.btn-nouvelle-matiere {
-    background: #6366f1;
-    color: white;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 12px;
-    font-size: 0.875rem;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2);
-}
 
-.btn-nouvelle-matiere:hover {
-    background: #4f46e5;
-    transform: translateY(-2px);
-    box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
-}
 
 /* Matières List */
 .matieres-list {
