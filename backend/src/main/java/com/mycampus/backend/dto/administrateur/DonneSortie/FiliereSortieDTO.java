@@ -13,7 +13,6 @@ public class FiliereSortieDTO {
     private String codeFiliere;
     private  String nom;
     private  String description;
-    private String emploiTemps;
     private  String dureeFormation;
     private  String niveauDiplome;
     private  EtatStructure etat;

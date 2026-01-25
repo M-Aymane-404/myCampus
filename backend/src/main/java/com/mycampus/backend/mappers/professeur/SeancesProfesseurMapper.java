@@ -1,4 +1,4 @@
-package com.mycampus.backend.mappers;
+package com.mycampus.backend.mappers.professeur;
 
 
 

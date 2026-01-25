@@ -26,8 +26,7 @@ public class Filiere {
     
     private String description;
     
-    private String emploiTemps;
-    
+
     @Column(nullable = false)
     private String dureeFormation;
     

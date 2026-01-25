@@ -15,7 +15,7 @@
     import com.mycampus.backend.entites.*;
     import com.mycampus.backend.entites.Module;
     import com.mycampus.backend.repositorys.*;
-    import com.mycampus.backend.mappers.StructureMapper;
+    import com.mycampus.backend.mappers.administrateur.StructureMapper;
     import com.mycampus.backend.exceptions.StructureAcademiqueException;
     import lombok.RequiredArgsConstructor;
     import org.springframework.stereotype.Service;
@@ -23,7 +23,6 @@
 
     import java.time.LocalDate;
     import java.util.List;
-    import java.util.Optional;
 
     @Service
     @Transactional
@@ -310,9 +309,7 @@
             if (filiereEntrerDTO.getDescription() != null) {
                 filiere.setDescription(filiereEntrerDTO.getDescription());
             }
-            if (filiereEntrerDTO.getEmploiTemps() != null) {
-                filiere.setEmploiTemps(filiereEntrerDTO.getEmploiTemps());
-            }
+
             if (filiereEntrerDTO.getDureeFormation() != null && !filiereEntrerDTO.getDureeFormation().trim().isEmpty()) {
                 filiere.setDureeFormation(filiereEntrerDTO.getDureeFormation());
             }
@@ -455,6 +452,9 @@
             }
             if (classeEntrerDTO.getEffectifMax() != null) {
                 classe.setEffectifMax(classeEntrerDTO.getEffectifMax());
+            }
+            if (classeEntrerDTO.getEmploiTemps() != null) {
+                classe.setEmploiTemps(classeEntrerDTO.getEmploiTemps());
             }
 
             Classe classeModifiee = classeRepository.save(classe);

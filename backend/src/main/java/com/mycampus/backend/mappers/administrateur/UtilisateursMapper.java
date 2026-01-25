@@ -1,4 +1,4 @@
-package com.mycampus.backend.mappers;
+package com.mycampus.backend.mappers.administrateur;
 
 import com.mycampus.backend.dto.administrateur.DonneEntrer.AdministrateurEntrerDTO;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.EtudiantEntrerDTO;
