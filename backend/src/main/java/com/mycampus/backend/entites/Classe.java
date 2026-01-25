@@ -32,7 +32,10 @@ public class Classe {
     
     @Column(nullable = false)
     private Integer effectifMax;
-    
+
+    private String emploiTemps;
+
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "filiere_id", nullable = false)
     private Filiere filiere;

@@ -13,6 +13,7 @@ public class ClasseSortieDTO {
     private  String nom;
     private  String niveau;
     private  Integer effectifMax;
+    private String emploiTemps;
     private  String codeFiliere;
     private  String filiereNom;
     private  String anneeUniversitaire;

@@ -1,4 +1,4 @@
-package com.mycampus.backend.mappers;
+package com.mycampus.backend.mappers.professeur;
 
 import com.mycampus.backend.dto.professeur.DonneeSortie.fichiersSeance.FichierSeanceSortieDTO;
 import com.mycampus.backend.entites.FichierSeance;

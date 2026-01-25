@@ -14,6 +14,7 @@ import java.util.List;
 
 @NoArgsConstructor
 @AllArgsConstructor
+@MappedSuperclass
 @ToString(exclude = {"notifications"})
 @EqualsAndHashCode(exclude = {"notifications"})
 public class Utilisateur {

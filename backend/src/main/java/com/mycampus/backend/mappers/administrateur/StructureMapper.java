@@ -1,5 +1,6 @@
-package com.mycampus.backend.mappers;
+package com.mycampus.backend.mappers.administrateur;
 
+import com.mycampus.backend.dto.etudiant.DonneeSortie.SeanceSortieDTO;
 import com.mycampus.backend.entites.Departement;
 import com.mycampus.backend.entites.Filiere;
 import com.mycampus.backend.entites.Classe;
@@ -19,7 +20,6 @@ import com.mycampus.backend.dto.administrateur.DonneSortie.ClasseSortieDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.ModuleSortieDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.MatiereSortieDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.AffectationEnseignementSortieDTO;
-import com.mycampus.backend.dto.etudient.DonneeEntrer.SeanceDTO;
 import com.mycampus.backend.repositorys.*;
 import org.springframework.beans.BeanUtils;
 import lombok.RequiredArgsConstructor;
@@ -103,7 +103,6 @@ public class StructureMapper {
         filiereSortieDTO.setCodeFiliere(filiere.getCodeFiliere());
         filiereSortieDTO.setNom(filiere.getNom());
         filiereSortieDTO.setDescription(filiere.getDescription());
-        filiereSortieDTO.setEmploiTemps(filiere.getEmploiTemps());
         filiereSortieDTO.setDureeFormation(filiere.getDureeFormation());
         filiereSortieDTO.setNiveauDiplome(filiere.getNiveauDiplome());
         filiereSortieDTO.setEtat(filiere.getEtat());
@@ -161,6 +160,8 @@ public class StructureMapper {
         classeSortieDTO.setNom(classe.getNom());
         classeSortieDTO.setNiveau(classe.getNiveau());
         classeSortieDTO.setAnneeUniversitaire(classe.getAnneeUniversitaire());
+        classeSortieDTO.setEmploiTemps(classe.getEmploiTemps());
+
         classeSortieDTO.setEffectifMax(classe.getEffectifMax());
         
         // Mapping des relations par codes
@@ -339,12 +340,12 @@ public class StructureMapper {
 
     // ==================== SEANCE ====================
 
-    public SeanceDTO FromSeanceVersSeanceDTO(Seance seance) {
+    public SeanceSortieDTO FromSeanceVersSeanceSortieDTO(Seance seance) {
         if (seance == null) {
             return null;
         }
 
-        SeanceDTO seanceDTO = new SeanceDTO();
+        SeanceSortieDTO seanceDTO = new SeanceSortieDTO();
         BeanUtils.copyProperties(seance, seanceDTO);
         
         // Mapping manuel de l'ID de l'affectation
@@ -355,13 +356,13 @@ public class StructureMapper {
         return seanceDTO;
     }
 
-    public List<SeanceDTO> FromListeSeanceVersListeSeanceDTO(List<Seance> seances) {
+    public List<SeanceSortieDTO> FromListeSeanceVersListeSeanceSortieDTO(List<Seance> seances) {
         if (seances == null) {
             return List.of();
         }
         
         return seances.stream()
-            .map(this::FromSeanceVersSeanceDTO)
+            .map(this::FromSeanceVersSeanceSortieDTO)
             .collect(Collectors.toList());
     }
 }

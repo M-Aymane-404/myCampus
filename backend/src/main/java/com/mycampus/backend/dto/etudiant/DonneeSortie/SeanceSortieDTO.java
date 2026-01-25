@@ -1,7 +1,11 @@
-package com.mycampus.backend.dto.etudient.DonneeEntrer;
+package com.mycampus.backend.dto.etudiant.DonneeSortie;
 
+import com.mycampus.backend.dto.administrateur.DonneSortie.ModuleSortieDTO;
 import com.mycampus.backend.enumerations.TypeSeance;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
@@ -9,7 +13,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Builder
 @Data
-public class SeanceDTO {
+public class SeanceSortieDTO {
     
     private Long id;
     
@@ -28,4 +32,10 @@ public class SeanceDTO {
     private String contenu;
     
     private Long affectationEnseignementId;
+    private String codeClasse;
+    private String professeurPpr;
+    private String professeurNom;
+    private String professeurPrenom;
+    private String codeMatiere;
+
 }

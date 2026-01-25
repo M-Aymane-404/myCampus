@@ -18,4 +18,6 @@ public class ClasseEntrerDTO {
     private Integer effectifMax;
     private String codeFiliere;
     private String anneeUniversitaire;
+    private String emploiTemps;
+
 }
