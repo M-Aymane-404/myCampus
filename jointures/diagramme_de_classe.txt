@@ -110,7 +110,7 @@ direction LR
 	    -codeFiliere: String
 	    -nom: String
 	    -description: String
-	    -emploiTemps: String
+	  
 	    -dureeFormation: int
 	    -niveauDiplome: String
 	    -etat: EtatStructure
@@ -122,6 +122,7 @@ direction LR
 	    -nom: String
 	    -niveau: String
 	    -anneeUniversitaire: String
+		  -emploiTemps: String
 	    -effectifMax: int
     }
 
@@ -143,9 +144,7 @@ direction LR
     }
 
     class AffectationEnseignement {
-	    -id: Long
-	    -anneeUniversitaire: String
-	    -semestre: Semestre
+	    -id: Long	   
 	    -active: boolean
     }
 
@@ -171,13 +170,13 @@ direction LR
 
     class Examen {
 	    -id: Long
-	    -semestre: String
+	    -semestre: Semestre
 	    -dateExamen: LocalDateTime
 	    -numeroExamen: int
 	    -typeExamen: TypeExamen
 	    -duree: int
 	    -etat: EtatExamen
-	    -feuilleCorrection: String
+	    -corrigePath: String
     }
 
     class Resultat {
@@ -185,7 +184,7 @@ direction LR
 	    -note: Double
 	    -datePublication: LocalDateTime
 	    -valide: boolean
-	    -fichierExam: String
+	    -copieEtudiantPath: String
     }
 
     class Presence {
@@ -234,11 +233,12 @@ direction LR
     Classe "1" -- "1..*" Etudiant : regroupe
     Module "1" -- "1..*" Matiere : compose
     Module ..> Semestre : uses
+	  Examen ..> Semestre : uses
     Etudiant ..> Semestre : uses
     Professeur "1" -- "0..*" AffectationEnseignement : affecte
     Classe "1" -- "0..*" AffectationEnseignement : concerne
     Matiere "1" -- "0..*" AffectationEnseignement : porte
-    AffectationEnseignement ..> TypeSeance : uses
+
     AffectationEnseignement ..> Semestre : uses
     Seance "1" -- "0..*" FichierSeance : contient
     Seance ..> TypeSeance : uses

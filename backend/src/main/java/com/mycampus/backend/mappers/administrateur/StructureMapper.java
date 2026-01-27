@@ -44,10 +44,10 @@ public class StructureMapper {
         BeanUtils.copyProperties(departement, departementSortieDTO);
         
         // Mapping des codes métier
-        departementSortieDTO.setCodeDepartement(departement.getCodeDepartement());
+      /*  departementSortieDTO.setCodeDepartement(departement.getCodeDepartement());
         departementSortieDTO.setTypeDepartement(departement.getTypeDepartement());
         departementSortieDTO.setDescription(departement.getDescription());
-        departementSortieDTO.setDateCreation(departement.getDateCreation());
+        departementSortieDTO.setDateCreation(departement.getDateCreation());*/
         departementSortieDTO.setNbFilieres( filiereRepository.countByDepartement_CodeDepartement(departement.getCodeDepartement()));
         departementSortieDTO.setNbEtudiants(etudiantRepository.countEtudiantsByCodeDepartement(departement.getCodeDepartement()));
 
@@ -105,12 +105,12 @@ public class StructureMapper {
         BeanUtils.copyProperties(filiere, filiereSortieDTO);
         
         // Mapping des codes métier
-        filiereSortieDTO.setCodeFiliere(filiere.getCodeFiliere());
+       /* filiereSortieDTO.setCodeFiliere(filiere.getCodeFiliere());
         filiereSortieDTO.setNom(filiere.getNom());
         filiereSortieDTO.setDescription(filiere.getDescription());
         filiereSortieDTO.setDureeFormation(filiere.getDureeFormation());
         filiereSortieDTO.setNiveauDiplome(filiere.getNiveauDiplome());
-        filiereSortieDTO.setEtat(filiere.getEtat());
+        filiereSortieDTO.setEtat(filiere.getEtat());*/
         filiereSortieDTO.setNbModules(moduleRepository.countByFiliere_CodeFiliere(filiere.getCodeFiliere()));
         filiereSortieDTO.setNbEtudiants(etudiantRepository.countEtudiantsByCodeFiliere(filiere.getCodeFiliere()));
         
@@ -172,11 +172,11 @@ public class StructureMapper {
         BeanUtils.copyProperties(classe, classeSortieDTO);
         
         // Mapping des codes métier
-        classeSortieDTO.setCodeClasse(classe.getCodeClasse());
+       /* classeSortieDTO.setCodeClasse(classe.getCodeClasse());
         classeSortieDTO.setNom(classe.getNom());
         classeSortieDTO.setNiveau(classe.getNiveau());
         classeSortieDTO.setAnneeUniversitaire(classe.getAnneeUniversitaire());
-        classeSortieDTO.setEmploiTemps(classe.getEmploiTemps());
+        classeSortieDTO.setEmploiTemps(classe.getEmploiTemps());*/
 
         classeSortieDTO.setEffectifMax(classe.getEffectifMax());
         
@@ -232,11 +232,11 @@ public class StructureMapper {
         BeanUtils.copyProperties(module, moduleSortieDTO);
         
         // Mapping des codes métier
-        moduleSortieDTO.setCodeModule(module.getCodeModule());
+     /*   moduleSortieDTO.setCodeModule(module.getCodeModule());
         moduleSortieDTO.setNom(module.getNom());
         moduleSortieDTO.setDescription(module.getDescription());
         moduleSortieDTO.setSemestre(module.getSemestre());
-        moduleSortieDTO.setCoefficient(module.getCoefficient());
+        moduleSortieDTO.setCoefficient(module.getCoefficient());*/
         moduleSortieDTO.setNbMatieres(matiereRepository.countByModule_CodeModule(moduleSortieDTO.getCodeModule()));
 
         // Mapping des relations par codes
