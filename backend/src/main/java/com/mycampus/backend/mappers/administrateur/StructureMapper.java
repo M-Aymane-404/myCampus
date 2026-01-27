@@ -1,32 +1,23 @@
 package com.mycampus.backend.mappers.administrateur;
 
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.*;
+import com.mycampus.backend.dto.administrateur.DonneSortie.*;
 import com.mycampus.backend.dto.etudiant.DonneeSortie.SeanceSortieDTO;
-import com.mycampus.backend.entites.Departement;
-import com.mycampus.backend.entites.Filiere;
-import com.mycampus.backend.entites.Classe;
-import com.mycampus.backend.entites.Module;
-import com.mycampus.backend.entites.Matiere;
-import com.mycampus.backend.entites.AffectationEnseignement;
-import com.mycampus.backend.entites.Seance;
+import com.mycampus.backend.entites.*;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.DepartementEntrerDTO;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.FiliereEntrerDTO;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.ClasseEntrerDTO;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.ModuleEntrerDTO;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.MatiereEntrerDTO;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.AffectationEnseignementEntrerDTO;
-import com.mycampus.backend.dto.administrateur.DonneSortie.DepartementSortieDTO;
-import com.mycampus.backend.dto.administrateur.DonneSortie.FiliereSortieDTO;
-import com.mycampus.backend.dto.administrateur.DonneSortie.ClasseSortieDTO;
-import com.mycampus.backend.dto.administrateur.DonneSortie.ModuleSortieDTO;
-import com.mycampus.backend.dto.administrateur.DonneSortie.MatiereSortieDTO;
-import com.mycampus.backend.dto.administrateur.DonneSortie.AffectationEnseignementSortieDTO;
+import com.mycampus.backend.entites.Module;
 import com.mycampus.backend.repositorys.*;
 import org.springframework.beans.BeanUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Component
@@ -39,6 +30,8 @@ public class StructureMapper {
     private final EtudiantRepository etudiantRepository;
     private final MatiereRepository matiereRepository;
     private final ModuleRepository moduleRepository;
+    private final AffectationEnseignementRepository affectationEnseignementRepository;
+    private final  ProfesseurRepository professeurRepository;
 
     // ==================== DEPARTEMENT ====================
 
@@ -298,10 +291,10 @@ public class StructureMapper {
         BeanUtils.copyProperties(matiere, matiereSortieDTO);
         
         // Mapping des codes métier
-        matiereSortieDTO.setCodeMatiere(matiere.getCodeMatiere());
+      /*  matiereSortieDTO.setCodeMatiere(matiere.getCodeMatiere());
         matiereSortieDTO.setNom(matiere.getNom());
         matiereSortieDTO.setDescription(matiere.getDescription());
-        matiereSortieDTO.setCoefficient(matiere.getCoefficient());
+        matiereSortieDTO.setCoefficient(matiere.getCoefficient());*/
         
         // Mapping des relations par codes
         if (matiere.getModule() != null) {
@@ -310,6 +303,38 @@ public class StructureMapper {
         }
         
         return matiereSortieDTO;
+    }
+
+    public MatiereSortieAvecProfDTO FromMatiereVersMatiereSortieAvecProfDTO(Matiere matiere,String codeClasse) {
+        if (matiere == null) {
+            return null;
+        }
+
+        MatiereSortieAvecProfDTO matiereSortieAvecProfDTO = new MatiereSortieAvecProfDTO();
+        BeanUtils.copyProperties(matiere, matiereSortieAvecProfDTO);
+
+        // Mapping des codes métier
+      /*  matiereSortieAvecProfDTO.setCodeMatiere(matiere.getCodeMatiere());
+        matiereSortieAvecProfDTO.setNom(matiere.getNom());
+        matiereSortieAvecProfDTO.setDescription(matiere.getDescription());
+        matiereSortieAvecProfDTO.setCoefficient(matiere.getCoefficient());*/
+
+        // Mapping des relations par codes
+
+       AffectationEnseignement affectationEnseignement =  affectationEnseignementRepository.findByMatiere_CodeMatiereAndClasse_CodeClasse(matiere.getCodeMatiere(), codeClasse);
+        if (affectationEnseignement != null) {
+            ProfesseurMiniSortieDTO prof =  new ProfesseurMiniSortieDTO();
+           prof.setPpr(affectationEnseignement.getProfesseur().getPpr());
+           prof.setNom(affectationEnseignement.getProfesseur().getNom());
+           prof.setPrenom(affectationEnseignement.getProfesseur().getPrenom());
+
+
+            matiereSortieAvecProfDTO.setProfesseur(prof);
+        }else {
+            matiereSortieAvecProfDTO.setProfesseur(null);
+        }
+
+        return matiereSortieAvecProfDTO;
     }
 
     public List<MatiereSortieDTO> FromListeMatiereVersListeMatiereSortieDTO(List<Matiere> matieres) {
@@ -321,6 +346,7 @@ public class StructureMapper {
             .map(this::FromMatiereVersMatiereSortieDTO)
             .collect(Collectors.toList());
     }
+
 
     public Matiere FromMatiereEntrerVersMatiere(MatiereEntrerDTO matiereEntrerDTO) {
         if (matiereEntrerDTO == null) {

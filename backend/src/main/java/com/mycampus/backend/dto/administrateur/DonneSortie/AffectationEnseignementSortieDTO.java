@@ -10,8 +10,6 @@ import lombok.*;
 public class AffectationEnseignementSortieDTO {
     
     private Long id;
-    private String anneeUniversitaire;
-    private Semestre semestre;
 
     private Boolean active;
     private String professeurPpr;

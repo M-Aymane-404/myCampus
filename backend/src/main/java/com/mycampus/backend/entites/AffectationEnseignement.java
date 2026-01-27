@@ -23,12 +23,7 @@ public class AffectationEnseignement {
     @EqualsAndHashCode.Include
     private Long id;
     
-    @Column(nullable = false)
-    private String anneeUniversitaire;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Semestre semestre;
     
 
     

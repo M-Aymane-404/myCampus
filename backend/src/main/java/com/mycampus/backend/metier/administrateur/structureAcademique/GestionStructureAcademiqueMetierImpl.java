@@ -7,12 +7,7 @@
     import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.MatiereEntrerDTO;
     import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.AffectationEnseignementEntrerDTO;
     import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.*;
-    import com.mycampus.backend.dto.administrateur.DonneSortie.DepartementSortieDTO;
-    import com.mycampus.backend.dto.administrateur.DonneSortie.FiliereSortieDTO;
-    import com.mycampus.backend.dto.administrateur.DonneSortie.ClasseSortieDTO;
-    import com.mycampus.backend.dto.administrateur.DonneSortie.ModuleSortieDTO;
-    import com.mycampus.backend.dto.administrateur.DonneSortie.MatiereSortieDTO;
-    import com.mycampus.backend.dto.administrateur.DonneSortie.AffectationEnseignementSortieDTO;
+    import com.mycampus.backend.dto.administrateur.DonneSortie.*;
     import com.mycampus.backend.entites.*;
     import com.mycampus.backend.entites.Module;
     import com.mycampus.backend.repositorys.*;
@@ -654,6 +649,24 @@
         }
 
         @Override
+        @Transactional(readOnly = true)
+        public  List<MatiereSortieAvecProfDTO> trouverMatieresParProfAffecterEtModule(String codeModule, String codeClasse) throws StructureAcademiqueException{
+            if (codeModule == null || codeModule.trim().isEmpty()) {
+                throw new StructureAcademiqueException("Le code du module est obligatoire");
+            }
+            if (codeClasse == null || codeClasse.trim().isEmpty()) {
+                throw new StructureAcademiqueException("Le code du module est obligatoire");
+            }
+
+
+                List<Matiere> matieres = matiereRepository.findByModule_CodeModule(codeModule);
+
+            return  matieres.stream()
+                    .map(m -> structureMapper.FromMatiereVersMatiereSortieAvecProfDTO(m,codeClasse)).toList();
+
+        }
+
+        @Override
         public MatiereSortieDTO modifierMatiere(String codeMatiere, MatiereModificationDTO matiereModificationDTO) throws StructureAcademiqueException {
             if (codeMatiere == null || codeMatiere.trim().isEmpty()) {
                 throw new StructureAcademiqueException("Le code de la matière est obligatoire");
@@ -718,12 +731,8 @@
                 throw new StructureAcademiqueException("l'affectation ne peut pas être null ");
             }
 
-            if (affectationEnseignementEntrerDTO.getAnneeUniversitaire() == null || affectationEnseignementEntrerDTO.getAnneeUniversitaire().trim().isEmpty()) {
-                throw new StructureAcademiqueException("Année Universitaire est obligatoire");
-            }
-            if(affectationEnseignementEntrerDTO.getSemestre() == null){
-                throw new StructureAcademiqueException("Semestre est obligatoire");
-            }
+
+
 
             if(affectationEnseignementEntrerDTO.getProfesseurPpr() == null || affectationEnseignementEntrerDTO.getProfesseurPpr().trim().isEmpty()) {
                 throw new StructureAcademiqueException("Professeur est obligatoire");
@@ -760,14 +769,9 @@
             AffectationEnseignement affectationExistante = affectationEnseignementRepository.findById(id).orElseThrow(() ->
                     new StructureAcademiqueException("Affectation introuvable avec l'identifiant: " + id));
 
-            // Mise à jour des champs autorisés (null-safe)
-            if (affectationEnseignementModificationDTO.getAnneeUniversitaire() != null && !affectationEnseignementModificationDTO.getAnneeUniversitaire().trim().isEmpty()) {
-                affectationExistante.setAnneeUniversitaire(affectationEnseignementModificationDTO.getAnneeUniversitaire());
-            }
 
-            if (affectationEnseignementModificationDTO.getSemestre() != null) {
-                affectationExistante.setSemestre(affectationEnseignementModificationDTO.getSemestre());
-            }
+
+
 
             // Mise à jour du professeur si fourni et différent
             if (affectationEnseignementModificationDTO.getProfesseurPpr() != null &&

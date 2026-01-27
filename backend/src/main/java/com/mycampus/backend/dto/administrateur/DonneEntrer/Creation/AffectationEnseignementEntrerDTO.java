@@ -12,8 +12,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class AffectationEnseignementEntrerDTO {
     
-    private String anneeUniversitaire;
-    private Semestre semestre;
     private Boolean active;
     private String professeurPpr;
     private String codeClasse;

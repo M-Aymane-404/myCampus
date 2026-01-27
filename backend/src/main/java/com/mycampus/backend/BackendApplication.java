@@ -401,24 +401,21 @@ public class BackendApplication {
         // Exemple: plusieurs affectations
         List<AffectationEnseignementEntrerDTO> affectations = List.of(
                 AffectationEnseignementEntrerDTO.builder()
-                        .anneeUniversitaire("2025/2026")
-                        .semestre(Semestre.S1)
+
                         .professeurPpr("20000002") // prof maths
                         .codeClasse("ILCS1")
                         .codeMatiere("ALGEBRE")
                         .active(true)
                         .build(),
                 AffectationEnseignementEntrerDTO.builder()
-                        .anneeUniversitaire("2025/2026")
-                        .semestre(Semestre.S1)
+
                         .professeurPpr("20000001") // prof cyber
                         .codeClasse("ILCS1")
                         .codeMatiere("CRYPTO")
                         .active(true)
                         .build(),
                 AffectationEnseignementEntrerDTO.builder()
-                        .anneeUniversitaire("2025/2026")
-                        .semestre(Semestre.S1)
+
                         .professeurPpr("20000001")
                         .codeClasse("ILCS2")
                         .codeMatiere("CRYPTO")
@@ -516,8 +513,6 @@ public class BackendApplication {
             Long firstId = affectationIds.get(0);
             try {
                 AffectationEnseignementModificationDTO affUp = AffectationEnseignementModificationDTO.builder()
-                        .anneeUniversitaire("2025/2026")
-                        .semestre(Semestre.S2)
                         .professeurPpr("20000002")
                         .codeClasse("ILCS1")
                         .codeMatiere("ALGEBRE")

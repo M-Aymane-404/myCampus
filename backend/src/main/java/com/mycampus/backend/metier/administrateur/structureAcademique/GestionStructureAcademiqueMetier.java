@@ -7,12 +7,7 @@ import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.ModuleEntrer
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.MatiereEntrerDTO;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.AffectationEnseignementEntrerDTO;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.*;
-import com.mycampus.backend.dto.administrateur.DonneSortie.DepartementSortieDTO;
-import com.mycampus.backend.dto.administrateur.DonneSortie.FiliereSortieDTO;
-import com.mycampus.backend.dto.administrateur.DonneSortie.ClasseSortieDTO;
-import com.mycampus.backend.dto.administrateur.DonneSortie.ModuleSortieDTO;
-import com.mycampus.backend.dto.administrateur.DonneSortie.MatiereSortieDTO;
-import com.mycampus.backend.dto.administrateur.DonneSortie.AffectationEnseignementSortieDTO;
+import com.mycampus.backend.dto.administrateur.DonneSortie.*;
 import com.mycampus.backend.exceptions.StructureAcademiqueException;
 
 import java.util.List;
@@ -77,7 +72,8 @@ public interface GestionStructureAcademiqueMetier {
     List<MatiereSortieDTO> listerToutesLesMatieres() throws StructureAcademiqueException;
     
     List<MatiereSortieDTO> trouverMatieresParModule(String codeModule) throws StructureAcademiqueException;
-    
+    List<MatiereSortieAvecProfDTO> trouverMatieresParProfAffecterEtModule(String codeModule,String codeClasse) throws StructureAcademiqueException;
+
     MatiereSortieDTO modifierMatiere(String codeMatiere, MatiereModificationDTO matiereModificationDTO) throws StructureAcademiqueException;
     
     void supprimerMatiere(String codeMatiere) throws StructureAcademiqueException;

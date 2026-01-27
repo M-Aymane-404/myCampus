@@ -1,6 +1,7 @@
 package com.mycampus.backend.web.administrateur.StructureAcademique;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.MatiereEntrerDTO;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.MatiereModificationDTO;
+import com.mycampus.backend.dto.administrateur.DonneSortie.MatiereSortieAvecProfDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.MatiereSortieDTO;
 import com.mycampus.backend.metier.administrateur.structureAcademique.GestionStructureAcademiqueMetier;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +39,12 @@ public class MatiereController {
     @GetMapping("/module/{codeModule}")
     public ResponseEntity<List<MatiereSortieDTO>> trouverMatieresParModule(@PathVariable String codeModule) {
         List<MatiereSortieDTO> result = metier.trouverMatieresParModule(codeModule);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/module/{codeModule}/classe/{codeClasse}")
+    public ResponseEntity<List<MatiereSortieAvecProfDTO>> trouverMatieresParModuleEtClasse(@PathVariable String codeModule, @PathVariable String codeClasse) {
+        List<MatiereSortieAvecProfDTO> result = metier.trouverMatieresParProfAffecterEtModule(codeModule,codeClasse);
         return ResponseEntity.ok(result);
     }
 
