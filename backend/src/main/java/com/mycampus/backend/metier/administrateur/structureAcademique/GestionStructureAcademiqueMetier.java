@@ -24,7 +24,11 @@ public interface GestionStructureAcademiqueMetier {
     DepartementSortieDTO modifierDepartement(String codeDepartement, DepartementModificationDTO departementModificationDTO) throws StructureAcademiqueException;
     
     void supprimerDepartement(String codeDepartement) throws StructureAcademiqueException;
-    
+
+    void FermerDepartement(String codeDep) throws StructureAcademiqueException;
+
+    void OuvrirDepartement(String codeDep) throws StructureAcademiqueException;
+
     // Filière management
     FiliereSortieDTO creerFiliere(FiliereEntrerDTO filiereEntrerDTO) throws StructureAcademiqueException;
     
@@ -37,7 +41,11 @@ public interface GestionStructureAcademiqueMetier {
     FiliereSortieDTO modifierFiliere(String codeFiliere, FiliereModificationDTO filiereModificationDTO) throws StructureAcademiqueException;
     
     void supprimerFiliere(String codeFiliere) throws StructureAcademiqueException;
-    
+
+    void FermerFiliere(String codeFiliere) throws StructureAcademiqueException;
+
+    void OuvrirFiliere(String codeFiliere) throws StructureAcademiqueException;
+
     // Classe management
     ClasseSortieDTO creerClasse(ClasseEntrerDTO classeEntrerDTO) throws StructureAcademiqueException;
     

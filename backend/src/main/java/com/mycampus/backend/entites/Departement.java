@@ -1,5 +1,6 @@
 package com.mycampus.backend.entites;
 
+import com.mycampus.backend.enumerations.EtatStructure;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -29,6 +30,10 @@ public class Departement {
     private String description;
     
     private LocalDate dateCreation;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private EtatStructure etat;
     
     @OneToMany(mappedBy = "departement")
     private List<Filiere> filieres;

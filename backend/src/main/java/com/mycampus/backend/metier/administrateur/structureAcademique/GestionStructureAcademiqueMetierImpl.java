@@ -11,6 +11,7 @@
     import com.mycampus.backend.entites.Examen;
     import com.mycampus.backend.entites.*;
     import com.mycampus.backend.entites.Module;
+    import com.mycampus.backend.enumerations.EtatStructure;
     import com.mycampus.backend.repositorys.*;
     import com.mycampus.backend.mappers.administrateur.StructureMapper;
     import com.mycampus.backend.exceptions.StructureAcademiqueException;
@@ -104,6 +105,7 @@
 
             Departement departement = structureMapper.FromDepartementEntrerVersDepartement(departementEntrerDTO);
             departement.setDateCreation( LocalDate.now());
+            departement.setEtat(EtatStructure.OUVERTE);
 
             // Gérer le chef de département si fourni
             if (departementEntrerDTO.getChefDepartementPpr() != null && !departementEntrerDTO.getChefDepartementPpr().trim().isEmpty()) {
@@ -154,17 +156,18 @@
                 departement.setChefDepartement(chefDepartement);
             }
 
-
-
             // Mettre à jour les champs autorisés
-
             if (departementModificationDTO.getTypeDepartement() != null && !departementModificationDTO.getTypeDepartement().trim().isEmpty()) {
                 departement.setTypeDepartement(departementModificationDTO.getTypeDepartement());
             }
+
             if (departementModificationDTO.getDescription() != null) {
                 departement.setDescription(departementModificationDTO.getDescription());
             }
 
+            if (departementModificationDTO.getEtat() != null) {
+                departement.setEtat(departementModificationDTO.getEtat());
+            }
 
             Departement departementModifie = departementRepository.save(departement);
             return structureMapper.FromDepartementVersDepartementSortieDTO(departementModifie);
@@ -192,6 +195,28 @@
             departementRepository.delete(departement);
         }
 
+
+        @Override
+        public void FermerDepartement(String codeDep) throws StructureAcademiqueException {
+            Departement dep = requireDepartement(codeDep);
+
+            dep.setEtat(EtatStructure.FERMEE);
+            departementRepository.save(dep);
+
+
+
+        }
+        @Override
+        public void OuvrirDepartement(String codeDep) throws StructureAcademiqueException {
+            Departement dep = requireDepartement(codeDep);
+
+            dep.setEtat((EtatStructure.OUVERTE));
+            departementRepository.save(dep);
+
+
+
+        }
+
         // Filière management
         @Override
         public FiliereSortieDTO creerFiliere(FiliereEntrerDTO filiereEntrerDTO) throws StructureAcademiqueException {
@@ -217,6 +242,7 @@
             Departement departement = requireDepartement(filiereEntrerDTO.getCodeDepartement());
 
             filiere.setDepartement(departement);
+            filiere.setEtat(EtatStructure.OUVERTE);
 
             Filiere filiereSauvegardee = filiereRepository.save(filiere);
             return structureMapper.FromFiliereVersFiliereSortieDTO(filiereSauvegardee);
@@ -323,6 +349,28 @@
             }
 
             filiereRepository.delete(filiere);
+        }
+
+        @Override
+        public void FermerFiliere(String codeFiliere) throws StructureAcademiqueException {
+            Filiere filiere = requireFiliere(codeFiliere);
+
+            filiere.setEtat(EtatStructure.FERMEE);
+            filiereRepository.save(filiere);
+
+
+
+        }
+
+        @Override
+        public void OuvrirFiliere(String codeFiliere) throws StructureAcademiqueException {
+            Filiere filiere = requireFiliere(codeFiliere);
+
+            filiere.setEtat(EtatStructure.OUVERTE);
+            filiereRepository.save(filiere);
+
+
+
         }
 
         // Classe management

@@ -1,5 +1,9 @@
 package com.mycampus.backend.dto.administrateur.DonneEntrer.Creation;
 
+import com.mycampus.backend.enumerations.EtatStructure;
+import jakarta.persistence.Column;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,4 +23,6 @@ public class DepartementEntrerDTO {
     private String description;
     private String chefDepartementPpr;
     private LocalDate dateCreation;
+
+    private EtatStructure etat;
 }

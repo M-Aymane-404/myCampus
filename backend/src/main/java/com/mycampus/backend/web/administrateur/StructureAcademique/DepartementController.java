@@ -4,6 +4,9 @@ import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.DepartementE
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.DepartementModificationDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.DepartementSortieDTO;
 import com.mycampus.backend.metier.administrateur.structureAcademique.GestionStructureAcademiqueMetier;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -47,6 +50,32 @@ public class DepartementController {
     @DeleteMapping("/{codeDepartement}")
     public ResponseEntity<Void> supprimerDepartement(@PathVariable String codeDepartement) {
         metier.supprimerDepartement(codeDepartement);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Fermer un département")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Département fermé"),
+            @ApiResponse(responseCode = "404", description = "Département introuvable"),
+            @ApiResponse(responseCode = "400", description = "Données invalides")
+    })
+    @PatchMapping("{codeDepartement}/Fermer")
+    public ResponseEntity<Void> FermerDepartement(@PathVariable String codeDepartement) {
+        metier.FermerDepartement(codeDepartement);
+        return ResponseEntity.noContent().build();
+    }
+
+
+
+    @Operation(summary = "Ouvrir un département")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Département Ouvert"),
+            @ApiResponse(responseCode = "404", description = "Département introuvable"),
+            @ApiResponse(responseCode = "400", description = "Données invalides")
+    })
+    @PatchMapping("{codeDepartement}/Ouvrir")
+    public ResponseEntity<Void> OuvrirDepartement(@PathVariable String codeDepartement) {
+        metier.OuvrirDepartement(codeDepartement);
         return ResponseEntity.noContent().build();
     }
 }

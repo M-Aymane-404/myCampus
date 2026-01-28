@@ -3,6 +3,9 @@ import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.FiliereEntre
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.FiliereModificationDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.FiliereSortieDTO;
 import com.mycampus.backend.metier.administrateur.structureAcademique.GestionStructureAcademiqueMetier;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -52,6 +55,31 @@ public class FiliereController {
     @DeleteMapping("/{codeFiliere}")
     public ResponseEntity<Void> supprimerFiliere(@PathVariable String codeFiliere) {
         metier.supprimerFiliere(codeFiliere);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Fermer un filière")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "filière fermé"),
+            @ApiResponse(responseCode = "404", description = "filière introuvable"),
+            @ApiResponse(responseCode = "400", description = "Données invalides")
+    })
+    @PatchMapping("{codeFiliere}/Fermer")
+    public ResponseEntity<Void> FermerFiliere(@PathVariable String codeFiliere) {
+        metier.FermerFiliere(codeFiliere);
+        return ResponseEntity.noContent().build();
+    }
+
+
+    @Operation(summary = "Ouvrir un filière")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "filière Ouvert"),
+            @ApiResponse(responseCode = "404", description = "filière introuvable"),
+            @ApiResponse(responseCode = "400", description = "Données invalides")
+    })
+    @PatchMapping("{codeFiliere}/Ouvrir")
+    public ResponseEntity<Void> OuvrirFiliere(@PathVariable String codeFiliere) {
+        metier.OuvrirFiliere(codeFiliere);
         return ResponseEntity.noContent().build();
     }
 }
