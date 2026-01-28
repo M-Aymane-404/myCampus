@@ -8,7 +8,7 @@ export const apiAffectations = {
                 method: 'GET',
                 headers: apiAuth.getAuthHeaders(),
             });
-
+            
             if (!reponse.ok) {
                 throw new Error(`Erreur HTTP: ${reponse.status}`);
             }
@@ -58,6 +58,29 @@ export const apiAffectations = {
             return await reponse.json();
         } catch (erreur) {
             console.error('Erreur lors de l\'affectation:', erreur);
+            throw erreur;
+        }
+    },
+
+    async modifier(id, affectation) {
+        try {
+            const reponse = await fetch(`${BASE_URL}/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...apiAuth.getAuthHeaders(),
+                },
+                body: JSON.stringify(affectation),
+            });
+
+            if (!reponse.ok) {
+                const erreurData = await reponse.json().catch(() => ({}));
+                throw new Error(erreurData.message || `Erreur HTTP: ${reponse.status}`);
+            }
+
+            return await reponse.json();
+        } catch (erreur) {
+            console.error('Erreur lors de la modification de l\'affectation:', erreur);
             throw erreur;
         }
     },

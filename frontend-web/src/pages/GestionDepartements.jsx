@@ -3,11 +3,13 @@ import { Building2, Edit2, Trash2, Plus, ChevronRight, Home } from 'lucide-react
 import FormulaireModal from '../composants/communs/FormulaireModal';
 import ChampFormulaire from '../composants/communs/ChampFormulaire';
 import { apiStructure } from '../services/apiStructure';
+import { apiProfesseurs } from '../services/apiProfesseurs';
 import DetailsDepartement from './DetailsDepartement';
 import './GestionDepartements.css';
 
 const GestionDepartements = () => {
   const [departements, setDepartements] = useState([]);
+  const [professeurs, setProfesseurs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -23,12 +25,14 @@ const GestionDepartements = () => {
   const [formData, setFormData] = useState({
     codeDepartement: '',
     typeDepartement: '',
-    description: ''
+    description: '',
+    chefDepartementPpr: ''
   });
 
   // Fetch departments on mount
   useEffect(() => {
     fetchDepartements();
+    fetchProfesseurs();
   }, []);
 
   const fetchDepartements = async () => {
@@ -45,6 +49,15 @@ const GestionDepartements = () => {
     }
   };
 
+  const fetchProfesseurs = async () => {
+    try {
+      const data = await apiProfesseurs.obtenirTous();
+      setProfesseurs(data);
+    } catch (err) {
+      console.error('Failed to fetch professors:', err);
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -54,7 +67,8 @@ const GestionDepartements = () => {
     setFormData({
       codeDepartement: '',
       typeDepartement: '',
-      description: ''
+      description: '',
+      chefDepartementPpr: ''
     });
     setIsEditing(false);
     setCurrentDepartement(null);
@@ -62,10 +76,14 @@ const GestionDepartements = () => {
   };
 
   const handleEditDepartement = (dept) => {
+    // Backend might return typeDepartement or nom depending on the version/endpoint
+    const typeValue = dept.typeDepartement || dept.nom || '';
+
     setFormData({
       codeDepartement: dept.codeDepartement || '',
-      typeDepartement: dept.typeDepartement || '',
-      description: dept.description || ''
+      typeDepartement: typeValue,
+      description: dept.description || '',
+      chefDepartementPpr: dept.chefDepartementPpr || ''
     });
     setIsEditing(true);
     setCurrentDepartement(dept);
@@ -81,14 +99,24 @@ const GestionDepartements = () => {
     setIsLoading(true);
     try {
       if (isEditing) {
-        await apiStructure.modifierDepartement(currentDepartement.codeDepartement, formData);
+        const payload = {
+          typeDepartement: formData.typeDepartement,
+          description: formData.description,
+          chefDepartementPpr: formData.chefDepartementPpr
+        };
+        await apiStructure.modifierDepartement(currentDepartement.codeDepartement, payload);
       } else {
         await apiStructure.creerDepartement(formData);
       }
 
       await fetchDepartements();
       setModalOpen(false);
-      setFormData({ codeDepartement: '', typeDepartement: '', description: '' });
+      setFormData({
+        codeDepartement: '',
+        typeDepartement: '',
+        description: '',
+        chefDepartementPpr: ''
+      });
     } catch (err) {
       console.error('Save failed:', err);
       alert('Une erreur est survenue lors de la sauvegarde: ' + err.message);
@@ -116,8 +144,8 @@ const GestionDepartements = () => {
 
   // Calculate element count (you can customize this based on your needs)
   const getElementCount = (dept) => {
-    // This could be number of filieres, classes, etc.
-    return dept.nombreFilieres || dept.nombreElements || 0;
+    // Check all possible count fields from the backend
+    return dept.nbFilieres || dept.nombreFilieres || dept.nombreElements || 0;
   };
 
   // If a department is selected, show details view
@@ -239,6 +267,17 @@ const GestionDepartements = () => {
           onChange={handleInputChange}
           placeholder="Ex: Informatique"
           requis
+        />
+        <ChampFormulaire
+          label="Chef de Département"
+          nom="chefDepartementPpr"
+          type="select"
+          valeur={formData.chefDepartementPpr}
+          onChange={handleInputChange}
+          options={professeurs.map(p => ({
+            value: p.ppr,
+            label: `${p.nom} ${p.prenom} (${p.ppr})`
+          }))}
         />
         <ChampFormulaire
           label="Description"

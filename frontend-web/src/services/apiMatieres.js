@@ -84,6 +84,38 @@ export const apiMatieres = {
         }
     },
 
+    async obtenirParModuleEtClasse(codeModule, codeClasse) {
+        try {
+            const reponse = await fetch(`${BASE_URL}/module/${codeModule}/classe/${codeClasse}`, {
+                method: 'GET',
+                headers: apiAuth.getAuthHeaders(),
+            });
+
+            if (!reponse.ok) {
+                console.warn(`Failed to get matières with class filter, status: ${reponse.status}`);
+                // Fallback to module-only endpoint
+                console.log('Trying fallback to module-only endpoint...');
+                const fallbackReponse = await fetch(`${BASE_URL}/module/${codeModule}`, {
+                    method: 'GET',
+                    headers: apiAuth.getAuthHeaders(),
+                });
+                
+                if (!fallbackReponse.ok) {
+                    throw new Error(`Erreur HTTP: ${fallbackReponse.status}`);
+                }
+                
+                const fallbackData = await fallbackReponse.json();
+                console.log('Fallback successful, got data without class filter');
+                return fallbackData;
+            }
+
+            return await reponse.json();
+        } catch (erreur) {
+            console.error('Erreur lors de la récupération des matières par module et classe:', erreur);
+            throw erreur;
+        }
+    },
+
     async supprimer(codeMatiere) {
         try {
             const reponse = await fetch(`${BASE_URL}/${codeMatiere}`, {

@@ -130,14 +130,16 @@ const ModalDetailsUtilisateur = ({ estOuvert, surFermer, utilisateur, surModifie
 
                             <div className="detail-field-card">
                                 <div className="field-label">
-                                    <Award size={16} className="field-icon" /> SPÉCIALITÉ
+                                    <Award size={16} className="field-icon" /> {utilisateur.role === "STUDENT" ? "Classe" : utilisateur.role === "ADMIN" ? "Grade" : "SPÉCIALITÉ"}
                                 </div>
-                                <div className="field-value">{utilisateur.specialite || "Ingénierie Logicielle"}</div>
+                                <div className="field-value">
+                                    {utilisateur.role === "STUDENT" ? (utilisateur.className || "Classe non spécifiée") : utilisateur.role === "ADMIN" ? (utilisateur.grade || "Grade non spécifié") : (utilisateur.specialite || "Spécialité non spécifiée")}
+                                </div>
                             </div>
 
                             <div className="detail-field-card">
                                 <div className="field-label">
-                                    <Hash size={16} className="field-icon" /> APOGÉE OU PPR
+                                    <Hash size={16} className="field-icon" /> {utilisateur.role === "STUDENT" ? "APOGEE" : "PPR"}
                                 </div>
                                 <div className="field-value">{userId}</div>
                             </div>
@@ -146,7 +148,7 @@ const ModalDetailsUtilisateur = ({ estOuvert, surFermer, utilisateur, surModifie
                                 <div className="field-label">
                                     <Calendar size={16} className="field-icon" /> DATE DE CRÉATION
                                 </div>
-                                <div className="field-value">12/09/2023 10:45</div>
+                                <div className="field-value">{utilisateur.dateCreation || "12/09/2023 10:45"}</div>
                             </div>
                         </div>
 
