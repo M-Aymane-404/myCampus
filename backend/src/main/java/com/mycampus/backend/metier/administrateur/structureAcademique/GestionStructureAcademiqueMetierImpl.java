@@ -368,9 +368,6 @@
 
             filiere.setEtat(EtatStructure.OUVERTE);
             filiereRepository.save(filiere);
-
-
-
         }
 
         // Classe management

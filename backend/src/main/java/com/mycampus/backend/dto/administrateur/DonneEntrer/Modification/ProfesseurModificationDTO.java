@@ -2,6 +2,8 @@ package com.mycampus.backend.dto.administrateur.DonneEntrer.Modification;
 
 
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.UtilisateurEntrerDto;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -16,22 +18,20 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @SuperBuilder
 public class ProfesseurModificationDTO extends UtilisateurModificationDto {
+    
+    @Pattern(regexp = "^[0-9]{8}$", message = "PPR doit contenir 8 chiffres")
     private String ppr;
 
+    @Size(min = 2, max = 100, message = "Spécialité doit contenir entre 2 et 100 caractères")
     private String specialite;
 
+    @Size(min = 2, max = 50, message = "Grade doit contenir entre 2 et 50 caractères")
     private String grade;
 
     private LocalDate dateRecrutement;
 
+    @Size(min = 2, max = 50, message = "Statut doit contenir entre 2 et 50 caractères")
     private String statut;
 
-
-
     private String codeDepartementOuTravail;
-
-
-
-
-
 }

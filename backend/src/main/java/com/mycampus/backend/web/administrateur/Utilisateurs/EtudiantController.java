@@ -1,8 +1,10 @@
 package com.mycampus.backend.web.administrateur.Utilisateurs;
 
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.EtudiantEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.EtudiantModificationDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.EtudiantSortieDTO;
 import com.mycampus.backend.metier.administrateur.utilisateurs.GestionUtilisateursMetier;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +20,7 @@ public class EtudiantController {
     private final GestionUtilisateursMetier gestionUtilisateursMetier;
 
     @PostMapping("")
-    public ResponseEntity<EtudiantSortieDTO> creerEtudiant(@RequestBody EtudiantEntrerDTO etudiantEntrerDTO) {
+    public ResponseEntity<EtudiantSortieDTO> creerEtudiant(@RequestBody @Valid EtudiantEntrerDTO etudiantEntrerDTO) {
         EtudiantSortieDTO etudiant = gestionUtilisateursMetier.creerEtudiant(etudiantEntrerDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(etudiant);
     }
@@ -36,8 +38,8 @@ public class EtudiantController {
     }
 
     @PutMapping("/{apogee}")
-    public ResponseEntity<EtudiantSortieDTO> modifierEtudiant(@PathVariable String apogee, @RequestBody EtudiantEntrerDTO etudiantEntrerDTO) {
-        EtudiantSortieDTO etudiant = gestionUtilisateursMetier.modifierEtudiant(apogee, etudiantEntrerDTO);
+    public ResponseEntity<EtudiantSortieDTO> modifierEtudiant(@PathVariable String apogee, @RequestBody @Valid EtudiantModificationDTO etudiantModificationDTO) {
+        EtudiantSortieDTO etudiant = gestionUtilisateursMetier.modifierEtudiant(apogee, etudiantModificationDTO);
         return ResponseEntity.ok(etudiant);
     }
 

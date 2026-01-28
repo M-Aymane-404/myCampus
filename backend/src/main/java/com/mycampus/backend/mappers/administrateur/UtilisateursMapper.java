@@ -103,6 +103,8 @@ public class UtilisateursMapper {
         return professeurSortieDTO;
     }
 
+
+
     public List<ProfesseurSortieDTO> FromListeProfesseurVersListeProfesseurSortie(List<Professeur> professeurs) {
         if ( professeurs == null) {
             return List.of();

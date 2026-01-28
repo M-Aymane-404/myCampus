@@ -1,6 +1,8 @@
 package com.mycampus.backend.dto.administrateur.DonneEntrer.Modification;
 
 import com.mycampus.backend.enumerations.Semestre;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,9 +14,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class AffectationEnseignementModificationDTO {
     
-
     private Boolean active;
+    
+    @Pattern(regexp = "^[0-9]{8}$", message = "PPR professeur doit contenir 8 chiffres")
     private String professeurPpr;
-    private String codeClasse;
-    private String codeMatiere;
+
+     private String codeClasse;
+
+     private String codeMatiere;
 }

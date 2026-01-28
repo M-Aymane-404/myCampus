@@ -7,6 +7,7 @@ import com.mycampus.backend.metier.administrateur.structureAcademique.GestionStr
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +23,7 @@ public class DepartementController {
     private final GestionStructureAcademiqueMetier metier;
 
     @PostMapping
-    public ResponseEntity<DepartementSortieDTO> creerDepartement(@RequestBody DepartementEntrerDTO departementDTO) {
+    public ResponseEntity<DepartementSortieDTO> creerDepartement(@RequestBody @Valid DepartementEntrerDTO departementDTO) {
         DepartementSortieDTO result = metier.creerDepartement(departementDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
@@ -42,7 +43,7 @@ public class DepartementController {
     @PutMapping("/{codeDepartement}")
     public ResponseEntity<DepartementSortieDTO> modifierDepartement(
             @PathVariable String codeDepartement, 
-            @RequestBody DepartementModificationDTO departementDTO) {
+            @RequestBody @Valid DepartementModificationDTO departementDTO) {
         DepartementSortieDTO result = metier.modifierDepartement(codeDepartement, departementDTO);
         return ResponseEntity.ok(result);
     }

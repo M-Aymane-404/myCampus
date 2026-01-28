@@ -1,8 +1,10 @@
 package com.mycampus.backend.web.administrateur.Utilisateurs;
 
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.AdministrateurEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.AdministrateurModificationDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.AdministrateurSortieDTO;
 import com.mycampus.backend.metier.administrateur.utilisateurs.GestionUtilisateursMetier;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +21,7 @@ public class AdministrateurController {
 
     @PostMapping("")
     public ResponseEntity<AdministrateurSortieDTO> creerAdministrateur(
-            @RequestBody AdministrateurEntrerDTO administrateurEntrerDTO) {
+            @RequestBody @Valid AdministrateurEntrerDTO administrateurEntrerDTO) {
         AdministrateurSortieDTO created = gestionUtilisateursMetier.creerAdministrateur(administrateurEntrerDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
@@ -39,8 +41,8 @@ public class AdministrateurController {
     @PutMapping("/{ppr}")
     public ResponseEntity<AdministrateurSortieDTO> modifierAdministrateur(
             @PathVariable String ppr,
-            @RequestBody AdministrateurEntrerDTO administrateurEntrerDTO) {
-        AdministrateurSortieDTO updated = gestionUtilisateursMetier.modifierAdministrateur(ppr, administrateurEntrerDTO);
+            @RequestBody @Valid AdministrateurModificationDTO administrateurModificationDTO) {
+        AdministrateurSortieDTO updated = gestionUtilisateursMetier.modifierAdministrateur(ppr, administrateurModificationDTO);
         return ResponseEntity.ok(updated);
     }
 

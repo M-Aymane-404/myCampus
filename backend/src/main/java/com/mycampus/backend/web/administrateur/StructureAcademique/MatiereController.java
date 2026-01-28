@@ -4,6 +4,7 @@ import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.MatiereM
 import com.mycampus.backend.dto.administrateur.DonneSortie.MatiereSortieAvecProfDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.MatiereSortieDTO;
 import com.mycampus.backend.metier.administrateur.structureAcademique.GestionStructureAcademiqueMetier;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +20,7 @@ public class MatiereController {
     private final GestionStructureAcademiqueMetier metier;
 
     @PostMapping
-    public ResponseEntity<MatiereSortieDTO> creerMatiere(@RequestBody MatiereEntrerDTO matiereDTO) {
+    public ResponseEntity<MatiereSortieDTO> creerMatiere(@RequestBody @Valid MatiereEntrerDTO matiereDTO) {
         MatiereSortieDTO result = metier.creerMatiere(matiereDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
@@ -51,7 +52,7 @@ public class MatiereController {
     @PutMapping("/{codeMatiere}")
     public ResponseEntity<MatiereSortieDTO> modifierMatiere(
             @PathVariable String codeMatiere, 
-            @RequestBody MatiereModificationDTO matiereDTO) {
+            @RequestBody @Valid MatiereModificationDTO matiereDTO) {
         MatiereSortieDTO result = metier.modifierMatiere(codeMatiere, matiereDTO);
         return ResponseEntity.ok(result);
     }

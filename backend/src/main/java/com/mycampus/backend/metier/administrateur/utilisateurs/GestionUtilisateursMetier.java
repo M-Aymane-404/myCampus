@@ -3,6 +3,9 @@ package com.mycampus.backend.metier.administrateur.utilisateurs;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.AdministrateurEntrerDTO;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.EtudiantEntrerDTO;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.ProfesseurEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.AdministrateurModificationDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.EtudiantModificationDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.ProfesseurModificationDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.AdministrateurSortieDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.ProfesseurSortieDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.EtudiantSortieDTO;
@@ -20,7 +23,7 @@ public interface GestionUtilisateursMetier {
     
     List<AdministrateurSortieDTO> listerTousLesAdministrateurs() throws UtilisateursException;
     
-    AdministrateurSortieDTO modifierAdministrateur(String ppr, AdministrateurEntrerDTO administrateurEntrerDTO) throws UtilisateursException;
+    AdministrateurSortieDTO modifierAdministrateur(String ppr, AdministrateurModificationDTO administrateurModificationDTO) throws UtilisateursException;
     
     void supprimerAdministrateur(String ppr) throws UtilisateursException;
     
@@ -36,7 +39,7 @@ public interface GestionUtilisateursMetier {
     
     List<ProfesseurSortieDTO> listerTousLesProfesseurs() throws UtilisateursException;
     
-    ProfesseurSortieDTO modifierProfesseur(String ppr, ProfesseurEntrerDTO professeurEntrerDTO) throws UtilisateursException;
+    ProfesseurSortieDTO modifierProfesseur(String ppr, ProfesseurModificationDTO professeurModificationDTO) throws UtilisateursException;
     
     void supprimerProfesseur(String ppr) throws UtilisateursException;
     
@@ -52,7 +55,7 @@ public interface GestionUtilisateursMetier {
     
     List<EtudiantSortieDTO> listerTousLesEtudiants() throws UtilisateursException;
     
-    EtudiantSortieDTO modifierEtudiant(String apogee, EtudiantEntrerDTO etudiantEntrerDTO) throws UtilisateursException;
+    EtudiantSortieDTO modifierEtudiant(String apogee, EtudiantModificationDTO etudiantModificationDTO) throws UtilisateursException;
     
     void supprimerEtudiant(String apogee) throws UtilisateursException;
     
