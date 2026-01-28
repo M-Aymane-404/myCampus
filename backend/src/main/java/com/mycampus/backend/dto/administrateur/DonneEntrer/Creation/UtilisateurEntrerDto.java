@@ -26,7 +26,7 @@ public class UtilisateurEntrerDto {
 
     private String photo;
 
-    private Boolean enabled ;
+    private Boolean active ;
 
 
 

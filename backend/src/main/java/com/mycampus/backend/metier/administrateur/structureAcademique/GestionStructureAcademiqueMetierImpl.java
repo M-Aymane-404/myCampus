@@ -8,6 +8,7 @@
     import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.AffectationEnseignementEntrerDTO;
     import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.*;
     import com.mycampus.backend.dto.administrateur.DonneSortie.*;
+    import com.mycampus.backend.entites.Examen;
     import com.mycampus.backend.entites.*;
     import com.mycampus.backend.entites.Module;
     import com.mycampus.backend.repositorys.*;
@@ -163,6 +164,7 @@
             if (departementModificationDTO.getDescription() != null) {
                 departement.setDescription(departementModificationDTO.getDescription());
             }
+
 
             Departement departementModifie = departementRepository.save(departement);
             return structureMapper.FromDepartementVersDepartementSortieDTO(departementModifie);

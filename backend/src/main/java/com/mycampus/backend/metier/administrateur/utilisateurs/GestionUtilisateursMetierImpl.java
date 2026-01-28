@@ -143,6 +143,34 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
         if (administrateurEntrerDTO.getGrade() != null && !administrateurEntrerDTO.getGrade().trim().isEmpty()) {
             adminAModifier.setGrade(administrateurEntrerDTO.getGrade());
         }
+        if (administrateurEntrerDTO.getCin() != null && !administrateurEntrerDTO.getCin().trim().isEmpty()) {
+            if(!adminAModifier.getCin().equals(administrateurEntrerDTO.getCin()) && utilisateurRepository.existsByCin(administrateurEntrerDTO.getCin())){
+                    throw new UtilisateursException("Un utilisateur avec cet Cin existe déjà");
+
+            }
+            adminAModifier.setCin(administrateurEntrerDTO.getCin());
+
+        }
+        if(administrateurEntrerDTO.getPpr() != null && !administrateurEntrerDTO.getPpr().trim().isEmpty()) {
+            if(!adminAModifier.getPpr().equals(administrateurEntrerDTO.getPpr()) && administrateurRepository.existsByPpr(administrateurEntrerDTO.getPpr())){
+                throw new UtilisateursException("Un utilisateur avec cet Ppr existe déjà");
+
+            }
+            adminAModifier.setPpr(administrateurEntrerDTO.getPpr());
+        }
+
+        if(administrateurEntrerDTO.getTel() != null && !administrateurEntrerDTO.getTel().trim().isEmpty()) {
+            if(!adminAModifier.getTel().equals(administrateurEntrerDTO.getTel()) && utilisateurRepository.existsByTel(administrateurEntrerDTO.getTel())){
+                throw new UtilisateursException("Un utilisateur avec cet Numero existe déjà");
+            }
+            adminAModifier.setTel(administrateurEntrerDTO.getTel());
+        }
+        if (administrateurEntrerDTO.getPhoto() != null && !administrateurEntrerDTO.getPhoto().trim().isEmpty()) {
+            adminAModifier.setPhoto(administrateurEntrerDTO.getPhoto());
+        }
+        if (adminAModifier.getActive() != null) {
+            adminAModifier.setActive(administrateurEntrerDTO.getActive());
+        }
 
        /* if(administrateurDTO.getPassword() != null && !administrateurDTO.getPassword().trim().isEmpty()) {
             adminAModifier.setPassword(passwordEncoder.encode(administrateurDTO.getPassword()));
@@ -319,6 +347,36 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
         if (professeurEntrerDTO.getStatut() != null && !professeurEntrerDTO.getStatut().trim().isEmpty()) {
             professeurAModifier.setStatut(professeurEntrerDTO.getStatut());
         }
+        if(professeurEntrerDTO.getCin() != null && !professeurEntrerDTO.getCin().trim().isEmpty()) {
+            if(!professeurAModifier.getCin().equals(professeurEntrerDTO.getCin()) && utilisateurRepository.existsByCin(professeurEntrerDTO.getCin())){
+                throw new UtilisateursException("Un utilisateur avec cet Cin existe déjà");
+
+            }
+            professeurAModifier.setCin(professeurEntrerDTO.getCin());
+        }
+
+        if(professeurEntrerDTO.getTel() != null && !professeurEntrerDTO.getTel().trim().isEmpty()) {
+            if(!professeurAModifier.getCin().equals(professeurEntrerDTO.getCin()) && utilisateurRepository.existsByTel(professeurEntrerDTO.getTel())){
+                throw new UtilisateursException("Un utilisateur avec cet numero existe déjà");
+
+            }
+            professeurAModifier.setTel(professeurEntrerDTO.getTel());
+        }
+
+        if(professeurEntrerDTO.getPpr() != null && !professeurEntrerDTO.getPpr().trim().isEmpty()) {
+            if(!professeurAModifier.getPpr().equals(professeurEntrerDTO.getPpr()) && professeurRepository.existsByPpr(professeurEntrerDTO.getPpr())){
+                throw new UtilisateursException("Un utilisateur avec cet Ppr existe déjà");
+
+            }
+            professeurAModifier.setPpr(professeurAModifier.getPpr());
+        }
+        if (professeurEntrerDTO.getPhoto() != null && !professeurEntrerDTO.getPhoto().trim().isEmpty()) {
+            professeurAModifier.setPhoto(professeurEntrerDTO.getPhoto());
+        }
+        if(professeurEntrerDTO.getActive() != null) {
+            professeurAModifier.setActive(professeurEntrerDTO.getActive());
+        }
+
 
 
 
@@ -488,6 +546,9 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
         if (etudiantEntrerDTO.getNiveau() != null && !etudiantEntrerDTO.getNiveau().trim().isEmpty()) {
             etudiantAModifier.setNiveau(etudiantEntrerDTO.getNiveau());
         }
+        if(etudiantEntrerDTO.getActive() != null){
+            etudiantAModifier.setActive(etudiantEntrerDTO.getActive());
+        }
         
         if (etudiantEntrerDTO.getAnneeInscription() != null) {
             etudiantAModifier.setAnneeInscription(etudiantEntrerDTO.getAnneeInscription());
@@ -509,6 +570,22 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
             etudiantAModifier.setEtatInscription(etudiantEntrerDTO.getEtatInscription());
         }
 
+
+        if(etudiantEntrerDTO.getTel() != null && !etudiantEntrerDTO.getTel().trim().isEmpty()) {
+            if(!etudiantAModifier.getCin().equals(etudiantEntrerDTO.getCin()) && utilisateurRepository.existsByTel(etudiantEntrerDTO.getTel())){
+                throw new UtilisateursException("Un utilisateur avec cet numero existe déjà");
+
+            }
+            etudiantAModifier.setTel(etudiantEntrerDTO.getTel());
+        }
+        if(etudiantEntrerDTO.getCin() != null && !etudiantEntrerDTO.getCin().trim().isEmpty()) {
+            if(!etudiantAModifier.getCin().equals(etudiantEntrerDTO.getCin()) && utilisateurRepository.existsByCin(etudiantEntrerDTO.getCin())){
+                throw new UtilisateursException("Un utilisateur avec cet Cin existe déjà");
+
+            }
+            etudiantAModifier.setCin(etudiantEntrerDTO.getCin());
+        }
+
         if (etudiantEntrerDTO.getCodeClasse() != null) {
             Classe classe = classeRepository.findByCodeClasse(etudiantEntrerDTO.getCodeClasse())
                     .orElseThrow(() -> new UtilisateursException(
@@ -516,6 +593,11 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
                     ));
             etudiantAModifier.setClasse(classe);
         }
+
+        if(etudiantEntrerDTO.getPhoto() != null && !etudiantEntrerDTO.getPhoto().trim().isEmpty()) {
+            etudiantAModifier.setPhoto(etudiantEntrerDTO.getPhoto());
+        }
+
 
         /* if(etudiantDTO.getPassword() != null && !etudiantDTO.getPassword().trim().isEmpty()) {
             etudiantAModifier.setPassword(passwordEncoder.encode(etudiantDTO.getPassword()));

@@ -33,12 +33,14 @@ public class Presence {
     
     @Column(nullable = false)
     private LocalDateTime dateDeclaration;
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "seance_id", nullable = false)
     private Seance seance;
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "etudiant_id", nullable = false)
     private Etudiant etudiant;
+    
+
 }

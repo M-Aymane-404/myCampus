@@ -26,7 +26,7 @@ public class UtilisateurModificationDto {
 
     private String photo;
 
-    private Boolean enabled ;
+    private Boolean active ;
 
 
 

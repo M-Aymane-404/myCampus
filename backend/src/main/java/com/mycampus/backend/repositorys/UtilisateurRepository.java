@@ -12,4 +12,6 @@ public interface UtilisateurRepository extends JpaRepository<Utilisateur, Long> 
     //long countByEnabledTrue();
 
     boolean existsByCin(String cin);
+
+    boolean existsByTel(String tel);
 }

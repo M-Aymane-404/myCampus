@@ -14,7 +14,7 @@ import lombok.*;
 public class Administrateur extends Utilisateur {
 
 
-    @Column(nullable = false, unique = true, updatable = false)
+    @Column(nullable = false, unique = true)
     private String ppr;
     
     @Column(nullable = false)

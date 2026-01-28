@@ -17,7 +17,7 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 public class Professeur extends Utilisateur {
     
-    @Column(nullable = false, unique = true, updatable = false)
+    @Column(nullable = false, unique = true)
     private String ppr;
     
     @Column(nullable = false)

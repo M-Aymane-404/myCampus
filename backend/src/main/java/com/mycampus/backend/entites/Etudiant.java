@@ -6,7 +6,6 @@ import lombok.*;
 import com.mycampus.backend.enumerations.EtatInscription;
 
 import java.time.LocalDate;
-import java.util.Date;
 import java.util.List;
 
 @Entity
@@ -19,8 +18,8 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 
 public class Etudiant extends Utilisateur {
-    @EqualsAndHashCode.Include
-    @Column(nullable = false, unique = true, updatable = false)
+
+    @Column(nullable = false, unique = true)
     private String apogee;
     
     @Column(nullable = false)
