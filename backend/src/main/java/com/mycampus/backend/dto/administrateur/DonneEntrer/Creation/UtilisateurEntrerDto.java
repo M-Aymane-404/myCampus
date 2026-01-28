@@ -34,7 +34,7 @@ public class UtilisateurEntrerDto {
 
     @NotBlank(message = "CIN obligatoire")
     @Pattern(
-            regexp = "^[A-Z0-9]{4,8}$",
+            regexp = "^[A-Za-z0-9]{4,8}$",
             message = "Numéro de CIN non valide"
     )
     private String cin;

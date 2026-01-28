@@ -6,7 +6,6 @@ import com.mycampus.backend.metier.administrateur.structureAcademique.GestionStr
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +21,7 @@ public class FiliereController {
     private final GestionStructureAcademiqueMetier metier;
 
     @PostMapping
-    public ResponseEntity<FiliereSortieDTO> creerFiliere(@RequestBody @Valid FiliereEntrerDTO filiereDTO) {
+    public ResponseEntity<FiliereSortieDTO> creerFiliere(@RequestBody FiliereEntrerDTO filiereDTO) {
         FiliereSortieDTO result = metier.creerFiliere(filiereDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
@@ -48,7 +47,7 @@ public class FiliereController {
     @PutMapping("/{codeFiliere}")
     public ResponseEntity<FiliereSortieDTO> modifierFiliere(
             @PathVariable String codeFiliere, 
-            @RequestBody @Valid FiliereModificationDTO filiereDTO) {
+            @RequestBody FiliereModificationDTO filiereDTO) {
         FiliereSortieDTO result = metier.modifierFiliere(codeFiliere, filiereDTO);
         return ResponseEntity.ok(result);
     }

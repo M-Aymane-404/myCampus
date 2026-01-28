@@ -22,18 +22,22 @@ public class UtilisateurModificationDto {
     private String prenom;
 
     @Email(message = "Email invalide")
+    @Size(max = 100, message = "Email ne doit pas dépasser 100 caractères")
     private String email;
 
-    @Size(min = 8, message = "Mot de passe doit contenir au moins 8 caractères")
+    @Size(min = 8, max = 100, message = "Mot de passe doit contenir entre 8 et 100 caractères")
     private String password;
 
-    @Pattern(regexp = "^[A-Z0-9]{4,8}$", message = "CIN invalide")
+    @Pattern(
+            regexp = "^[A-Za-z0-9]{4,8}$",
+            message = "Numéro de CIN non valide"
+    )
     private String cin;
 
-    @Size(min = 10, max = 20, message = "Numéro de téléphone invalide")
+    @Size(min = 10, max = 20, message = "Numéro de Téléphone non valide")
     private String tel;
 
-    @Size(min = 2, max = 50)
+    @Size(max = 50, message = "Photo ne doit pas dépasser 50 caractères")
     private String photo;
 
     private Boolean active;

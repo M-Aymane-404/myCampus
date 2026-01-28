@@ -5,6 +5,7 @@ import com.mycampus.backend.enumerations.Semestre;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -20,25 +21,28 @@ import java.time.LocalDate;
 @SuperBuilder
 public class EtudiantEntrerDTO extends UtilisateurEntrerDto {
     
-    @NotBlank(message = "Code apogée obligatoire")
-    @Pattern(regexp = "^[0-9]{9}$", message = "Code apogée doit contenir 9 chiffres")
+    @NotBlank(message = "Code Apogée obligatoire")
+    @Pattern(
+            regexp = "^[0-9]{9}$",
+            message = "Code Apogée doit contenir 9 chiffres"
+    )
     private String apogee;
     
-    @NotBlank(message = "Niveau obligatoire")
+    @Size(max = 50, message = "Niveau ne doit pas dépasser 50 caractères")
     private String niveau;
     
-    @NotNull(message = "Année d'inscription obligatoire")
     private Integer anneeInscription;
     
     private Semestre semestreActuel;
+    
+    @Size(max = 20, message = "Année fin étude ne doit pas dépasser 20 caractères")
     private String anneeFinEtude;
     
     @NotNull(message = "Date de naissance obligatoire")
     private LocalDate dateNaissance;
     
-    @NotNull(message = "État d'inscription obligatoire")
     private EtatInscription etatInscription;
     
-    @NotBlank(message = "Code classe obligatoire")
+    @Size(max = 20, message = "Code classe ne doit pas dépasser 20 caractères")
     private String codeClasse;
 }

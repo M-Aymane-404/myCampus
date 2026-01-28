@@ -17,12 +17,15 @@ import lombok.experimental.SuperBuilder;
 
 public class AdministrateurModificationDTO extends UtilisateurModificationDto {
 
-    @Pattern(regexp = "^[0-9]{8}$", message = "PPR doit contenir 8 chiffres")
+    @Pattern(
+            regexp = "^[0-9]{8}$",
+            message = "PPR doit contenir 8 chiffres"
+    )
     private String ppr;
 
-    @Size(min = 2, max = 50, message = "Grade doit contenir entre 2 et 50 caractères")
+    @Size(max = 50, message = "Grade ne doit pas dépasser 50 caractères")
     private String grade;
 
-    @Size(min = 2, max = 100, message = "Fonction doit contenir entre 2 et 100 caractères")
+    @Size(max = 100, message = "Fonction ne doit pas dépasser 100 caractères")
     private String fonction;
 }

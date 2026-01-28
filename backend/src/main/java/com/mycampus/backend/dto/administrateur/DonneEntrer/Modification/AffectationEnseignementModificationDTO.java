@@ -1,7 +1,6 @@
 package com.mycampus.backend.dto.administrateur.DonneEntrer.Modification;
 
 import com.mycampus.backend.enumerations.Semestre;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

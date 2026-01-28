@@ -21,22 +21,25 @@ import java.time.LocalDate;
 @SuperBuilder
 public class EtudiantModificationDTO extends UtilisateurModificationDto {
     
-    @Pattern(regexp = "^[0-9]{9}$", message = "Code apogée doit contenir 9 chiffres")
+    @Pattern(
+            regexp = "^[0-9]{9}$",
+            message = "Code Apogée doit contenir 9 chiffres"
+    )
     private String apogee;
     
-    @Size(min = 2, max = 50, message = "Niveau doit contenir entre 2 et 50 caractères")
+    @Size(max = 50, message = "Niveau ne doit pas dépasser 50 caractères")
     private String niveau;
     
     @Min(value = 2026, message = "Année d'inscription minimum est 2020")
     private Integer anneeInscription;
     
     private Semestre semestreActuel;
-    
+
     private String anneeFinEtude;
     
     private LocalDate dateNaissance;
     
     private EtatInscription etatInscription;
-    
+
     private String codeClasse;
 }

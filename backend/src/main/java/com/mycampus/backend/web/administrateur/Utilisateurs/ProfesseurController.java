@@ -4,8 +4,8 @@ import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.ProfesseurEn
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.ProfesseurModificationDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.ProfesseurSortieDTO;
 import com.mycampus.backend.metier.administrateur.utilisateurs.GestionUtilisateursMetier;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +20,7 @@ public class ProfesseurController {
     private final GestionUtilisateursMetier gestionUtilisateursMetier;
 
     @PostMapping("")
-    public ResponseEntity<ProfesseurSortieDTO> creerProfesseur(@RequestBody @Valid ProfesseurEntrerDTO professeurEntrerDTO) {
+    public ResponseEntity<ProfesseurSortieDTO> creerProfesseur(@Valid @RequestBody ProfesseurEntrerDTO professeurEntrerDTO) {
         ProfesseurSortieDTO professeur = gestionUtilisateursMetier.creerProfesseur(professeurEntrerDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(professeur);
     }
@@ -38,7 +38,7 @@ public class ProfesseurController {
     }
 
     @PutMapping("/{ppr}")
-    public ResponseEntity<ProfesseurSortieDTO> modifierProfesseur(@PathVariable String ppr, @RequestBody @Valid ProfesseurModificationDTO professeurModificationDTO) {
+    public ResponseEntity<ProfesseurSortieDTO> modifierProfesseur(@PathVariable String ppr, @Valid @RequestBody ProfesseurModificationDTO professeurModificationDTO) {
         ProfesseurSortieDTO professeur = gestionUtilisateursMetier.modifierProfesseur(ppr, professeurModificationDTO);
         return ResponseEntity.ok(professeur);
     }
