@@ -9,6 +9,7 @@ import './ModernAcademicRedesign.css';
 
 const DetailsClasse = ({ classe, filiere, departement, onRetour }) => {
     const [modules, setModules] = useState([]);
+    const [matieres, setMatieres] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -48,6 +49,11 @@ const DetailsClasse = ({ classe, filiere, departement, onRetour }) => {
             );
 
             setModules(data || []);
+            
+            // Fetch all matières for these modules
+            const allMatieres = await apiStructure.obtenirToutesMatieres();
+            setMatieres(allMatieres || []);
+            
             setError(null);
         } catch (err) {
             console.error('Failed to fetch modules:', err);
@@ -140,7 +146,13 @@ const DetailsClasse = ({ classe, filiere, departement, onRetour }) => {
     };
 
     const getElementCount = (module) => {
-        return module.nombreMatieres || module.nombreElements || 0;
+        // Count matières for this specific module
+        const moduleMatieres = matieres.filter(matiere => 
+            matiere.codeModule === module.codeModule || 
+            matiere.moduleId === module.id ||
+            matiere.module?.codeModule === module.codeModule
+        );
+        return moduleMatieres.length || 0;
     };
 
     // If a module is selected, show subjects view

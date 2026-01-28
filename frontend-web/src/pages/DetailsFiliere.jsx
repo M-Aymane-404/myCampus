@@ -4,12 +4,16 @@ import FormulaireModal from '../composants/communs/FormulaireModal';
 import ChampFormulaire from '../composants/communs/ChampFormulaire';
 import { apiStructure } from '../services/apiStructure';
 import { apiClasses } from '../services/apiClasses';
+import { apiProfesseurs } from '../services/apiProfesseurs';
 import DetailsClasse from './DetailsClasse';
 import './DetailsFiliere.css';
 import './ModernAcademicRedesign.css';
 
 const DetailsFiliere = ({ filiere, departement, onRetour }) => {
     const [classes, setClasses] = useState([]);
+    const [modules, setModules] = useState([]);
+    const [professeurs, setProfesseurs] = useState([]);
+    const [modulesCount, setModulesCount] = useState({});
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -41,8 +45,16 @@ const DetailsFiliere = ({ filiere, departement, onRetour }) => {
         try {
             // Utiliser l'API dédiée pour récupérer les classes par filière
             const data = await apiClasses.obtenirParFiliere(filiere.codeFiliere);
-
             setClasses(data);
+            
+            // Fetch modules for this filiere to get the count
+            const modulesData = await apiStructure.obtenirModulesParFiliere(filiere.codeFiliere);
+            setModules(modulesData);
+            
+            // Fetch all professeurs to get chef filiere name
+            const professeursData = await apiProfesseurs.obtenirTous();
+            setProfesseurs(professeursData);
+            
             setError(null);
         } catch (err) {
             console.error('Failed to fetch classes:', err);
@@ -55,6 +67,10 @@ const DetailsFiliere = ({ filiere, departement, onRetour }) => {
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+    };
+     const getProfesseurNom = (ppr) => {
+        const prof = professeurs.find(p => p.ppr === ppr);
+        return prof ? `${prof.prenom} ${prof.nom}` : ppr || 'Non défini';
     };
 
     const handleOpenAddModal = () => {
@@ -135,7 +151,8 @@ const DetailsFiliere = ({ filiere, departement, onRetour }) => {
     };
 
     const getElementCount = (classe) => {
-        return classe.nombreModules || classe.nombreElements || 0;
+        // Return the count of modules for this filiere
+        return modules.length || 0;
     };
 
     // If a classe is selected, show modules view
@@ -192,7 +209,7 @@ const DetailsFiliere = ({ filiere, departement, onRetour }) => {
                             <User size={16} />
                             CHEF FILIÈRE
                         </div>
-                        <div className="stat-value">{filiere.chefFiliereNom || 'Non défini'}</div>
+                        <div className="stat-value">{getProfesseurNom(filiere.chefFilierePpr)}</div>
                     </div>
                     <div className="stat-item">
                         <div className="stat-header">

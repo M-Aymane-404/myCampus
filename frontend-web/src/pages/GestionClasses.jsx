@@ -22,11 +22,11 @@ const GestionClasses = ({ filiereId, filiereNom, onRetour, surVoirModules }) => 
     try {
       setChargement(true);
       setErreur(null);
-      
+
       // Fetch real data from backend - use codeFiliere if filiereId is a code, otherwise use id
       const codeFiliere = typeof filiereId === 'string' ? filiereId : filiereId?.codeFiliere;
       const donnees = await apiClasses.obtenirParFiliere(codeFiliere || filiereId);
-      
+
       // Map backend data to frontend format
       const classesMapped = donnees.map(c => ({
         id: c.id,
@@ -142,7 +142,7 @@ const GestionClasses = ({ filiereId, filiereNom, onRetour, surVoirModules }) => 
                   <span className="classe-carte-info-value">{classe.nombreModules}</span>
                 </div>
                 <div className="classe-carte-info-item">
-                  <BadgeStatut 
+                  <BadgeStatut
                     statut={classe.statut === 'Actif' ? 'success' : 'error'}
                     texte={classe.statut}
                   />

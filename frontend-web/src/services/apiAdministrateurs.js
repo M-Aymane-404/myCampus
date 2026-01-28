@@ -100,11 +100,14 @@ export const apiAdministrateurs = {
 
     async activer(id) {
         try {
+            const headers = {
+                'Content-Type': 'application/json',
+                ...apiAuth.getAuthHeaders()
+            };
+
             const reponse = await fetch(`${BASE_URL}/${id}/activer`, {
                 method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: headers,
             });
 
             if (!reponse.ok) {
@@ -120,11 +123,14 @@ export const apiAdministrateurs = {
 
     async desactiver(id) {
         try {
+            const headers = {
+                'Content-Type': 'application/json',
+                ...apiAuth.getAuthHeaders()
+            };
+
             const reponse = await fetch(`${BASE_URL}/${id}/desactiver`, {
                 method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: headers,
             });
 
             if (!reponse.ok) {

@@ -43,10 +43,10 @@ export const apiProfesseur = {
   // Get grades for a course/assessment
   async obtenirNotes(courseId, assessmentId = null) {
     try {
-      const url = assessmentId 
+      const url = assessmentId
         ? `${BASE_URL}/courses/${courseId}/assessments/${assessmentId}/grades`
         : `${BASE_URL}/courses/${courseId}/grades`;
-      
+
       const response = await fetch(url, {
         method: 'GET',
         headers: apiAuth.getAuthHeaders(),
@@ -89,7 +89,7 @@ export const apiProfesseur = {
       const url = sessionId
         ? `${BASE_URL}/courses/${courseId}/sessions/${sessionId}/attendance`
         : `${BASE_URL}/courses/${courseId}/attendance`;
-      
+
       const response = await fetch(url, {
         method: 'GET',
         headers: apiAuth.getAuthHeaders(),

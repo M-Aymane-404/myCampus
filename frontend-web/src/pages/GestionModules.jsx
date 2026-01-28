@@ -38,7 +38,7 @@ const GestionModules = ({ classeId, classeNom, onRetour }) => {
       }));
 
       // Filter by classeId if provided
-      const modulesFiltres = classeId 
+      const modulesFiltres = classeId
         ? modulesMapped.filter(m => m.classeId === classeId || m.codeClasse === classeId)
         : modulesMapped;
 
@@ -176,11 +176,11 @@ const GestionModules = ({ classeId, classeNom, onRetour }) => {
   ];
 
   // Filter modules by classeId if provided (computed from state)
-  const modulesFiltres = classeId 
+  const modulesFiltres = classeId
     ? modules.filter(m => {
-        const mClasseId = m.classeId || m.codeClasse;
-        return mClasseId === classeId || mClasseId?.toString() === classeId?.toString();
-      })
+      const mClasseId = m.classeId || m.codeClasse;
+      return mClasseId === classeId || mClasseId?.toString() === classeId?.toString();
+    })
     : modules;
 
   const totalModules = modulesFiltres.length;

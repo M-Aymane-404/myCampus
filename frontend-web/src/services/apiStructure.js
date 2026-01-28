@@ -195,6 +195,7 @@ export const apiStructure = {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...apiAuth.getAuthHeaders(),
         },
         body: JSON.stringify(departement),
       });
@@ -217,6 +218,7 @@ export const apiStructure = {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          ...apiAuth.getAuthHeaders(),
         },
         body: JSON.stringify(departement),
       });
@@ -239,6 +241,7 @@ export const apiStructure = {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
+          ...apiAuth.getAuthHeaders(),
         },
       });
 
@@ -261,6 +264,7 @@ export const apiStructure = {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...apiAuth.getAuthHeaders(),
         },
         body: JSON.stringify(filiere),
       });
@@ -283,6 +287,7 @@ export const apiStructure = {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          ...apiAuth.getAuthHeaders(),
         },
         body: JSON.stringify(filiere),
       });
@@ -305,6 +310,7 @@ export const apiStructure = {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
+          ...apiAuth.getAuthHeaders(),
         },
       });
 
@@ -326,6 +332,7 @@ export const apiStructure = {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          ...apiAuth.getAuthHeaders(),
         },
       });
 
@@ -347,6 +354,7 @@ export const apiStructure = {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...apiAuth.getAuthHeaders(),
         },
         body: JSON.stringify(classe),
       });
@@ -369,6 +377,7 @@ export const apiStructure = {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          ...apiAuth.getAuthHeaders(),
         },
         body: JSON.stringify(classe),
       });
@@ -391,6 +400,7 @@ export const apiStructure = {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
+          ...apiAuth.getAuthHeaders(),
         },
       });
 
@@ -413,6 +423,7 @@ export const apiStructure = {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...apiAuth.getAuthHeaders(),
         },
         body: JSON.stringify(module),
       });
@@ -435,6 +446,7 @@ export const apiStructure = {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          ...apiAuth.getAuthHeaders(),
         },
         body: JSON.stringify(module),
       });
@@ -457,6 +469,7 @@ export const apiStructure = {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
+          ...apiAuth.getAuthHeaders(),
         },
       });
 

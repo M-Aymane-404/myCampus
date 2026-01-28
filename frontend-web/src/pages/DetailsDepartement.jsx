@@ -10,6 +10,7 @@ import './ModernAcademicRedesign.css';
 
 const DetailsDepartement = ({ departement, onRetour }) => {
     const [filieres, setFilieres] = useState([]);
+    const [classes, setClasses] = useState([]);
     const [professeurs, setProfesseurs] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -42,17 +43,20 @@ const DetailsDepartement = ({ departement, onRetour }) => {
     const fetchData = async () => {
         setIsLoading(true);
         try {
-            const [filieresData, professeursData] = await Promise.all([
+            const [filieresData, professeursData, classesData] = await Promise.all([
                 apiStructure.obtenirFilieresParDepartement(departement.codeDepartement).catch(() =>
                     apiStructure.obtenirToutesFilieres().then(all =>
                         all.filter(f => f.codeDepartement === departement.codeDepartement)
                     )
                 ),
-                apiProfesseurs.obtenirTous().catch(() => [])
+                apiProfesseurs.obtenirTous().catch(() => []),
+                apiStructure.obtenirToutesClasses().catch(() => [])
             ]);
 
             setFilieres(filieresData);
             setProfesseurs(professeursData);
+            setClasses(classesData);
+
             setError(null);
         } catch (err) {
             console.error('Failed to fetch data:', err);
@@ -151,7 +155,8 @@ const DetailsDepartement = ({ departement, onRetour }) => {
     };
 
     const getElementCount = (filiere) => {
-        return filiere.nombreModules || filiere.nombreElements || 0;
+        // Count classes that belong to this filiere
+        return classes.filter(c => c.codeFiliere === filiere.codeFiliere).length;
     };
 
     const getProfesseurNom = (ppr) => {

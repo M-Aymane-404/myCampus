@@ -191,6 +191,10 @@ const GestionComptes = () => {
     setIsLoading(true);
     try {
       const userPayload = { ...formData };
+      const originalUser = usersList.find(u => u.id === selectedUserId);
+      
+      // Check if the enabled status has changed
+      const statusChanged = originalUser && originalUser.enabled !== formData.enabled;
 
       // Backend expects 'enabled' (Boolean), not 'active'
       // Keep enabled as is, don't convert to active
@@ -238,13 +242,33 @@ const GestionComptes = () => {
           break;
         default:
           service = apiAdministrateurs;
+          if (isEditing) id = formData.ppr || selectedUserId;
       }
 
       // Log payload for debugging (remove in production)
       console.log('Saving user payload:', userPayload);
 
       if (isEditing) {
-        await service.modifier(id, userPayload);
+        // If only the status changed, use the dedicated endpoints
+        if (statusChanged && !hasOtherChanges(originalUser, formData)) {
+          if (formData.enabled) {
+            await service.activer(id);
+          } else {
+            await service.desactiver(id);
+          }
+        } else {
+          // For other changes or combined changes, use the general modifier endpoint
+          await service.modifier(id, userPayload);
+          
+          // If status also changed, make a separate call to the status endpoint
+          if (statusChanged) {
+            if (formData.enabled) {
+              await service.activer(id);
+            } else {
+              await service.desactiver(id);
+            }
+          }
+        }
       } else {
         await service.creer(userPayload);
       }
@@ -258,6 +282,70 @@ const GestionComptes = () => {
       alert("Une erreur est survenue lors de la sauvegarde: " + errorMessage);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Helper function to check if there are changes other than the enabled status
+  const hasOtherChanges = (original, updated) => {
+    if (!original) return true;
+    
+    const fieldsToCheck = ['nom', 'prenom', 'email', 'password', 'cin', 'tel', 'role', 
+                          'ppr', 'grade', 'fonction', 'specialite', 'dateRecrutement', 
+                          'statut', 'apogee', 'niveau', 'anneeInscription', 'semestreActuel', 
+                          'anneeFinEtude', 'dateNaissance', 'etatInscription', 'classeId'];
+    
+    return fieldsToCheck.some(field => original[field] !== updated[field]);
+  };
+
+  const handleAccountStatusChange = async (userId, newStatus) => {
+    try {
+      const user = usersList.find(u => u.id === userId);
+      if (!user) {
+        alert("Utilisateur introuvable");
+        return;
+      }
+
+      const role = normalizeRole(user.role);
+      let service;
+      let id;
+
+      // Determine service and ID based on role
+      switch (role) {
+        case 'PROFESSOR':
+          service = apiProfesseurs;
+          id = user.ppr || user.id || userId;
+          break;
+        case 'STUDENT':
+          service = apiEtudiants;
+          id = user.apogee || user.id || userId;
+          break;
+        default:
+          service = apiAdministrateurs;
+          id = user.ppr || user.id || userId;
+      }
+
+      if (!id) {
+        alert("Impossible de déterminer l'identifiant de l'utilisateur");
+        return;
+      }
+
+      // Call the dedicated activate/deactivate endpoint
+      if (newStatus) {
+        await service.activer(id);
+      } else {
+        await service.desactiver(id);
+      }
+
+      // Refresh the users list to get updated status
+      await fetchUsers();
+      
+    } catch (err) {
+      console.error("Status change failed:", err);
+      const errorMessage = err.message || 'Erreur inconnue';
+      alert("Une erreur est survenue lors du changement de statut: " + errorMessage);
+      
+      // Revert the checkbox state on error
+      setFormData(prev => ({ ...prev, enabled: !newStatus }));
     }
   };
 
@@ -286,7 +374,7 @@ const GestionComptes = () => {
         deleteId = user.apogee || user.id || id;
         deleteService = apiEtudiants;
       } else {
-        deleteId = user.id || id;
+        deleteId = user.ppr || user.id || id;
         deleteService = apiAdministrateurs;
       }
 
@@ -323,11 +411,54 @@ const GestionComptes = () => {
     }
   };
 
-  const handleViewDetails = (id) => {
+  const handleViewDetails = async (id) => {
     const user = usersList.find(u => u.id === id);
     if (user) {
-      setUserToView(user);
-      setViewModalOpen(true);
+      try {
+        let fullUserData = { ...user };
+        
+        // Fetch complete user data based on role
+        const role = normalizeRole(user.role);
+        if (role === 'STUDENT' && user.apogee) {
+          try {
+            const studentData = await apiEtudiants.obtenirParApogee(user.apogee);
+            fullUserData = { ...fullUserData, ...studentData };
+          } catch (err) {
+            console.warn('Could not fetch full student data:', err);
+          }
+        } else if (role === 'PROFESSOR' && user.ppr) {
+          try {
+            const profData = await apiProfesseurs.obtenirParPpr(user.ppr);
+            fullUserData = { ...fullUserData, ...profData };
+          } catch (err) {
+            console.warn('Could not fetch full professor data:', err);
+          }
+        }
+
+        // For students, map codeClasse to className for display in modal
+        if (role === 'STUDENT' && fullUserData.codeClasse) {
+          // Find the class by codeClasse to get its name
+          const matchingClass = classesList.find(c => 
+            c.codeClasse === fullUserData.codeClasse || 
+            c.code === fullUserData.codeClasse ||
+            c.id?.toString() === fullUserData.codeClasse
+          );
+          if (matchingClass) {
+            fullUserData.className = matchingClass.nom || matchingClass.nomClasse || `Classe ${matchingClass.id}`;
+          } else {
+            // Fallback: use codeClasse as className if class not found
+            fullUserData.className = fullUserData.codeClasse;
+          }
+        }
+
+        setUserToView(fullUserData);
+        setViewModalOpen(true);
+      } catch (err) {
+        console.error('Error loading user details for view:', err);
+        // Still show basic data if full data fetch fails
+        setUserToView(user);
+        setViewModalOpen(true);
+      }
     }
   };
 

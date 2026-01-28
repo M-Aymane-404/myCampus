@@ -47,21 +47,39 @@ const DetailsModule = ({ module, classe, filiere, departement, onRetour }) => {
     const fetchData = async () => {
         setIsLoading(true);
         try {
+            console.log('DEBUG - classe object:', classe);
+            console.log('DEBUG - classe?.codeClasse for API call:', classe?.codeClasse);
+            
             const [matieresData, professeursData, affectationsData] = await Promise.all([
-                apiMatieres.obtenirParModule(module.codeModule),
+                apiMatieres.obtenirParModuleEtClasse(module.codeModule, classe?.codeClasse),
                 apiProfesseurs.obtenirTous().catch(() => []),
-                apiAffectations.obtenirParClasse(classe?.id || classe?.codeClasse).catch(() => [])
+                apiAffectations.obtenirParClasse(classe?.codeClasse).catch(() => [])
             ]);
             setMatieres(matieresData);
             setProfesseurs(professeursData);
             setAffectations(affectationsData);
-            console.log('DEBUG - Matieres:', matieresData);
-            console.log('DEBUG - Affectations for Classe:', affectationsData);
-            console.log('DEBUG - Professeurs:', professeursData);
+            console.log('DEBUG - Matieres with professor data:', matieresData);
             setError(null);
         } catch (err) {
             console.error('Failed to fetch data:', err);
-            setError('Impossible de charger les matières.');
+            console.error('Error details:', err.message);
+            
+            // Try fallback without class filter if the combined call fails
+            console.log('Attempting fallback without class filter...');
+            try {
+                const matieresData = await apiMatieres.obtenirParModule(module.codeModule);
+                const professeursData = await apiProfesseurs.obtenirTous().catch(() => []);
+                const affectationsData = await apiAffectations.obtenirToutes().catch(() => []);
+                
+                setMatieres(matieresData);
+                setProfesseurs(professeursData);
+                setAffectations(affectationsData);
+                setError(null);
+                console.log('Fallback successful - loaded subjects without class filter');
+            } catch (fallbackErr) {
+                console.error('Fallback also failed:', fallbackErr);
+                setError('Impossible de charger les matières. Erreur: ' + err.message);
+            }
         } finally {
             setIsLoading(false);
         }
@@ -149,12 +167,14 @@ const DetailsModule = ({ module, classe, filiere, departement, onRetour }) => {
     const handleOpenAffectationModal = (matiere) => {
         setCurrentMatiere(matiere);
         // Find existing assignment if any
-        const existingAff = affectations.find(a => String(a.matiere_id || a.matiereId) === String(matiere.id));
+        const existingAff = affectations.find(a => a.codeMatiere === matiere.codeMatiere);
+
+        console.log('DEBUG - Existing assignment found:', existingAff);
 
         setAffectationFormData({
-            professeurId: existingAff?.professeur_id || existingAff?.professeurId || '',
-            active: (existingAff?.active === 1 || existingAff?.active === '1' || existingAff?.active === true) ? 'OUI' : 'NON',
-            anneeUniversitaire: existingAff?.annee_universitaire || existingAff?.anneeUniversitaire || '2025/2026',
+            professeurId: existingAff?.professeurPpr || '',
+            active: existingAff?.active ? 'OUI' : 'NON',
+            anneeUniversitaire: existingAff?.anneeUniversitaire || '2025/2026',
             semestre: existingAff?.semestre || module?.semestre || ''
         });
         setAffectationModalOpen(true);
@@ -173,24 +193,63 @@ const DetailsModule = ({ module, classe, filiere, departement, onRetour }) => {
 
         setIsLoading(true);
         try {
-            const payload = {
-                professeurId: parseInt(affectationFormData.professeurId),
-                matiereId: parseInt(currentMatiere.id),
-                classeId: parseInt(classe?.id || classe?.codeClasse),
-                anneeUniversitaire: affectationFormData.anneeUniversitaire,
-                semestre: affectationFormData.semestre,
-                active: affectationFormData.active === 'OUI' ? 1 : 0
-            };
+            // Check if there's an existing assignment for this subject and class
+            const existingAff = affectations.find(a => a.codeMatiere === currentMatiere.codeMatiere);
+            
+            if (existingAff) {
+                // Update existing assignment using the PUT endpoint
+                const updatePayload = {
+                    professeurPpr: affectationFormData.professeurId,
+                    active: affectationFormData.active === 'OUI'
+                };
 
-            console.log('DEBUG - Sending Payload:', payload);
-            await apiAffectations.assigner(payload);
+                console.log('DEBUG - Updating existing assignment:', existingAff.id, updatePayload);
+                await apiAffectations.modifier(existingAff.id, updatePayload);
+            } else {
+                // Create new assignment
+                const createPayload = {
+                    professeurPpr: affectationFormData.professeurId,
+                    codeMatiere: currentMatiere.codeMatiere,
+                    codeClasse: classe?.codeClasse,
+                    anneeUniversitaire: affectationFormData.anneeUniversitaire,
+                    semestre: affectationFormData.semestre,
+                    active: affectationFormData.active === 'OUI'
+                };
 
+                console.log('DEBUG - Creating new assignment:', createPayload);
+                await apiAffectations.assigner(createPayload);
+            }
+
+            // Add a small delay before refreshing data to allow backend to process
+            await new Promise(resolve => setTimeout(resolve, 300));
+            
             await fetchData();
             setAffectationModalOpen(false);
-            alert('Affectation enregistrée avec succès');
+            alert(`Affectation ${affectationFormData.active === 'OUI' ? 'activée' : 'désactivée'} avec succès`);
         } catch (err) {
             console.error('Assignment failed:', err);
-            alert('Erreur lors de l\'affectation: ' + err.message);
+            console.error('Error details:', {
+                message: err.message,
+                payload: {
+                    professeurPpr: affectationFormData.professeurId,
+                    codeMatiere: currentMatiere?.codeMatiere,
+                    active: affectationFormData.active === 'OUI'
+                }
+            });
+            
+            // Provide more specific error messages
+            let errorMessage = 'Erreur lors de l\'affectation: ';
+            if (err.message.includes('404')) {
+                errorMessage += 'Ressource non trouvée. Vérifiez que la matière et la classe existent.';
+            } else if (err.message.includes('403')) {
+                errorMessage += 'Vous n\'avez pas les permissions pour effectuer cette action.';
+            } else if (err.message.includes('500')) {
+                errorMessage += 'Erreur serveur. Veuillez réessayer plus tard.';
+            } else {
+                errorMessage += err.message;
+            }
+            
+            alert(errorMessage);
         } finally {
             setIsLoading(false);
         }
@@ -199,26 +258,25 @@ const DetailsModule = ({ module, classe, filiere, departement, onRetour }) => {
     const getMatiereProfessor = (matiere) => {
         if (!matiere) return 'NON DÉFINI';
 
-        const mId = String(matiere.id || '');
-        const mCode = String(matiere.codeMatiere || '');
-        const targetClasseId = String(classe?.id || '');
-
-        // Find assignment for this matiere and the current class
-        // Use both ID and code as fallback just in case
-        const aff = affectations.find(a =>
-            (String(a.matiere_id || a.matiereId) === mId || String(a.matiere_id || a.matiereId) === mCode) &&
-            (String(a.classe_id || a.classeId) === targetClasseId)
-        );
-
-        if (!aff) return 'NON DÉFINI';
-
-        const profId = String(aff.professeur_id || aff.professeurId || '');
-        const prof = professeurs.find(p =>
-            String(p.id || '') === profId ||
-            String(p.ppr || '') === profId
-        );
-
-        return prof ? `PR. ${prof.prenom.toUpperCase()} ${prof.nom.toUpperCase()}` : `PROF ID: ${profId}`;
+        console.log('DEBUG - Getting professor for matiere:', matiere.codeMatiere);
+        
+        // Check if professor data is included in the matiere object
+        if (matiere.professeur) {
+            const prof = matiere.professeur;
+            return `PR. ${prof.prenom.toUpperCase()} ${prof.nom.toUpperCase()}`;
+        }
+        
+        // Check if professor name is directly available
+        if (matiere.professeurNom) {
+            return `PR. ${matiere.professeurNom}`;
+        }
+        
+        // Check if professor PPR is available
+        if (matiere.professeurPpr) {
+            return `PR. ${matiere.professeurPpr}`;
+        }
+        
+        return 'NON DÉFINI';
     };
 
     return (
@@ -424,7 +482,7 @@ const DetailsModule = ({ module, classe, filiere, departement, onRetour }) => {
                     options={[
                         { value: '', label: 'Sélectionner un professeur' },
                         ...professeurs.map(p => ({
-                            value: p.id || p.ppr,
+                            value: p.ppr,
                             label: `${p.prenom} ${p.nom} (${p.ppr})`
                         }))
                     ]}
@@ -442,32 +500,7 @@ const DetailsModule = ({ module, classe, filiere, departement, onRetour }) => {
                     ]}
                     requis
                 />
-                <ChampFormulaire
-                    label="Année Universitaire"
-                    nom="anneeUniversitaire"
-                    valeur={affectationFormData.anneeUniversitaire}
-                    onChange={handleAffectationInputChange}
-                    placeholder="Ex: 2023-2024"
-                    requis
-                />
-                <ChampFormulaire
-                    label="Semestre"
-                    nom="semestre"
-                    type="select"
-                    valeur={affectationFormData.semestre}
-                    onChange={handleAffectationInputChange}
-                    options={[
-                        { value: 'S1', label: 'Semestre 1' },
-                        { value: 'S2', label: 'Semestre 2' },
-                        { value: 'S3', label: 'Semestre 3' },
-                        { value: 'S4', label: 'Semestre 4' },
-                        { value: 'S5', label: 'Semestre 5' },
-                        { value: 'S6', label: 'Semestre 6' },
-                        { value: 'S7', label: 'Semestre 7' },
-                        { value: 'S8', label: 'Semestre 8' }
-                    ]}
-                    requis
-                />
+                
             </FormulaireModal>
         </div>
     );
