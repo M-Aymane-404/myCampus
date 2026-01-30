@@ -74,23 +74,27 @@ const EnTete = ({ elementActif, surChangementElement }) => {
 
   const MENU_ITEMS = useMemo(() => ({
     admin: [
-      { id: 'tableau-de-bord', icone: LayoutDashboard, libelle: 'Dashboard' },
-      { id: 'departements', icone: Building2, libelle: 'Departments' },
-      { id: 'emploi-temps', icone: Calendar, libelle: 'Schedule' },
-      { id: 'comptes', icone: Users, libelle: 'Accounts' },
-      { id: 'journal-audit', icone: ShieldData, libelle: 'Logs & Security' },
+      { id: 'tableau-de-bord', libelle: 'Tableau de bord' },
+      { id: 'departements', libelle: 'Departements' },
+      { id: 'emploi-temps', libelle: 'Emploi-temps' },
+      { id: 'comptes', libelle: 'Comptes' },
+      { id: 'journal-audit', libelle: 'Journal audit' },
     ],
     professor: [
-      { id: 'tableau-de-bord-professeur', icone: LayoutDashboard, libelle: 'Dashboard' },
-      { id: 'cours', icone: BookOpen, libelle: 'Courses' },
-      { id: 'notes', icone: GraduationCap, libelle: 'Grades' },
-      { id: 'calendrier', icone: Calendar, libelle: 'Calendar' },
-      { id: 'presence', icone: UserCheck, libelle: 'Attendance' },
-      { id: 'annonces', icone: Megaphone, libelle: 'Announcements' },
+      { id: 'tableau-de-bord-professeur', libelle: 'Tableau de bord' },
+      { id: 'cours', libelle: 'Cours' },
+      { id: 'notes', libelle: 'Notes' },
+      { id: 'calendrier', libelle: 'Calendrier' },
+      { id: 'presence', libelle: 'Presence' },
+      { id: 'annonces', libelle: 'Annonces' },
     ],
     student: [
-      { id: 'tableau-de-bord', icone: LayoutDashboard, libelle: 'Dashboard' },
-      // Placeholder for Student menu items
+      { id: 'tableau-de-bord-etudiant', libelle: 'Tableau de bord' },
+      { id: 'cours', libelle: 'Cours' },
+      { id: 'notes', libelle: 'Notes' },
+      { id: 'presence', libelle: 'Presence' },
+      { id: 'calendrier', libelle: 'Calendrier' },
+      { id: 'annonces', libelle: 'Annonces' },
     ]
   }), []);
 
@@ -140,7 +144,6 @@ const EnTete = ({ elementActif, surChangementElement }) => {
       {/* 2. Middle Section: Pill Navigation */}
       <nav className="en-tete-nav-container">
         {menuItemsToDisplay.map((element) => {
-          const Icone = element.icone;
           const estActif = elementActif === element.id;
           return (
             <button
@@ -148,7 +151,6 @@ const EnTete = ({ elementActif, surChangementElement }) => {
               className={`nav-item ${estActif ? 'nav-item-actif' : ''}`}
               onClick={() => gererClicMenu(element.id)}
             >
-              <Icone size={20} />
               <span>{element.libelle}</span>
             </button>
           );

@@ -1,0 +1,347 @@
+:root {
+  --student-bg: #f8fafc;
+  --student-card-bg: #ffffff;
+  --student-dark-bg: #0f172a;
+  --student-accent: #5c54ed;
+  --student-text: #1e293b;
+  --student-text-muted: #64748b;
+  --student-border: #e2e8f0;
+  --student-radius-lg: 35px;
+  --student-radius-md: 24px;
+  --student-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.05);
+}
+
+.tableau-de-bord-etudiant {
+
+  padding: 2rem 1.5rem;
+  min-height: 100vh;
+  font-family: 'Inter', sans-serif;
+  color: var(--student-text);
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+
+/* Header Section */
+.etudiant-header {
+  margin-bottom: 8px;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.header-info h1 {
+  font-size: 32px;
+  font-weight: 800;
+  margin: 0 0 4px 0;
+  letter-spacing: -1px;
+}
+
+.header-info p {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--student-text-muted);
+  margin: 0;
+}
+
+.session-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: white;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  box-shadow: var(--student-shadow);
+  color: var(--student-text-muted);
+}
+
+.status-indicator {
+  width: 10px;
+  height: 10px;
+  background: #10b981;
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+}
+
+/* Dashboard Grid Layout */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 32px;
+}
+
+.left-column {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.bottom-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+/* Card General Styles */
+.card-modern {
+  background: var(--student-card-bg);
+  border-radius: var(--student-radius-md);
+  padding: 24px;
+  box-shadow: var(--student-shadow);
+  border: 1px solid rgba(226, 232, 240, 0.5);
+}
+
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.section-label h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--student-text);
+}
+
+.label-icon {
+  color: var(--student-accent);
+}
+
+/* Announcements Section */
+.announcements-section {
+  background: var(--student-card-bg);
+  border-radius: var(--student-radius-md);
+  padding: 24px;
+}
+
+.announcements-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.announcements-badge {
+  background: #f1f5f9;
+  padding: 4px 12px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--student-text-muted);
+  letter-spacing: 0.5px;
+}
+
+.announcements-container {
+  border: 2px dashed #e2e8f0;
+  border-radius: var(--student-radius-md);
+  padding: 40px;
+  background: rgba(255, 255, 255, 0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.no-announcements-icon {
+  color: #cbd5e1;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.announcements-container p {
+  font-size: 14px;
+  font-weight: 600;
+  color: #94a3b8;
+  margin: 0;
+}
+
+/* Attendance Card */
+.attendance-card {
+  padding: 32px;
+}
+
+.attendance-content {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.gauge-container {
+  position: relative;
+  width: 100px;
+  height: 100px;
+}
+
+.gauge-percentage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.attendance-details p {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--student-text-muted);
+}
+
+.excellent-tag {
+  font-size: 11px;
+  font-weight: 800;
+  color: #10b981;
+}
+
+/* Next Session Card (Dark) */
+.next-session-card {
+  background: var(--student-dark-bg);
+  color: white;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.next-session-card h3 {
+  color: white;
+  font-size: 18px;
+  margin-bottom: 24px;
+}
+
+.session-info-main {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.session-time {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--student-accent);
+  padding-right: 24px;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.session-details-text h4 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 6px 0;
+}
+
+.session-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Grades Sidebar (Right) */
+.grades-sidebar {
+  height: fit-content;
+}
+
+.grades-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.grades-header h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.grade-list-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.grade-list-item:last-of-type {
+  border-bottom: none;
+  margin-bottom: 12px;
+}
+
+.grade-icon-box {
+  width: 44px;
+  height: 44px;
+  background: #f1f5f9;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--student-text);
+  opacity: 0.8;
+}
+
+.grade-subject-info {
+  flex: 1;
+}
+
+.grade-subject-info h4 {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0 0 2px 0;
+}
+
+.grade-date {
+  font-size: 10px;
+  font-weight: 700;
+  color: #cbd5e1;
+  text-transform: uppercase;
+}
+
+.grade-number {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--student-accent);
+}
+
+.view-bulletins-btn {
+  width: 100%;
+  background: var(--student-dark-bg);
+  color: white;
+  border: none;
+  padding: 18px;
+  border-radius: 18px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.view-bulletins-btn:hover {
+  transform: translateY(-2px);
+}
+
+/* Responsive */
+@media (max-width: 1100px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .bottom-row {
+    grid-template-columns: 1fr;
+  }
+}

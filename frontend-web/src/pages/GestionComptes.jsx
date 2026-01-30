@@ -196,9 +196,7 @@ const GestionComptes = () => {
       // Check if the enabled status has changed
       const statusChanged = originalUser && originalUser.enabled !== formData.enabled;
 
-      // Backend expects 'enabled' (Boolean), not 'active'
-      // Keep enabled as is, don't convert to active
-      // The backend DTO uses 'enabled' field directly
+      
 
       // For students, convert classeId to codeClasse (backend expects codeClasse as String)
       if (formData.role === 'STUDENT') {

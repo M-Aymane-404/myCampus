@@ -74,7 +74,7 @@
   border: none;
   color: #64748B;
   /* Muted Text */
-  font-size: 0.65rem;
+  font-size: 0.7rem;
   font-weight: 900;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);

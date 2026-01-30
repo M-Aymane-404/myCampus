@@ -26,7 +26,8 @@ const GestionDepartements = () => {
     codeDepartement: '',
     typeDepartement: '',
     description: '',
-    chefDepartementPpr: ''
+    chefDepartementPpr: '',
+    etat: 'OUVERTE'
   });
 
   // Fetch departments on mount
@@ -68,7 +69,8 @@ const GestionDepartements = () => {
       codeDepartement: '',
       typeDepartement: '',
       description: '',
-      chefDepartementPpr: ''
+      chefDepartementPpr: '',
+      etat: 'OUVERTE'
     });
     setIsEditing(false);
     setCurrentDepartement(null);
@@ -83,7 +85,8 @@ const GestionDepartements = () => {
       codeDepartement: dept.codeDepartement || '',
       typeDepartement: typeValue,
       description: dept.description || '',
-      chefDepartementPpr: dept.chefDepartementPpr || ''
+      chefDepartementPpr: dept.chefDepartementPpr || '',
+      etat: dept.etat || 'OUVERTE'
     });
     setIsEditing(true);
     setCurrentDepartement(dept);
@@ -102,7 +105,8 @@ const GestionDepartements = () => {
         const payload = {
           typeDepartement: formData.typeDepartement,
           description: formData.description,
-          chefDepartementPpr: formData.chefDepartementPpr
+          chefDepartementPpr: formData.chefDepartementPpr,
+          etat: formData.etat
         };
         await apiStructure.modifierDepartement(currentDepartement.codeDepartement, payload);
       } else {
@@ -115,7 +119,8 @@ const GestionDepartements = () => {
         codeDepartement: '',
         typeDepartement: '',
         description: '',
-        chefDepartementPpr: ''
+        chefDepartementPpr: '',
+        etat: 'OUVERTE'
       });
     } catch (err) {
       console.error('Save failed:', err);
@@ -278,6 +283,17 @@ const GestionDepartements = () => {
             value: p.ppr,
             label: `${p.nom} ${p.prenom} (${p.ppr})`
           }))}
+        />
+        <ChampFormulaire
+          label="État"
+          nom="etat"
+          type="select"
+          valeur={formData.etat}
+          onChange={handleInputChange}
+          options={[
+            { value: 'OUVERTE', label: 'OUVERTE' },
+            { value: 'FERMEE', label: 'FERMÉE' }
+          ]}
         />
         <ChampFormulaire
           label="Description"

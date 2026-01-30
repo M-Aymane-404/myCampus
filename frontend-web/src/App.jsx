@@ -3,6 +3,7 @@ import { LogOut, GraduationCap } from 'lucide-react';
 import Login from './pages/Login';
 import ConteneurPrincipal from './composants/layout/ConteneurPrincipal';
 import ConteneurProfesseur from './composants/layout/ConteneurProfesseur';
+import ConteneurEtudiant from './composants/layout/ConteneurEtudiant';
 import TableauDeBordAdmin from './pages/TableauDeBordAdmin';
 import GestionDepartements from './pages/GestionDepartements';
 import GestionFilieres from './pages/GestionFilieres';
@@ -17,6 +18,9 @@ import GestionCoursProfesseur from './pages/GestionCoursProfesseur';
 import GestionNotesProfesseur from './pages/GestionNotesProfesseur';
 import GestionPresenceProfesseur from './pages/GestionPresenceProfesseur';
 import GestionAnnoncesProfesseur from './pages/GestionAnnoncesProfesseur';
+import TableauDeBordEtudiant from './pages/TableauDeBordEtudiant';
+import CoursBibliotheque from './pages/CoursBibliotheque';
+import NotesEtudiant from './pages/NotesEtudiant';
 import ProfilPage from './pages/ProfilPage';
 import { apiAuth } from './services/apiAuth';
 import './App.css';
@@ -52,9 +56,9 @@ function App() {
     else if (role === 'professor') {
       setElementActif('tableau-de-bord-professeur');
     }
-    // Student -> Student Dashboard (placeholder)
+    // Student -> Student Dashboard
     else if (role === 'student') {
-      setElementActif('tableau-de-bord'); // Placeholder - can be updated when student interface is ready
+      setElementActif('tableau-de-bord-etudiant');
     }
     // Default to admin dashboard if role is unknown
     else {
@@ -89,7 +93,7 @@ function App() {
         } else if (role === 'admin') {
           setElementActif('tableau-de-bord');
         } else if (role === 'student') {
-          setElementActif('tableau-de-bord');
+          setElementActif('tableau-de-bord-etudiant');
         }
       }
     }
@@ -192,6 +196,24 @@ function App() {
     }
   };
 
+  const rendreContenuEtudiant = () => {
+    console.log('DEBUG: rendreContenuEtudiant called with elementActif:', elementActif);
+    switch (elementActif) {
+      case 'tableau-de-bord-etudiant':
+        console.log('DEBUG: Rendering TableauDeBordEtudiant');
+        return <TableauDeBordEtudiant surNavigation={gererChangementElement} />;
+      case 'profil':
+        return <ProfilPage />;
+      case 'cours':
+        return <CoursBibliotheque />;
+      case 'notes':
+        return <NotesEtudiant />;
+      default:
+        console.log('DEBUG: Rendering default TableauDeBordEtudiant');
+        return <TableauDeBordEtudiant surNavigation={gererChangementElement} />;
+    }
+  };
+
   // Show login page if not logged in
   if (!utilisateurConnecte) {
     return <Login onLogin={gererLogin} />;
@@ -216,71 +238,26 @@ function App() {
         {rendreContenuAdmin()}
       </ConteneurPrincipal>
     );
-  } else {
-    // Student dashboard placeholder
-    const gererLogoutEtudiant = () => {
-      if (window.confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
-        apiAuth.logout();
-      }
-    };
-
+  } else if (utilisateurConnecte.role === 'student') {
+    console.log('DEBUG: Student role detected, rendering student container');
+    console.log('DEBUG: Current elementActif:', elementActif);
     return (
-      <div style={{
-        height: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: '#F8FAFC',
-        fontFamily: 'Inter, sans-serif'
-      }}>
-        <div style={{
-          background: '#FFFFFF',
-          padding: '40px',
-          borderRadius: '24px',
-          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
-          textAlign: 'center',
-          maxWidth: '400px'
-        }}>
-          <div style={{
-            width: '60px',
-            height: '60px',
-            background: '#EEF2FF',
-            borderRadius: '16px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 24px',
-            color: '#4F46E5'
-          }}>
-            <GraduationCap size={32} />
-          </div>
-          <h1 style={{ color: '#0F172A', fontSize: '24px', marginBottom: '8px' }}>Student Dashboard</h1>
-          <p style={{ color: '#64748B', marginBottom: '32px' }}>Student interface coming soon...</p>
-          <button
-            onClick={gererLogoutEtudiant}
-            style={{
-              background: '#4F46E5',
-              color: '#FFFFFF',
-              border: 'none',
-              padding: '12px 24px',
-              borderRadius: '12px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              margin: '0 auto'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.background = '#4338CA'}
-            onMouseOut={(e) => e.currentTarget.style.background = '#4F46E5'}
-          >
-            <LogOut size={18} />
-            Déconnexion
-          </button>
-        </div>
-      </div >
+      <ConteneurEtudiant
+        elementActif={elementActif}
+        surChangementElement={gererChangementElement}
+      >
+        {rendreContenuEtudiant()}
+      </ConteneurEtudiant>
+    );
+  } else {
+    // Fallback for unknown roles - show admin dashboard
+    return (
+      <ConteneurPrincipal
+        elementActif={elementActif}
+        surChangementElement={gererChangementElement}
+      >
+        {rendreContenuAdmin()}
+      </ConteneurPrincipal>
     );
   }
 }
