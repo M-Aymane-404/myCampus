@@ -185,7 +185,7 @@ const CoursBibliotheque = () => {
                                     <td>
                                         <div className="cb-resource-info">
                                             <div className={`cb-res-icon-box ${res.type.toLowerCase()}`}>
-                                                <res.icon size={24} />
+                                                <res.icon size={20} />
                                             </div>
                                             <div className="cb-res-details">
                                                 <span className="cb-res-name">{res.name}</span>
@@ -217,10 +217,10 @@ const CoursBibliotheque = () => {
                                     <td>
                                         <div className="cb-actions">
                                             <button className="cb-action-btn" title="Télécharger">
-                                                <Download size={18} />
+                                                <Download size={16} />
                                             </button>
                                             <button className="cb-action-btn secondary" title="Ouvrir">
-                                                <ExternalLink size={18} />
+                                                <ExternalLink size={16} />
                                             </button>
                                         </div>
                                     </td>

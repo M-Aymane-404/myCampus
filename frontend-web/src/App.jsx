@@ -21,6 +21,9 @@ import GestionAnnoncesProfesseur from './pages/GestionAnnoncesProfesseur';
 import TableauDeBordEtudiant from './pages/TableauDeBordEtudiant';
 import CoursBibliotheque from './pages/CoursBibliotheque';
 import NotesEtudiant from './pages/NotesEtudiant';
+import PresenceEtudiant from './pages/PresenceEtudiant';
+import CalendrierEtudiant from './pages/CalendrierEtudiant';
+import AnnoncesEtudiant from './pages/AnnoncesEtudiant';
 import ProfilPage from './pages/ProfilPage';
 import { apiAuth } from './services/apiAuth';
 import './App.css';
@@ -208,6 +211,12 @@ function App() {
         return <CoursBibliotheque />;
       case 'notes':
         return <NotesEtudiant />;
+      case 'presence':
+        return <PresenceEtudiant />;
+      case 'calendrier':
+        return <CalendrierEtudiant />;
+      case 'annonces':
+        return <AnnoncesEtudiant />;
       default:
         console.log('DEBUG: Rendering default TableauDeBordEtudiant');
         return <TableauDeBordEtudiant surNavigation={gererChangementElement} />;

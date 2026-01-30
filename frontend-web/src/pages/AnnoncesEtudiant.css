@@ -1,0 +1,308 @@
+:root {
+    --ann-sidebar-bg: #ffffff;
+    --ann-sidebar-border: #f1f5f9;
+    --ann-text-main: #0f172a;
+    --ann-text-muted: #64748b;
+    --ann-accent: #0f172a;
+    --ann-search-bg: #f8fafc;
+    --ann-badge-pink: #fff1f2;
+    --ann-badge-pink-text: #e11d48;
+    --ann-badge-orange: #fff7ed;
+    --ann-badge-orange-text: #f59e0b;
+}
+
+.ann-container {
+    display: flex;
+    height: calc(100vh - 80px);
+    /* Adjust based on header height */
+    background-color: white;
+    font-family: 'Inter', sans-serif;
+    overflow: hidden;
+}
+
+/* Sidebar Styling */
+.ann-sidebar {
+    width: 320px;
+    background-color: var(--ann-sidebar-bg);
+    border-right: 1px solid var(--ann-sidebar-border);
+    display: flex;
+    flex-direction: column;
+    padding: 2rem 1.5rem;
+}
+
+.ann-sidebar-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--ann-text-main);
+    margin-bottom: 2rem;
+}
+
+.ann-search-box {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.ann-search-box input {
+    width: 100%;
+    background-color: var(--ann-search-bg);
+    border: none;
+    padding: 0.75rem 1rem 0.75rem 2.5rem;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    outline: none;
+    color: var(--ann-text-main);
+}
+
+.ann-search-icon {
+    position: absolute;
+    left: 0.875rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--ann-text-muted);
+}
+
+.ann-filters {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2.5rem;
+}
+
+.ann-filter-pill {
+    padding: 0.5rem 1.25rem;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: var(--ann-text-muted);
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+}
+
+.ann-filter-pill.active {
+    background-color: var(--ann-accent);
+    color: white;
+    border-color: var(--ann-accent);
+}
+
+.ann-list {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.ann-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.ann-item {
+    padding: 1.25rem;
+    border-radius: 16px;
+    margin-bottom: 1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+}
+
+.ann-item:hover {
+    background: #f8fafc;
+}
+
+.ann-item.active {
+    background: white;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+}
+
+.ann-item-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.ann-dot {
+    width: 6px;
+    height: 6px;
+    background-color: #ef4444;
+    border-radius: 50%;
+}
+
+.ann-item-date {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--ann-text-muted);
+    text-transform: uppercase;
+}
+
+.ann-pin {
+    position: absolute;
+    right: 1.25rem;
+    top: 1.25rem;
+    color: #fca311;
+}
+
+.ann-item-title {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--ann-text-main);
+    line-height: 1.4;
+    margin-bottom: 0.25rem;
+}
+
+.ann-item-subtitle {
+    font-size: 0.75rem;
+    color: var(--ann-text-muted);
+    font-weight: 500;
+}
+
+/* Main Content Styling */
+.ann-main {
+    flex: 1;
+    background-color: white;
+    padding: 2rem 4rem;
+    overflow-y: auto;
+}
+
+.ann-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+}
+
+.ann-prof-box {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.ann-prof-img {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+    background-color: #e2e8f0;
+}
+
+.ann-prof-name {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--ann-text-main);
+}
+
+.ann-prof-subject {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--ann-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 0.15rem;
+}
+
+.ann-status-box {
+    text-align: right;
+}
+
+.ann-status-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: var(--ann-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.ann-status-date {
+    font-size: 0.8125rem;
+    font-weight: 800;
+    color: var(--ann-text-main);
+    margin-top: 0.2rem;
+}
+
+.ann-badges {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+}
+
+.ann-badge {
+    padding: 0.4rem 0.875rem;
+    border-radius: 8px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.ann-badge.examen {
+    background-color: var(--ann-badge-pink);
+    color: var(--ann-badge-pink-text);
+}
+
+.ann-badge.priorite {
+    background-color: var(--ann-badge-orange);
+    color: var(--ann-badge-orange-text);
+}
+
+.ann-headline {
+    font-size: 2.25rem;
+    font-weight: 900;
+    color: var(--ann-text-main);
+    line-height: 1.15;
+    margin-bottom: 1.75rem;
+    max-width: 800px;
+    letter-spacing: -0.015em;
+}
+
+.ann-content {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #475569;
+    max-width: 800px;
+}
+
+.ann-content p {
+    margin-bottom: 1.25rem;
+}
+
+.ann-resources-section {
+    margin-top: 3rem;
+}
+
+.ann-resources-title {
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: var(--ann-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.ann-resources-grid {
+    display: flex;
+    gap: 1rem;
+}
+
+.ann-resource-card {
+    padding: 1.5rem 2.5rem;
+    background-color: white;
+    border: 1px solid #f1f5f9;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.ann-resource-card:hover {
+    border-color: #e2e8f0;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
