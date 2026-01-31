@@ -34,7 +34,7 @@ public interface EtudiantRepository extends JpaRepository<Etudiant, Long> {
     select count (e)
     from Etudiant e
     join e.classe c
-    join c.filiere f 
+    join c.filiere f
     where f.codeFiliere = :code
 """
     )

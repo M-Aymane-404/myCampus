@@ -1,10 +1,8 @@
 package com.mycampus.backend.dto.etudiant.DonneeSortie;
 
-import com.mycampus.backend.dto.administrateur.DonneSortie.UtilisateurSortieDto;
 import com.mycampus.backend.enumerations.EtatInscription;
 import com.mycampus.backend.enumerations.Semestre;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -14,7 +12,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class EtudiantSortieDTO {
+public class EtudiantSortieEtudiantDTO {
 
     private Long id;
 

@@ -2,6 +2,7 @@ package com.mycampus.backend.repositorys;
 
 import com.mycampus.backend.entites.Classe;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -17,4 +18,11 @@ public interface ClasseRepository extends JpaRepository<Classe, Long> {
     List<Classe> findByFiliereId(Long filiereId);
     
     List<Classe> findByFiliere_CodeFiliere(String codeFiliere);
+
+    @Query("""
+select c from Classe c
+join c.etudiants e
+where e.id =:id
+""")
+    Classe findByEtudiant_idEtudiant(Long etudiant_id);
 }

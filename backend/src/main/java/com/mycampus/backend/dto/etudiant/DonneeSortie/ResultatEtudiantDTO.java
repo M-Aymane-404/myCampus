@@ -2,7 +2,6 @@ package com.mycampus.backend.dto.etudiant.DonneeSortie;
 
 import com.mycampus.backend.entites.Etudiant;
 import com.mycampus.backend.entites.Examen;
-import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -12,7 +11,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 
-public class Resultat {
+public class ResultatEtudiantDTO {
     
 
     private Long id;

@@ -199,6 +199,9 @@
         @Override
         public void FermerDepartement(String codeDep) throws StructureAcademiqueException {
             Departement dep = requireDepartement(codeDep);
+            if(dep == null){
+                throw new StructureAcademiqueException("Department introuvable");
+            }
 
             dep.setEtat(EtatStructure.FERMEE);
             departementRepository.save(dep);
@@ -209,7 +212,9 @@
         @Override
         public void OuvrirDepartement(String codeDep) throws StructureAcademiqueException {
             Departement dep = requireDepartement(codeDep);
-
+            if(dep == null){
+                throw new StructureAcademiqueException("Department introuvable");
+            }
             dep.setEtat((EtatStructure.OUVERTE));
             departementRepository.save(dep);
 
@@ -354,6 +359,9 @@
         @Override
         public void FermerFiliere(String codeFiliere) throws StructureAcademiqueException {
             Filiere filiere = requireFiliere(codeFiliere);
+            if(filiere == null){
+                throw new StructureAcademiqueException("filiere introuvable");
+            }
 
             filiere.setEtat(EtatStructure.FERMEE);
             filiereRepository.save(filiere);
@@ -365,6 +373,9 @@
         @Override
         public void OuvrirFiliere(String codeFiliere) throws StructureAcademiqueException {
             Filiere filiere = requireFiliere(codeFiliere);
+            if(filiere == null){
+                throw new StructureAcademiqueException("filiere introuvable");
+            }
 
             filiere.setEtat(EtatStructure.OUVERTE);
             filiereRepository.save(filiere);

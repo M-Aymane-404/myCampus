@@ -2,7 +2,7 @@ package com.mycampus.backend.mappers.administrateur;
 
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.*;
 import com.mycampus.backend.dto.administrateur.DonneSortie.*;
-import com.mycampus.backend.dto.etudiant.DonneeSortie.SeanceSortieDTO;
+import com.mycampus.backend.dto.etudiant.DonneeSortie.SeanceSortieEtudiantDTO;
 import com.mycampus.backend.entites.*;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.DepartementEntrerDTO;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.FiliereEntrerDTO;
@@ -17,7 +17,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Component
@@ -433,12 +432,12 @@ public class StructureMapper {
 
     // ==================== SEANCE ====================
 
-    public SeanceSortieDTO FromSeanceVersSeanceSortieDTO(Seance seance) {
+    public SeanceSortieEtudiantDTO FromSeanceVersSeanceSortieDTO(Seance seance) {
         if (seance == null) {
             return null;
         }
 
-        SeanceSortieDTO seanceDTO = new SeanceSortieDTO();
+        SeanceSortieEtudiantDTO seanceDTO = new SeanceSortieEtudiantDTO();
         BeanUtils.copyProperties(seance, seanceDTO);
         
         // Mapping manuel de l'ID de l'affectation
@@ -449,7 +448,7 @@ public class StructureMapper {
         return seanceDTO;
     }
 
-    public List<SeanceSortieDTO> FromListeSeanceVersListeSeanceSortieDTO(List<Seance> seances) {
+    public List<SeanceSortieEtudiantDTO> FromListeSeanceVersListeSeanceSortieDTO(List<Seance> seances) {
         if (seances == null) {
             return List.of();
         }

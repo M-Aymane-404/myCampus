@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @Data
 
-public class ClasseSortieDTO {
+public class ClasseSortieEtudiantDTO {
     
     private  Long id;
     private  String codeClasse;
