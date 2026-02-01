@@ -13,8 +13,8 @@ public class MatiereDeReleveEtudiantDTO {
     private Long id;
     private String nomDuMatiere;
     private String codeMatiere;
-    List<ExamenDeReleveEtudiantDTO> examens;
-    private Double moyenne;
+    private List<ExamenDeReleveEtudiantDTO> examens;
+    private Double moyenneDuMatiere;
     private Boolean validee; // moyenne >= 10
 
 }

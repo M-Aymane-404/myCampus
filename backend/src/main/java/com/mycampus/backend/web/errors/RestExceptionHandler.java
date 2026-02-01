@@ -36,17 +36,15 @@ public class RestExceptionHandler {
 
     @ExceptionHandler(EtudiantException.class)
     public ResponseEntity<Object> handleEtudiantException(EtudiantException ex, WebRequest request) {
-        log.error("Étudiant exception: {}", ex.getMessage());
-
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("timestamp", LocalDateTime.now());
         body.put("status", HttpStatus.BAD_REQUEST.value());
         body.put("erreur", "Requête invalide");
         body.put("message", ex.getMessage());
         body.put("path", request.getDescription(false));
-
         return ResponseEntity.badRequest().body(body);
     }
+
 
     @ExceptionHandler(UtilisateursException.class)
     public ResponseEntity<Object> handleUtilisateursException(UtilisateursException ex, WebRequest request) {

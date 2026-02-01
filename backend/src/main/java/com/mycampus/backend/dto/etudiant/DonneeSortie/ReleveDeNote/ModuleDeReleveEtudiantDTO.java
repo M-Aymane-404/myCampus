@@ -14,6 +14,6 @@ public class ModuleDeReleveEtudiantDTO {
     private String nomDuModule;
     private String codeModule;
     private  Integer coefficient;
-    List<MatiereDeReleveEtudiantDTO> matieres;
-    private Double moyenne;
+    private List<MatiereDeReleveEtudiantDTO> matieres;
+    private Double moyenneDuModule;
 }

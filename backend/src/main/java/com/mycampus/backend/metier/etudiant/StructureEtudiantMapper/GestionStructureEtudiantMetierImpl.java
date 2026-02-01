@@ -2,6 +2,7 @@ package com.mycampus.backend.metier.etudiant.StructureEtudiantMapper;
 
 import com.mycampus.backend.dto.etudiant.DonneeSortie.*;
 import com.mycampus.backend.dto.etudiant.DonneeSortie.ReleveDeNote.ExamenDeReleveEtudiantDTO;
+import com.mycampus.backend.dto.etudiant.DonneeSortie.ReleveDeNote.MatiereDeReleveEtudiantDTO;
 import com.mycampus.backend.dto.etudiant.DonneeSortie.ReleveDeNote.ModuleDeReleveEtudiantDTO;
 import com.mycampus.backend.dto.etudiant.DonneeSortie.ReleveDeNote.ReleveDeNoteEtudiantParSessionDTO;
 import com.mycampus.backend.entites.*;
@@ -83,13 +84,19 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
 
     @Override
     @Transactional(readOnly = true)
-    public List<MatiereSortieEtudiantDTO> trouverMatiereParCodeModule(Long EtudiantId , String codeModule) throws EtudiantException {
+    public List<MatiereSortieEtudiantDTO> trouverMatiereParCodeModule(Long etudiantId , String codeModule) throws EtudiantException {
         if(codeModule == null){
             throw  new EtudiantException("code Module  est obligatoire");
         }
+        if (etudiantId == null){
+            throw  new EtudiantException("id étudiant est obligatoire");
+        }
 
         List<Matiere> matieres = matiereRepository.findByModule_CodeModule(codeModule);
-        Classe classe = classeRepository.findByEtudiant_idEtudiant(EtudiantId);
+        Classe classe = classeRepository.findByEtudiant_idEtudiant(etudiantId);
+        if(classe == null){
+            throw new EtudiantException("Classe introuvable pour l'étudiant " + etudiantId);
+        }
 
         if(matieres == null){
             return List.of();
@@ -99,7 +106,7 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
                 MatiereSortieEtudiantDTO matiereSortieEtudiantDTO = mapper.DuMatiereVersMatiereSortieEtudiantDTO(matier);
                 AffectationEnseignement affectationEnseignement = affectationEnseignementRepository.findByMatiere_CodeMatiereAndClasse_CodeClasse(matier.getCodeMatiere(), classe.getCodeClasse());
                 if (affectationEnseignement != null) {
-                    matiereSortieEtudiantDTO.setProfesseurDeMatiere(affectationEnseignement.getProfesseur().getNom() + affectationEnseignement.getProfesseur().getPrenom());
+                    matiereSortieEtudiantDTO.setProfesseurDeMatiere(affectationEnseignement.getProfesseur().getNom() + " " + affectationEnseignement.getProfesseur().getPrenom());
                 } else {
                     matiereSortieEtudiantDTO.setProfesseurDeMatiere(null);
                 }
@@ -254,7 +261,8 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
                         .orElse(null);
 
                 if (noteRattrapage != null) {
-                    matiereDto.setMoyenne(noteRattrapage);
+                    matiereDto.setMoyenneDuMatiere(noteRattrapage);
+
                 } else {
 
                     double moyenneNormal = matiereDto.getExamens().stream()
@@ -265,15 +273,41 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
                             .average()
                             .orElse(Double.NaN);
 
-                    matiereDto.setMoyenne(Double.isNaN(moyenneNormal) ? null : moyenneNormal);
-                    matiereDto.setValidee(
-                            matiereDto.getMoyenne() != null && matiereDto.getMoyenne() >= 10
-                    );
+                    matiereDto.setMoyenneDuMatiere(Double.isNaN(moyenneNormal) ? null : moyenneNormal);
+
+
+
+
 
 
                 }
+                Double moyenne = matiereDto.getMoyenneDuMatiere();
+                matiereDto.setValidee(moyenne != null && moyenne >= 10);
             });
-        });
+
+
+            if(moduleDto.getMatieres().size() == 1) {
+                moduleDto.setMoyenneDuModule(moduleDto.getMatieres().get(0).getMoyenneDuMatiere());
+            }
+            if(moduleDto.getMatieres().size() >= 2) {
+                double somme = 0.0;
+                int nbMoyennes = 0;
+                int nbTotal = moduleDto.getMatieres().size();
+
+                for (MatiereDeReleveEtudiantDTO matiere : moduleDto.getMatieres()) {
+                    Double moy = matiere.getMoyenneDuMatiere();
+                    if (moy != null) {
+                        somme += moy;
+                        nbMoyennes++;
+
+                    }
+                 }
+
+                 moduleDto.setMoyenneDuModule(nbMoyennes == nbTotal ? (somme / nbTotal) : null);
+
+            }
+
+            });
 
         return ReleveDeNoteEtudiantParSessionDTO.builder()
                 .semestre(semestre)

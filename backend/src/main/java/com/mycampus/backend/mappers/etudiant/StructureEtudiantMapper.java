@@ -1,16 +1,12 @@
 package com.mycampus.backend.mappers.etudiant;
 
-import com.mycampus.backend.dto.administrateur.DonneSortie.ProfesseurMiniSortieDTO;
-import com.mycampus.backend.dto.etudiant.DonneeSortie.*;
+ import com.mycampus.backend.dto.etudiant.DonneeSortie.*;
 import com.mycampus.backend.dto.etudiant.DonneeSortie.ReleveDeNote.ExamenDeReleveEtudiantDTO;
 import com.mycampus.backend.dto.etudiant.DonneeSortie.ReleveDeNote.MatiereDeReleveEtudiantDTO;
 import com.mycampus.backend.dto.etudiant.DonneeSortie.ReleveDeNote.ModuleDeReleveEtudiantDTO;
-import com.mycampus.backend.dto.etudiant.DonneeSortie.ReleveDeNote.ReleveDeNoteEtudiantParSessionDTO;
-import com.mycampus.backend.entites.*;
+ import com.mycampus.backend.entites.*;
 import com.mycampus.backend.entites.Module;
-import com.mycampus.backend.repositorys.AffectationEnseignementRepository;
-import com.mycampus.backend.repositorys.ProfesseurRepository;
-import com.mycampus.backend.repositorys.SeanceRepository;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
