@@ -432,7 +432,7 @@ public class StructureMapper {
 
     // ==================== SEANCE ====================
 
-    public SeanceSortieEtudiantDTO FromSeanceVersSeanceSortieDTO(Seance seance) {
+   /* public SeanceSortieEtudiantDTO FromSeanceVersSeanceSortieDTO(Seance seance) {
         if (seance == null) {
             return null;
         }
@@ -456,5 +456,5 @@ public class StructureMapper {
         return seances.stream()
             .map(this::FromSeanceVersSeanceSortieDTO)
             .collect(Collectors.toList());
-    }
+    }*/
 }

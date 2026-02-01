@@ -20,8 +20,7 @@ public class MatiereModificationDTO {
     @Size(min = 5, max = 500, message = "Description doit contenir entre 5 et 500 caractères")
     private String description;
     
-    @Min(value = 1, message = "Coefficient minimum est 1")
-    private Integer coefficient;
+
 
 
     private String codeModule;

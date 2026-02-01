@@ -26,8 +26,7 @@ public class Matiere {
     
     private String description;
     
-    @Column(nullable = false)
-    private Integer coefficient;
+
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "module_id", nullable = false)

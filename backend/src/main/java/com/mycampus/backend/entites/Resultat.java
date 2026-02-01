@@ -33,8 +33,7 @@ public class Resultat {
     @Column(nullable = false)
     private LocalDateTime datePublication;
     
-    @Column(nullable = false)
-    private Boolean valide = false;
+
     
     private String copieEtudiantPath;
     

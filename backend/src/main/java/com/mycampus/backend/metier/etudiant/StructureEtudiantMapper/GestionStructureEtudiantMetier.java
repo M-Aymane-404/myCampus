@@ -1,6 +1,7 @@
 package com.mycampus.backend.metier.etudiant.StructureEtudiantMapper;
 
 import com.mycampus.backend.dto.etudiant.DonneeSortie.*;
+import com.mycampus.backend.dto.etudiant.DonneeSortie.ReleveDeNote.ReleveDeNoteEtudiantParSessionDTO;
 import com.mycampus.backend.enumerations.Semestre;
 import com.mycampus.backend.enumerations.StatusAbsence;
 import com.mycampus.backend.enumerations.TypeSeance;
@@ -24,4 +25,7 @@ public interface GestionStructureEtudiantMetier {
     List<FichierSeanceSortieEtudiantDTO> trouverRessourceD_uneSeance(Long seanceId);
 
     List<PresenceSortieEtudiantDTO> trouverToutPresenceDuEtudiantConnecter(Long IdEtudiant, StatusAbsence status, LocalDate date) throws EtudiantException;
+
+    ReleveDeNoteEtudiantParSessionDTO trouverLeReleverDeNoteParSessionDuEtudiant(Long idEtudiant, Semestre semestre)
+            throws EtudiantException;
 }

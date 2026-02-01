@@ -23,12 +23,12 @@ public class ResultatEtudiantDTO {
     private LocalDateTime datePublication;
     
 
-    private Boolean valide ;
+
     
     private String copieEtudiantPath;
     
 
-    private Examen examen;
+    private Long examenId;
 
-    private Etudiant etudiant;
+
 }

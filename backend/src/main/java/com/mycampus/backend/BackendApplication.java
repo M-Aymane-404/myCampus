@@ -34,7 +34,7 @@ public class BackendApplication {
         SpringApplication.run(BackendApplication.class, args);
     }
 
-    @Bean
+    //@Bean
     CommandLineRunner commandLineRunner(
             GestionStructureAcademiqueMetier structureMetier,
             GestionUtilisateursMetier utilisateursMetier
@@ -184,29 +184,25 @@ public class BackendApplication {
                         .codeMatiere("ALGEBRE")
                         .nom("Algèbre")
                         .description("Algèbre linéaire")
-                        .coefficient(2)
-                        .codeModule("MATH101")
+                         .codeModule("MATH101")
                         .build(),
                 MatiereEntrerDTO.builder()
                         .codeMatiere("ANALYSE")
                         .nom("Analyse")
                         .description("Analyse 1")
-                        .coefficient(2)
-                        .codeModule("MATH101")
+                         .codeModule("MATH101")
                         .build(),
                 MatiereEntrerDTO.builder()
                         .codeMatiere("CRYPTO")
                         .nom("Cryptographie")
                         .description("Bases crypto")
-                        .coefficient(3)
-                        .codeModule("SEC101")
+                         .codeModule("SEC101")
                         .build(),
                 MatiereEntrerDTO.builder()
                         .codeMatiere("JAVA_BASICS")
                         .nom("Java Basics")
                         .description("OOP + syntaxe")
-                        .coefficient(3)
-                        .codeModule("JAVA101")
+                         .codeModule("JAVA101")
                         .build()
         );
 

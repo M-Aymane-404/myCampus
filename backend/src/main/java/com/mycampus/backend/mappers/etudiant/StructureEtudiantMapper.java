@@ -2,6 +2,10 @@ package com.mycampus.backend.mappers.etudiant;
 
 import com.mycampus.backend.dto.administrateur.DonneSortie.ProfesseurMiniSortieDTO;
 import com.mycampus.backend.dto.etudiant.DonneeSortie.*;
+import com.mycampus.backend.dto.etudiant.DonneeSortie.ReleveDeNote.ExamenDeReleveEtudiantDTO;
+import com.mycampus.backend.dto.etudiant.DonneeSortie.ReleveDeNote.MatiereDeReleveEtudiantDTO;
+import com.mycampus.backend.dto.etudiant.DonneeSortie.ReleveDeNote.ModuleDeReleveEtudiantDTO;
+import com.mycampus.backend.dto.etudiant.DonneeSortie.ReleveDeNote.ReleveDeNoteEtudiantParSessionDTO;
 import com.mycampus.backend.entites.*;
 import com.mycampus.backend.entites.Module;
 import com.mycampus.backend.repositorys.AffectationEnseignementRepository;
@@ -21,9 +25,7 @@ import java.util.stream.Collectors;
 public class StructureEtudiantMapper {
 
 
-    private final AffectationEnseignementRepository affectationEnseignementRepository;
-    private final SeanceRepository  seanceRepository;
-    private final ProfesseurRepository professeurRepository;
+
 
 
     public ModuleSortieEtudiantDTO DuModuleVersModuleSortieEtudiantDTO(Module module) {
@@ -41,28 +43,17 @@ public class StructureEtudiantMapper {
        return modules.stream().map(this::DuModuleVersModuleSortieEtudiantDTO).toList();
     }
 
-    public MatiereSortieEtudiantDTO DuMatiereVersMatiereSortieEtudiantDTO(Matiere matiere, String codeClasse) {
+    public MatiereSortieEtudiantDTO DuMatiereVersMatiereSortieEtudiantDTO(Matiere matiere) {
         MatiereSortieEtudiantDTO matiereSortieEtudiantDTO = new MatiereSortieEtudiantDTO();
         BeanUtils.copyProperties(matiere, matiereSortieEtudiantDTO);
 
-        AffectationEnseignement affectationEnseignement =  affectationEnseignementRepository.findByMatiere_CodeMatiereAndClasse_CodeClasse(matiere.getCodeMatiere(), codeClasse);
-        if (affectationEnseignement != null) {
-            matiereSortieEtudiantDTO.setProfesseurDeMatiere(affectationEnseignement.getProfesseur().getNom() + affectationEnseignement.getProfesseur().getPrenom());
-        }else {
-            matiereSortieEtudiantDTO.setProfesseurDeMatiere(null);
-        }
+
 
         return matiereSortieEtudiantDTO;
     }
 
 
-    public List<MatiereSortieEtudiantDTO> DuListeMatiereVersListeMatiereSortieEtudiantDTO(List<Matiere> matieres,String codeClasse) {
-      if (matieres == null){
-          return List.of();
-      }
 
-      return matieres.stream().map(matiere -> DuMatiereVersMatiereSortieEtudiantDTO(matiere,codeClasse)).toList();
-    }
 
 
     public SeanceSortieEtudiantDTO DuSeanceVersSeanceSortieEtudiantDTO(Seance seance) {
@@ -100,30 +91,63 @@ public class StructureEtudiantMapper {
     public PresenceSortieEtudiantDTO DuPresenceVersPresenceSortieEtudiantDTO(Presence presence) {
         PresenceSortieEtudiantDTO presenceSortieEtudiantDTO = new PresenceSortieEtudiantDTO();
         BeanUtils.copyProperties(presence, presenceSortieEtudiantDTO);
-        Seance seanceDuPresence = seanceRepository.findByPresence_presenceId(presence.getId());
-        Professeur prof = professeurRepository.findBySeance_SeanceId(seanceDuPresence.getId());
 
-        MiniSeanceSortieEtudiantDTO seance = new MiniSeanceSortieEtudiantDTO();
-
-        seance.setDate(seanceDuPresence.getDate());
-        seance.setSalle(seanceDuPresence.getSalle());
-        seance.setType(seanceDuPresence.getType());
-        seance.setProf(prof.getNom() + " " + prof.getPrenom());
-
-        presenceSortieEtudiantDTO.setSeance(seance);
 
 
          return presenceSortieEtudiantDTO;
     }
 
-    public List<PresenceSortieEtudiantDTO> DuListePresenceVersListePresenceSortieEtudiantDTO(List<Presence> presences) {
-        if (presences == null){
-            return List.of();
-        }
 
-        return presences.stream().map(this::DuPresenceVersPresenceSortieEtudiantDTO).toList();
+
+
+
+
+
+
+
+
+
+
+   public ExamenDeReleveEtudiantDTO DuExamenVersExamenDeReleveEtudiantDTO(Examen examen) {
+        ExamenDeReleveEtudiantDTO examenDeReleveEtudiantDTO = new ExamenDeReleveEtudiantDTO();
+        examenDeReleveEtudiantDTO.setNumeroExamen(examen.getNumeroExamen());
+        examenDeReleveEtudiantDTO.setTypeExamen(examen.getTypeExamen());
+        examenDeReleveEtudiantDTO.setCorrigePath(examen.getCorrigePath());
+        examenDeReleveEtudiantDTO.setId(examen.getId());
+
+        return examenDeReleveEtudiantDTO;
+   }
+
+
+
+    public MatiereDeReleveEtudiantDTO DuMatiereVersMatiereDeReleveEtudiantDTOO(Matiere matiere) {
+        MatiereDeReleveEtudiantDTO matiereDeReleveEtudiantDTO = new MatiereDeReleveEtudiantDTO();
+        matiereDeReleveEtudiantDTO.setCodeMatiere(matiere.getCodeMatiere());
+        matiereDeReleveEtudiantDTO.setNomDuMatiere(matiere.getNom());
+        matiereDeReleveEtudiantDTO.setId(matiere.getId());
+
+        matiereDeReleveEtudiantDTO.setExamens(
+                matiere.getExamens().stream().map(this::DuExamenVersExamenDeReleveEtudiantDTO).collect(Collectors.toList())
+        );
+
+        return matiereDeReleveEtudiantDTO;
     }
 
+    public ModuleDeReleveEtudiantDTO DuModuleVersModuleDeReleveEtudiantDTO(Module module) {
+
+        ModuleDeReleveEtudiantDTO moduleDeReleveEtudiantDTO = new ModuleDeReleveEtudiantDTO();
+        moduleDeReleveEtudiantDTO.setCodeModule(module.getCodeModule());
+        moduleDeReleveEtudiantDTO.setNomDuModule(module.getNom());
+        moduleDeReleveEtudiantDTO.setCoefficient(module.getCoefficient());
+        moduleDeReleveEtudiantDTO.setId(module.getId());
+
+
+        moduleDeReleveEtudiantDTO.setMatieres(
+                module.getMatieres().stream().map(this::DuMatiereVersMatiereDeReleveEtudiantDTOO).toList()
+        );
+
+        return moduleDeReleveEtudiantDTO;
+    }
 
 
 }

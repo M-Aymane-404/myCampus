@@ -29,8 +29,7 @@ public class MatiereEntrerDTO {
     @Size(max = 500, message = "Description ne doit pas dépasser 500 caractères")
     private String description;
     
-    private Integer coefficient;
-    
+
     @Pattern(
             regexp = "^[A-Z0-9]{2,20}$",
             message = "Code module doit contenir 2-20 caractères alphanumériques en majuscules"

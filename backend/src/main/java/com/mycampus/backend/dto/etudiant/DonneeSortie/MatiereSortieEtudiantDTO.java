@@ -16,8 +16,7 @@ public class MatiereSortieEtudiantDTO {
     private  String codeMatiere;
     private  String nom;
     private  String description;
-    private  Integer coefficient;
-    private String professeurDeMatiere ;
+     private String professeurDeMatiere ;
 
 
 }

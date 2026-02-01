@@ -753,9 +753,7 @@
             if (matiereModificationDTO.getDescription() != null) {
                 matiere.setDescription(matiereModificationDTO.getDescription());
             }
-            if (matiereModificationDTO.getCoefficient() != null) {
-                matiere.setCoefficient(matiereModificationDTO.getCoefficient());
-            }
+
 
             Matiere matiereModifiee = matiereRepository.save(matiere);
             return structureMapper.FromMatiereVersMatiereSortieDTO(matiereModifiee);
