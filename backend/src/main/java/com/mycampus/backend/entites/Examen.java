@@ -13,6 +13,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @ToString(exclude = {"matiere", "resultats"})
 @EqualsAndHashCode(exclude = {"matiere", "resultats"})
 public class Examen {

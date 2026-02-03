@@ -2,6 +2,7 @@ package com.mycampus.backend.entites;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @PrimaryKeyJoinColumn(name = "utilisateur_id")
@@ -9,6 +10,8 @@ import lombok.*;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@SuperBuilder
+
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 
 public class Administrateur extends Utilisateur {

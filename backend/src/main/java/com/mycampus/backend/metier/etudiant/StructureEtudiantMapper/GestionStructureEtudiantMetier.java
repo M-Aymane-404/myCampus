@@ -6,6 +6,7 @@ import com.mycampus.backend.enumerations.Semestre;
 import com.mycampus.backend.enumerations.StatusAbsence;
 import com.mycampus.backend.enumerations.TypeSeance;
 import com.mycampus.backend.exceptions.EtudiantException;
+import org.springframework.security.core.Authentication;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -28,4 +29,6 @@ public interface GestionStructureEtudiantMetier {
 
     ReleveDeNoteEtudiantParSessionDTO trouverLeReleverDeNoteParSessionDuEtudiant(Long idEtudiant, Semestre semestre)
             throws EtudiantException;
-}
+
+
+ }

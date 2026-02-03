@@ -12,9 +12,11 @@ import com.mycampus.backend.enumerations.StatusAbsence;
 import com.mycampus.backend.enumerations.TypeExamen;
 import com.mycampus.backend.enumerations.TypeSeance;
 import com.mycampus.backend.exceptions.EtudiantException;
+import com.mycampus.backend.exceptions.StructureAcademiqueException;
 import com.mycampus.backend.mappers.etudiant.StructureEtudiantMapper;
 import com.mycampus.backend.repositorys.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +31,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudiantMetier {
      private final EtudiantRepository etudiantRepository;
+     private final UtilisateurRepository utilisateurRepository;
     private final ModuleRepository moduleRepository;
     private final MatiereRepository matiereRepository;
     private final SeanceRepository seanceRepository;
@@ -315,13 +318,6 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
                 .build();
 
     }
-
-
-
-
-
-
-
 
 
 

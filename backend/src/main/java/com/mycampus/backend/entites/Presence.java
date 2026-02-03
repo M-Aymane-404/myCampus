@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @ToString(exclude = {"seance", "etudiant"})
 @EqualsAndHashCode(exclude = {"seance", "etudiant"})
 public class Presence {
@@ -18,10 +19,7 @@ public class Presence {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
-    
 
-    
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private StatusAbsence status;

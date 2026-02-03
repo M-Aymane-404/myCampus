@@ -2,6 +2,7 @@ package com.mycampus.backend.entites;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
 import java.util.Date;
@@ -13,6 +14,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@SuperBuilder
 @ToString(exclude = {"affectationEnseignements", "departementOuTravail", "departementDirigee", "filiereDirigee"})
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 public class Professeur extends Utilisateur {
@@ -30,18 +32,14 @@ public class Professeur extends Utilisateur {
     
     private String statut;
     
-    @OneToMany(mappedBy = "professeur", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "professeur", fetch = FetchType.LAZY,cascade = CascadeType.ALL)
     private List<AffectationEnseignement> affectationEnseignements;
 
     @ManyToOne(fetch = FetchType.LAZY)
     private Departement departementOuTravail;
 
     @OneToOne(mappedBy = "chefDepartement")
-   /* @JoinColumn(
-            name = "departement_dirigee_id",
-            nullable = true,
-            unique = true
-    )*/
+
     private Departement departementDirigee;
 
     @OneToOne( mappedBy = "chefFiliere")

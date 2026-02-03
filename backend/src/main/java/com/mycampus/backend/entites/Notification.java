@@ -13,6 +13,7 @@ import java.util.Date;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @ToString(exclude = {"utilisateur"})
 @EqualsAndHashCode(exclude = {"utilisateur"})
 public class Notification {

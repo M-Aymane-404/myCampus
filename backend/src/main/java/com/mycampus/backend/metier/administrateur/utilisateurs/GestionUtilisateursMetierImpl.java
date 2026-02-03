@@ -9,15 +9,12 @@ import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.Professe
 import com.mycampus.backend.dto.administrateur.DonneSortie.AdministrateurSortieDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.ProfesseurSortieDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.EtudiantSortieDTO;
-import com.mycampus.backend.entites.Administrateur;
-import com.mycampus.backend.entites.Departement;
-import com.mycampus.backend.entites.Professeur;
-import com.mycampus.backend.entites.Etudiant;
-import com.mycampus.backend.entites.Classe;
+import com.mycampus.backend.entites.*;
 import com.mycampus.backend.repositorys.*;
 import com.mycampus.backend.mappers.administrateur.UtilisateursMapper;
 import com.mycampus.backend.exceptions.UtilisateursException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,7 +34,7 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
     private final DepartementRepository departementRepository;
     private final FiliereRepository filiereRepository;
     private final ClasseRepository classeRepository;
-    //private final PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public AdministrateurSortieDTO creerAdministrateur(AdministrateurEntrerDTO administrateurEntrerDTO) throws UtilisateursException {
@@ -76,7 +73,7 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
         Administrateur administrateur = utilisateursMapper.FromAdministrateurEntrerVersAdministrateur(administrateurEntrerDTO);
         administrateur.setDateCreation(LocalDateTime.now());
         administrateur.setActive(true);
-      //  administrateur.setPassword(passwordEncoder.encode(administrateurDTO.getPassword()));
+      administrateur.setPassword(passwordEncoder.encode(administrateurEntrerDTO.getPassword()));
 
         
         Administrateur administrateurSauvegarde = administrateurRepository.save(administrateur);
@@ -107,6 +104,7 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
             throw new UtilisateursException("Erreur lors de la liste des administrateurs: " + e.getMessage(), e);
         }
     }
+
 
     @Override
     public AdministrateurSortieDTO modifierAdministrateur(String ppr, AdministrateurModificationDTO administrateurModificationDTO) throws UtilisateursException {
@@ -175,9 +173,9 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
             adminAModifier.setActive(administrateurModificationDTO.getActive());
         }
 
-       /* if(administrateurModificationDTO.getPassword() != null && !administrateurModificationDTO.getPassword().trim().isEmpty()) {
+        if(administrateurModificationDTO.getPassword() != null && !administrateurModificationDTO.getPassword().trim().isEmpty()) {
             adminAModifier.setPassword(passwordEncoder.encode(administrateurModificationDTO.getPassword()));
-        }*/
+        }
 
         
         Administrateur administrateurModifie = administrateurRepository.save(adminAModifier);
@@ -277,6 +275,8 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
         professeur.setActive(true);
         professeur.setDateCreation(LocalDateTime.now());
         professeur.setDateDerniereConnexion(null);
+        professeur.setPassword(passwordEncoder.encode(professeurEntrerDTO.getPassword()));
+
 
 
 
@@ -393,9 +393,9 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
 
 
 
-        /* if(professeurDTO.getPassword() != null && !professeurDTO.getPassword().trim().isEmpty()) {
-            professeurAModifier.setPassword(passwordEncoder.encode(professeurDTO.getPassword()));
-        }*/
+          if(professeurModificationDTO.getPassword() != null && !professeurModificationDTO.getPassword().trim().isEmpty()) {
+            professeurAModifier.setPassword(passwordEncoder.encode(professeurModificationDTO.getPassword()));
+        }
 
         Professeur professeurModifie = professeurRepository.save(professeurAModifier);
         return utilisateursMapper.FromProfesseurVersProfesseurSortirDTO(professeurModifie);
@@ -490,6 +490,8 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
         etudiant.setActive(true);
         etudiant.setDateCreation(LocalDateTime.now());
         etudiant.setAnneeFinEtude(null);
+        etudiant.setPassword(passwordEncoder.encode(etudiantEntrerDTO.getPassword()));
+
 
         return utilisateursMapper.FromEtudientVersEtudiantSortieDTO(etudiantRepository.save(etudiant));
     }
@@ -602,9 +604,9 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
         }
 
 
-        /* if(etudiantDTO.getPassword() != null && !etudiantDTO.getPassword().trim().isEmpty()) {
-            etudiantAModifier.setPassword(passwordEncoder.encode(etudiantDTO.getPassword()));
-        }*/
+       if(etudiantModificationDTO.getPassword() != null && !etudiantModificationDTO.getPassword().trim().isEmpty()) {
+            etudiantAModifier.setPassword(passwordEncoder.encode(etudiantModificationDTO.getPassword()));
+        }
 
         Etudiant etudiantModifie = etudiantRepository.save(etudiantAModifier);
         return utilisateursMapper.FromEtudientVersEtudiantSortieDTO(etudiantModifie);
@@ -647,4 +649,6 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
         etudiant.setActive(false);
         etudiantRepository.save(etudiant);
     }
+
+
 }

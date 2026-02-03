@@ -4,6 +4,7 @@ import com.mycampus.backend.enumerations.Semestre;
 import jakarta.persistence.*;
 import lombok.*;
 import com.mycampus.backend.enumerations.EtatInscription;
+import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -16,7 +17,7 @@ import java.util.List;
 @AllArgsConstructor
 @ToString(exclude = {"classe", "presences", "resultats"})
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
-
+@SuperBuilder
 public class Etudiant extends Utilisateur {
 
     @Column(nullable = false, unique = true)

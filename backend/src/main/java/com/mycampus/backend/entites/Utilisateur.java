@@ -2,6 +2,7 @@ package com.mycampus.backend.entites;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -15,6 +16,7 @@ import java.util.List;
 
 @NoArgsConstructor
 @AllArgsConstructor
+@SuperBuilder
 @ToString(exclude = {"notifications"})
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Utilisateur {
@@ -49,6 +51,13 @@ public class Utilisateur {
     
     private LocalDateTime dateDerniereConnexion;
     
-    @OneToMany(mappedBy = "utilisateur")
+    @OneToMany(mappedBy = "utilisateur",cascade = CascadeType.ALL)
     private List<Notification> notifications;
+
+    @OneToMany(mappedBy = "utilisateur" ,cascade = CascadeType.ALL,    orphanRemoval = true)
+
+    private List<UtilisateurRole> utilisateurRoles;
+
+    @OneToMany(mappedBy = "utilisateur", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<RefreshToken> refreshTokens;
 }
