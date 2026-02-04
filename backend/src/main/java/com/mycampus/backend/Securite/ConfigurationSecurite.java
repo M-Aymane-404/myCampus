@@ -3,6 +3,7 @@ package com.mycampus.backend.Securite;
 
 import com.mycampus.backend.metier.security.UserDetailsServiceImpl;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -11,7 +12,9 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
@@ -26,32 +29,15 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
 import javax.crypto.spec.SecretKeySpec;
-//import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-//import org.springframework.security.crypto.password.PasswordEncoder;
+
 
 @Configuration
-
+@EnableWebSecurity
+@EnableMethodSecurity
+@RequiredArgsConstructor
 public class ConfigurationSecurite {
 
-
-
-    @Bean
-    public CorsFilter corsFilter() {
-        CorsConfiguration config = new CorsConfiguration();
-        config.setAllowCredentials(true);
-        config.addAllowedOrigin("http://localhost:5173");
-        config.addAllowedHeader("*");
-        config.addAllowedMethod("*");
-        
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
-        return new CorsFilter(source);
-    }
-
-
-    @Autowired
-    private UserDetailsServiceImpl userDetailsServiceImpl;
-
+     private final  UserDetailsServiceImpl userDetailsServiceImpl;
 
 
     @Value("${jwt.secretKey}")
@@ -63,21 +49,18 @@ public class ConfigurationSecurite {
         http
                 .headers(header -> header.frameOptions(frame -> frame.disable()))
                 .exceptionHandling(e -> e
-                        // .authenticationEntryPoint(restAuthenticationEntryPoint)
-                        .accessDeniedPage("/public/notAuth")
+                         .accessDeniedPage("/public/notAuth")
                 )
-                //   .formLogin(fl->fl.loginPage("/login").defaultSuccessUrl("/").permitAll())
 
 
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/login").permitAll()
+                        .requestMatchers("/auth/seConnecter").permitAll()
 
                         .anyRequest().authenticated()
                 )
 
 
-                .httpBasic(Customizer.withDefaults())
-                .cors(Customizer.withDefaults())
+                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
                 .oauth2ResourceServer(oa -> oa.jwt(Customizer.withDefaults()))
 
@@ -106,6 +89,19 @@ public class ConfigurationSecurite {
         daoAuthenticationProvider.setPasswordEncoder(passwordEncoder);
         return new ProviderManager(daoAuthenticationProvider);
 
+    }
+
+    @Bean
+    public CorsFilter corsFilter() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowCredentials(true);
+        config.addAllowedOrigin("http://localhost:5173");
+        config.addAllowedHeader("*");
+        config.addAllowedMethod("*");
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return new CorsFilter(source);
     }
 
 

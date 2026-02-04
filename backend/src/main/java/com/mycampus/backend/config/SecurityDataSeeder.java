@@ -2,11 +2,6 @@ package com.mycampus.backend.config;
 
 import com.mycampus.backend.entites.*;
 import com.mycampus.backend.enumerations.RolesCode;
-import com.mycampus.backend.enumerations.Semestre;
-
-import com.mycampus.backend.enumerations.TypeSeance;
-import com.mycampus.backend.enumerations.StatusAbsence;
-import com.mycampus.backend.enumerations.TypeExamen;
 import com.mycampus.backend.repositorys.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +12,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -31,30 +25,29 @@ public class SecurityDataSeeder {
     private final PermissionRepository permissionRepository;
     private final RolePermissionRepository rolePermissionRepository;
     private final UtilisateurRepository utilisateurRepository;
-
     private final PasswordEncoder passwordEncoder;
+    private final ProfesseursSeeder professeursSeeder;
+    private final EtudiantsSeeder etudiantsSeeder;
+    private final PedagogiqueDataSeeder  pedagogiqueDataSeeder;
 
     @Bean
     public ApplicationRunner securityDataSeederRunner() {
         return args -> {
             log.info("Starting security data seeding...");
             seedSecurityData();
+            professeursSeeder.seedProfesseurs();
+            etudiantsSeeder.seedEtudiants();
+            pedagogiqueDataSeeder.seedPedagogicalData();
+
             log.info("Security data seeding completed successfully");
         };
     }
 
     @Transactional
     public void seedSecurityData() {
-        // Seed Roles
         seedRoles();
-        
-        // Seed Permissions
         seedPermissions();
-        
-        // Seed Role-Permission associations
         seedRolePermissions();
-        
-        // Seed Admins
         seedAdmins();
     }
     
@@ -105,8 +98,8 @@ public class SecurityDataSeeder {
             .forEach(code -> {
                 Permission permission = Permission.builder()
                     .codePermission(code)
-                     .description("Permission: " + code)
-                     .dateCreation(LocalDateTime.now())
+                    .description("Permission: " + code)
+                    .dateCreation(LocalDateTime.now())
                     .build();
                 permissionRepository.save(permission);
                 log.info("Created permission: {}", code);
@@ -115,10 +108,9 @@ public class SecurityDataSeeder {
 
     private void seedRolePermissions() {
         // Admin role gets all permissions
-        Role adminRole = roleRepository.findByNomRole(RolesCode.ADMIN)
-                .orElseThrow(() -> new RuntimeException("ADMIN role not found"));
-
+        Role adminRole = requireRole(RolesCode.ADMIN);
         List<Permission> allPermissions = permissionRepository.findAll();
+        
         for (Permission permission : allPermissions) {
             boolean exists = rolePermissionRepository
                     .existsByRole_NomRoleAndPermission_CodePermission(
@@ -136,9 +128,7 @@ public class SecurityDataSeeder {
         }
 
         // Student role permissions
-        Role studentRole = roleRepository.findByNomRole(RolesCode.ETUDIANT)
-                .orElseThrow(() -> new RuntimeException("ETUDIANT role not found"));
-        
+        Role studentRole = requireRole(RolesCode.ETUDIANT);
         List<String> studentPermissionCodes = Arrays.asList(
             "ETUDIANT_INFORMATION_PERSONNEL_LIRE", "ETUDIANT_MODULES_LIRE", "ETUDIANT_MATIERES_LIRE",
             "ETUDIANT_SEANCES_LIRE", "ETUDIANT_RESSOURCES_LIRE", "ETUDIANT_PRESENCES_LIRE", "ETUDIANT_RELEVE_LIRE"
@@ -163,9 +153,7 @@ public class SecurityDataSeeder {
         }
 
         // Professor role permissions
-        Role professeurRole = roleRepository.findByNomRole(RolesCode.PROFESSEUR)
-                .orElseThrow(() -> new RuntimeException("PROFESSEUR role not found"));
-        
+        Role professeurRole = requireRole(RolesCode.PROFESSEUR);
         List<String> professeurPermissionCodes = Arrays.asList(
             "PROFESSEUR_INFORMATION_PERSONNEL_LIRE", "PROFESSEUR_MODULES_LIRE", "PROFESSEUR_MATIERES_LIRE",
             "PROFESSEUR_SEANCES_LIRE", "PROFESSEUR_RESSOURCES_LIRE", "PROFESSEUR_PRESENCES_LIRE",
@@ -189,6 +177,10 @@ public class SecurityDataSeeder {
                 }
             });
         }
+    }
+    private Role requireRole(RolesCode roleCode) {
+        return roleRepository.findByNomRole(roleCode)
+                .orElseThrow(() -> new RuntimeException("Role " + roleCode + " not found"));
     }
 
     private void seedAdmins() {

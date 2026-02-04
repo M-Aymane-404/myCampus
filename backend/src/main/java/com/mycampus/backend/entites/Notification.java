@@ -32,6 +32,7 @@ public class Notification {
     private LocalDateTime dateEnvoi;
     
     @Column(nullable = false)
+    @Builder.Default
     private Boolean lu = false;
     
     private LocalDateTime dateLecture;

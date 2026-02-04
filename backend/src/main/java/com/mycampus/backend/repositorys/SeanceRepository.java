@@ -1,5 +1,6 @@
 package com.mycampus.backend.repositorys;
 
+import com.mycampus.backend.entites.AffectationEnseignement;
 import com.mycampus.backend.entites.Classe;
 import com.mycampus.backend.entites.Seance;
 import com.mycampus.backend.enumerations.TypeSeance;
@@ -8,6 +9,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository

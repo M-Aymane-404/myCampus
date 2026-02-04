@@ -45,6 +45,7 @@ public class Utilisateur {
     private String photo;
     
     @Column(nullable = false)
+    @Builder.Default
     private Boolean active = true;
     
     private LocalDateTime dateCreation;

@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 public class RefreshToken {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-     private String id ;
+     private Long id ;
     private String token;
     private LocalDateTime dateCreation;
     private LocalDateTime dateExpiration;
