@@ -71,8 +71,7 @@ public class ConfigurationSecurite {
 
 
                 .csrf(csrf -> csrf.disable())
-                 .httpBasic(Customizer.withDefaults())
-                .cors(Customizer.withDefaults())
+                 .cors(Customizer.withDefaults())
                 .httpBasic(Customizer.withDefaults())
 
                 .authorizeHttpRequests(auth -> auth
