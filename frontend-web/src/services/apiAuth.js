@@ -1,7 +1,7 @@
-const BASE_URL = 'http://localhost:8080/api/auth';
+const BASE_URL = 'http://localhost:8080/auth';
 
-// MOCK MODE: Set to true to bypass backend authentication
-const MOCK_MODE = true;
+// MOCK MODE: Set to false to use real backend
+const MOCK_MODE = false;
 
 export const apiAuth = {
   // Mock login - accepts any credentials and returns success based on selected role
@@ -31,23 +31,20 @@ export const apiAuth = {
     };
   },
 
-  async login(email, password, role = null) {
+  async login(email, password) {
     // MOCK MODE: Always use mock login (bypasses backend)
     if (MOCK_MODE) {
-      // If role is provided, use it; otherwise default to admin
-      const selectedRole = role || 'admin';
-      return this.mockLogin(email, password, selectedRole);
+      return this.mockLogin(email, password, 'admin');
     }
     try {
-      // First try with just email and password (most common format)
       const requestBody = {
         email: email,
-        password: password
+        moteDePasse: password // Matching backend ConnectionDTO field name
       };
 
-      console.log('Attempting login with:', { email, passwordLength: password.length });
+      console.log('Attempting login with:', { email });
 
-      const response = await fetch(`${BASE_URL}/login`, {
+      const response = await fetch(`${BASE_URL}/seConnecter`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -55,48 +52,50 @@ export const apiAuth = {
         body: JSON.stringify(requestBody),
       });
 
-      console.log('Login response status:', response.status);
-
-      // Handle different response statuses
       if (!response.ok) {
-        let errorMessage = `Erreur HTTP: ${response.status}`;
-
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.message || errorData.error || errorMessage;
-
-          // Handle specific error cases
-          if (response.status === 500) {
-            errorMessage = 'Erreur interne du serveur';
-          } else if (response.status === 401) {
-            errorMessage = 'Email ou mot de passe incorrect';
-          } else if (response.status === 404) {
-            errorMessage = 'Service d\'authentification non disponible';
-          }
-        } catch (parseError) {
-          // If JSON parsing fails, use status-based message
-          if (response.status === 500) {
-            errorMessage = 'Erreur interne du serveur';
-          }
+        let errorMessage = 'Erreur de connexion';
+        if (response.status === 401) {
+          errorMessage = 'Email ou mot de passe incorrect';
+        } else if (response.status === 500) {
+          errorMessage = 'Erreur serveur. Veuillez réessayer plus tard.';
         }
-
         throw new Error(errorMessage);
       }
 
       const data = await response.json();
 
-      // Store token and user data
-      if (data.token) {
-        localStorage.setItem('mycampus_token', data.token);
-      }
-      if (data.user) {
-        localStorage.setItem('mycampus_user', JSON.stringify(data.user));
-      } else if (data) {
-        // If the entire response is user data
-        localStorage.setItem('mycampus_user', JSON.stringify(data));
+      // Store token
+      if (data.access_token) {
+        const token = data.access_token;
+        localStorage.setItem('mycampus_token', token);
+
+        // Decode JWT to extract role from 'scope' claim
+        try {
+          const payloadBase64 = token.split('.')[1];
+          const decodedPayload = JSON.parse(atob(payloadBase64));
+          const scope = decodedPayload.scope || '';
+
+          // Normalize roles from backend (e.g., "ROLE_ADMIN ROLE_USER" -> "admin")
+          let role = 'student'; // default
+          if (scope.includes('ROLE_ADMIN')) role = 'admin';
+          else if (scope.includes('ROLE_PROFESSEUR')) role = 'professor';
+          else if (scope.includes('ROLE_ETUDIANT')) role = 'student';
+
+          const user = {
+            email: email,
+            role: role,
+            nom: decodedPayload.sub, // 'sub' is usually the username/email
+          };
+
+          localStorage.setItem('mycampus_user', JSON.stringify(user));
+          return { token, user };
+        } catch (e) {
+          console.error('Error decoding token:', e);
+          throw new Error('Erreur lors du traitement du jeton de connexion');
+        }
       }
 
-      return data;
+      throw new Error('Réponse du serveur invalide');
     } catch (erreur) {
       console.error('Erreur lors de la connexion:', erreur);
       throw erreur;

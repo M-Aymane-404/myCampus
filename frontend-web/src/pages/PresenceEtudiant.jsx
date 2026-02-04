@@ -64,10 +64,22 @@ const PresenceEtudiant = () => {
 
     const months = ['JAN', 'FEV', 'MAR', 'AVR', 'MAI', 'JUIN', 'JUIL', 'AOUT', 'SEPT', 'OCT', 'NOV', 'DEC'];
 
+    const handleMonthChange = (direction) => {
+        const currentIndex = months.indexOf(currentMonth);
+        let newIndex = currentIndex + direction;
+        
+        if (newIndex < 0) newIndex = 11; // Wrap to December
+        if (newIndex > 11) newIndex = 0;  // Wrap to January
+        
+        setCurrentMonth(months[newIndex]);
+    };
+
     const renderCalendar = () => {
         const cells = [];
-        const daysInMonth = 31;
-        const startOffset = 2; // Offset for starting day (Lundi/Mardi offset)
+        const monthIndex = months.indexOf(currentMonth);
+        const daysInMonth = new Date(currentYear, monthIndex + 1, 0).getDate();
+        const firstDay = new Date(currentYear, monthIndex, 1).getDay();
+        const startOffset = firstDay === 0 ? 6 : firstDay - 1; // Convert Sunday=0 to Saturday=6 offset
 
         // Empty cells for alignment
         for (let i = 0; i < startOffset; i++) {
@@ -131,6 +143,8 @@ const PresenceEtudiant = () => {
                                     value={currentYear}
                                     onChange={(e) => setCurrentYear(parseInt(e.target.value))}
                                 >
+                                    <option value={2026}>2026</option>
+                                    <option value={2025}>2025</option>
                                     <option value={2024}>2024</option>
                                     <option value={2023}>2023</option>
                                 </select>
@@ -139,11 +153,11 @@ const PresenceEtudiant = () => {
                             <div className="control-row">
                                 <span className="control-label">Mois</span>
                                 <div className="month-stepper">
-                                    <button className="stepper-btn">
+                                    <button className="stepper-btn" onClick={() => handleMonthChange(-1)}>
                                         <ChevronLeft size={14} />
                                     </button>
                                     <span className="current-month">{currentMonth}</span>
-                                    <button className="stepper-btn">
+                                    <button className="stepper-btn" onClick={() => handleMonthChange(1)}>
                                         <ChevronRight size={14} />
                                     </button>
                                 </div>
