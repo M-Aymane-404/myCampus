@@ -67,7 +67,6 @@ public class ConfigurationSecurite {
                         .authenticationEntryPoint(new JsonAuthenticationEntryPoint())
                         .accessDeniedHandler(new JsonAccessDeniedHandler())
                 )
-                .securityMatcher("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html")
 
 
                 .csrf(csrf -> csrf.disable())
@@ -75,8 +74,11 @@ public class ConfigurationSecurite {
                 .httpBasic(Customizer.withDefaults())
 
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/seConnecter").permitAll()
-                        .anyRequest().authenticated()
+                         .requestMatchers("/auth/seConnecter").permitAll()
+
+                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").authenticated()
+
+                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oa -> oa.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)))
                 .userDetailsService(userDetailsServiceImpl)
