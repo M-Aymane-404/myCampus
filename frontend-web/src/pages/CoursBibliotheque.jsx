@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Search,
     Book,
@@ -14,75 +14,129 @@ import {
     Filter
 } from 'lucide-react';
 import './CoursBibliotheque.css';
+import { apiCours } from '../services/apiCours';
 
 const CoursBibliotheque = () => {
-    const [activeModule, setActiveModule] = useState('react');
+    const [modules, setModules] = useState([]);
+    const [activeModule, setActiveModule] = useState(null);
     const [activeTab, setActiveTab] = useState('TOUS');
     const [resourceSearch, setResourceSearch] = useState('');
-    const [activeSemester, setActiveSemester] = useState('TOUS');
+    const [activeSemester, setActiveSemester] = useState('S4'); // Will be updated by profile
+    const [semesters, setSemesters] = useState(apiCours.getSemesters());
+    const [resources, setResources] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [resourcesLoading, setResourcesLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [studentProfile, setStudentProfile] = useState(null);
 
-    // Mock Modules Data
-    const modules = [
-        { id: 'react', name: 'React.js & TypeScript', count: 3, active: true, semestre: 'S4' },
-        { id: 'node', name: 'Node.js Architecture', count: 2, active: false, semestre: 'S3' },
-        { id: 'analyse', name: 'Analyse & Conception', count: 1, active: false, semestre: 'S2' },
-        { id: 'sql', name: 'Bases de Données SQL', count: 1, active: false, semestre: 'S1' },
-        { id: 'security', name: 'Réseaux & Sécurité', count: 1, active: false, semestre: 'S3' },
-        { id: 'algo', name: 'Algorithmique S3', count: 1, active: false, semestre: 'S3' },
-        { id: 'management', name: 'Management de Projet', count: 1, active: false, semestre: 'S4' },
-    ];
+    // Fetch Profile once on mount
+    useEffect(() => {
+        const fetchProfile = async () => {
+            try {
+                const profile = await apiCours.getStudentProfile();
+                setStudentProfile(profile);
+                if (profile.semestreActuel) {
+                    setActiveSemester(profile.semestreActuel);
+                }
+            } catch (err) {
+                console.error("Erreur lors de la récupération du profil:", err);
+            }
+        };
+        fetchProfile();
+    }, []);
 
-    // Mock Resources Data
-    const resources = [
-        {
-            id: 1,
-            name: 'Fondamentaux de TypeScript & React',
-            type: 'COURS',
-            semestre: 'S-1',
-            professor: 'Pr. Meryem Alaoui',
-            date: '15/05/2024',
-            size: '2.4 MB',
-            icon: Book,
-            moduleId: 'react'
-        },
-        {
-            id: 2,
-            name: "Gestion d'état avec Context API",
-            type: 'TD',
-            semestre: 'S-1',
-            professor: 'Pr. Meryem Alaoui',
-            date: '16/05/2024',
-            size: '1.1 MB',
-            icon: FileText,
-            moduleId: 'react'
-        },
-        {
-            id: 3,
-            name: 'Projet : Dashboard Architecture',
-            type: 'TP',
-            semestre: 'S-1',
-            professor: 'Pr. Meryem Alaoui',
-            date: '17/05/2024',
-            size: '4.8 MB',
-            icon: Terminal,
-            moduleId: 'react'
-        }
-    ];
+    useEffect(() => {
+        const fetchModules = async () => {
+            try {
+                setLoading(true);
+                setError(null);
+                const modulesData = await apiCours.getStudentModules(activeSemester);
+                setModules(modulesData);
+                if (modulesData.length > 0) {
+                    setActiveModule(modulesData[0].codeModule);
+                } else {
+                    setActiveModule(null);
+                    setResources([]);
+                }
+            } catch (error) {
+                console.error('Erreur lors du chargement des modules:', error);
+                setError("Impossible de charger les modules. Le serveur a rencontré une erreur.");
+                setModules([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchModules();
+    }, [activeSemester]);
 
-    const filteredModules = modules.filter(m =>
-        activeSemester === 'TOUS' || m.semestre === activeSemester
-    );
+    useEffect(() => {
+        const fetchAggregatedResources = async () => {
+            if (!activeModule) {
+                setResources([]);
+                return;
+            }
+            try {
+                setResourcesLoading(true);
+                const data = await apiCours.getAggregatedResources(activeModule);
+                setResources(data);
+            } catch (error) {
+                console.error('Erreur lors de l\'agrégation des ressources:', error);
+            } finally {
+                setResourcesLoading(false);
+            }
+        };
+        fetchAggregatedResources();
+    }, [activeModule]);
 
     const filteredResources = resources.filter(r => {
-        const matchesModule = r.moduleId === activeModule;
-        const matchesTab = activeTab === 'TOUS' || r.type === activeTab;
-        const matchesSearch = r.name.toLowerCase().includes(resourceSearch.toLowerCase());
-        return matchesModule && matchesTab && matchesSearch;
+        const typeMime = r.typeMime || '';
+        const matchesTab = activeTab === 'TOUS' ||
+            typeMime.includes(activeTab) ||
+            (activeTab === 'COURS' && r.nomOriginal.toLowerCase().includes('cours'));
+        const matchesSearch = r.nomOriginal.toLowerCase().includes(resourceSearch.toLowerCase());
+        return matchesTab && matchesSearch;
     });
 
     const getActiveModuleName = () => {
-        return modules.find(m => m.id === activeModule)?.name || 'Module';
+        return modules.find(m => m.codeModule === activeModule)?.nom || 'Module';
     };
+
+    const handleDownload = (res) => {
+        const link = document.createElement('a');
+        link.href = `http://localhost:8080/api/public/fichiers/voir?chemin=${encodeURIComponent(res.chemin)}`;
+        link.download = res.nomOriginal;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const handleView = (res) => {
+        window.open(`http://localhost:8080/api/public/fichiers/voir?chemin=${encodeURIComponent(res.chemin)}`, '_blank');
+    };
+
+    const formatSize = (bytes) => {
+        if (!bytes) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    };
+
+    const formatDate = (dateString) => {
+        if (!dateString) return '-';
+        return new Date(dateString).toLocaleDateString('fr-FR');
+    };
+
+    const getIconForType = (type) => {
+        const t = (type || '').toLowerCase();
+        if (t.includes('pdf')) return Book;
+        if (t.includes('word') || t.includes('text')) return FileText;
+        return Terminal;
+    };
+
+    if (loading && modules.length === 0) {
+        return <div className="cb-loading">Chargement des modules...</div>;
+    }
 
     return (
         <div className="cb-container">
@@ -105,40 +159,70 @@ const CoursBibliotheque = () => {
                                 onChange={(e) => setActiveSemester(e.target.value)}
                                 className="cb-semester-select-minimal"
                             >
-                                <option value="TOUS">Tous</option>
-                                <option value="S1">Semestre 1</option>
-                                <option value="S2">Semestre 2</option>
-                                <option value="S3">Semestre 3</option>
-                                <option value="S4">Semestre 4</option>
+                                {semesters.map(s => (
+                                    <option key={s} value={s}>{s}</option>
+                                ))}
                             </select>
                             <ChevronDown size={14} className="cb-select-arrow" />
                         </div>
                     </div>
                 </div>
 
-
-
                 <div className="cb-module-list">
-                    {filteredModules.map(module => (
-                        <div
-                            key={module.id}
-                            className={`cb-module-item ${activeModule === module.id ? 'active' : ''}`}
-                            onClick={() => setActiveModule(module.id)}
-                        >
-                            <div className="cb-module-info">
-                                <div className="cb-status-dot"></div>
-                                <span className="cb-module-name">{module.name}</span>
+                    {error ? (
+                        <div className="cb-error-container" style={{ padding: '20px', textAlign: 'center' }}>
+                            <div className="cb-error-msg" style={{ color: '#ef4444', fontSize: '0.875rem', marginBottom: '10px' }}>
+                                {error}
                             </div>
-                            <span className="cb-module-count">{module.count}</span>
+                            <button
+                                onClick={() => setActiveSemester(prev => {
+                                    // Trigger re-fetch by cycling value or same value
+                                    const val = activeSemester;
+                                    setActiveSemester('');
+                                    setTimeout(() => setActiveSemester(val), 10);
+                                    return prev;
+                                })}
+                                className="cb-retry-btn"
+                                style={{
+                                    padding: '6px 12px',
+                                    background: '#6366f1',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    fontSize: '0.75rem'
+                                }}
+                            >
+                                Réessayer
+                            </button>
                         </div>
-                    ))}
+                    ) : (
+                        <>
+                            {modules.map(module => (
+                                <div
+                                    key={module.codeModule}
+                                    className={`cb-module-item ${activeModule === module.codeModule ? 'active' : ''}`}
+                                    onClick={() => setActiveModule(module.codeModule)}
+                                >
+                                    <div className="cb-module-info">
+                                        <div className="cb-status-dot"></div>
+                                        <span className="cb-module-name">{module.nom}</span>
+                                    </div>
+                                </div>
+                            ))}
+                            {modules.length === 0 && !loading && (
+                                <div className="cb-no-data-msg" style={{ padding: '20px', color: '#94a3b8', fontSize: '0.875rem' }}>
+                                    Aucun module pour ce semestre.
+                                </div>
+                            )}
+                        </>
+                    )}
                 </div>
             </aside>
 
             {/* Main Content */}
             <main className="cb-main">
                 <header className="cb-header">
-
                     <div className="cb-header-row">
                         <h1 className="cb-title">{getActiveModuleName()}</h1>
 
@@ -169,72 +253,80 @@ const CoursBibliotheque = () => {
                 </section>
 
                 <section className="cb-resources-container">
-                    <table className="cb-table">
-                        <thead>
-                            <tr>
-                                <th>RESSOURCE</th>
-                                <th>PROFESSEUR</th>
-                                <th>DATE</th>
-                                <th>TAILLE</th>
-                                <th>ACTIONS</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredResources.map(res => (
-                                <tr key={res.id}>
-                                    <td>
-                                        <div className="cb-resource-info">
-                                            <div className={`cb-res-icon-box ${res.type.toLowerCase()}`}>
-                                                <res.icon size={20} />
-                                            </div>
-                                            <div className="cb-res-details">
-                                                <span className="cb-res-name">{res.name}</span>
-                                                <div className="cb-res-meta">
-                                                    <span className={`cb-res-type-badge ${res.type.toLowerCase()}`}>{res.type}</span>
-                                                    <span className="cb-breadcrumb-sep">•</span>
-                                                    <span className="cb-res-sem">{res.semestre}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div className="cb-prof-box">
-                                            <img src="https://ui-avatars.com/api/?name=Meryem+Alaoui&background=random" alt="" className="cb-prof-avatar" />
-                                            <span className="cb-prof-name">{res.professor}</span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div className="cb-date-box">
-                                            <Calendar size={16} className="cb-text-light" />
-                                            <span>{res.date}</span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div className="cb-size-box">
-                                            <span>{res.size}</span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div className="cb-actions">
-                                            <button className="cb-action-btn" title="Télécharger">
-                                                <Download size={16} />
-                                            </button>
-                                            <button className="cb-action-btn secondary" title="Ouvrir">
-                                                <ExternalLink size={16} />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                            {filteredResources.length === 0 && (
+                    {resourcesLoading ? (
+                        <div className="cb-resources-loading" style={{ padding: '3rem', textAlign: 'center', color: '#6366f1' }}>
+                            <span>Récupération des ressources en cours...</span>
+                        </div>
+                    ) : (
+                        <table className="cb-table">
+                            <thead>
                                 <tr>
-                                    <td colSpan="5" style={{ textAlign: 'center', padding: '3rem', color: 'var(--cb-text-light)' }}>
-                                        Aucune ressource trouvée pour ce module ou ce filtre.
-                                    </td>
+                                    <th>RESSOURCE</th>
+                                    <th>MATIÈRE</th>
+                                    <th>DATE</th>
+                                    <th>TAILLE</th>
+                                    <th>ACTIONS</th>
                                 </tr>
-                            )}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {filteredResources.map(res => {
+                                    const Icon = getIconForType(res.typeMime);
+                                    return (
+                                        <tr key={res.id}>
+                                            <td>
+                                                <div className="cb-resource-info">
+                                                    <div className={`cb-res-icon-box ${(res.typeMime || '').includes('pdf') ? 'cours' : 'td'}`}>
+                                                        <Icon size={20} />
+                                                    </div>
+                                                    <div className="cb-res-details">
+                                                        <span className="cb-res-name">{res.nomOriginal}</span>
+                                                        <div className="cb-res-meta">
+                                                            <span className={`cb-res-type-badge ${(res.typeMime || '').includes('pdf') ? 'cours' : 'td'}`}>
+                                                                {res.typeSeance || 'DOCUMENT'}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div className="cb-matiere-badge" style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                                                    {res.matiereNom}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div className="cb-date-box">
+                                                    <Calendar size={16} className="cb-text-light" />
+                                                    <span>{formatDate(res.dateUpload)}</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div className="cb-size-box">
+                                                    <span>{formatSize(res.taille)}</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div className="cb-actions">
+                                                    <button className="cb-action-btn" title="Télécharger" onClick={() => handleDownload(res)}>
+                                                        <Download size={16} />
+                                                    </button>
+                                                    <button className="cb-action-btn secondary" title="Ouvrir" onClick={() => handleView(res)}>
+                                                        <ExternalLink size={16} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                                {filteredResources.length === 0 && (
+                                    <tr>
+                                        <td colSpan="5" style={{ textAlign: 'center', padding: '3rem', color: 'var(--cb-text-light)' }}>
+                                            Aucune ressource trouvée pour ce module.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    )}
                 </section>
             </main>
         </div>
@@ -242,3 +334,4 @@ const CoursBibliotheque = () => {
 };
 
 export default CoursBibliotheque;
+

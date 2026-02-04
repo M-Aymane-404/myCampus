@@ -6,8 +6,7 @@ import './Login.css';
 const Login = ({ onLogin }) => {
   const [formData, setFormData] = useState({
     email: '',
-    password: '',
-    role: 'admin' // Default role for mock login
+    password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [erreur, setErreur] = useState('');
@@ -32,21 +31,20 @@ const Login = ({ onLogin }) => {
     setErreur('');
 
     try {
-      // MOCK LOGIN MODE: Use role from dropdown, bypass backend authentication
-      // Call mock login which accepts any credentials
-      const data = await apiAuth.mockLogin(formData.email, formData.password, formData.role);
+      // Login with real backend using email and password
+      const data = await apiAuth.login(formData.email, formData.password);
 
-      // Use the role selected in the dropdown (not from backend)
-      const role = formData.role;
+      // The role is now extracted from the JWT token in apiAuth.login
+      const role = data.user?.role;
 
       console.log('Login successful with role:', role);
 
-      // Call the onLogin callback with the selected role
+      // Call the onLogin callback with the role from backend
       if (onLogin) {
         onLogin({
           email: formData.email,
           role: role,
-          user: data.user || { email: formData.email, role: role }
+          user: data.user
         });
       }
     } catch (error) {
@@ -149,21 +147,6 @@ const Login = ({ onLogin }) => {
                 </div>
               </div>
 
-              <div className="modern-form-group">
-                <label>VOTRE RÔLE</label>
-                <div className="role-selection-group">
-                  {['admin', 'professor', 'student'].map((r) => (
-                    <button
-                      key={r}
-                      type="button"
-                      className={`role-btn ${formData.role === r ? 'active' : ''}`}
-                      onClick={() => setFormData(prev => ({ ...prev, role: r }))}
-                    >
-                      {r.charAt(0) + r.slice(1)}
-                    </button>
-                  ))}
-                </div>
-              </div>
 
               <button type="submit" className="modern-submit-btn" disabled={chargement}>
                 <span>{chargement ? 'Connexion en cours...' : 'Se connecter'}</span>

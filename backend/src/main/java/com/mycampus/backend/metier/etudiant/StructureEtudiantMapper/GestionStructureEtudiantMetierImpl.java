@@ -51,9 +51,33 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
             throw  new EtudiantException("id est obli");
         }
 
+        Etudiant etudiant = etudiantRepository.findById(id)
+                .orElseThrow(() -> new EtudiantException("Étudiant introuvable"));
 
+        String codeClasse = null;
+        if (etudiant.getClasse() != null) {
+            codeClasse = etudiant.getClasse().getCodeClasse();
+        }
 
-        return null;
+        return EtudiantSortieEtudiantDTO.builder()
+                .id(etudiant.getId())
+                .nom(etudiant.getNom())
+                .prenom(etudiant.getPrenom())
+                .email(etudiant.getEmail())
+                .cin(etudiant.getCin())
+                .tel(etudiant.getTel())
+                .photo(etudiant.getPhoto())
+                .active(etudiant.getActive())
+                .apogee(etudiant.getApogee())
+                .niveau(etudiant.getNiveau())
+                .anneeInscription(etudiant.getAnneeInscription())
+                .semestreActuel(etudiant.getSemestreActuel())
+                .anneeFinEtude(etudiant.getAnneeFinEtude())
+                .dateNaissance(etudiant.getDateNaissance())
+                .etatInscription(etudiant.getEtatInscription())
+                .codeClasse(codeClasse)
+                .dateDerniereConnexion(etudiant.getDateDerniereConnexion())
+                .build();
     }
 
 
