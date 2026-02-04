@@ -2,12 +2,15 @@ package com.mycampus.backend.Securite;
 
 
 import com.mycampus.backend.metier.security.UserDetailsServiceImpl;
+import com.mycampus.backend.web.errors.JsonAccessDeniedHandler;
+import com.mycampus.backend.web.errors.JsonAuthenticationEntryPoint;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -22,6 +25,8 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -43,38 +48,41 @@ public class ConfigurationSecurite {
     @Value("${jwt.secretKey}")
     private String secretKey;
 
+
+
     @Bean
+
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
+        grantedAuthoritiesConverter.setAuthoritiesClaimName("scope");
+        grantedAuthoritiesConverter.setAuthorityPrefix("");
 
-        http
+        JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
+        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);
+
+
+        return http
                 .headers(header -> header.frameOptions(frame -> frame.disable()))
-                .exceptionHandling(e -> e
-                         .accessDeniedPage("/public/notAuth")
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(new JsonAuthenticationEntryPoint())
+                        .accessDeniedHandler(new JsonAccessDeniedHandler())
                 )
+                .securityMatcher("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html")
 
+
+                .csrf(csrf -> csrf.disable())
+                 .httpBasic(Customizer.withDefaults())
+                .cors(Customizer.withDefaults())
+                .httpBasic(Customizer.withDefaults())
 
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/seConnecter").permitAll()
-                        .requestMatchers(
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/swagger-ui.html"
-                        ).authenticated()
                         .anyRequest().authenticated()
                 )
-
-                .httpBasic(Customizer.withDefaults())
-
-                 .cors(Customizer.withDefaults())
-                .csrf(csrf -> csrf.disable())
-                .oauth2ResourceServer(oa -> oa.jwt(Customizer.withDefaults()))
-
-                .userDetailsService(userDetailsServiceImpl);
-
-
-        return http.build();
+                .oauth2ResourceServer(oa -> oa.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)))
+                .userDetailsService(userDetailsServiceImpl)
+                .build();
     }
-
     @Bean
     public JwtEncoder jwtEncoder() {
 
@@ -84,7 +92,7 @@ public class ConfigurationSecurite {
     @Bean
     public JwtDecoder jwtDecoder() {
 
-        SecretKeySpec secretKeySpec = new SecretKeySpec(secretKey.getBytes(), "RSA");
+        SecretKeySpec secretKeySpec = new SecretKeySpec(secretKey.getBytes(), "HmacSHA512");
         return NimbusJwtDecoder.withSecretKey(secretKeySpec).macAlgorithm(MacAlgorithm.HS512).build();
     }
 
@@ -97,17 +105,17 @@ public class ConfigurationSecurite {
     }
 
     @Bean
-    public CorsFilter corsFilter() {
+    public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-       // config.addAllowedOrigin("http://localhost:5173");
-        config.addAllowedOrigin("*");
+        config.addAllowedOrigin("http://localhost:5173");
+
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
-        return new CorsFilter(source);
+        return source;
     }
 
 

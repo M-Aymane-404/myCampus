@@ -20,5 +20,5 @@ public class ConnectionDTO {
     @NotBlank(message = "moteDePasse obligatoire")
     @Size(max = 50, message = "  mote De Passe  ne doit pas dépasser 50 caractères")
 
-    private String moteDePasse;
+    private String motDePasse;
 }

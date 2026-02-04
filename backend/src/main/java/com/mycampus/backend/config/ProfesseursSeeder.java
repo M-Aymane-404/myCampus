@@ -38,24 +38,8 @@ public class ProfesseursSeeder {
         seedDepartements();
         
         List<Professeur> professeurs = Arrays.asList(
-            Professeur.builder()
-                .nom("Professeur").prenom("Cyber").email("prof.cyber@mycampus.ma")
-                .password(passwordEncoder.encode("password123"))
-                .active(true).cin("PC100010").ppr("PPR200010")
-                .specialite("Cybersécurité").statut("Titulaire").grade("Professeur")
-                .dateCreation(LocalDateTime.now()).tel("0600000010")
-                .dateRecrutement(LocalDate.of(2020, 9, 1))
-                .departementOuTravail(requireDepartement("INFO"))
-                .build(),
-            Professeur.builder()
-                .nom("Professeur").prenom("Math").email("prof.math@mycampus.ma")
-                .password(passwordEncoder.encode("password123"))
-                .active(true).cin("PC100011").ppr("PPR200011")
-                .specialite("Mathématiques").statut("Titulaire").grade("Professeur")
-                .dateCreation(LocalDateTime.now()).tel("0600000011")
-                .dateRecrutement(LocalDate.of(2019, 9, 1))
-                .departementOuTravail(requireDepartement("INFO"))
-                .build(),
+
+
             Professeur.builder()
                 .nom("Professeur").prenom("Indus").email("prof.indus@mycampus.ma")
                 .password(passwordEncoder.encode("password123"))
@@ -83,24 +67,8 @@ public class ProfesseursSeeder {
                 .dateRecrutement(LocalDate.of(2020, 9, 1))
                 .departementOuTravail(requireDepartement("INFO"))
                 .build(),
-            Professeur.builder()
-                .nom("Professeur").prenom("Reseau").email("prof.reseau@mycampus.ma")
-                .password(passwordEncoder.encode("password123"))
-                .active(true).cin("PC100015").ppr("PPR200015")
-                .specialite("Réseaux").statut("Titulaire").grade("Professeur")
-                .dateCreation(LocalDateTime.now()).tel("0600000015")
-                .dateRecrutement(LocalDate.of(2019, 9, 1))
-                .departementOuTravail(requireDepartement("INFO"))
-                .build(),
-            Professeur.builder()
-                .nom("Professeur").prenom("Elec").email("prof.elec@mycampus.ma")
-                .password(passwordEncoder.encode("password123"))
-                .active(true).cin("PC100016").ppr("PPR200016")
-                .specialite("Électronique").statut("Titulaire").grade("Professeur")
-                .dateCreation(LocalDateTime.now()).tel("0600000016")
-                .dateRecrutement(LocalDate.of(2018, 9, 1))
-                .departementOuTravail(requireDepartement("ELEC"))
-                .build(),
+
+
             Professeur.builder()
                 .nom("Professeur").prenom("Physique").email("prof.physique@mycampus.ma")
                 .password(passwordEncoder.encode("password123"))
@@ -148,13 +116,8 @@ public class ProfesseursSeeder {
                 .description("Département de Génie Industriel")
                 .etat(com.mycampus.backend.enumerations.EtatStructure.OUVERTE)
                 .dateCreation(LocalDate.now())
-                .build(),
-            Departement.builder()
-                .codeDepartement("ELEC").typeDepartement("Département de Génie Électrique")
-                .description("Département de Génie Électrique")
-                .etat(com.mycampus.backend.enumerations.EtatStructure.OUVERTE)
-                .dateCreation(LocalDate.now())
                 .build()
+
         );
         
         for (Departement dept : departements) {
@@ -169,10 +132,9 @@ public class ProfesseursSeeder {
         // ✅ Utilisation des méthodes requireXxx() pour garantir les dépendances
         Departement infoDept = requireDepartement("INFO");
         Departement indusDept = requireDepartement("INDUS");
-        Departement elecDept = requireDepartement("ELEC");
-        
+
         if (infoDept.getChefDepartement() == null) {
-            Professeur chefInfo = requireProfesseurByEmail("prof.cyber@mycampus.ma");
+            Professeur chefInfo = requireProfesseurByEmail("prof.gl@mycampus.ma");
             infoDept.setChefDepartement(chefInfo);
             departementRepository.save(infoDept);
             log.info("Set chef for INFO department: {}", chefInfo.getEmail());
@@ -185,12 +147,7 @@ public class ProfesseursSeeder {
             log.info("Set chef for INDUS department: {}", chefIndus.getEmail());
         }
         
-        if (elecDept.getChefDepartement() == null) {
-            Professeur chefElec = requireProfesseurByEmail("prof.elec@mycampus.ma");
-            elecDept.setChefDepartement(chefElec);
-            departementRepository.save(elecDept);
-            log.info("Set chef for ELEC department: {}", chefElec.getEmail());
-        }
+
     }
 
     // ✅ Méthodes requireXxx() défensives pour les FK obligatoires

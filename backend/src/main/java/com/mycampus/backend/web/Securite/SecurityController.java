@@ -1,6 +1,8 @@
 package com.mycampus.backend.web.Securite;
 
 import com.mycampus.backend.dto.securite.entree.ConnectionDTO;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -20,12 +22,11 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/auth")
+@RequiredArgsConstructor
 public class SecurityController {
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
-    @Autowired
-    private JwtEncoder jwtEncoder;
+     private final AuthenticationManager authenticationManager;
+     private final JwtEncoder jwtEncoder;
 
     @GetMapping("/profile")
     public Map<String, Object> profile(Authentication authentication) {
@@ -33,21 +34,21 @@ public class SecurityController {
         return Map.of(
                 "email", authentication.getName(),
                 "authorities", authentication.getAuthorities().stream()
-                        .map(a -> a.getAuthority())
+                        .map(GrantedAuthority::getAuthority)
                         .toList()
         );
     }
-    @PostMapping("/seConnecter")
-    public Map<String,String> connecter(@RequestBody ConnectionDTO connectionDTO) {
+    @PostMapping("/connecter")
+    public Map<String,String> connecter(@Valid @RequestBody ConnectionDTO connectionDTO) {
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(connectionDTO.getEmail(),connectionDTO.getMoteDePasse())
+                new UsernamePasswordAuthenticationToken(connectionDTO.getEmail(),connectionDTO.getMotDePasse())
         );
         Instant instant = Instant.now();
         String scope  = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority).collect(Collectors.joining(" "));
         JwtClaimsSet jwtClaimsSet = JwtClaimsSet.builder()
                 .issuedAt(instant)
-                .expiresAt(instant.plus(10, ChronoUnit.HOURS))
+                .expiresAt(instant.plus(15, ChronoUnit.MINUTES))
 
                 .subject(authentication.getName())
                 .claim("scope", scope)

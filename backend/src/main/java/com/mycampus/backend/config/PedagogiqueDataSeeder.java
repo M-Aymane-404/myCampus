@@ -54,77 +54,38 @@ public class PedagogiqueDataSeeder {
     private void validatePrerequisites() {
         requireProfesseur("prof.web@mycampus.ma");
         requireProfesseur("prof.gl@mycampus.ma");
-        requireProfesseur("prof.reseau@mycampus.ma");
-        requireClasse("ISI2-A");
-        requireClasse("ISI2-B");
-        requireClasse("GL2-A");
-        requireClasse("GIND2-A");
-        requireFiliere("ISI");
-        requireFiliere("GL");
+
+        requireClasse("ILCS1-A");
+        requireClasse("GIND1-A");
+
+
         requireFiliere("GIND");
-        log.info("All prerequisites validated for pedagogical seeding");
+        requireFiliere("ILCS");
+         log.info("All prerequisites validated for pedagogical seeding");
     }
 
     private void seedModules() {
-        Filiere isi = requireFiliere("ISI");
-        Filiere gl = requireFiliere("GL");
-        Filiere gind = requireFiliere("GIND");
+        Filiere ilcs = requireFiliere("ILCS");
+         Filiere gind = requireFiliere("GIND");
         
         List<Module> modules = Arrays.asList(
-            Module.builder()
-                .codeModule("ISI-WEB-S3")
-                .nom("Développement Web S3")
-                .description("Technologies Web avancées")
-                .semestre(Semestre.S3)
-                .coefficient(4)
-                .filiere(isi)
-                .build(),
-            Module.builder()
-                .codeModule("ISI-BDD-S3")
-                .nom("Bases de Données S3")
-                .description("Systèmes de gestion de bases de données")
-                .semestre(Semestre.S3)
-                .coefficient(3)
-                .filiere(isi)
-                .build(),
+
             Module.builder()
                 .codeModule("ISI-RESEAU-S3")
                 .nom("Réseaux S3")
                 .description("Réseaux informatiques et protocoles")
                 .semestre(Semestre.S3)
                 .coefficient(3)
-                .filiere(isi)
+                .filiere(ilcs)
                 .build(),
-            Module.builder()
-                .codeModule("GL-DEV-S3")
-                .nom("Développement Logiciel S3")
-                .description("Génie logiciel et patterns")
-                .semestre(Semestre.S3)
-                .coefficient(4)
-                .filiere(gl)
-                .build(),
-            Module.builder()
-                .codeModule("GL-TEST-S3")
-                .nom("Tests Qualité S3")
-                .description("Stratégies de test et assurance qualité")
-                .semestre(Semestre.S3)
-                .coefficient(2)
-                .filiere(gl)
-                .build(),
+
+
             Module.builder()
                 .codeModule("GIND-PROD-S1")
                 .nom("Production Industrielle S1")
                 .description("Optimisation des processus de production")
                 .semestre(Semestre.S1)
                 .coefficient(4)
-                .filiere(gind)
-                .build(),
-            Module.builder()
-                .codeModule("GIND-QUAL-S1")
-                .nom("Qualité Industrielle S1")
-                .description("Management de la qualité")
-                .semestre(Semestre.S1)
-                .coefficient(3)
                 .filiere(gind)
                 .build()
         );
@@ -138,75 +99,36 @@ public class PedagogiqueDataSeeder {
     }
 
     private void seedMatieres() {
-        Module isiWeb = requireModule("ISI-WEB-S3");
-        Module isiBdd = requireModule("ISI-BDD-S3");
+
         Module isiReseau = requireModule("ISI-RESEAU-S3");
-        Module glDev = requireModule("GL-DEV-S3");
-        Module glTest = requireModule("GL-TEST-S3");
+
         Module gindProd = requireModule("GIND-PROD-S1");
-        Module gindQual = requireModule("GIND-QUAL-S1");
+
         
         List<Matiere> matieres = Arrays.asList(
-            Matiere.builder()
-                .codeMatiere("HTML_CSS")
-                .nom("HTML/CSS")
-                .description("Développement front-end avec HTML et CSS")
-                .module(isiWeb)
-                .build(),
-            Matiere.builder()
-                .codeMatiere("JAVASCRIPT")
-                .nom("JavaScript")
-                .description("Programmation JavaScript moderne")
-                .module(isiWeb)
-                .build(),
-            Matiere.builder()
-                .codeMatiere("SQL")
-                .nom("SQL Avancé")
-                .description("Requêtes SQL complexes et optimisation")
-                .module(isiBdd)
-                .build(),
+
             Matiere.builder()
                 .codeMatiere("RESEAUX")
                 .nom("Réseaux")
                 .description("Protocoles réseau et architecture TCP/IP")
                 .module(isiReseau)
                 .build(),
-            Matiere.builder()
-                .codeMatiere("PATTERNS")
-                .nom("Design Patterns")
-                .description("Patterns de conception en programmation")
-                .module(glDev)
-                .build(),
-            Matiere.builder()
-                .codeMatiere("TESTS_UNITAIRES")
-                .nom("Tests Unitaires")
-                .description("Tests unitaires et TDD")
-                .module(glTest)
-                .build(),
+
+
             Matiere.builder()
                 .codeMatiere("LEAN")
                 .nom("Lean Manufacturing")
                 .description("Principes du Lean Manufacturing")
                 .module(gindProd)
                 .build(),
-            Matiere.builder()
-                .codeMatiere("SIX_SIGMA")
-                .nom("Six Sigma")
-                .description("Méthodologie Six Sigma")
-                .module(gindQual)
-                .build(),
+
             Matiere.builder()
                 .codeMatiere("ISO_9001")
                 .nom("ISO 9001")
                 .description("Norme ISO 9001 qualité")
-                .module(gindQual)
-                .build(),
-            Matiere.builder()
-                .codeMatiere("AUDIT_QUAL")
-                .nom("Audit Qualité")
-                .description("Audit des systèmes qualité")
-                .module(gindQual)
+                .module(isiReseau)
                 .build()
+
         );
         
         for (Matiere matiere : matieres) {
@@ -220,65 +142,36 @@ public class PedagogiqueDataSeeder {
     private void seedAffectationEnseignement() {
         Professeur profWeb = requireProfesseur("prof.web@mycampus.ma");
         Professeur profGl = requireProfesseur("prof.gl@mycampus.ma");
-        Professeur profReseau = requireProfesseur("prof.reseau@mycampus.ma");
+
+        Classe gind = requireClasse("GIND1-A");
+        Classe ilcs = requireClasse("ILCS1-A");
+
         
-        Classe isi2a = requireClasse("ISI2-A");
-        Classe isi2b = requireClasse("ISI2-B");
-        Classe gl2a = requireClasse("GL2-A");
-        Classe gind2a = requireClasse("GIND2-A");
-        
-        Matiere htmlCss = requireMatiere("HTML_CSS");
-        Matiere javascript = requireMatiere("JAVASCRIPT");
-        Matiere sql = requireMatiere("SQL");
+
         Matiere reseaux = requireMatiere("RESEAUX");
-        Matiere patterns = requireMatiere("PATTERNS");
-        Matiere tests = requireMatiere("TESTS_UNITAIRES");
+
         Matiere lean = requireMatiere("LEAN");
-        Matiere sixSigma = requireMatiere("SIX_SIGMA");
+
         Matiere iso9001 = requireMatiere("ISO_9001");
-        Matiere auditQual = requireMatiere("AUDIT_QUAL");
+
         
         List<AffectationEnseignement> affectations = Arrays.asList(
             AffectationEnseignement.builder()
-                .professeur(profWeb).classe(isi2a).matiere(htmlCss)
+                .professeur(profWeb).classe(gind).matiere(lean)
                 .active(true)
                 .build(),
             AffectationEnseignement.builder()
-                .professeur(profWeb).classe(isi2b).matiere(javascript)
+                .professeur(profWeb).classe(gind).matiere(iso9001)
                 .active(true)
                 .build(),
+
+
             AffectationEnseignement.builder()
-                .professeur(profWeb).classe(isi2a).matiere(sql)
-                .active(true)
-                .build(),
-            AffectationEnseignement.builder()
-                .professeur(profReseau).classe(isi2b).matiere(reseaux)
-                .active(true)
-                .build(),
-            AffectationEnseignement.builder()
-                .professeur(profGl).classe(gl2a).matiere(patterns)
-                .active(true)
-                .build(),
-            AffectationEnseignement.builder()
-                .professeur(profGl).classe(gl2a).matiere(tests)
-                .active(true)
-                .build(),
-            AffectationEnseignement.builder()
-                .professeur(profGl).classe(gind2a).matiere(lean)
-                .active(true)
-                .build(),
-            AffectationEnseignement.builder()
-                .professeur(profGl).classe(gind2a).matiere(sixSigma)
-                .active(true)
-                .build(),
-            AffectationEnseignement.builder()
-                .professeur(profGl).classe(gind2a).matiere(iso9001)
-                .active(true)
-                .build(),
-            AffectationEnseignement.builder()
-                .professeur(profGl).classe(gind2a).matiere(auditQual)
+                .professeur(profGl).classe(ilcs).matiere(reseaux)
                 .active(true)
                 .build()
+
+
         );
         
         for (AffectationEnseignement affectation : affectations) {
@@ -299,7 +192,7 @@ public class PedagogiqueDataSeeder {
         for (AffectationEnseignement affectation : affectations) {
             LocalDate today = LocalDate.now();
             
-            for (int i = 0; i < 3; i++) {
+            for (int i = 0; i < 2; i++) {
                 LocalDate dateSeance = today.plusWeeks(i);
                 LocalDateTime heureDebut = LocalDateTime.now();
                 LocalDateTime heureFin = LocalDateTime.now();
@@ -341,6 +234,18 @@ public class PedagogiqueDataSeeder {
                 .build();
             
             fichierSeanceRepository.save(fichier);
+
+
+            FichierSeance fichier1 = FichierSeance.builder()
+                    .nomOriginal("TD_" + seance.getType().name() + ".pdf")
+                    .chemin("/fichiers/TD_" + seance.getId() + ".pdf")
+                    .typeMime("application/pdf")
+                    .taille(1025000L)
+                    .dateUpload(LocalDateTime.now())
+                    .seance(seance)
+                    .build();
+
+            fichierSeanceRepository.save(fichier1);
             log.info("Created fichier for seance: {}", seance.getId());
         }
     }
@@ -378,8 +283,8 @@ public class PedagogiqueDataSeeder {
     }
 
     private void seedExamens() {
-        Matiere htmlCss = requireMatiere("HTML_CSS");
-        Matiere javascript = requireMatiere("JAVASCRIPT");
+        Matiere reseaux = requireMatiere("RESEAUX");
+        Matiere iso = requireMatiere("ISO_9001");
         Matiere lean = requireMatiere("LEAN");
         
         List<Examen> examens = Arrays.asList(
@@ -392,7 +297,7 @@ public class PedagogiqueDataSeeder {
                 .duree(120)
                 .etat(EtatExamen.PROGRAMME)
                 .corrigePath("/corriges/html_css_normal_corrige.pdf")
-                .matiere(htmlCss)
+                .matiere(reseaux)
                 .build(),
             Examen.builder()
                 .semestre(Semestre.S3)
@@ -403,19 +308,9 @@ public class PedagogiqueDataSeeder {
                 .duree(120)
                 .etat(EtatExamen.PROGRAMME)
                 .corrigePath("/corriges/javascript_normal_corrige.pdf")
-                .matiere(javascript)
+                .matiere(iso)
                 .build(),
-            Examen.builder()
-                .semestre(Semestre.S3)
-                .dateExamen(Date.from(LocalDateTime.of(2025, 1, 15, 9, 0)
-                    .atZone(java.time.ZoneId.systemDefault()).toInstant()))
-                .numeroExamen(1)
-                .typeExamen(TypeExamen.RATTRAPAGE)
-                .duree(120)
-                .etat(EtatExamen.PROGRAMME)
-                .corrigePath("/corriges/html_css_rattrapage_corrige.pdf")
-                .matiere(htmlCss)
-                .build(),
+
             Examen.builder()
                 .semestre(Semestre.S1)
                 .dateExamen(Date.from(LocalDateTime.of(2024, 11, 20, 10, 0)
