@@ -10,6 +10,8 @@ import com.mycampus.backend.dto.administrateur.DonneSortie.AdministrateurSortieD
 import com.mycampus.backend.dto.administrateur.DonneSortie.ProfesseurSortieDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.EtudiantSortieDTO;
 import com.mycampus.backend.entites.*;
+import com.mycampus.backend.enumerations.RolesCode;
+import com.mycampus.backend.exceptions.SecuriteException;
 import com.mycampus.backend.repositorys.*;
 import com.mycampus.backend.mappers.administrateur.UtilisateursMapper;
 import com.mycampus.backend.exceptions.UtilisateursException;
@@ -19,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -32,9 +35,10 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
     private final ProfesseurRepository professeurRepository;
     private final EtudiantRepository etudiantRepository;
     private final DepartementRepository departementRepository;
-    private final FiliereRepository filiereRepository;
+    private final RoleRepository roleRepository;
     private final ClasseRepository classeRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UtilisateurRoleRepository utilisateurRoleRepository;
 
     @Override
     public AdministrateurSortieDTO creerAdministrateur(AdministrateurEntrerDTO administrateurEntrerDTO) throws UtilisateursException {
@@ -76,7 +80,35 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
       administrateur.setPassword(passwordEncoder.encode(administrateurEntrerDTO.getPassword()));
 
         
+
+
+
+
+
+
+
+         if (administrateur.getUtilisateurRoles() == null) {
+            administrateur.setUtilisateurRoles(new ArrayList<>());
+        }
+
+        Role role =   roleRepository.findByNomRole(RolesCode.ADMIN)
+                .orElseThrow(() -> new SecuriteException("Rôle introuvable: " + RolesCode.ADMIN.name()));
+
         Administrateur administrateurSauvegarde = administrateurRepository.save(administrateur);
+
+         UtilisateurRole utilisateurRole = UtilisateurRole.builder()
+                .utilisateur(administrateurSauvegarde)
+                .role(role)
+                .dateAttribution(LocalDateTime.now())
+                .actif(true)
+                .build();
+
+         administrateurSauvegarde.getUtilisateurRoles().add(utilisateurRole);
+
+         utilisateurRoleRepository.save(utilisateurRole);
+
+
+
         return utilisateursMapper.FromAdministrateurVersAdministrateurSortieDTO(administrateurSauvegarde);
     }
 
@@ -277,10 +309,29 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
         professeur.setDateDerniereConnexion(null);
         professeur.setPassword(passwordEncoder.encode(professeurEntrerDTO.getPassword()));
 
+        if (professeur.getUtilisateurRoles() == null) {
+            professeur.setUtilisateurRoles(new ArrayList<>());
+        }
+
+        Role role =   roleRepository.findByNomRole(RolesCode.PROFESSEUR)
+                .orElseThrow(() -> new SecuriteException("Rôle introuvable: " + RolesCode.PROFESSEUR.name()));
+
+        Professeur professeurSauvegarde = professeurRepository.save(professeur);
+
+        UtilisateurRole utilisateurRole = UtilisateurRole.builder()
+                .utilisateur(professeurSauvegarde)
+                .role(role)
+                .dateAttribution(LocalDateTime.now())
+                .actif(true)
+                .build();
+
+        professeurSauvegarde.getUtilisateurRoles().add(utilisateurRole);
+
+        utilisateurRoleRepository.save(utilisateurRole);
 
 
 
-        return utilisateursMapper.FromProfesseurVersProfesseurSortirDTO(professeurRepository.save(professeur));
+        return utilisateursMapper.FromProfesseurVersProfesseurSortirDTO(professeurSauvegarde);
     }
 
     @Override
@@ -493,7 +544,29 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
         etudiant.setPassword(passwordEncoder.encode(etudiantEntrerDTO.getPassword()));
 
 
-        return utilisateursMapper.FromEtudientVersEtudiantSortieDTO(etudiantRepository.save(etudiant));
+        if (etudiant.getUtilisateurRoles() == null) {
+            etudiant.setUtilisateurRoles(new ArrayList<>());
+        }
+
+        Role role =   roleRepository.findByNomRole(RolesCode.ETUDIANT)
+                .orElseThrow(() -> new SecuriteException("Rôle introuvable: " + RolesCode.PROFESSEUR.name()));
+
+        Etudiant etudiantSauvegarde = etudiantRepository.save(etudiant);
+
+        UtilisateurRole utilisateurRole = UtilisateurRole.builder()
+                .utilisateur(etudiantSauvegarde)
+                .role(role)
+                .dateAttribution(LocalDateTime.now())
+                .actif(true)
+                .build();
+
+        etudiantSauvegarde.getUtilisateurRoles().add(utilisateurRole);
+
+        utilisateurRoleRepository.save(utilisateurRole);
+
+
+
+        return utilisateursMapper.FromEtudientVersEtudiantSortieDTO(etudiantSauvegarde);
     }
 
     @Override

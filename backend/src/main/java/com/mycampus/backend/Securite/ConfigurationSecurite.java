@@ -55,10 +55,15 @@ public class ConfigurationSecurite {
 
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/seConnecter").permitAll()
-
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/swagger-ui.html"
+                        ).authenticated()
                         .anyRequest().authenticated()
                 )
 
+                .httpBasic(Customizer.withDefaults())
 
                  .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
@@ -95,7 +100,8 @@ public class ConfigurationSecurite {
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.addAllowedOrigin("http://localhost:5173");
+       // config.addAllowedOrigin("http://localhost:5173");
+        config.addAllowedOrigin("*");
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
 
