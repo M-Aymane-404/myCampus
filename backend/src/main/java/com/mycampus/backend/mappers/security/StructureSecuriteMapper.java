@@ -69,4 +69,6 @@ public class StructureSecuriteMapper {
                 .map(this::duPermissionVersPermissionSortieDTO)
                 .collect(Collectors.toList());
     }
+
+
 }
