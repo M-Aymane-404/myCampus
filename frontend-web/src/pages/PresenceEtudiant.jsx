@@ -1,94 +1,177 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
-    Calendar as CalendarIcon,
     ChevronLeft,
     ChevronRight,
-    Search,
-    Download,
     Book,
     User,
     MapPin,
-    ArrowUpRight,
     X,
     Zap,
     UploadCloud
 } from 'lucide-react';
 import './PresenceEtudiant.css';
+import { apiAttendance } from '../services/apiAttendance';
 
 const PresenceEtudiant = () => {
-    const [selectedDay, setSelectedDay] = useState(20);
-    const [currentMonth, setCurrentMonth] = useState('MAI');
-    const [currentYear, setCurrentYear] = useState(2024);
+    // Current Calendar View State
+    const [currentDate, setCurrentDate] = useState(new Date()); // Tracks the month being viewed
+
+    // Selected Day State (Default to today)
+    const [selectedDay, setSelectedDay] = useState(new Date().getDate());
+
+    // Data State
+    const [attendanceData, setAttendanceData] = useState([]); // All fetched records
+    const [loading, setLoading] = useState(true);
+    const [availableYears, setAvailableYears] = useState([]);
+
+    // UI State
     const [activeFilter, setActiveFilter] = useState('HISTORIQUE');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedSession, setSelectedSession] = useState(null);
 
-    // Mock Attendance Data for the calendar
-    const calendarData = {
-        12: { status: ['absent'] },
-        15: { status: ['present'] },
-        20: { status: ['present', 'retard', 'absent'] }, // Today/Selected sample
-        21: { status: ['present'] },
-    };
-
-    // Sessions for the selected day (20 Mai)
-    const sessions = [
-        {
-            id: 1,
-            date: '20 Mai',
-            time: '08:30 - 10:30',
-            course: 'React.js & TypeScript',
-            prof: 'PR. MERYEM ALAOUI',
-            room: 'AMPHI A',
-            status: 'present'
-        },
-        {
-            id: 2,
-            date: '20 Mai',
-            time: '10:30 - 12:30',
-            course: 'Node.js Architecture',
-            prof: 'PR. KARIM EL IDRISSI',
-            room: 'LABO 4',
-            status: 'retard'
-        },
-        {
-            id: 3,
-            date: '20 Mai',
-            time: '14:00 - 16:00',
-            course: 'Machine Learning',
-            prof: 'PR. KARIM EL IDRISSI',
-            room: 'AMPHI B',
-            status: 'absent'
-        }
-    ];
-
     const months = ['JAN', 'FEV', 'MAR', 'AVR', 'MAI', 'JUIN', 'JUIL', 'AOUT', 'SEPT', 'OCT', 'NOV', 'DEC'];
 
+    // 1. Initialize: Fetch Profile (Year Range) and Attendance Data
+    useEffect(() => {
+        const initData = async () => {
+            setLoading(true);
+            try {
+                // Fetch Profile for Year Range
+                const profile = await apiAttendance.fetchStudentProfile();
+                if (profile) {
+                    const startYear = profile.anneeInscription || new Date().getFullYear();
+                    const endYear = profile.anneeFinEtudes || (startYear + 5);
+
+                    const years = [];
+                    for (let y = endYear; y >= startYear; y--) {
+                        years.push(y);
+                    }
+                    setAvailableYears(years);
+                }
+
+                // Fetch All Attendance Data
+                const presenceList = await apiAttendance.fetchAttendance();
+                setAttendanceData(presenceList);
+
+            } catch (err) {
+                console.error("Initialization failed", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        initData();
+    }, []);
+
+    // Calendar Navigation
     const handleMonthChange = (direction) => {
-        const currentIndex = months.indexOf(currentMonth);
-        let newIndex = currentIndex + direction;
-        
-        if (newIndex < 0) newIndex = 11; // Wrap to December
-        if (newIndex > 11) newIndex = 0;  // Wrap to January
-        
-        setCurrentMonth(months[newIndex]);
+        const newDate = new Date(currentDate);
+        newDate.setMonth(newDate.getMonth() + direction);
+        setCurrentDate(newDate);
+        setSelectedDay(null);
     };
+
+    const handleYearChange = (year) => {
+        const newDate = new Date(currentDate);
+        newDate.setFullYear(year);
+        setCurrentDate(newDate);
+    };
+
+    // Helper: Handle Spring Boot Date Array [yyyy, mm, dd, hh, mm, ss] or ISO String
+    const parseBackendDate = (dateVal) => {
+        if (!dateVal) return null;
+        if (Array.isArray(dateVal)) {
+            // Java months are 1-12, JS Date months are 0-11
+            const y = dateVal[0];
+            const m = dateVal[1] - 1;
+            const d = dateVal[2];
+            const h = dateVal[3] || 0;
+            const min = dateVal[4] || 0;
+            const s = dateVal[5] || 0;
+            return new Date(y, m, d, h, min, s);
+        }
+        return new Date(dateVal);
+    };
+
+    // Helper: Get day number
+    const getDayFromDate = (dateVal) => {
+        const d = parseBackendDate(dateVal);
+        return d ? d.getDate() : null;
+    };
+
+    const isSameMonthAndYear = (dateVal) => {
+        const d = parseBackendDate(dateVal);
+        if (!d) return false;
+        return d.getMonth() === currentDate.getMonth() && d.getFullYear() === currentDate.getFullYear();
+    };
+
+    // Derived Data: Calendar Dots
+    const getCalendarStatusMap = () => {
+        const map = {};
+        attendanceData.forEach(record => {
+            const eventDate = record.seance?.date || record.dateDeclaration;
+            if (isSameMonthAndYear(eventDate)) {
+                const day = getDayFromDate(eventDate);
+                if (day) {
+                    if (!map[day]) map[day] = new Set();
+                    const statusLower = record.status ? record.status.toLowerCase() : 'unknown';
+                    map[day].add(statusLower);
+                }
+            }
+        });
+        return map;
+    };
+
+    const calendarStatusMap = getCalendarStatusMap();
+
+    // Derived Data: Filtered Sessions
+    const getSessionsForSelectedDay = () => {
+        if (!selectedDay) return [];
+
+        let daySessions = attendanceData.filter(record => {
+            const eventDate = record.seance?.date || record.dateDeclaration;
+            const d = parseBackendDate(eventDate);
+            if (!d) return false;
+
+            return d.getDate() === selectedDay &&
+                d.getMonth() === currentDate.getMonth() &&
+                d.getFullYear() === currentDate.getFullYear();
+        });
+
+        if (activeFilter === 'ABSENCES') {
+            daySessions = daySessions.filter(s => s.status?.toUpperCase() === 'ABSENT');
+        } else if (activeFilter === 'RETARDS') {
+            daySessions = daySessions.filter(s => s.status?.toUpperCase() === 'RETARD');
+        }
+
+        return daySessions.sort((a, b) => {
+            const dA = parseBackendDate(a.dateDeclaration) || new Date(0);
+            const dB = parseBackendDate(b.dateDeclaration) || new Date(0);
+            return dA - dB;
+        });
+    };
+
+    const currentSessions = getSessionsForSelectedDay();
 
     const renderCalendar = () => {
         const cells = [];
-        const monthIndex = months.indexOf(currentMonth);
-        const daysInMonth = new Date(currentYear, monthIndex + 1, 0).getDate();
-        const firstDay = new Date(currentYear, monthIndex, 1).getDay();
-        const startOffset = firstDay === 0 ? 6 : firstDay - 1; // Convert Sunday=0 to Saturday=6 offset
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
 
-        // Empty cells for alignment
-        for (let i = 0; i < startOffset; i++) {
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const firstDayObj = new Date(year, month, 1);
+
+        let startDay = firstDayObj.getDay();
+        startDay = startDay === 0 ? 6 : startDay - 1;
+
+        for (let i = 0; i < startDay; i++) {
             cells.push(<div key={`empty-${i}`} className="calendar-cell empty"></div>);
         }
 
         for (let day = 1; day <= daysInMonth; day++) {
-            const dayData = calendarData[day];
             const isSelected = day === selectedDay;
+            const statuses = calendarStatusMap[day] || new Set();
+            const statusArray = Array.from(statuses);
 
             cells.push(
                 <div
@@ -97,17 +180,17 @@ const PresenceEtudiant = () => {
                     onClick={() => setSelectedDay(day)}
                 >
                     {day}
-                    {dayData && !isSelected && (
+                    {!isSelected && statusArray.length > 0 && (
                         <div className="dot-indicators">
-                            {dayData.status.map((s, idx) => (
-                                <div key={idx} className={`dot ${s}`}></div>
+                            {statusArray.map(s => (
+                                <div key={s} className={`dot ${s}`} title={s}></div>
                             ))}
                         </div>
                     )}
-                    {isSelected && dayData && (
+                    {isSelected && statusArray.length > 0 && (
                         <div className="cell-dots-selected">
-                            {dayData.status.map((_, idx) => (
-                                <div key={idx} className="dot-selected"></div>
+                            {statusArray.map(s => (
+                                <div key={s} className="dot-selected"></div>
                             ))}
                         </div>
                     )}
@@ -117,9 +200,17 @@ const PresenceEtudiant = () => {
         return cells;
     };
 
+    const getStatusLabel = (status) => {
+        switch (status?.toUpperCase()) {
+            case 'PRESENT': return 'Présent';
+            case 'RETARD': return 'En Retard';
+            case 'ABSENT': return 'Absent';
+            default: return status;
+        }
+    };
+
     return (
         <div className="presence-container">
-            {/* Top Dark Header & Calendar Card */}
             <div className="presence-calendar-wrapper">
                 <div className="presence-calendar-left">
                     <div className="presence-calendar-header">
@@ -135,18 +226,18 @@ const PresenceEtudiant = () => {
 
                         <div className="selection-box">
                             <span className="selection-title">Sélection Rapide</span>
-
                             <div className="control-row">
                                 <span className="control-label">Année</span>
                                 <select
                                     className="year-select"
-                                    value={currentYear}
-                                    onChange={(e) => setCurrentYear(parseInt(e.target.value))}
+                                    value={currentDate.getFullYear()}
+                                    onChange={(e) => handleYearChange(parseInt(e.target.value))}
                                 >
-                                    <option value={2026}>2026</option>
-                                    <option value={2025}>2025</option>
-                                    <option value={2024}>2024</option>
-                                    <option value={2023}>2023</option>
+                                    {availableYears.length > 0 ? (
+                                        availableYears.map(y => <option key={y} value={y}>{y}</option>)
+                                    ) : (
+                                        <option value={currentDate.getFullYear()}>{currentDate.getFullYear()}</option>
+                                    )}
                                 </select>
                             </div>
 
@@ -156,7 +247,7 @@ const PresenceEtudiant = () => {
                                     <button className="stepper-btn" onClick={() => handleMonthChange(-1)}>
                                         <ChevronLeft size={14} />
                                     </button>
-                                    <span className="current-month">{currentMonth}</span>
+                                    <span className="current-month">{months[currentDate.getMonth()]}</span>
                                     <button className="stepper-btn" onClick={() => handleMonthChange(1)}>
                                         <ChevronRight size={14} />
                                     </button>
@@ -197,7 +288,6 @@ const PresenceEtudiant = () => {
                 </div>
             </div>
 
-            {/* Bottom History Section */}
             <div className="history-section">
                 <div className="history-controls-row">
                     <div className="history-tabs">
@@ -223,60 +313,74 @@ const PresenceEtudiant = () => {
 
                     <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                         <div className="selected-date-badge">
-                            {selectedDay} {currentMonth} {currentYear}
-                            <X size={14} style={{ cursor: 'pointer' }} />
+                            {selectedDay ? `${selectedDay} ${months[currentDate.getMonth()]} ${currentDate.getFullYear()}` : 'Aucune date'}
+                            {selectedDay && <X size={14} style={{ cursor: 'pointer' }} onClick={() => setSelectedDay(null)} />}
                         </div>
-
                     </div>
                 </div>
 
                 <div className="presence-list">
-                    {sessions.map(session => (
-                        <div key={session.id} className="presence-card">
-                            <div className="time-box">
-                                <span className="date-text">{session.date}</span>
-                                <span className="hour-text">{session.time}</span>
-                            </div>
+                    {loading ? (
+                        <div style={{ padding: '2rem', textAlign: 'center' }}>Chargement...</div>
+                    ) : currentSessions.length === 0 ? (
+                        <div style={{ padding: '2rem', textAlign: 'center', color: '#aaa' }}>Aucun cours enregistré pour cette date.</div>
+                    ) : (
+                        currentSessions.map((session, idx) => {
+                            const eventDateRaw = session.seance?.date || session.dateDeclaration;
+                            const eventDateObj = parseBackendDate(eventDateRaw) || new Date();
+                            const dateDeclObj = parseBackendDate(session.dateDeclaration);
+                            const timeStr = dateDeclObj ? dateDeclObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--';
 
-                            <div className="course-icon-box">
-                                <Book size={24} />
-                            </div>
+                            const courseName = session.seance?.type || 'Cours';
+                            const profName = session.seance?.prof || 'Enseignant';
+                            const roomName = session.seance?.salle || 'Salle';
 
-                            <div className="course-info-box">
-                                <h3>{session.course}</h3>
-                                <div className="prof-room">
-                                    <span><User size={12} /> {session.prof}</span>
-                                    <span><MapPin size={12} /> {session.room}</span>
+                            return (
+                                <div key={session.id || idx} className="presence-card">
+                                    <div className="time-box">
+                                        <span className="date-text">{eventDateObj.toLocaleDateString()}</span>
+                                        <span className="hour-text">{timeStr}</span>
+                                    </div>
+
+                                    <div className="course-icon-box">
+                                        <Book size={24} />
+                                    </div>
+
+                                    <div className="course-info-box">
+                                        <h3>{courseName}</h3>
+                                        <div className="prof-room">
+                                            <span><User size={12} /> {profName}</span>
+                                            <span><MapPin size={12} /> {roomName}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="status-box">
+                                        <div className={`status-badge ${session.status?.toLowerCase()}`}>
+                                            <div className={`dot ${session.status?.toLowerCase()}`}></div>
+                                            {getStatusLabel(session.status)}
+                                        </div>
+                                    </div>
+
+                                    <div className="action-box">
+                                        {session.status?.toUpperCase() === 'ABSENT' && (
+                                            <button
+                                                className="justifier-btn"
+                                                onClick={() => {
+                                                    setSelectedSession(session);
+                                                    setIsModalOpen(true);
+                                                }}
+                                            >
+                                                JUSTIFIER
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-
-                            <div className="status-box">
-                                <div className={`status-badge ${session.status}`}>
-                                    <div className={`dot ${session.status}`}></div>
-                                    {session.status === 'present' ? 'Présent' :
-                                        session.status === 'retard' ? 'En Retard' : 'Absent'}
-                                </div>
-                            </div>
-
-                            <div className="action-box">
-                                {session.status === 'absent' && (
-                                    <button
-                                        className="justifier-btn"
-                                        onClick={() => {
-                                            setSelectedSession(session);
-                                            setIsModalOpen(true);
-                                        }}
-                                    >
-                                        JUSTIFIER
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    ))}
+                            );
+                        })
+                    )}
                 </div>
             </div>
 
-            {/* Justification Modal */}
             {isModalOpen && (
                 <div className="presence-modal-overlay">
                     <div className="presence-modal-content">
@@ -289,8 +393,10 @@ const PresenceEtudiant = () => {
 
                         <div className="modal-body">
                             <div className="session-info-card">
-                                <span className="session-date-label">{selectedSession?.date} {currentYear}</span>
-                                <h3 className="session-title-label">{selectedSession?.course}</h3>
+                                <span className="session-date-label">
+                                    {selectedSession && parseBackendDate(selectedSession.seance?.date || selectedSession.dateDeclaration)?.toLocaleDateString()}
+                                </span>
+                                <h3 className="session-title-label">{selectedSession?.seance?.type || 'Cours'}</h3>
                             </div>
 
                             <div className="form-group">
@@ -305,10 +411,13 @@ const PresenceEtudiant = () => {
                             <div className="upload-zone">
                                 <UploadCloud size={32} className="upload-icon" />
                                 <span className="upload-text">IMPORTER PDF (MAX 5MO)</span>
-                                <input type="file" className="file-input-hidden" accept=".pdf" />
+                                <input type="file" className="file-input-hidden" accept=".pdf" onChange={() => alert("Fonctionnalité d'upload bientôt disponible")} />
                             </div>
 
-                            <button className="submit-justif-btn">
+                            <button className="submit-justif-btn" onClick={() => {
+                                alert("Document soumis pour validation.");
+                                setIsModalOpen(false);
+                            }}>
                                 SOUMETTRE LE DOCUMENT
                             </button>
                         </div>

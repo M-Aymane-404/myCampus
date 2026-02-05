@@ -60,7 +60,7 @@ public class SecurityController {
                 .map(GrantedAuthority::getAuthority).collect(Collectors.joining(" "));
         JwtClaimsSet jwtClaimsSet = JwtClaimsSet.builder()
                 .issuedAt(instant)
-                .expiresAt(instant.plus(30, ChronoUnit.SECONDS))
+                .expiresAt(instant.plus(15, ChronoUnit.MINUTES))
 
                 .subject(authentication.getName())
                 .claim("scope", scope)
