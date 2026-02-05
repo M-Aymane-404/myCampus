@@ -51,7 +51,6 @@
 
 
         @Bean
-
         public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
             JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
             grantedAuthoritiesConverter.setAuthoritiesClaimName("scope");
@@ -63,18 +62,18 @@
 
             return http
                     .headers(header -> header.frameOptions(frame -> frame.disable()))
-//                    .exceptionHandling(ex -> ex
-//                            .authenticationEntryPoint(new JsonAuthenticationEntryPoint())
-//                            .accessDeniedHandler(new JsonAccessDeniedHandler())
-//                    )
+                    .exceptionHandling(ex -> ex
+                            .authenticationEntryPoint(new JsonAuthenticationEntryPoint())
+                            .accessDeniedHandler(new JsonAccessDeniedHandler())
+                    )
 
 
                     .csrf(csrf -> csrf.disable())
                      .cors(Customizer.withDefaults())
-                    .httpBasic(Customizer.withDefaults())
+                 //   .httpBasic(Customizer.withDefaults())
 
                     .authorizeHttpRequests(auth -> auth
-                             .requestMatchers("/auth/seConnecter").permitAll()
+                             .requestMatchers("/auth/connecter", "/auth/rafraichir-jeton", "/auth/deconnexion").permitAll()
 
                              .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").authenticated()
 

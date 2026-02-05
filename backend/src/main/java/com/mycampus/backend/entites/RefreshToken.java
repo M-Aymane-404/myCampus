@@ -14,12 +14,14 @@ public class RefreshToken {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
      private Long id ;
-    private String token;
+    private String tokenHash;
     private LocalDateTime dateCreation;
     private LocalDateTime dateExpiration;
     private Boolean revoque;
     private String userAgent;
     private String ip;
+    @Transient
+    private String token;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "utilisateur_id", nullable = false)
