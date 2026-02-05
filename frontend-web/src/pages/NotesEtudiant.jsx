@@ -1,4 +1,4 @@
-import { useState, Fragment } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import {
     Award,
     BookOpen,
@@ -20,128 +20,185 @@ import {
     Filter
 } from 'lucide-react';
 import './NotesEtudiant.css';
+import { apiGrades } from '../services/apiGrades';
+import { getSpectializationFromClass, parseExams } from '../utils/academicUtils';
 
 const NotesEtudiant = () => {
-    const [activeSemester, setActiveSemester] = useState(4);
+    const [activeSemester, setActiveSemester] = useState(1);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    // Mock Data for the Student Portal
-    const studentStats = {
+    // Stats State
+    const [studentStats, setStudentStats] = useState({
         degree: "Diplôme d'Ingénieur",
-        specialization: "Génie Logiciel",
-        generalAverage: 16.12,
-        validatedModules: 24,
-        totalModules: 28,
-        sessionStatus: "Admis avec Mention",
-        sessionMessage: "Félicitations pour vos résultats !",
-        finalMention: "Très Bien",
-        certId: "LUM-2024-CERT-S4"
-    };
+        specialization: "Chargement...",
+        generalAverage: 0,
+        validatedModules: 0,
+        totalModules: 0,
+        sessionStatus: "...",
+        sessionMessage: "En attente...",
+        finalMention: "...",
+        certId: "LUM-2024-PENDING",
+        maxSemester: 1,
+        availableSemesters: []
+    });
 
-    const gradeData = {
-        4: {
-            label: "Semestre 4 – Printemps 2024",
-            average: 15.50,
-            ects: "30/30",
-            status: "VALIDÉ",
-            modules: [
-                {
-                    id: 'react',
-                    name: 'React.js & TypeScript',
-                    ects: 4,
-                    coeff: 4,
-                    ds: 16.5,
-                    exam: 15.5,
-                    hasCopy: true,
-                    hasCorrection: true,
-                    mention: 'BIEN',
-                    average: 15.83,
-                    letter: 'R'
-                },
-                {
-                    id: 'node',
-                    name: 'Node.js Architecture',
-                    ects: 4,
-                    coeff: 4,
-                    ds: 14.0,
-                    exam: 17.5,
-                    hasCopy: true,
-                    hasCorrection: true,
-                    mention: 'TRES BIEN',
-                    average: 16.33,
-                    letter: 'N'
-                },
-                {
-                    id: 'ai',
-                    name: 'Intelligence Artificielle & ML',
-                    ects: 4,
-                    coeff: 3,
-                    ds: 15.0,
-                    exam: 14.25,
-                    hasCopy: false,
-                    hasCorrection: false,
-                    mention: 'BIEN',
-                    average: 14.50,
-                    letter: 'A'
-                },
-                {
-                    id: 'design',
-                    name: 'Analyse & Conception UML',
-                    ects: 4,
-                    coeff: 2,
-                    ds: 13.0,
-                    exam: 14.5,
-                    hasCopy: true,
-                    hasCorrection: false,
-                    mention: 'BIEN',
-                    average: 14.00,
-                    letter: 'A'
-                },
-                {
-                    id: 'algo',
-                    name: 'Algorithmique Avancée',
-                    ects: 4,
-                    coeff: 3,
-                    ds: 18.0,
-                    exam: 15.0,
-                    hasCopy: false,
-                    hasCorrection: true,
-                    mention: 'TRES BIEN',
-                    average: 16.00,
-                    letter: 'A'
-                },
-                {
-                    id: 'law',
-                    name: 'Droit Numérique & Éthique',
-                    ects: 2,
-                    coeff: 1,
-                    ds: 12.5,
-                    exam: 14.0,
-                    hasCopy: false,
-                    hasCorrection: false,
-                    mention: 'ASSEZ BIEN',
-                    average: 13.50,
-                    letter: 'D'
-                },
-                {
-                    id: 'lang',
-                    name: 'Langues Étrangères',
-                    ects: 4,
-                    coeff: 2,
-                    isParent: true,
-                    mention: 'TRES BIEN',
-                    average: 16.83,
-                    letter: 'L',
-                    color: 'black',
-                    subjects: [
-                        { name: 'Français Professionnel', ds: 14.0, exam: 16.5, average: 15.67, hasDsCopy: true },
-                        { name: 'Anglais Technique (TOEIC)', ds: 17.0, exam: 18.5, average: 18.00, hasExamCopy: true }
-                    ]
+    // Grades Data State
+    const [currentData, setCurrentData] = useState({
+        label: `Semestre ${activeSemester}`,
+        average: 0,
+        ects: "0/30",
+        status: "EN COURS",
+        modules: []
+    });
+
+    // Fetch Global Stats on Mount
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const stats = await apiGrades.fetchGlobalStats();
+                setStudentStats(prev => ({
+                    ...prev,
+                    ...stats,
+                    sessionMessage: stats.currentSessionStatus === 'Admis' ? "Félicitations pour vos résultats !" : "Continuez vos efforts."
+                }));
+                // Set active semester to the latest one found
+                if (stats.availableSemesters && stats.availableSemesters.length > 0) {
+                    const lastSem = stats.availableSemesters[stats.availableSemesters.length - 1];
+                    setActiveSemester(lastSem);
+                } else if (stats.maxSemester) {
+                    setActiveSemester(stats.maxSemester);
                 }
-            ]
-        }
-    };
+            } catch (err) {
+                console.error("Failed to fetch stats", err);
+                // Fallback or error state
+            }
+        };
+        fetchStats();
+    }, []);
 
-    const currentData = gradeData[activeSemester] || { modules: [] };
+    // Fetch Grades when Active Semester Changes
+    useEffect(() => {
+        const fetchGrades = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const data = await apiGrades.fetchStudentGrades(activeSemester);
+
+                if (!data) {
+                    // Handle empty data for this semester
+                    setCurrentData({
+                        label: `Semestre ${activeSemester}`,
+                        average: 0,
+                        ects: "0/30",
+                        status: "NON DISPONIBLE",
+                        modules: []
+                    });
+                    setLoading(false);
+                    return;
+                }
+
+                // Process Modules
+                const processedModules = data.modules.map((mod, idx) => {
+                    // Check logic: "Langues" -> Nested. Others -> Flattened.
+                    const isLanguages = mod.nomDuModule.toLowerCase().includes('langue');
+
+                    if (isLanguages) {
+                        // --- NESTED VIEW (Langues) ---
+                        const subjects = mod.matieres.map(mat => {
+                            const exams = parseExams(mat.examens);
+                            return {
+                                name: mat.nomDuMatiere,
+                                ds: exams.ds,
+                                exam: exams.exam,
+                                average: mat.moyenneDuMatiere,
+                                hasDsCopy: exams.hasDsCopy,
+                                hasExamCopy: exams.hasExamCopy,
+                                dsCopyPath: exams.dsCopyPath,
+                                examCopyPath: exams.examCopyPath,
+                                isRattrapage: exams.isRattrapage
+                            };
+                        });
+
+                        return {
+                            id: mod.id || idx,
+                            name: mod.nomDuModule,
+                            ects: mod.coefficient,
+                            coeff: mod.coefficient,
+                            mention: getMentionFromGrade(mod.moyenneDuModule),
+                            average: mod.moyenneDuModule,
+                            letter: mod.nomDuModule.charAt(0).toUpperCase(),
+                            color: 'black',
+                            isParent: true,
+                            subjects: subjects,
+                            isRattrapage: subjects.some(s => s.isRattrapage)
+                        };
+
+                    } else {
+                        // --- FLATTENED VIEW (General Modules) ---
+                        // "DS Column" -> Subject 1
+                        // "Exam Column" -> Subject 2
+
+                        const sub1 = mod.matieres && mod.matieres.length > 0 ? mod.matieres[0] : null;
+                        const sub2 = mod.matieres && mod.matieres.length > 1 ? mod.matieres[1] : null;
+
+                        const sub1Exams = sub1 ? parseExams(sub1.examens) : null;
+                        const sub2Exams = sub2 ? parseExams(sub2.examens) : null;
+
+                        // Copies
+                        const sub1CopyPath = sub1Exams ? (sub1Exams.dsCopyPath || sub1Exams.examCopyPath) : null;
+                        const sub2CopyPath = sub2Exams ? (sub2Exams.dsCopyPath || sub2Exams.examCopyPath) : null;
+
+                        // Correction
+                        const correctionPath = sub2Exams?.examCorrection || sub2Exams?.dsCorrection || sub1Exams?.examCorrection || sub1Exams?.dsCorrection;
+                        const hasCorrection = !!correctionPath;
+
+                        return {
+                            id: mod.id || idx,
+                            name: mod.nomDuModule,
+                            ects: mod.coefficient,
+                            coeff: mod.coefficient,
+
+                            // Map Sub 1 to "DS" slot
+                            ds: sub1 ? sub1.moyenneDuMatiere : null,
+                            hasDsCopy: !!sub1CopyPath,
+                            dsCopyPath: sub1CopyPath,
+
+                            // Map Sub 2 to "Exam" slot
+                            exam: sub2 ? sub2.moyenneDuMatiere : null,
+                            hasExamCopy: !!sub2CopyPath,
+                            examCopyPath: sub2CopyPath,
+
+                            hasCorrection: hasCorrection,
+                            correctionPath: correctionPath,
+
+                            mention: getMentionFromGrade(mod.moyenneDuModule),
+                            average: mod.moyenneDuModule,
+                            letter: mod.nomDuModule.charAt(0).toUpperCase(),
+                            isParent: false,
+                            isRattrapage: (sub1Exams?.isRattrapage || sub2Exams?.isRattrapage)
+                        };
+                    }
+                });
+
+                setCurrentData({
+                    label: `Semestre ${activeSemester}`,
+                    average: data.moyenneSession,
+                    ects: `${processedModules.reduce((acc, m) => acc + (m.average >= 10 ? 30 / processedModules.length : 0), 0).toFixed(0)}/30`, // Rough Estimate if ECTS not in backend
+                    status: data.moyenneSession >= 10 ? "VALIDÉ" : "AJOURNÉ",
+                    modules: processedModules
+                });
+
+            } catch (err) {
+                console.error(err);
+                setError(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchGrades();
+    }, [activeSemester]);
 
     const getMentionClass = (mention) => {
         switch (mention) {
@@ -150,6 +207,27 @@ const NotesEtudiant = () => {
             case 'ASSEZ BIEN': return 'mention-assez-bien';
             default: return '';
         }
+    };
+
+    const getMentionFromGrade = (grade) => {
+        if (!grade) return '-';
+        if (grade >= 16) return 'TRES BIEN';
+        if (grade >= 14) return 'BIEN';
+        if (grade >= 12) return 'ASSEZ BIEN';
+        if (grade >= 10) return 'PASSABLE';
+        return 'AJOURNÉ';
+    };
+
+    // Helper to open PDF
+    const openPdf = (path) => {
+        if (!path) return;
+        // Assuming path is relative or needs base URL
+        // If path is full URL, open it.
+        // If not, maybe append to some base static URL?
+        // Backend DTO `copieEtudiantPath` is typically a string.
+        // For now, assume it's a serve-able URL or we alert.
+        // Or cleaner: window.open(path, '_blank');
+        window.open(path, '_blank');
     };
 
     return (
@@ -167,7 +245,7 @@ const NotesEtudiant = () => {
                         <span>{studentStats.specialization}</span>
                     </div>
 
-                    <button className="releve-global-btn">
+                    <button className="releve-global-btn" onClick={() => alert("Fonctionnalité de téléchargement globale à implémenter")}>
                         <CheckCircle size={16} />
                         Relevé de notes global
                     </button>
@@ -200,8 +278,6 @@ const NotesEtudiant = () => {
                 </div>
             </div>
 
-            {/* Semester Navigation REMOVED - replaced by integrated filter */}
-
             {/* Main Grade Detail Card */}
             <div className="grades-detail-card">
                 <header className="grades-header">
@@ -220,17 +296,14 @@ const NotesEtudiant = () => {
                                         onChange={(e) => setActiveSemester(parseInt(e.target.value))}
                                         className="semester-select-minimal"
                                     >
-                                        {[1, 2, 3, 4].map(s => (
+                                        {(studentStats.availableSemesters || [1]).map(s => (
                                             <option key={s} value={s}>Semestre {s}</option>
                                         ))}
                                     </select>
                                     <ChevronDown size={14} className="select-arrow" />
                                 </div>
                             </div>
-                            <div className="grades-sub-info">
-                                <span className="status-valid">● VALIDÉ</span>
-                                <span className="ects-info">• {currentData.ects} ECTS ACQUIS</span>
-                            </div>
+
                         </div>
                     </div>
 
@@ -249,135 +322,136 @@ const NotesEtudiant = () => {
                             <th style={{ textAlign: 'center' }}>DS / Copie</th>
                             <th style={{ textAlign: 'center' }}>Exam / Copie</th>
                             <th style={{ textAlign: 'center' }}>Correction</th>
-                            <th style={{ textAlign: 'center' }}>Mention</th>
+                            <th style={{ textAlign: 'center' }}>Session</th>
                             <th style={{ textAlign: 'center' }}>Moyenne</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {currentData.modules.map(module => (
-                            <Fragment key={module.id}>
-                                {/* Module Row */}
-                                <tr className="module-row">
-                                    <td>
-                                        <div className="module-info">
-                                            <div className={`module-letter ${module.color === 'black' ? 'black' : ''}`}>
-                                                {module.letter}
-                                            </div>
-                                            <div className="item-details">
-                                                <span className="item-name">{module.name}</span>
-                                                <div className="item-meta">
-                                                    {module.ects} ECTS <span>• x{module.coeff}</span>
+                        {loading ? (
+                            <tr><td colSpan="6" style={{ textAlign: 'center', padding: '2rem' }}>Chargement des notes...</td></tr>
+                        ) : error ? (
+                            <tr><td colSpan="6" style={{ textAlign: 'center', padding: '2rem', color: 'red' }}>Erreur de chargement ou semestre vide.</td></tr>
+                        ) : currentData.modules.length === 0 ? (
+                            <tr><td colSpan="6" style={{ textAlign: 'center', padding: '2rem' }}>Aucune note disponible pour ce semestre.</td></tr>
+                        ) : (
+                            currentData.modules.map((module, idx) => (
+                                <Fragment key={module.id || idx}>
+                                    {/* Module Row */}
+                                    <tr className="module-row">
+                                        <td>
+                                            <div className="module-info">
+                                                <div className={`module-letter ${module.color === 'black' ? 'black' : ''}`}>
+                                                    {module.letter}
+                                                </div>
+                                                <div className="item-details">
+                                                    <span className="item-name">{module.name}</span>
+                                                    <div className="item-meta">
+                                                        <span>• x{module.coeff}</span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        {module.ds && (
-                                            <div className="note-cell">
-                                                <div className="note-val">{module.ds}</div>
-                                                {module.hasCopy && (
-                                                    <button className="btn-voir-copie">
-                                                        <Eye size={10} /> Voir Copie
-                                                    </button>
-                                                )}
-                                            </div>
-                                        )}
-                                    </td>
-                                    <td>
-                                        {module.exam && (
-                                            <div className="note-cell">
-                                                <div className="note-val">{module.exam}</div>
-                                                {module.hasCopy && (
-                                                    <button className="btn-voir-copie">
-                                                        <Eye size={10} /> Voir Copie
-                                                    </button>
-                                                )}
-                                            </div>
-                                        )}
-                                    </td>
-                                    <td style={{ textAlign: 'center' }}>
-                                        {module.hasCorrection ? (
-                                            <div className="correction-icon">
-                                                <FileText size={14} />
-                                            </div>
-                                        ) : (
-                                            <span style={{ color: '#cbd5e1', fontSize: '0.625rem', fontWeight: 700 }}>N/A</span>
-                                        )}
-                                    </td>
-                                    <td>
-                                        <div style={{ textAlign: 'center' }}>
-                                            <span className={`mention-badge ${getMentionClass(module.mention)}`}>
-                                                {module.mention}
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div className="final-moy">{module.average?.toFixed(2)}</div>
-                                    </td>
-                                </tr>
-
-                                {/* Subject Rows (for split modules like Languages) */}
-                                {module.subjects?.map((sub, idx) => (
-                                    <tr key={idx} className="subject-row">
+                                        </td>
                                         <td>
-                                            <div className="subject-info">
-                                                <div className="subject-icon">
-                                                    <FileText size={16} />
-                                                </div>
-                                                <span className="item-name" style={{ fontSize: '0.75rem' }}>{sub.name}</span>
+                                            {/* DS Cell */}
+                                            {module.isParent ? null : (
+                                                module.ds !== null && (
+                                                    <div className="note-cell">
+                                                        <div className="note-val">{module.ds}</div>
+                                                        {module.hasDsCopy && (
+                                                            <button className="btn-voir-copie" onClick={() => openPdf(module.dsCopyPath)}>
+                                                                <Eye size={10} /> Voir Copie
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                )
+                                            )}
+                                        </td>
+                                        <td>
+                                            {/* Exam Cell */}
+                                            {module.isParent ? null : (
+                                                module.exam !== null && (
+                                                    <div className="note-cell">
+                                                        <div className="note-val">{module.exam}</div>
+                                                        {module.hasExamCopy && (
+                                                            <button className="btn-voir-copie" onClick={() => openPdf(module.examCopyPath)}>
+                                                                <Eye size={10} /> Voir Copie
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                )
+                                            )}
+                                        </td>
+                                        <td style={{ textAlign: 'center' }}>
+                                            {/* Correction Cell */}
+                                            {!module.isParent && (
+                                                module.hasCorrection ? (
+                                                    <div className="correction-icon" title="Correction disponible" onClick={() => openPdf(module.correctionPath)} style={{ cursor: 'pointer' }}>
+                                                        <FileText size={14} />
+                                                    </div>
+                                                ) : (
+                                                    <span style={{ color: '#cbd5e1', fontSize: '0.625rem', fontWeight: 700 }}>N/A</span>
+                                                )
+                                            )}
+                                        </td>
+                                        <td>
+                                            <div style={{ textAlign: 'center' }}>
+                                                <span className={`mention-badge ${module.isRattrapage ? 'mention-assez-bien' : 'mention-tres-bien'}`}>
+                                                    {module.isRattrapage ? 'RATTRAPAGE' : 'NORMAL'}
+                                                </span>
                                             </div>
                                         </td>
                                         <td>
-                                            <div className="note-cell">
-                                                <div className="note-val" style={{ color: '#94a3b8' }}>{sub.ds}</div>
-                                                {sub.hasDsCopy && <button className="btn-voir-copie"><Eye size={10} /> COPIE</button>}
-                                            </div>
+                                            <div className="final-moy">{module.average?.toFixed(2)}</div>
                                         </td>
-                                        <td>
-                                            <div className="note-cell">
-                                                <div className="note-val" style={{ color: '#94a3b8' }}>{sub.exam}</div>
-                                                {sub.hasExamCopy && <button className="btn-voir-copie"><Eye size={10} /> COPIE</button>}
-                                            </div>
-                                        </td>
-                                        <td></td>
-                                        <td><div style={{ textAlign: 'center', color: '#cbd5e1', fontSize: '0.625rem' }}>Moyenne:</div></td>
-                                        <td><div className="final-moy" style={{ fontSize: '0.875rem', color: '#6366f1' }}>{sub.average?.toFixed(2)}</div></td>
                                     </tr>
-                                ))}
-                            </Fragment>
-                        ))}
+
+                                    {/* Subject Rows (for split modules like Languages) */}
+                                    {module.isParent && module.subjects?.map((sub, sIdx) => (
+                                        <tr key={`${module.id}-sub-${sIdx}`} className="subject-row">
+                                            <td>
+                                                <div className="subject-info">
+                                                    <div className="subject-icon">
+                                                        <FileText size={16} />
+                                                    </div>
+                                                    <span className="item-name" style={{ fontSize: '0.75rem' }}>{sub.name}</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div className="note-cell">
+                                                    <div className="note-val" style={{ color: '#94a3b8' }}>{sub.ds !== null ? sub.ds : '-'}</div>
+                                                    {sub.hasDsCopy && (
+                                                        <button className="btn-voir-copie" onClick={() => openPdf(sub.dsCopyPath)}>
+                                                            <Eye size={10} /> COPIE
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div className="note-cell">
+                                                    <div className="note-val" style={{ color: '#94a3b8' }}>{sub.exam !== null ? sub.exam : '-'}</div>
+                                                    {sub.hasExamCopy && (
+                                                        <button className="btn-voir-copie" onClick={() => openPdf(sub.examCopyPath)}>
+                                                            <Eye size={10} /> COPIE
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td></td>
+                                            <td><div style={{ textAlign: 'center', color: '#cbd5e1', fontSize: '0.625rem' }}>Moyenne:</div></td>
+                                            <td><div className="final-moy" style={{ fontSize: '0.875rem', color: '#6366f1' }}>{sub.average?.toFixed(2)}</div></td>
+                                        </tr>
+                                    ))}
+                                </Fragment>
+                            ))
+                        )}
                     </tbody>
                 </table>
             </div>
 
-            {/* Footer Final Result Bar */}
-            <footer className="notes-footer-result">
-                <div className="footer-left">
-                    <div className="footer-icon">
-                        <Award size={24} color="white" />
-                    </div>
-                    <div className="footer-res-details">
-                        <span className="tag">Mention Académique Finale</span>
-                        <div className="val">{studentStats.finalMention} <span>★</span></div>
-                        <p style={{ margin: 0, fontSize: '0.625rem', color: '#94a3b8' }}>
-                            Félicitations pour vos résultats exceptionnels.
-                        </p>
-                    </div>
-                </div>
 
-                <div className="footer-right">
-                    <div className="statut-session">
-                        <span className="statut-tag">Statut Session</span>
-                        <span className="statut-val">ADMIS</span>
-                    </div>
-                    <div className="cert-id-badge">
-                        <Shield size={12} />
-                        ID: {studentStats.certId}
-                    </div>
-                </div>
-            </footer>
         </div>
     );
 };
 
 export default NotesEtudiant;
+

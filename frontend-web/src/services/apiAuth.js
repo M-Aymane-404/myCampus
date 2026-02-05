@@ -39,12 +39,12 @@ export const apiAuth = {
     try {
       const requestBody = {
         email: email,
-        moteDePasse: password // Matching backend ConnectionDTO field name
+        motDePasse: password // Matching backend ConnectionDTO field name
       };
 
       console.log('Attempting login with:', { email });
 
-      const response = await fetch(`${BASE_URL}/seConnecter`, {
+      const response = await fetch(`${BASE_URL}/connecter`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

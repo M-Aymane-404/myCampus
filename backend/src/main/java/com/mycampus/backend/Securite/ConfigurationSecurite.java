@@ -74,7 +74,7 @@
                     .httpBasic(Customizer.withDefaults())
 
                     .authorizeHttpRequests(auth -> auth
-                             .requestMatchers("/auth/seConnecter").permitAll()
+                             .requestMatchers("/auth/connecter").permitAll()
 
                              .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").authenticated()
 
