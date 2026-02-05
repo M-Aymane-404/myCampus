@@ -8,6 +8,7 @@ export const apiAdministrateurs = {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
+                    ...apiAuth.getAuthHeaders(),
                 },
             });
 

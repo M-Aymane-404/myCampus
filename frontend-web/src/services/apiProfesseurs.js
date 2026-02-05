@@ -1,7 +1,29 @@
 const BASE_URL = 'http://localhost:8080/api/admin/utilisateurs/professeurs';
+const PROFESSEUR_PROFILE_URL = 'http://localhost:8080/api/professeur';
 import { apiAuth } from './apiAuth';
 
 export const apiProfesseurs = {
+  /**
+   * Get current professor's profile information
+   */
+  async getProfile() {
+    try {
+      const response = await fetch(`${PROFESSEUR_PROFILE_URL}/moi`, {
+        method: 'GET',
+        headers: apiAuth.getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error('Erreur lors de la récupération du profil professeur');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('API Error (getProfile):', error);
+      throw error;
+    }
+  },
+
   async obtenirTous() {
     try {
       const reponse = await fetch(BASE_URL, {

@@ -84,7 +84,9 @@ export const apiAuth = {
           const user = {
             email: email,
             role: role,
-            nom: decodedPayload.sub, // 'sub' is usually the username/email
+            nom: '', // Will be populated from backend user profile
+            prenom: '', // Will be populated from backend user profile
+            nomUtilisateur: decodedPayload.sub || email // Store username/email separately
           };
 
           localStorage.setItem('mycampus_user', JSON.stringify(user));
@@ -133,6 +135,38 @@ export const apiAuth = {
       return newUser;
     }
     return null;
+  },
+
+  async getBackendProfile() {
+    try {
+      const headers = this.getAuthHeaders();
+      console.log('Fetching backend profile from:', `${BASE_URL}/profile`);
+      console.log('Request headers:', {
+        ...headers,
+        'Authorization': headers.Authorization ? 'Bearer [HIDDEN]' : 'None'
+      });
+
+      const response = await fetch(`${BASE_URL}/profile`, {
+        method: 'GET',
+        headers: headers,
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          console.error('Authentication failed (401). logging out...');
+          this.logout();
+          throw new Error('Session expirée. Veuillez vous reconnecter.');
+        }
+        const errorText = await response.text();
+        console.error(`Profile fetch error (${response.status}):`, errorText);
+        throw new Error(`Erreur lors de la récupération du profil (${response.status})`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('API Error (getBackendProfile):', error);
+      throw error;
+    }
   },
 
   // Helper function to add auth headers to requests
