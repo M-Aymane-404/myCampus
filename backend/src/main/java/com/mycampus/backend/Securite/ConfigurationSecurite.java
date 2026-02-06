@@ -62,15 +62,15 @@
 
             return http
                     .headers(header -> header.frameOptions(frame -> frame.disable()))
-                    .exceptionHandling(ex -> ex
+                    /*.exceptionHandling(ex -> ex
                             .authenticationEntryPoint(new JsonAuthenticationEntryPoint())
                             .accessDeniedHandler(new JsonAccessDeniedHandler())
-                    )
+                    )*/
 
 
                     .csrf(csrf -> csrf.disable())
-                     .cors(Customizer.withDefaults())
-                 //   .httpBasic(Customizer.withDefaults())
+                    .cors(Customizer.withDefaults())
+                    .httpBasic(Customizer.withDefaults())
 
                     .authorizeHttpRequests(auth -> auth
                              .requestMatchers("/auth/connecter", "/auth/rafraichir-jeton", "/auth/deconnexion").permitAll()

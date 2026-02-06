@@ -1,17 +1,15 @@
 .gestion-emploi-temps-modern {
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-  background: #F8FAFC;
+  padding: 2rem;
+  background-color: white;
   min-height: 100vh;
+  font-family: 'Inter', sans-serif;
 }
 
 /* Header Banner */
 .planning-header-banner {
   background: #0F172A;
   border-radius: 40px;
-  padding: 30px 40px;
+  padding: 15px 30px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -174,6 +172,11 @@
   color: #5C54ED;
 }
 
+/* Timetable Main Area */
+.timetable-main-area {
+    margin-top: 2rem;
+}
+
 /* Footer Legend */
 .planning-footer-legend {
   background: white;
@@ -184,6 +187,7 @@
   align-items: center;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
   margin-top: 10px;
+  border: 1px solid var(--ce-border);
 }
 
 .legend-items {
@@ -198,8 +202,8 @@
 }
 
 .dot {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
 }
 

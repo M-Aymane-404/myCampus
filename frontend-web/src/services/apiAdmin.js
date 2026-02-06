@@ -32,5 +32,47 @@ export const apiAdmin = {
             console.error('API Error (getProfile):', error);
             throw error;
         }
+    },
+
+    /**
+     * Update current administrator's profile information
+     * @param {Object} profileData - { nom, prenom, tel, email, fonction }
+     */
+    async updateProfile(profileData) {
+        try {
+            // Get current admin to find their PPR
+            const currentAdmin = await this.getProfile();
+            
+            const response = await fetch(`${BASE_URL}/${currentAdmin.ppr}`, {
+                method: 'PUT',
+                headers: {
+                    ...apiAuth.getAuthHeaders(),
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(profileData),
+            });
+
+            if (!response.ok) {
+                // Try to get error message from body if available
+                let errorData;
+                try {
+                    errorData = await response.json();
+                } catch (e) {
+                    errorData = { message: `Erreur ${response.status}: ${response.statusText}` };
+                }
+                throw new Error(errorData.message || 'Erreur lors de la mise à jour du profil');
+            }
+
+            // Handle 204 No Content or empty bodies
+            const contentType = response.headers.get("content-type");
+            if (response.status === 204 || !contentType || !contentType.includes("application/json")) {
+                return { success: true };
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('API Error (updateProfile):', error);
+            throw error;
+        }
     }
 };

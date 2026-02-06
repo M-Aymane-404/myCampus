@@ -2,8 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { User, Plus, Calendar, Save, Loader2 } from 'lucide-react';
 import { apiAuth } from '../services/apiAuth';
 import { apiEtudiant } from '../services/apiEtudiant';
-import { apiProfesseurs } from '../services/apiProfesseurs';
-import { apiAdmin } from '../services/apiAdmin';
 import './ProfilPage.css';
 
 const ProfilPage = () => {
@@ -20,8 +18,6 @@ const ProfilPage = () => {
         cin: '',
         apogee: '',
         dateNaissance: '',
-        dateRecrutement: '',
-        fonction: '', // Add fonction field for admin
         photo: null
     });
 
@@ -33,76 +29,22 @@ const ProfilPage = () => {
         const chargerProfil = async () => {
             try {
                 setLoading(true);
-                const currentUser = apiAuth.getUser();
-                const role = (currentUser?.role || 'student').toLowerCase();
+                const data = await apiEtudiant.getProfile();
+                setInfosUtilisateur({
+                    nom: data.nom || '',
+                    prenom: data.prenom || '',
+                    email: data.email || '',
+                    tel: data.tel || '',
+                    role: data.role || 'ETUDIANT',
+                    cin: data.cin || '',
+                    apogee: data.apogee || '',
+                    dateNaissance: data.dateNaissance || '',
+                    photo: data.photo || null
+                });
 
-                if (role === 'student') {
-                    console.log('Loading student profile...');
-                    const data = await apiEtudiant.getProfile();
-                    console.log('Student data received:', data);
-                    
-                    setInfosUtilisateur({
-                        nom: data.nom || '',
-                        prenom: data.prenom || '',
-                        email: data.email || '',
-                        tel: data.tel || '',
-                        role: data.role || 'ETUDIANT',
-                        cin: data.cin || '',
-                        apogee: data.apogee || '',
-                        dateNaissance: data.dateNaissance || '',
-                        dateRecrutement: '', // Students don't have dateRecrutement
-                        photo: data.photo || null
-                    });
-
-                    if (data.photo) {
-                        setPhotoPreview(data.photo.startsWith('http') ? data.photo : `http://localhost:8080/uploads/${data.photo}`);
-                    }
-                } else if (role === 'professor') {
-                    console.log('Loading professor profile...');
-                    const data = await apiProfesseurs.getProfile();
-                    console.log('Professor data received:', data);
-                    
-                    setInfosUtilisateur({
-                        nom: data.nom || '',
-                        prenom: data.prenom || '',
-                        email: data.email || '',
-                        tel: data.tel || '',
-                        role: 'PROFESSEUR',
-                        cin: data.cin || '',
-                        apogee: data.ppr || '',
-                        dateNaissance: '', // Professors don't have dateNaissance
-                        dateRecrutement: data.dateRecrutement || '',
-                        photo: data.photo || null
-                    });
-
-                    if (data.photo) {
-                        setPhotoPreview(data.photo.startsWith('http') ? data.photo : `http://localhost:8080/uploads/${data.photo}`);
-                    }
-                } else {
-                    // Admin - use admin profile endpoint
-                    console.log('Loading admin profile...');
-                    const data = await apiAdmin.getProfile();
-                    console.log('Admin data received:', data);
-                    console.log('Admin nom:', data.nom);
-                    console.log('Admin prenom:', data.prenom);
-                    
-                    setInfosUtilisateur({
-                        nom: data.nom || '',
-                        prenom: data.prenom || '',
-                        email: data.email || '',
-                        tel: data.tel || '',
-                        role: 'ADMIN',
-                        cin: data.cin || '',
-                        apogee: data.ppr || '',
-                        dateNaissance: '', // Admins don't have dateNaissance
-                        dateRecrutement: '', // Admins don't use dateRecrutement
-                        fonction: data.fonction || '', // Load fonction from database
-                        photo: data.photo || null
-                    });
-
-                    if (data.photo) {
-                        setPhotoPreview(data.photo.startsWith('http') ? data.photo : `http://localhost:8080/uploads/${data.photo}`);
-                    }
+                if (data.photo) {
+                    // Assuming photo is a full URL or relative path handled by backend/frontend mapping
+                    setPhotoPreview(data.photo.startsWith('http') ? data.photo : `http://localhost:8080/uploads/${data.photo}`);
                 }
             } catch (err) {
                 console.error("Erreur lors du chargement du profil:", err);
@@ -143,15 +85,15 @@ const ProfilPage = () => {
             // Notify header/other components
             window.dispatchEvent(new Event('user-updated'));
 
-            alert("✅ Modifications enregistrées avec succès !");
+            alert("Modifications enregistrées avec succès !");
         } catch (err) {
             console.error("Erreur détaillée lors de la sauvegarde:", err);
 
             // Helpful message if backend is not ready
             if (err.message.includes('405') || err.message.includes('404')) {
-                alert(`⚠️ Le bouton ne peut pas enregistrer car l'API de mise à jour (PATCH ${BASE_URL}/moi) n'est pas encore implémentée par votre équipe backend.\n\nVérifiez que le contrôleur Java gère bien la méthode PATCH.`);
+                alert(`Le bouton ne peut pas enregistrer car l'API de mise à jour (PATCH ${BASE_URL}/moi) n'est pas encore implémentée par votre équipe backend.\n\nVérifiez que le contrôleur Java gère bien la méthode PATCH.`);
             } else {
-                alert(`❌ Erreur: ${err.message}`);
+                alert(`Erreur: ${err.message}`);
             }
         } finally {
             setSaving(false);
@@ -202,25 +144,10 @@ const ProfilPage = () => {
     const currentRole = infosUtilisateur.role ? infosUtilisateur.role.toUpperCase() : 'ETUDIANT';
 
     const getDisplayName = () => {
-        console.log('getDisplayName called with:', {
-            prenom: infosUtilisateur.prenom,
-            nom: infosUtilisateur.nom,
-            email: infosUtilisateur.email,
-            role: infosUtilisateur.role
-        });
-        
         if (infosUtilisateur.prenom && infosUtilisateur.nom) {
-            const fullName = `${infosUtilisateur.prenom} ${infosUtilisateur.nom}`;
-            console.log('Returning full name:', fullName);
-            return fullName;
+            return `${infosUtilisateur.prenom} ${infosUtilisateur.nom}`;
         }
-        if (infosUtilisateur.email) {
-            const emailName = infosUtilisateur.email.split('@')[0] || 'Utilisateur';
-            console.log('Returning email-based name:', emailName);
-            return emailName;
-        }
-        console.log('Returning default name');
-        return 'Utilisateur';
+        return infosUtilisateur.email.split('@')[0] || 'Utilisateur';
     };
 
     if (loading) {
@@ -323,19 +250,13 @@ const ProfilPage = () => {
                         </div>
 
                         <div className="profile-input-group">
-                            <label>
-                                {infosUtilisateur.role === 'ETUDIANT' ? 'DATE DE NAISSANCE' : 
-                                 infosUtilisateur.role === 'ADMIN' ? 'FONCTION' : 'DATE DE RECRUTEMENT'}
-                            </label>
+                            <label>DATE DE NAISSANCE</label>
                             <input
-                                type={infosUtilisateur.role === 'ADMIN' ? 'text' : 'date'}
-                                name={infosUtilisateur.role === 'ETUDIANT' ? 'dateNaissance' : 
-                                     infosUtilisateur.role === 'ADMIN' ? 'fonction' : 'dateRecrutement'}
-                                value={infosUtilisateur.role === 'ETUDIANT' ? infosUtilisateur.dateNaissance : 
-                                       infosUtilisateur.role === 'ADMIN' ? infosUtilisateur.fonction : infosUtilisateur.dateRecrutement}
+                                type="date"
+                                name="dateNaissance"
+                                value={infosUtilisateur.dateNaissance}
                                 onChange={handleChange}
                                 className="profile-input-field"
-                                readOnly={infosUtilisateur.role === 'ADMIN'}
                             />
                         </div>
 
