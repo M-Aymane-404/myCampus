@@ -3,6 +3,7 @@ package com.mycampus.backend.metier.administrateur.utilisateurs;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.AdministrateurEntrerDTO;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.EtudiantEntrerDTO;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.ProfesseurEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.AdministrateurConnecterModificationDTO;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.AdministrateurModificationDTO;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.EtudiantModificationDTO;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.ProfesseurModificationDTO;
@@ -27,7 +28,9 @@ public interface GestionUtilisateursMetier {
     List<AdministrateurSortieDTO> listerTousLesAdministrateurs() throws UtilisateursException;
     
     AdministrateurSortieDTO modifierAdministrateur(String ppr, AdministrateurModificationDTO administrateurModificationDTO) throws UtilisateursException;
-    
+
+    AdministrateurSortieDTO modifierAdministrateurConnecter(String email, AdministrateurConnecterModificationDTO administrateurModificationDTO) throws UtilisateursException;
+
     void supprimerAdministrateur(String ppr) throws UtilisateursException;
     
     void activerAdministrateur(String ppr) throws UtilisateursException;

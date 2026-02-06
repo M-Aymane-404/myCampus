@@ -4,6 +4,7 @@ import com.mycampus.backend.dto.FichierStocker.FichierStockerDTO;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.AdministrateurEntrerDTO;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.EtudiantEntrerDTO;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.ProfesseurEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.AdministrateurConnecterModificationDTO;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.AdministrateurModificationDTO;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.EtudiantModificationDTO;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.ProfesseurModificationDTO;
@@ -212,6 +213,69 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
         }
 
         
+        Administrateur administrateurModifie = administrateurRepository.save(adminAModifier);
+        return utilisateursMapper.FromAdministrateurVersAdministrateurSortieDTO(administrateurModifie);
+    }
+
+
+    @Override
+    public AdministrateurSortieDTO modifierAdministrateurConnecter(String email, AdministrateurConnecterModificationDTO administrateurModificationDTO) throws UtilisateursException {
+        if (email == null || email.trim().isEmpty()) {
+            throw new UtilisateursException("Le PPR de l'administrateur ne peut pas être nul");
+        }
+
+        if (administrateurModificationDTO == null) {
+            throw new UtilisateursException("Les données de l'administrateur ne peuvent pas être nulles");
+        }
+
+        Administrateur adminAModifier = administrateurRepository.findByEmail(email).orElseThrow(() ->
+                new UtilisateursException("Administrateur introuvable avec le PPR: " + email));
+
+
+
+        if (administrateurModificationDTO.getNom() != null && !administrateurModificationDTO.getNom().trim().isEmpty()) {
+            adminAModifier.setNom(administrateurModificationDTO.getNom());
+        }
+
+        if (administrateurModificationDTO.getPrenom() != null && !administrateurModificationDTO.getPrenom().trim().isEmpty()) {
+            adminAModifier.setPrenom(administrateurModificationDTO.getPrenom());
+        }
+
+        if (administrateurModificationDTO.getEmail() != null && !administrateurModificationDTO.getEmail().trim().isEmpty()) {
+            if (!adminAModifier.getEmail().equals(administrateurModificationDTO.getEmail()) &&
+                    utilisateurRepository.existsByEmail(administrateurModificationDTO.getEmail())) {
+                throw new UtilisateursException("Un utilisateur avec cet email existe déjà");
+            }
+            adminAModifier.setEmail(administrateurModificationDTO.getEmail());
+        }
+
+
+
+
+        if (administrateurModificationDTO.getCin() != null && !administrateurModificationDTO.getCin().trim().isEmpty()) {
+            if(!adminAModifier.getCin().equals(administrateurModificationDTO.getCin()) && utilisateurRepository.existsByCin(administrateurModificationDTO.getCin())){
+                throw new UtilisateursException("Un utilisateur avec cet Cin existe déjà");
+
+            }
+            adminAModifier.setCin(administrateurModificationDTO.getCin());
+
+        }
+
+
+        if(administrateurModificationDTO.getTel() != null && !administrateurModificationDTO.getTel().trim().isEmpty()) {
+            if(!adminAModifier.getTel().equals(administrateurModificationDTO.getTel()) && utilisateurRepository.existsByTel(administrateurModificationDTO.getTel())){
+                throw new UtilisateursException("Un utilisateur avec cet Numero existe déjà");
+            }
+            adminAModifier.setTel(administrateurModificationDTO.getTel());
+        }
+
+
+
+        if(administrateurModificationDTO.getPassword() != null && !administrateurModificationDTO.getPassword().trim().isEmpty()) {
+            adminAModifier.setPassword(passwordEncoder.encode(administrateurModificationDTO.getPassword()));
+        }
+
+
         Administrateur administrateurModifie = administrateurRepository.save(adminAModifier);
         return utilisateursMapper.FromAdministrateurVersAdministrateurSortieDTO(administrateurModifie);
     }
