@@ -65,4 +65,5 @@ public class AdministrateurController {
         gestionUtilisateursMetier.supprimerAdministrateur(ppr);
         return ResponseEntity.noContent().build();
     }
+
 }

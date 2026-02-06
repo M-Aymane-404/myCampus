@@ -1,5 +1,6 @@
 package com.mycampus.backend.metier.administrateur.utilisateurs;
 
+import com.mycampus.backend.dto.FichierStocker.FichierStockerDTO;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.AdministrateurEntrerDTO;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.EtudiantEntrerDTO;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.ProfesseurEntrerDTO;
@@ -12,6 +13,7 @@ import com.mycampus.backend.dto.administrateur.DonneSortie.EtudiantSortieDTO;
 import com.mycampus.backend.entites.*;
 import com.mycampus.backend.enumerations.RolesCode;
 import com.mycampus.backend.exceptions.SecuriteException;
+import com.mycampus.backend.metier.administrateur.PhotoStorage.PhotoStorageMetier;
 import com.mycampus.backend.repositorys.*;
 import com.mycampus.backend.mappers.administrateur.UtilisateursMapper;
 import com.mycampus.backend.exceptions.UtilisateursException;
@@ -19,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -39,6 +42,7 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
     private final ClasseRepository classeRepository;
     private final PasswordEncoder passwordEncoder;
     private final UtilisateurRoleRepository utilisateurRoleRepository;
+    private final PhotoStorageMetier photoStorageMetier;
 
     @Override
     public AdministrateurSortieDTO creerAdministrateur(AdministrateurEntrerDTO administrateurEntrerDTO) throws UtilisateursException {
@@ -198,9 +202,7 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
             }
             adminAModifier.setTel(administrateurModificationDTO.getTel());
         }
-        if (administrateurModificationDTO.getPhoto() != null && !administrateurModificationDTO.getPhoto().trim().isEmpty()) {
-            adminAModifier.setPhoto(administrateurModificationDTO.getPhoto());
-        }
+
         if (administrateurModificationDTO.getActive() != null) {
             adminAModifier.setActive(administrateurModificationDTO.getActive());
         }
@@ -256,6 +258,7 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
 
 
     @Transactional
+    @Override
     public ProfesseurSortieDTO creerProfesseur(ProfesseurEntrerDTO professeurEntrerDTO) throws UtilisateursException {
 
         if(professeurEntrerDTO == null){
@@ -316,7 +319,10 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
         Role role =   roleRepository.findByNomRole(RolesCode.PROFESSEUR)
                 .orElseThrow(() -> new SecuriteException("Rôle introuvable: " + RolesCode.PROFESSEUR.name()));
 
+ 
         Professeur professeurSauvegarde = professeurRepository.save(professeur);
+
+
 
         UtilisateurRole utilisateurRole = UtilisateurRole.builder()
                 .utilisateur(professeurSauvegarde)
@@ -333,6 +339,8 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
 
         return utilisateursMapper.FromProfesseurVersProfesseurSortirDTO(professeurSauvegarde);
     }
+
+
 
     @Override
     public ProfesseurSortieDTO trouverProfesseurParPpr(String ppr) throws UtilisateursException {
@@ -424,9 +432,7 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
             }
             professeurAModifier.setPpr(professeurModificationDTO.getPpr());
         }
-        if (professeurModificationDTO.getPhoto() != null && !professeurModificationDTO.getPhoto().trim().isEmpty()) {
-            professeurAModifier.setPhoto(professeurModificationDTO.getPhoto());
-        }
+
         if(professeurModificationDTO.getActive() != null) {
             professeurAModifier.setActive(professeurModificationDTO.getActive());
         }
@@ -672,9 +678,7 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
             etudiantAModifier.setClasse(classe);
         }
 
-        if(etudiantModificationDTO.getPhoto() != null && !etudiantModificationDTO.getPhoto().trim().isEmpty()) {
-            etudiantAModifier.setPhoto(etudiantModificationDTO.getPhoto());
-        }
+
 
 
        if(etudiantModificationDTO.getPassword() != null && !etudiantModificationDTO.getPassword().trim().isEmpty()) {
@@ -721,6 +725,37 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
 
         etudiant.setActive(false);
         etudiantRepository.save(etudiant);
+    }
+
+
+    @Transactional
+    @Override
+    public Utilisateur changerPhotoProfil(String email, MultipartFile photo) throws UtilisateursException {
+        if (photo == null  ) {
+            throw new UtilisateursException("photo est obligatoire");
+        }
+        if (email == null  ) {
+            throw new UtilisateursException("email est obligatoire");
+        }
+
+
+        Utilisateur u = utilisateurRepository.findByEmail(email)
+                .orElseThrow(() -> new UtilisateursException("Utilisateur introuvable"));
+
+         photoStorageMetier.supprimerPhotoUtilisateurSiExsist(u.getPhotoNom());
+
+
+
+
+
+         FichierStockerDTO stored = photoStorageMetier.enregistrerPhoto(photo);
+
+        u.setPhotoNom(stored.fileName());
+        u.setPhotoUrl(stored.url());
+
+
+        return utilisateurRepository.save(u);
+
     }
 
 

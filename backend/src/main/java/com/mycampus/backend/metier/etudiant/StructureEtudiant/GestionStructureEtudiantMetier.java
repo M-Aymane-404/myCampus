@@ -1,12 +1,15 @@
-package com.mycampus.backend.metier.etudiant.StructureEtudiantMapper;
+package com.mycampus.backend.metier.etudiant.StructureEtudiant;
 
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.EtudiantModificationDTO;
+import com.mycampus.backend.dto.administrateur.DonneSortie.EtudiantSortieDTO;
+import com.mycampus.backend.dto.etudiant.DonneeEntrer.EtudiantModificationEtudiantDTO;
 import com.mycampus.backend.dto.etudiant.DonneeSortie.*;
 import com.mycampus.backend.dto.etudiant.DonneeSortie.ReleveDeNote.ReleveDeNoteEtudiantParSessionDTO;
 import com.mycampus.backend.enumerations.Semestre;
 import com.mycampus.backend.enumerations.StatusAbsence;
 import com.mycampus.backend.enumerations.TypeSeance;
 import com.mycampus.backend.exceptions.EtudiantException;
-import org.springframework.security.core.Authentication;
+import com.mycampus.backend.exceptions.UtilisateursException;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -15,6 +18,7 @@ public interface GestionStructureEtudiantMetier {
 
     EtudiantSortieEtudiantDTO trouverEtudiantConnecter(Long id);
 
+    public EtudiantSortieEtudiantDTO modifierEtudiant(String email, EtudiantModificationEtudiantDTO etudiantModificationDTO) throws UtilisateursException;
     List<ModuleSortieEtudiantDTO> trouverModulesDEtudiantConnecter(Long id) throws EtudiantException;
 
     List<ModuleSortieEtudiantDTO> trouverModulesDEtudiantConnecterParSemester(Long id, Semestre semestre) throws EtudiantException;

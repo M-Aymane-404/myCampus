@@ -1,5 +1,6 @@
 package com.mycampus.backend.mappers.etudiant;
 
+ import com.mycampus.backend.dto.administrateur.DonneSortie.EtudiantSortieDTO;
  import com.mycampus.backend.dto.etudiant.DonneeSortie.*;
 import com.mycampus.backend.dto.etudiant.DonneeSortie.ReleveDeNote.ExamenDeReleveEtudiantDTO;
 import com.mycampus.backend.dto.etudiant.DonneeSortie.ReleveDeNote.MatiereDeReleveEtudiantDTO;
@@ -143,6 +144,20 @@ public class StructureEtudiantMapper {
         );
 
         return moduleDeReleveEtudiantDTO;
+    }
+
+    public EtudiantSortieEtudiantDTO FromEtudientVersEtudiantSortieDTO(Etudiant etudiant) {
+        if (etudiant == null) {
+            return null;
+        }
+
+        EtudiantSortieEtudiantDTO etudiantSortieDTO = new EtudiantSortieEtudiantDTO();
+        BeanUtils.copyProperties(etudiant, etudiantSortieDTO);
+
+        // Mapping manuel de l'ID de la classe
+        etudiantSortieDTO.setCodeClasse(etudiant.getClasse() != null ? etudiant.getClasse().getCodeClasse() : null);
+
+        return etudiantSortieDTO;
     }
 
 

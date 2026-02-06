@@ -1,21 +1,30 @@
 package com.mycampus.backend.web.etudiant;
 
+import com.mycampus.backend.dto.FichierStocker.FichierStockerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.EtudiantModificationDTO;
+import com.mycampus.backend.dto.administrateur.DonneSortie.EtudiantSortieDTO;
+import com.mycampus.backend.dto.etudiant.DonneeEntrer.EtudiantModificationEtudiantDTO;
 import com.mycampus.backend.dto.etudiant.DonneeSortie.*;
 import com.mycampus.backend.dto.etudiant.DonneeSortie.ReleveDeNote.ReleveDeNoteEtudiantParSessionDTO;
+import com.mycampus.backend.entites.Utilisateur;
 import com.mycampus.backend.enumerations.Semestre;
 import com.mycampus.backend.enumerations.StatusAbsence;
 import com.mycampus.backend.enumerations.TypeSeance;
-import com.mycampus.backend.metier.etudiant.StructureEtudiantMapper.GestionStructureEtudiantMetier;
+import com.mycampus.backend.metier.administrateur.utilisateurs.GestionUtilisateursMetier;
+import com.mycampus.backend.metier.etudiant.StructureEtudiant.GestionStructureEtudiantMetier;
 import com.mycampus.backend.metier.security.GestionUtilisateurConnecteMetier;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -27,6 +36,9 @@ public class StructureAcademiqueEtudiantController {
 
     private final GestionStructureEtudiantMetier metier;
     private final GestionUtilisateurConnecteMetier utilisateurMetier;
+    private final GestionUtilisateursMetier gestionUtilisateursMetier;
+
+
 
     @GetMapping("/moi")
     @Operation(summary = "Trouver un étudiant connecté par son ID")
@@ -39,6 +51,32 @@ public class StructureAcademiqueEtudiantController {
         Long id = utilisateurMetier.trouverIdUtilisateurConnecte(authentication.getName());
         EtudiantSortieEtudiantDTO result = metier.trouverEtudiantConnecter(id);
         return ResponseEntity.ok(result);
+    }
+
+
+    @PreAuthorize("hasAuthority('ETUDIANT_INFORMATION_PERSONNEL_MODIFIER')")
+    @PutMapping(value = "/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public FichierStockerDTO modifierPhotoProfil(
+            Authentication authentication,
+            @RequestPart("photo") MultipartFile photo
+    ) {
+        Utilisateur u = gestionUtilisateursMetier.changerPhotoProfil(authentication.getName(), photo);
+        return new FichierStockerDTO(u.getPhotoNom(),u.getPhotoUrl());
+
+    }
+
+
+    @Operation(summary = "modifier un étudiant connecté ")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Étudiant modifier"),
+            @ApiResponse(responseCode = "404", description = "Étudiant introuvable")
+    })
+
+    @PreAuthorize("hasAuthority('ETUDIANT_INFORMATION_PERSONNEL_MODIFIER')")
+    @PutMapping("/moi/modifier")
+    public ResponseEntity<EtudiantSortieEtudiantDTO> modifierEtudiant(Authentication authentication, @Valid @RequestBody EtudiantModificationEtudiantDTO etudiantModificationDTO) {
+        EtudiantSortieEtudiantDTO etudiant = metier.modifierEtudiant(authentication.getName(), etudiantModificationDTO);
+        return ResponseEntity.ok(etudiant);
     }
 
     @GetMapping("/moi/modules")

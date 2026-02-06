@@ -27,7 +27,9 @@ public class UtilisateurSortieDto {
 
     private String tel;
 
-    private String photo;
+    private String photoUrl;
+    private String photoNom;
+
 
     private Boolean active ;
 

@@ -9,7 +9,10 @@ import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.Professe
 import com.mycampus.backend.dto.administrateur.DonneSortie.AdministrateurSortieDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.ProfesseurSortieDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.EtudiantSortieDTO;
+import com.mycampus.backend.entites.Utilisateur;
 import com.mycampus.backend.exceptions.UtilisateursException;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -62,4 +65,7 @@ public interface GestionUtilisateursMetier {
     void activerEtudiant(String apogee) throws UtilisateursException;
     
     void desactiverEtudiant(String apogee) throws UtilisateursException;
+
+    @Transactional
+    Utilisateur changerPhotoProfil(String email, MultipartFile photo) throws UtilisateursException;
 }

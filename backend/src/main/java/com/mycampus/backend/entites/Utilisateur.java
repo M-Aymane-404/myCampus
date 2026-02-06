@@ -42,8 +42,9 @@ public class Utilisateur {
     
     private String tel;
     
-    private String photo;
-    
+     private String photoUrl;   // ex: "/files/professeurs/{uuid}.png"
+    private String photoNom;
+
     @Column(nullable = false)
     @Builder.Default
     private Boolean active = true;

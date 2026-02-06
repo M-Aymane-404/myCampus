@@ -2,7 +2,6 @@ package com.mycampus.backend.metier.security;
 
 import com.mycampus.backend.entites.Role;
 import com.mycampus.backend.entites.Utilisateur;
-import com.mycampus.backend.metier.etudiant.StructureEtudiantMapper.GestionStructureEtudiantMetierImpl;
 import com.mycampus.backend.repositorys.UtilisateurRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.security.core.userdetails.User;
