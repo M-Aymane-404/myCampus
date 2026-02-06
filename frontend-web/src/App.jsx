@@ -26,6 +26,7 @@ import CalendrierEtudiant from './pages/CalendrierEtudiant';
 import AnnoncesEtudiant from './pages/AnnoncesEtudiant';
 import ProfilPage from './pages/ProfilPage';
 import { apiAuth } from './services/apiAuth';
+import { apiAuditLogs } from './services/apiAuditLogs';
 import './App.css';
 
 function App() {
@@ -60,6 +61,7 @@ function App() {
 
   // Check for existing session on mount
   useEffect(() => {
+    apiAuditLogs.initClientCapture();
     if (apiAuth.isAuthenticated()) {
       const userData = apiAuth.getUser();
       if (userData) {

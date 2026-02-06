@@ -71,7 +71,7 @@
 
                     .csrf(csrf -> csrf.disable())
                      .cors(Customizer.withDefaults()).httpBasic(Customizer.withDefaults())
-
+                    .httpBasic(Customizer.withDefaults())
                     .authorizeHttpRequests(auth -> auth
                              .requestMatchers("/auth/connecter", "/auth/rafraichir-jeton", "/auth/deconnexion").permitAll()
                             .requestMatchers("/files/**").permitAll()
