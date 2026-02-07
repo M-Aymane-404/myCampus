@@ -1,27 +1,31 @@
 package com.mycampus.backend.metier.administrateur.utilisateurs;
 
+import com.mycampus.backend.dto.FichierStocker.FichierStockerDTO;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.AdministrateurEntrerDTO;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.EtudiantEntrerDTO;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.ProfesseurEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.AdministrateurConnecterModificationDTO;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.AdministrateurModificationDTO;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.EtudiantModificationDTO;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.ProfesseurModificationDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.AdministrateurSortieDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.ProfesseurSortieDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.EtudiantSortieDTO;
-import com.mycampus.backend.entites.Administrateur;
-import com.mycampus.backend.entites.Departement;
-import com.mycampus.backend.entites.Professeur;
-import com.mycampus.backend.entites.Etudiant;
-import com.mycampus.backend.entites.Classe;
+import com.mycampus.backend.entites.*;
+import com.mycampus.backend.enumerations.RolesCode;
+import com.mycampus.backend.exceptions.SecuriteException;
+import com.mycampus.backend.metier.administrateur.PhotoStorage.PhotoStorageMetier;
 import com.mycampus.backend.repositorys.*;
 import com.mycampus.backend.mappers.administrateur.UtilisateursMapper;
 import com.mycampus.backend.exceptions.UtilisateursException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -35,9 +39,11 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
     private final ProfesseurRepository professeurRepository;
     private final EtudiantRepository etudiantRepository;
     private final DepartementRepository departementRepository;
-    private final FiliereRepository filiereRepository;
+    private final RoleRepository roleRepository;
     private final ClasseRepository classeRepository;
-    //private final PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
+    private final UtilisateurRoleRepository utilisateurRoleRepository;
+    private final PhotoStorageMetier photoStorageMetier;
 
     @Override
     public AdministrateurSortieDTO creerAdministrateur(AdministrateurEntrerDTO administrateurEntrerDTO) throws UtilisateursException {
@@ -76,10 +82,38 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
         Administrateur administrateur = utilisateursMapper.FromAdministrateurEntrerVersAdministrateur(administrateurEntrerDTO);
         administrateur.setDateCreation(LocalDateTime.now());
         administrateur.setActive(true);
-      //  administrateur.setPassword(passwordEncoder.encode(administrateurDTO.getPassword()));
+      administrateur.setPassword(passwordEncoder.encode(administrateurEntrerDTO.getPassword()));
 
         
+
+
+
+
+
+
+
+         if (administrateur.getUtilisateurRoles() == null) {
+            administrateur.setUtilisateurRoles(new ArrayList<>());
+        }
+
+        Role role =   roleRepository.findByNomRole(RolesCode.ADMIN)
+                .orElseThrow(() -> new SecuriteException("Rôle introuvable: " + RolesCode.ADMIN.name()));
+
         Administrateur administrateurSauvegarde = administrateurRepository.save(administrateur);
+
+         UtilisateurRole utilisateurRole = UtilisateurRole.builder()
+                .utilisateur(administrateurSauvegarde)
+                .role(role)
+                .dateAttribution(LocalDateTime.now())
+                .actif(true)
+                .build();
+
+         administrateurSauvegarde.getUtilisateurRoles().add(utilisateurRole);
+
+         utilisateurRoleRepository.save(utilisateurRole);
+
+
+
         return utilisateursMapper.FromAdministrateurVersAdministrateurSortieDTO(administrateurSauvegarde);
     }
 
@@ -107,6 +141,7 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
             throw new UtilisateursException("Erreur lors de la liste des administrateurs: " + e.getMessage(), e);
         }
     }
+
 
     @Override
     public AdministrateurSortieDTO modifierAdministrateur(String ppr, AdministrateurModificationDTO administrateurModificationDTO) throws UtilisateursException {
@@ -168,18 +203,79 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
             }
             adminAModifier.setTel(administrateurModificationDTO.getTel());
         }
-        if (administrateurModificationDTO.getPhoto() != null && !administrateurModificationDTO.getPhoto().trim().isEmpty()) {
-            adminAModifier.setPhoto(administrateurModificationDTO.getPhoto());
-        }
+
         if (administrateurModificationDTO.getActive() != null) {
             adminAModifier.setActive(administrateurModificationDTO.getActive());
         }
 
-       /* if(administrateurModificationDTO.getPassword() != null && !administrateurModificationDTO.getPassword().trim().isEmpty()) {
+        if(administrateurModificationDTO.getPassword() != null && !administrateurModificationDTO.getPassword().trim().isEmpty()) {
             adminAModifier.setPassword(passwordEncoder.encode(administrateurModificationDTO.getPassword()));
-        }*/
+        }
 
         
+        Administrateur administrateurModifie = administrateurRepository.save(adminAModifier);
+        return utilisateursMapper.FromAdministrateurVersAdministrateurSortieDTO(administrateurModifie);
+    }
+
+
+    @Override
+    public AdministrateurSortieDTO modifierAdministrateurConnecter(String email, AdministrateurConnecterModificationDTO administrateurModificationDTO) throws UtilisateursException {
+        if (email == null || email.trim().isEmpty()) {
+            throw new UtilisateursException("Le PPR de l'administrateur ne peut pas être nul");
+        }
+
+        if (administrateurModificationDTO == null) {
+            throw new UtilisateursException("Les données de l'administrateur ne peuvent pas être nulles");
+        }
+
+        Administrateur adminAModifier = administrateurRepository.findByEmail(email).orElseThrow(() ->
+                new UtilisateursException("Administrateur introuvable avec le PPR: " + email));
+
+
+
+        if (administrateurModificationDTO.getNom() != null && !administrateurModificationDTO.getNom().trim().isEmpty()) {
+            adminAModifier.setNom(administrateurModificationDTO.getNom());
+        }
+
+        if (administrateurModificationDTO.getPrenom() != null && !administrateurModificationDTO.getPrenom().trim().isEmpty()) {
+            adminAModifier.setPrenom(administrateurModificationDTO.getPrenom());
+        }
+
+        if (administrateurModificationDTO.getEmail() != null && !administrateurModificationDTO.getEmail().trim().isEmpty()) {
+            if (!adminAModifier.getEmail().equals(administrateurModificationDTO.getEmail()) &&
+                    utilisateurRepository.existsByEmail(administrateurModificationDTO.getEmail())) {
+                throw new UtilisateursException("Un utilisateur avec cet email existe déjà");
+            }
+            adminAModifier.setEmail(administrateurModificationDTO.getEmail());
+        }
+
+
+
+
+        if (administrateurModificationDTO.getCin() != null && !administrateurModificationDTO.getCin().trim().isEmpty()) {
+            if(!adminAModifier.getCin().equals(administrateurModificationDTO.getCin()) && utilisateurRepository.existsByCin(administrateurModificationDTO.getCin())){
+                throw new UtilisateursException("Un utilisateur avec cet Cin existe déjà");
+
+            }
+            adminAModifier.setCin(administrateurModificationDTO.getCin());
+
+        }
+
+
+        if(administrateurModificationDTO.getTel() != null && !administrateurModificationDTO.getTel().trim().isEmpty()) {
+            if(!adminAModifier.getTel().equals(administrateurModificationDTO.getTel()) && utilisateurRepository.existsByTel(administrateurModificationDTO.getTel())){
+                throw new UtilisateursException("Un utilisateur avec cet Numero existe déjà");
+            }
+            adminAModifier.setTel(administrateurModificationDTO.getTel());
+        }
+
+
+
+        if(administrateurModificationDTO.getPassword() != null && !administrateurModificationDTO.getPassword().trim().isEmpty()) {
+            adminAModifier.setPassword(passwordEncoder.encode(administrateurModificationDTO.getPassword()));
+        }
+
+
         Administrateur administrateurModifie = administrateurRepository.save(adminAModifier);
         return utilisateursMapper.FromAdministrateurVersAdministrateurSortieDTO(administrateurModifie);
     }
@@ -226,6 +322,7 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
 
 
     @Transactional
+    @Override
     public ProfesseurSortieDTO creerProfesseur(ProfesseurEntrerDTO professeurEntrerDTO) throws UtilisateursException {
 
         if(professeurEntrerDTO == null){
@@ -277,11 +374,37 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
         professeur.setActive(true);
         professeur.setDateCreation(LocalDateTime.now());
         professeur.setDateDerniereConnexion(null);
+        professeur.setPassword(passwordEncoder.encode(professeurEntrerDTO.getPassword()));
+
+        if (professeur.getUtilisateurRoles() == null) {
+            professeur.setUtilisateurRoles(new ArrayList<>());
+        }
+
+        Role role =   roleRepository.findByNomRole(RolesCode.PROFESSEUR)
+                .orElseThrow(() -> new SecuriteException("Rôle introuvable: " + RolesCode.PROFESSEUR.name()));
+
+ 
+        Professeur professeurSauvegarde = professeurRepository.save(professeur);
 
 
 
-        return utilisateursMapper.FromProfesseurVersProfesseurSortirDTO(professeurRepository.save(professeur));
+        UtilisateurRole utilisateurRole = UtilisateurRole.builder()
+                .utilisateur(professeurSauvegarde)
+                .role(role)
+                .dateAttribution(LocalDateTime.now())
+                .actif(true)
+                .build();
+
+        professeurSauvegarde.getUtilisateurRoles().add(utilisateurRole);
+
+        utilisateurRoleRepository.save(utilisateurRole);
+
+
+
+        return utilisateursMapper.FromProfesseurVersProfesseurSortirDTO(professeurSauvegarde);
     }
+
+
 
     @Override
     public ProfesseurSortieDTO trouverProfesseurParPpr(String ppr) throws UtilisateursException {
@@ -373,9 +496,7 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
             }
             professeurAModifier.setPpr(professeurModificationDTO.getPpr());
         }
-        if (professeurModificationDTO.getPhoto() != null && !professeurModificationDTO.getPhoto().trim().isEmpty()) {
-            professeurAModifier.setPhoto(professeurModificationDTO.getPhoto());
-        }
+
         if(professeurModificationDTO.getActive() != null) {
             professeurAModifier.setActive(professeurModificationDTO.getActive());
         }
@@ -393,9 +514,9 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
 
 
 
-        /* if(professeurDTO.getPassword() != null && !professeurDTO.getPassword().trim().isEmpty()) {
-            professeurAModifier.setPassword(passwordEncoder.encode(professeurDTO.getPassword()));
-        }*/
+          if(professeurModificationDTO.getPassword() != null && !professeurModificationDTO.getPassword().trim().isEmpty()) {
+            professeurAModifier.setPassword(passwordEncoder.encode(professeurModificationDTO.getPassword()));
+        }
 
         Professeur professeurModifie = professeurRepository.save(professeurAModifier);
         return utilisateursMapper.FromProfesseurVersProfesseurSortirDTO(professeurModifie);
@@ -490,8 +611,32 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
         etudiant.setActive(true);
         etudiant.setDateCreation(LocalDateTime.now());
         etudiant.setAnneeFinEtude(null);
+        etudiant.setPassword(passwordEncoder.encode(etudiantEntrerDTO.getPassword()));
 
-        return utilisateursMapper.FromEtudientVersEtudiantSortieDTO(etudiantRepository.save(etudiant));
+
+        if (etudiant.getUtilisateurRoles() == null) {
+            etudiant.setUtilisateurRoles(new ArrayList<>());
+        }
+
+        Role role =   roleRepository.findByNomRole(RolesCode.ETUDIANT)
+                .orElseThrow(() -> new SecuriteException("Rôle introuvable: " + RolesCode.PROFESSEUR.name()));
+
+        Etudiant etudiantSauvegarde = etudiantRepository.save(etudiant);
+
+        UtilisateurRole utilisateurRole = UtilisateurRole.builder()
+                .utilisateur(etudiantSauvegarde)
+                .role(role)
+                .dateAttribution(LocalDateTime.now())
+                .actif(true)
+                .build();
+
+        etudiantSauvegarde.getUtilisateurRoles().add(utilisateurRole);
+
+        utilisateurRoleRepository.save(utilisateurRole);
+
+
+
+        return utilisateursMapper.FromEtudientVersEtudiantSortieDTO(etudiantSauvegarde);
     }
 
     @Override
@@ -597,14 +742,12 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
             etudiantAModifier.setClasse(classe);
         }
 
-        if(etudiantModificationDTO.getPhoto() != null && !etudiantModificationDTO.getPhoto().trim().isEmpty()) {
-            etudiantAModifier.setPhoto(etudiantModificationDTO.getPhoto());
+
+
+
+       if(etudiantModificationDTO.getPassword() != null && !etudiantModificationDTO.getPassword().trim().isEmpty()) {
+            etudiantAModifier.setPassword(passwordEncoder.encode(etudiantModificationDTO.getPassword()));
         }
-
-
-        /* if(etudiantDTO.getPassword() != null && !etudiantDTO.getPassword().trim().isEmpty()) {
-            etudiantAModifier.setPassword(passwordEncoder.encode(etudiantDTO.getPassword()));
-        }*/
 
         Etudiant etudiantModifie = etudiantRepository.save(etudiantAModifier);
         return utilisateursMapper.FromEtudientVersEtudiantSortieDTO(etudiantModifie);
@@ -647,4 +790,37 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
         etudiant.setActive(false);
         etudiantRepository.save(etudiant);
     }
+
+
+    @Transactional
+    @Override
+    public Utilisateur changerPhotoProfil(String email, MultipartFile photo) throws UtilisateursException {
+        if (photo == null  ) {
+            throw new UtilisateursException("photo est obligatoire");
+        }
+        if (email == null  ) {
+            throw new UtilisateursException("email est obligatoire");
+        }
+
+
+        Utilisateur u = utilisateurRepository.findByEmail(email)
+                .orElseThrow(() -> new UtilisateursException("Utilisateur introuvable"));
+
+         photoStorageMetier.supprimerPhotoUtilisateurSiExsist(u.getPhotoNom());
+
+
+
+
+
+         FichierStockerDTO stored = photoStorageMetier.enregistrerPhoto(photo);
+
+        u.setPhotoNom(stored.fileName());
+        u.setPhotoUrl(stored.url());
+
+
+        return utilisateurRepository.save(u);
+
+    }
+
+
 }

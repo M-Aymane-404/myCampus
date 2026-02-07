@@ -14,6 +14,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @ToString(exclude = {"affectationEnseignement", "presences", "fichierSeances"})
 @EqualsAndHashCode(exclude = {"affectationEnseignement", "presences", "fichierSeances"})
 public class Seance {

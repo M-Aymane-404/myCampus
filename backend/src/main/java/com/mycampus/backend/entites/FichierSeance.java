@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @ToString(exclude = {"seance"})
 @EqualsAndHashCode(exclude = {"seance"})
 public class FichierSeance {

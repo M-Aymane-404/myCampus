@@ -15,18 +15,14 @@ import java.util.List;
 @AllArgsConstructor
 @ToString(exclude = {"professeur", "classe", "matiere","seances"})
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-
+@Builder
 public class AffectationEnseignement {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @EqualsAndHashCode.Include
     private Long id;
-    
 
-    
-
-    
     @Column(nullable = false)
     private Boolean active;
     
@@ -42,6 +38,6 @@ public class AffectationEnseignement {
     @JoinColumn(name = "matiere_id", nullable = false)
     private Matiere matiere;
     
-    @OneToMany(mappedBy = "affectationEnseignement", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "affectationEnseignement",fetch = FetchType.LAZY)
     private List<Seance> seances;
 }

@@ -44,8 +44,7 @@ public class UtilisateurEntrerDto {
     private String tel;
 
 
-    @Size(min = 2 , max = 50)
-    private String photo;
+
 
     private Boolean active ;
 

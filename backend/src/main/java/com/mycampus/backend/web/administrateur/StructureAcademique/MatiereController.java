@@ -7,6 +7,7 @@ import com.mycampus.backend.metier.administrateur.structureAcademique.GestionStr
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,6 +15,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/admin/structure/matieres")
 @RequiredArgsConstructor
+@PreAuthorize("hasAuthority('ADMIN_STRUCTURE_GERER')")
 public class MatiereController {
 
     private final GestionStructureAcademiqueMetier metier;

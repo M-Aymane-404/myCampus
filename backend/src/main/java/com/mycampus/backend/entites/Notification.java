@@ -13,6 +13,7 @@ import java.util.Date;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @ToString(exclude = {"utilisateur"})
 @EqualsAndHashCode(exclude = {"utilisateur"})
 public class Notification {
@@ -31,6 +32,7 @@ public class Notification {
     private LocalDateTime dateEnvoi;
     
     @Column(nullable = false)
+    @Builder.Default
     private Boolean lu = false;
     
     private LocalDateTime dateLecture;

@@ -81,6 +81,9 @@ direction LR
 	    -statut: String
     }
 
+	 
+
+
     class Etudiant {
 	    -apogee: String
 	    -niveau: String
@@ -103,6 +106,7 @@ direction LR
 	    -typeDepartement: String
 	    -description: String
 	    -dateCreation: LocalDate
+	    -etat: EtatStructure
     }
 
     class Filiere {
@@ -110,7 +114,6 @@ direction LR
 	    -codeFiliere: String
 	    -nom: String
 	    -description: String
-	  
 	    -dureeFormation: int
 	    -niveauDiplome: String
 	    -etat: EtatStructure
@@ -122,7 +125,7 @@ direction LR
 	    -nom: String
 	    -niveau: String
 	    -anneeUniversitaire: String
-		  -emploiTemps: String
+	    -emploiTemps: String
 	    -effectifMax: int
     }
 
@@ -140,11 +143,11 @@ direction LR
 	    -codeMatiere: String
 	    -nom: String
 	    -description: String
-	    -coefficient: double
+	    
     }
 
     class AffectationEnseignement {
-	    -id: Long	   
+	    -id: Long
 	    -active: boolean
     }
 
@@ -179,14 +182,6 @@ direction LR
 	    -corrigePath: String
     }
 
-    class Resultat {
-	    -id: Long
-	    -note: Double
-	    -datePublication: LocalDateTime
-	    -valide: boolean
-	    -copieEtudiantPath: String
-    }
-
     class Presence {
 	    -id: Long
 	    -status: StatusPresence
@@ -205,11 +200,12 @@ direction LR
 	    -type: TypeNotification
     }
 
-  
-
-   
-
-   
+    class Resultat {
+	    -id: Long
+	    -note: Double
+	    -datePublication: LocalDateTime
+	    -copieEtudiantPath: String
+    }
 
 	<<enumeration>> TypeSeance
 	<<enumeration>> StatusPresence
@@ -233,12 +229,11 @@ direction LR
     Classe "1" -- "1..*" Etudiant : regroupe
     Module "1" -- "1..*" Matiere : compose
     Module ..> Semestre : uses
-	  Examen ..> Semestre : uses
+    Examen ..> Semestre : uses
     Etudiant ..> Semestre : uses
     Professeur "1" -- "0..*" AffectationEnseignement : affecte
     Classe "1" -- "0..*" AffectationEnseignement : concerne
     Matiere "1" -- "0..*" AffectationEnseignement : porte
-
     AffectationEnseignement ..> Semestre : uses
     Seance "1" -- "0..*" FichierSeance : contient
     Seance ..> TypeSeance : uses
@@ -253,6 +248,7 @@ direction LR
     Examen ..> EtatExamen : uses
     Etudiant ..> EtatInscription : uses
     Filiere ..> EtatStructure : uses
+    Departement ..> EtatStructure : uses
     Examen ..> TypeExamen : uses
     Utilisateur "1" -- "0..*" Notification : recoit
     Notification ..> TypeNotification : uses

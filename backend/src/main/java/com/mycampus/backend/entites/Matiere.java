@@ -10,6 +10,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @ToString(exclude = {"module", "affectationEnseignements", "examens"})
 @EqualsAndHashCode(exclude = {"module", "affectationEnseignements", "examens"})
 public class Matiere {

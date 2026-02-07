@@ -1,5 +1,7 @@
 package com.mycampus.backend.repositorys;
 
+import com.mycampus.backend.entites.Etudiant;
+import com.mycampus.backend.entites.Examen;
 import com.mycampus.backend.entites.Resultat;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -12,6 +14,8 @@ import java.util.List;
 public interface ResultatRepository extends JpaRepository<Resultat, Long> {
 
     boolean existsByEtudiantIdAndExamenId(Long etudiantId, Long examenId);
+    
+    boolean existsByExamenAndEtudiant(Examen examen, Etudiant etudiant);
 
 
     @Query("""

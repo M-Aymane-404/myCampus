@@ -37,8 +37,7 @@ public class UtilisateurModificationDto {
     @Size(min = 10, max = 20, message = "Numéro de Téléphone non valide")
     private String tel;
 
-    @Size(max = 50, message = "Photo ne doit pas dépasser 50 caractères")
-    private String photo;
+
 
     private Boolean active;
 }

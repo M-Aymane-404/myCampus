@@ -10,6 +10,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @ToString(exclude = {"departement", "classes", "modules", "chefFiliere"})
 @EqualsAndHashCode(exclude = {"departement", "classes", "modules", "chefFiliere"})
 public class Filiere {

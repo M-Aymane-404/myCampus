@@ -1,3 +1,5 @@
+import { apiAuth } from './apiAuth';
+
 const BASE_URL = 'http://localhost:8080/api/admin/utilisateurs';
 
 export const apiComptes = {
@@ -11,9 +13,7 @@ export const apiComptes = {
             const [professeurs, etudiants, administrateurs] = await Promise.all([
                 fetch(`${BASE_URL}/professeurs`, {
                     method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: apiAuth.getAuthHeaders(),
                 }).then(reponse => {
                     if (!reponse.ok) throw new Error(`Erreur professeurs: ${reponse.status}`);
                     return reponse.json();
@@ -21,9 +21,7 @@ export const apiComptes = {
 
                 fetch(`${BASE_URL}/etudiants`, {
                     method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: apiAuth.getAuthHeaders(),
                 }).then(reponse => {
                     if (!reponse.ok) throw new Error(`Erreur étudiants: ${reponse.status}`);
                     return reponse.json();
@@ -31,9 +29,7 @@ export const apiComptes = {
 
                 fetch(`${BASE_URL}/administrateurs`, {
                     method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: apiAuth.getAuthHeaders(),
                 }).then(reponse => {
                     if (!reponse.ok) throw new Error(`Erreur administrateurs: ${reponse.status}`);
                     return reponse.json();

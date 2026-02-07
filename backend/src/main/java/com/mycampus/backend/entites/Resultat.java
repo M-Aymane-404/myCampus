@@ -9,9 +9,10 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @NoArgsConstructor
+@Builder
 @AllArgsConstructor
 @ToString(exclude = {"examen", "etudiant"})
-@EqualsAndHashCode(exclude = {"examen", "examen"})
+@EqualsAndHashCode(exclude = {"examen", "etudiant"})
 @Table(
         name = "resultat",
         uniqueConstraints = @UniqueConstraint(

@@ -29,16 +29,74 @@ const EnTete = ({ elementActif, surChangementElement }) => {
       try {
         const currentUser = apiAuth.getUser();
         if (currentUser) {
+          let profileData = null;
+
+          // Fetch detailed profile data based on role
+          if (!currentUser.nom || !currentUser.prenom) {
+            const role = (currentUser.role || '').toLowerCase();
+            
+            try {
+              if (role === 'student') {
+                const response = await fetch('http://localhost:8080/api/etudiant/moi', {
+                  method: 'GET',
+                  headers: apiAuth.getAuthHeaders(),
+                });
+
+                if (response.ok) {
+                  profileData = await response.json();
+                }
+              } else if (role === 'professor') {
+                const response = await fetch('http://localhost:8080/api/professeur/moi', {
+                  method: 'GET',
+                  headers: apiAuth.getAuthHeaders(),
+                });
+
+                if (response.ok) {
+                  profileData = await response.json();
+                }
+              } else if (role === 'admin') {
+                // Use admin API to get profile
+                const response = await fetch('http://localhost:8080/api/admin/utilisateurs/administrateurs', {
+                  method: 'GET',
+                  headers: apiAuth.getAuthHeaders(),
+                });
+
+                if (response.ok) {
+                  const allAdmins = await response.json();
+                  profileData = allAdmins.find(admin => admin.email === currentUser.email);
+                }
+              }
+
+              if (profileData) {
+                apiAuth.updateUser({
+                  nom: profileData.nom || '',
+                  prenom: profileData.prenom || '',
+                  email: profileData.email || currentUser.email || '',
+                  telephone: profileData.tel || profileData.telephone || '',
+                  photoProfile: profileData.photo || profileData.photoProfile || currentUser.photoProfile || null,
+                });
+              }
+            } catch (e) {
+              console.error("Erreur lors du chargement du profil de l'utilisateur", e);
+            }
+          }
+
+          const syncedUser = apiAuth.getUser();
+          const userToUse = syncedUser || currentUser;
+
+          const photo = userToUse.photoProfile || null;
+          const fullPhotoUrl = photo ? (photo.startsWith('http') ? photo : `http://localhost:8080/uploads/${photo}`) : null;
+
           setInfosUtilisateur({
-            nom: currentUser.nom || '',
-            prenom: currentUser.prenom || '',
-            email: currentUser.email || '',
-            telephone: currentUser.telephone || '',
-            nomUtilisateur: currentUser.nomUtilisateur || '',
-            departement: currentUser.departement || '',
-            role: currentUser.role || 'admin',
-            dateCreation: currentUser.dateCreation || new Date().toLocaleDateString(),
-            photoProfile: currentUser.photoProfile || null
+            nom: userToUse.nom || '',
+            prenom: userToUse.prenom || '',
+            email: userToUse.email || '',
+            telephone: userToUse.telephone || '',
+            nomUtilisateur: userToUse.nomUtilisateur || '',
+            departement: userToUse.departement || '',
+            role: userToUse.role || 'admin',
+            dateCreation: userToUse.dateCreation || new Date().toLocaleDateString(),
+            photoProfile: fullPhotoUrl
           });
         }
       } catch (error) {
@@ -62,8 +120,8 @@ const EnTete = ({ elementActif, surChangementElement }) => {
     if (!role) return '';
     const r = role.toLowerCase();
     switch (r) {
-      case 'professor': return 'Prof';
-      case 'student': return 'Student';
+      case 'professor': return 'Professeur';
+      case 'student': return 'Etudiant';
       case 'admin': return 'Admin';
       default: return role.charAt(0).toUpperCase() + role.slice(1);
     }
@@ -125,9 +183,29 @@ const EnTete = ({ elementActif, surChangementElement }) => {
 
   // Helper to display name with prefix if needed
   const getDisplayName = () => {
-    if (!infosUtilisateur.prenom && !infosUtilisateur.nom) return 'Loading...';
-    const prefix = currentRole === 'professor' ? 'Dr. ' : '';
-    return `${prefix}${infosUtilisateur.prenom} ${infosUtilisateur.nom}`;
+    // If we have both first and last name, use them
+    if (infosUtilisateur.prenom && infosUtilisateur.nom) {
+      const prefix = currentRole === 'professor' ? 'Dr. ' : '';
+      return `${prefix}${infosUtilisateur.prenom} ${infosUtilisateur.nom}`;
+    }
+
+    // If we have at least one name field, use it
+    if (infosUtilisateur.prenom || infosUtilisateur.nom) {
+      const prefix = currentRole === 'professor' ? 'Dr. ' : '';
+      return `${prefix}${infosUtilisateur.prenom || ''}${infosUtilisateur.nom || ''}`;
+    }
+
+    // Fallback to username or email if no names are available
+    const fallback = infosUtilisateur.nomUtilisateur || infosUtilisateur.email || 'Utilisateur';
+
+    // Extract username from email if email is the only available option
+    if (fallback.includes('@')) {
+      const username = fallback.split('@')[0];
+      // Capitalize first letter and make it more readable
+      return username.charAt(0).toUpperCase() + username.slice(1);
+    }
+
+    return fallback;
   };
 
   return (

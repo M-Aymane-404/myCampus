@@ -8,6 +8,7 @@ export const apiEtudiants = {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          ...apiAuth.getAuthHeaders(),
         },
       });
 
@@ -28,6 +29,7 @@ export const apiEtudiants = {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          ...apiAuth.getAuthHeaders(),
         },
       });
 
@@ -151,6 +153,7 @@ export const apiEtudiants = {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
+          ...apiAuth.getAuthHeaders(),
         },
       });
 

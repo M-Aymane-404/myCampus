@@ -10,6 +10,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @ToString(exclude = {"filiere", "etudiants", "affectationEnseignements"})
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Classe {

@@ -26,6 +26,7 @@ import CalendrierEtudiant from './pages/CalendrierEtudiant';
 import AnnoncesEtudiant from './pages/AnnoncesEtudiant';
 import ProfilPage from './pages/ProfilPage';
 import { apiAuth } from './services/apiAuth';
+import { apiAuditLogs } from './services/apiAuditLogs';
 import './App.css';
 
 function App() {
@@ -37,40 +38,30 @@ function App() {
   });
 
   const gererLogin = (donneesLogin) => {
-    // MOCK MODE: Use role directly from dropdown selection (no normalization needed)
-    const role = donneesLogin.role?.toLowerCase() || 'admin';
-
-    // User data is already stored by apiAuth.mockLogin()
+    const role = donneesLogin.role;
     const userData = {
       email: donneesLogin.email,
       role: role,
       user: donneesLogin.user
     };
 
-    // Set the logged-in user and role
     setUtilisateurConnecte(userData);
 
-    // Set default active element based on role - automatic redirection
-    // Administrator -> Admin Dashboard
+    // Redirection based on role
     if (role === 'admin') {
       setElementActif('tableau-de-bord');
-    }
-    // Professor -> Professor Dashboard
-    else if (role === 'professor') {
+    } else if (role === 'professor') {
       setElementActif('tableau-de-bord-professeur');
-    }
-    // Student -> Student Dashboard
-    else if (role === 'student') {
+    } else if (role === 'student') {
       setElementActif('tableau-de-bord-etudiant');
-    }
-    // Default to admin dashboard if role is unknown
-    else {
+    } else {
       setElementActif('tableau-de-bord');
     }
   };
 
   // Check for existing session on mount
   useEffect(() => {
+    apiAuditLogs.initClientCapture();
     if (apiAuth.isAuthenticated()) {
       const userData = apiAuth.getUser();
       if (userData) {

@@ -1,5 +1,8 @@
-package com.mycampus.backend.metier.etudiant.StructureEtudiantMapper;
+package com.mycampus.backend.metier.etudiant.StructureEtudiant;
 
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.EtudiantModificationDTO;
+import com.mycampus.backend.dto.administrateur.DonneSortie.EtudiantSortieDTO;
+import com.mycampus.backend.dto.etudiant.DonneeEntrer.EtudiantModificationEtudiantDTO;
 import com.mycampus.backend.dto.etudiant.DonneeSortie.*;
 import com.mycampus.backend.dto.etudiant.DonneeSortie.ReleveDeNote.ExamenDeReleveEtudiantDTO;
 import com.mycampus.backend.dto.etudiant.DonneeSortie.ReleveDeNote.MatiereDeReleveEtudiantDTO;
@@ -12,9 +15,12 @@ import com.mycampus.backend.enumerations.StatusAbsence;
 import com.mycampus.backend.enumerations.TypeExamen;
 import com.mycampus.backend.enumerations.TypeSeance;
 import com.mycampus.backend.exceptions.EtudiantException;
+import com.mycampus.backend.exceptions.UtilisateursException;
+import com.mycampus.backend.mappers.administrateur.UtilisateursMapper;
 import com.mycampus.backend.mappers.etudiant.StructureEtudiantMapper;
 import com.mycampus.backend.repositorys.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +35,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudiantMetier {
      private final EtudiantRepository etudiantRepository;
+     private final UtilisateurRepository utilisateurRepository;
     private final ModuleRepository moduleRepository;
     private final MatiereRepository matiereRepository;
     private final SeanceRepository seanceRepository;
@@ -39,6 +46,8 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
     private final AffectationEnseignementRepository affectationEnseignementRepository;
     private final ProfesseurRepository professeurRepository;
     private final StructureEtudiantMapper mapper;
+    private final UtilisateursMapper utilisateursMapper;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public EtudiantSortieEtudiantDTO trouverEtudiantConnecter(Long id) throws EtudiantException {
@@ -48,10 +57,102 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
             throw  new EtudiantException("id est obli");
         }
 
+        Etudiant etudiant = etudiantRepository.findById(id)
+                .orElseThrow(() -> new EtudiantException("Étudiant introuvable"));
 
+        String codeClasse = null;
+        if (etudiant.getClasse() != null) {
+            codeClasse = etudiant.getClasse().getCodeClasse();
+        }
 
-        return null;
+        return EtudiantSortieEtudiantDTO.builder()
+                .id(etudiant.getId())
+                .nom(etudiant.getNom())
+                .prenom(etudiant.getPrenom())
+                .email(etudiant.getEmail())
+                .cin(etudiant.getCin())
+                .tel(etudiant.getTel())
+                .photoNom(etudiant.getPhotoNom())
+                .photoUrl(etudiant.getPhotoUrl())
+                .active(etudiant.getActive())
+                .apogee(etudiant.getApogee())
+                .niveau(etudiant.getNiveau())
+                .anneeInscription(etudiant.getAnneeInscription())
+                .semestreActuel(etudiant.getSemestreActuel())
+                .anneeFinEtude(etudiant.getAnneeFinEtude())
+                .dateNaissance(etudiant.getDateNaissance())
+                .etatInscription(etudiant.getEtatInscription())
+                .codeClasse(codeClasse)
+                .dateDerniereConnexion(etudiant.getDateDerniereConnexion())
+                .build();
     }
+
+
+    @Override
+    public EtudiantSortieEtudiantDTO modifierEtudiant(String email, EtudiantModificationEtudiantDTO etudiantModificationDTO) throws UtilisateursException {
+        if (email == null || email.trim().isEmpty()) {
+            throw new UtilisateursException("L'email de l'étudiant ne peut pas être nulle");
+        }
+
+        if (etudiantModificationDTO == null) {
+            throw new UtilisateursException("L'étudiant ne peut pas être nul");
+        }
+
+        Etudiant etudiantAModifier = etudiantRepository.findByEmail(email).orElseThrow(() ->
+                new UtilisateursException("Étudiant introuvable avec l'apogée: " + email));
+
+        if (etudiantModificationDTO.getNom() != null && !etudiantModificationDTO.getNom().trim().isEmpty()) {
+            etudiantAModifier.setNom(etudiantModificationDTO.getNom());
+        }
+
+        if (etudiantModificationDTO.getPrenom() != null && !etudiantModificationDTO.getPrenom().trim().isEmpty()) {
+            etudiantAModifier.setPrenom(etudiantModificationDTO.getPrenom());
+        }
+
+        if (etudiantModificationDTO.getEmail() != null && !etudiantModificationDTO.getEmail().trim().isEmpty()) {
+            if (!etudiantAModifier.getEmail().equals(etudiantModificationDTO.getEmail()) &&
+                    utilisateurRepository.existsByEmail(etudiantModificationDTO.getEmail())) {
+                throw new UtilisateursException("Un utilisateur avec cet email existe déjà");
+            }
+            etudiantAModifier.setEmail(etudiantModificationDTO.getEmail());
+        }
+
+
+
+
+
+
+
+
+        if (etudiantModificationDTO.getDateNaissance() != null) {
+            etudiantAModifier.setDateNaissance(etudiantModificationDTO.getDateNaissance());
+        }
+
+
+
+
+        if(etudiantModificationDTO.getTel() != null && !etudiantModificationDTO.getTel().trim().isEmpty()) {
+            if(!etudiantAModifier.getTel().equals(etudiantModificationDTO.getTel()) && utilisateurRepository.existsByTel(etudiantModificationDTO.getTel())){
+                throw new UtilisateursException("Un utilisateur avec cet numero existe déjà");
+
+            }
+            etudiantAModifier.setTel(etudiantModificationDTO.getTel());
+        }
+
+
+
+
+
+
+
+        if(etudiantModificationDTO.getPassword() != null && !etudiantModificationDTO.getPassword().trim().isEmpty()) {
+            etudiantAModifier.setPassword(passwordEncoder.encode(etudiantModificationDTO.getPassword()));
+        }
+
+        Etudiant etudiantModifie = etudiantRepository.save(etudiantAModifier);
+        return mapper.FromEtudientVersEtudiantSortieDTO(etudiantModifie);
+    }
+
 
 
     @Override
@@ -315,13 +416,6 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
                 .build();
 
     }
-
-
-
-
-
-
-
 
 
 

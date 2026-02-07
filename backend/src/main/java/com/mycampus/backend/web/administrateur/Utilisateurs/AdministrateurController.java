@@ -1,6 +1,7 @@
 package com.mycampus.backend.web.administrateur.Utilisateurs;
 
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.AdministrateurEntrerDTO;
+import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.AdministrateurConnecterModificationDTO;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.AdministrateurModificationDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.AdministrateurSortieDTO;
 import com.mycampus.backend.metier.administrateur.utilisateurs.GestionUtilisateursMetier;
@@ -8,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,6 +18,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/admin/utilisateurs/administrateurs")
 @RequiredArgsConstructor
+@PreAuthorize("hasAuthority('ADMIN_UTILISATEUR_GERER')")
 public class AdministrateurController {
 
     private final GestionUtilisateursMetier gestionUtilisateursMetier;
@@ -46,6 +50,14 @@ public class AdministrateurController {
         return ResponseEntity.ok(updated);
     }
 
+    @PutMapping("/moi/modifier")
+    public ResponseEntity<AdministrateurSortieDTO> modifierAdministrateurConnecter(
+            Authentication authentication,
+            @Valid @RequestBody AdministrateurConnecterModificationDTO administrateurModificationDTO) {
+        AdministrateurSortieDTO updated = gestionUtilisateursMetier.modifierAdministrateurConnecter(authentication.getName(), administrateurModificationDTO);
+        return ResponseEntity.ok(updated);
+    }
+
     @PatchMapping("/{ppr}/activer")
     public ResponseEntity<Void> activerAdministrateur(@PathVariable String ppr) {
         gestionUtilisateursMetier.activerAdministrateur(ppr);
@@ -63,4 +75,5 @@ public class AdministrateurController {
         gestionUtilisateursMetier.supprimerAdministrateur(ppr);
         return ResponseEntity.noContent().build();
     }
+
 }
