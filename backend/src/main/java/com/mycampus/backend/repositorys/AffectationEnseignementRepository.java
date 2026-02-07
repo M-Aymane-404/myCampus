@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface AffectationEnseignementRepository extends JpaRepository<AffectationEnseignement, Long> {
@@ -30,4 +31,7 @@ public interface AffectationEnseignementRepository extends JpaRepository<Affecta
     List<AffectationEnseignement> findByClasse_CodeClasse(String codeClasse);
 
     AffectationEnseignement findByMatiere_CodeMatiereAndClasse_CodeClasse(String codeMatiere, String codeClasse);
+
+
+    Optional<AffectationEnseignement> findByIdAndProfesseur_Ppr(Long id,  String professeurPpr);
 }

@@ -1,5 +1,6 @@
 package com.mycampus.backend.dto.professeur.DonneeEntrer.seances;
 
+import com.mycampus.backend.enumerations.EtatSeance;
 import com.mycampus.backend.enumerations.TypeSeance;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,6 +25,8 @@ public class CreationSeanceEntrerDTO {
     private LocalDateTime heureDebut;
 
     private LocalDateTime heureFin;
+
+    private EtatSeance etat;
 
     private String salle;
 

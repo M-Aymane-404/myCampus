@@ -1,6 +1,7 @@
 package com.mycampus.backend.web.errors;
 
 import com.mycampus.backend.exceptions.EtudiantException;
+import com.mycampus.backend.exceptions.SeancesProfesseurException;
 import com.mycampus.backend.exceptions.StructureAcademiqueException;
 import com.mycampus.backend.exceptions.UtilisateursException;
 import jakarta.validation.ConstraintViolationException;
@@ -11,6 +12,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
@@ -115,4 +118,64 @@ public class RestExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }
+
+    //Prof
+
+    @ExceptionHandler(SeancesProfesseurException.class)
+    public ResponseEntity<Object> handleSeancesProfesseurException(SeancesProfesseurException ex, WebRequest request) {
+        log.error("Séances professeur exception: {}", ex.getMessage());
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.BAD_REQUEST.value());
+        body.put("erreur", "Requête invalide");
+        body.put("message", ex.getMessage());
+        body.put("path", request.getDescription(false));
+
+        return ResponseEntity.badRequest().body(body);
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<Object> handleMaxUploadSize(MaxUploadSizeExceededException ex, WebRequest request) {
+        log.warn("Upload trop volumineux: {}", ex.getMessage());
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.BAD_REQUEST.value());
+        body.put("erreur", "Fichier trop volumineux");
+        body.put("message", "La taille du fichier dépasse la limite autorisée");
+        body.put("path", request.getDescription(false));
+
+        return ResponseEntity.badRequest().body(body);
+    }
+
+    @ExceptionHandler(MultipartException.class)
+    public ResponseEntity<Object> handleMultipart(MultipartException ex, WebRequest request) {
+        log.warn("Erreur multipart: {}", ex.getMessage());
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.BAD_REQUEST.value());
+        body.put("erreur", "Erreur upload");
+        body.put("message", "Le fichier envoyé n'est pas valide ou la requête multipart est incorrecte");
+        body.put("path", request.getDescription(false));
+
+        return ResponseEntity.badRequest().body(body);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }

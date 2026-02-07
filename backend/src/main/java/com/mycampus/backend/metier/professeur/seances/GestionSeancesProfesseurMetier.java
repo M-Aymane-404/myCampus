@@ -7,6 +7,7 @@ import com.mycampus.backend.dto.professeur.DonneeEntrer.seances.CreationSeanceEn
 import com.mycampus.backend.dto.professeur.DonneeEntrer.seances.ModificationSeanceEntrerDTO;
 import com.mycampus.backend.dto.professeur.DonneeEntrer.seances.RechercheSeancesEntrerDTO;
 import com.mycampus.backend.dto.professeur.DonneeSortie.fichiersSeance.FichierSeanceSortieDTO;
+import com.mycampus.backend.dto.professeur.DonneeSortie.fichiersSeance.TelechargementFichierSeanceSortieDTO;
 import com.mycampus.backend.dto.professeur.DonneeSortie.seances.SeanceResumeSortieDTO;
 import com.mycampus.backend.dto.professeur.DonneeSortie.seances.SeanceSortieDTO;
 import com.mycampus.backend.exceptions.SeancesProfesseurException;
@@ -16,27 +17,31 @@ import java.util.List;
 
 public interface GestionSeancesProfesseurMetier {
 
-    SeanceSortieDTO creerSeance(Long professeurId, CreationSeanceEntrerDTO creationSeanceEntrerDTO)
+    SeanceSortieDTO creerSeance(String professeurPpr, CreationSeanceEntrerDTO creationSeanceEntrerDTO)
             throws SeancesProfesseurException;
 
-    SeanceSortieDTO modifierSeance(Long professeurId, Long seanceId, ModificationSeanceEntrerDTO modificationSeanceEntrerDTO)
+    SeanceSortieDTO modifierSeance(String professeurPpr, Long seanceId, ModificationSeanceEntrerDTO modificationSeanceEntrerDTO)
             throws SeancesProfesseurException;
 
-    void supprimerSeance(Long professeurId, Long seanceId)
+    void supprimerSeance(String professeurPpr, Long seanceId)
             throws SeancesProfesseurException;
 
-    SeanceSortieDTO trouverSeanceParId(Long professeurId, Long seanceId)
+    SeanceSortieDTO trouverSeanceParId(String professeurPpr, Long seanceId)
             throws SeancesProfesseurException;
 
-    List<SeanceResumeSortieDTO> rechercherSeances(Long professeurId, RechercheSeancesEntrerDTO rechercheSeancesEntrerDTO)
+    List<SeanceResumeSortieDTO> rechercherSeances(String professeurPpr, RechercheSeancesEntrerDTO rechercheSeancesEntrerDTO)
             throws SeancesProfesseurException;
 
-    FichierSeanceSortieDTO deposerFichierPourSeance(Long professeurId, DepotFichierSeanceEntrerDTO depotFichierSeanceEntrerDTO, MultipartFile fichier)
+    FichierSeanceSortieDTO deposerFichierPourSeance(String professeurPpr, DepotFichierSeanceEntrerDTO depotFichierSeanceEntrerDTO, MultipartFile fichier)
             throws SeancesProfesseurException;
 
-    void supprimerFichierDeSeance(Long professeurId, Long fichierSeanceId)
+    void supprimerFichierDeSeance(String professeurPpr, Long fichierSeanceId)
             throws SeancesProfesseurException;
 
-    List<FichierSeanceSortieDTO> listerFichiersDeSeance(Long professeurId, Long seanceId)
+    List<FichierSeanceSortieDTO> listerFichiersDeSeance(String professeurPpr, Long seanceId)
             throws SeancesProfesseurException;
+
+    TelechargementFichierSeanceSortieDTO preparerTelechargementFichierSeance(String professeurPpr, Long fichierSeanceId)
+            throws SeancesProfesseurException;
+
 }

@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface SeanceRepository extends JpaRepository<Seance, Long> {
@@ -34,6 +35,11 @@ join s.presences p
 where p.id =:presenceId 
 """)
 Seance findByPresence_presenceId(@Param("presenceId") Long presenceId);
+
+
+    Optional<Seance> findByIdAndAffectationEnseignement_Professeur_Ppr(Long id, String professeurPpr);
+
+    List<Seance> findByAffectationEnseignement_Professeur_Ppr(String professeurPpr);
 
 
 }
