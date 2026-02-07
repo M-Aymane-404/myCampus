@@ -12,14 +12,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-<<<<<<< HEAD
+
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartException;
-=======
+
  import jakarta.servlet.http.HttpServletRequest;
 
->>>>>>> bb5ae35b10839ffff3946e8743d76bb27d07d14e
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
@@ -139,7 +138,7 @@ public class RestExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }
-<<<<<<< HEAD
+
 
     //Prof
 
@@ -200,7 +199,7 @@ public class RestExceptionHandler {
 
 
 
-=======
+
     // erreurs DB -> 409 Conflict
 
     @ExceptionHandler(DataIntegrityViolationException.class)
@@ -217,5 +216,5 @@ public class RestExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
     }
->>>>>>> bb5ae35b10839ffff3946e8743d76bb27d07d14e
+
 }

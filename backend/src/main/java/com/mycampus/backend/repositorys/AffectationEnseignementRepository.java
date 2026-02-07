@@ -35,12 +35,10 @@ public interface AffectationEnseignementRepository extends JpaRepository<Affecta
 
     AffectationEnseignement findByMatiere_CodeMatiereAndClasse_CodeClasse(String codeMatiere, String codeClasse);
 
-<<<<<<< HEAD
 
     Optional<AffectationEnseignement> findByIdAndProfesseur_Ppr(Long id,  String professeurPpr);
-}
-=======
+
     boolean existsByClasseAndMatiereAndProfesseur(Classe classe, Matiere matiere, Professeur professeur);
     
  }
->>>>>>> bb5ae35b10839ffff3946e8743d76bb27d07d14e
+
