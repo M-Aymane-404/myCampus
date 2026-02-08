@@ -24,8 +24,7 @@ public class Annonce {
     private String contenu;
     @Column(nullable = false)
     private LocalDateTime datePublication;
-    private LocalDateTime dateExpiration;
-    private boolean publiee;
+     private boolean publiee;
 
 
     @Enumerated(EnumType.STRING)

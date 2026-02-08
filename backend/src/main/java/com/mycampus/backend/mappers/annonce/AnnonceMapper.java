@@ -1,6 +1,8 @@
 package com.mycampus.backend.mappers.annonce;
 
 import com.mycampus.backend.dto.annonces.AnnonceSortieDTO;
+import com.mycampus.backend.dto.annonces.AuteurDTO;
+import com.mycampus.backend.dto.annonces.ClasseDTO;
 import com.mycampus.backend.entites.Annonce;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -10,16 +12,15 @@ import org.springframework.stereotype.Component;
 public class AnnonceMapper {
 
     public AnnonceSortieDTO changerVersSortieDTO(Annonce annonce) {
-        AnnonceSortieDTO.AuteurDTO auteurDTO = new AnnonceSortieDTO.AuteurDTO(
-                annonce.getAuteur().getId(),
-                annonce.getAuteur().getNom(),
-                annonce.getAuteur().getPrenom(),
-                annonce.getAuteur().getEmail()
-        );
+        AuteurDTO auteurDTO = AuteurDTO.builder()
+                .id(annonce.getAuteur().getId())
+                .nom(annonce.getAuteur().getNom())
+                .prenom(annonce.getAuteur().getPrenom())
+                .build();
 
-        AnnonceSortieDTO.ClasseDTO classeDTO = null;
+         ClasseDTO classeDTO = null;
         if (annonce.getClasse() != null) {
-            classeDTO = new AnnonceSortieDTO.ClasseDTO(
+            classeDTO = new  ClasseDTO(
                     annonce.getClasse().getId(),
                     annonce.getClasse().getCodeClasse(),
                     annonce.getClasse().getNom(),
@@ -32,8 +33,7 @@ public class AnnonceMapper {
                 annonce.getTitre(),
                 annonce.getContenu(),
                 annonce.getDatePublication(),
-                annonce.getDateExpiration(),
-                annonce.isPubliee(),
+                 annonce.isPubliee(),
                 annonce.getCibleType(),
                 auteurDTO,
                 classeDTO
