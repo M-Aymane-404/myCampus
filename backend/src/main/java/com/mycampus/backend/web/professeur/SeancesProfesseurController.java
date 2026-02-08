@@ -44,6 +44,7 @@ public class SeancesProfesseurController {
             @RequestHeader("ProfesseurPpr") String professeurPpr,
             @RequestBody CreationSeanceEntrerDTO creationSeanceEntrerDTO
     ) throws SeancesProfesseurException {
+
         return gestionSeancesProfesseurMetier.creerSeance(professeurPpr, creationSeanceEntrerDTO);
     }
 

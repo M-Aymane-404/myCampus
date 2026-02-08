@@ -40,18 +40,18 @@ public class StructureAcademiqueEtudiantController {
 
 
 
-    @GetMapping("/moi")
-    @Operation(summary = "Trouver un étudiant connecté par son ID")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Étudiant trouvé"),
-            @ApiResponse(responseCode = "404", description = "Étudiant introuvable")
-    })
-    @PreAuthorize("hasAuthority('ETUDIANT_INFORMATION_PERSONNEL_LIRE')")
-    public ResponseEntity<EtudiantSortieEtudiantDTO> trouverEtudiantConnecter(Authentication authentication) {
-        Long id = utilisateurMetier.trouverIdUtilisateurConnecte(authentication.getName());
-        EtudiantSortieEtudiantDTO result = metier.trouverEtudiantConnecter(id);
-        return ResponseEntity.ok(result);
-    }
+        @GetMapping("/moi")
+        @Operation(summary = "Trouver un étudiant connecté par son ID")
+        @ApiResponses({
+                @ApiResponse(responseCode = "200", description = "Étudiant trouvé"),
+                @ApiResponse(responseCode = "404", description = "Étudiant introuvable")
+        })
+        @PreAuthorize("hasAuthority('ETUDIANT_INFORMATION_PERSONNEL_LIRE')")
+        public ResponseEntity<EtudiantSortieEtudiantDTO> trouverEtudiantConnecter(Authentication authentication) {
+            Long id = utilisateurMetier.trouverIdUtilisateurConnecte(authentication.getName());
+            EtudiantSortieEtudiantDTO result = metier.trouverEtudiantConnecter(id);
+            return ResponseEntity.ok(result);
+        }
 
 
     @PreAuthorize("hasAuthority('ETUDIANT_INFORMATION_PERSONNEL_MODIFIER')")

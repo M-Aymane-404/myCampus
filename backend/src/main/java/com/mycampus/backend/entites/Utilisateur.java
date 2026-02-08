@@ -4,10 +4,9 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.Date;
-import java.util.List;
+ import java.time.LocalDateTime;
+import java.util.ArrayList;
+ import java.util.List;
 
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
@@ -42,7 +41,7 @@ public class Utilisateur {
     
     private String tel;
     
-     private String photoUrl;   // ex: "/files/professeurs/{uuid}.png"
+     private String photoUrl;
     private String photoNom;
 
     @Column(nullable = false)
@@ -62,4 +61,7 @@ public class Utilisateur {
 
     @OneToMany(mappedBy = "utilisateur", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RefreshToken> refreshTokens;
+
+    @OneToMany(mappedBy = "auteur",cascade = CascadeType.ALL)
+    private List<Annonce>  annonces = new ArrayList<>();
 }
