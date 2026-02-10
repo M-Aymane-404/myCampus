@@ -28,6 +28,15 @@ where e.id =:etudiant_id
 """)
     Classe findByEtudiant_idEtudiant(@Param("etudiant_id") Long etudiant_id);
 
+
+    @Query("""
+select c from Classe c
+join c.etudiants e
+where e.email =:etudiant_Email
+""")
+    Optional<Classe> findByEtudiant_EmailEtudiant(@Param("etudiant_Email") String etudiant_Email);
+
+
     @Query("""
 SELECT DISTINCT c
 FROM Classe c

@@ -6,10 +6,12 @@ import com.mycampus.backend.dto.administrateur.DonneSortie.EtudiantSortieDTO;
 import com.mycampus.backend.dto.etudiant.DonneeEntrer.EtudiantModificationEtudiantDTO;
 import com.mycampus.backend.dto.etudiant.DonneeSortie.*;
 import com.mycampus.backend.dto.etudiant.DonneeSortie.ReleveDeNote.ReleveDeNoteEtudiantParSessionDTO;
+import com.mycampus.backend.dto.professeur.DonneeSortie.fichiersSeance.TelechargementFichierSeanceSortieDTO;
 import com.mycampus.backend.entites.Utilisateur;
 import com.mycampus.backend.enumerations.Semestre;
 import com.mycampus.backend.enumerations.StatusAbsence;
 import com.mycampus.backend.enumerations.TypeSeance;
+import com.mycampus.backend.exceptions.SeancesProfesseurException;
 import com.mycampus.backend.metier.administrateur.utilisateurs.GestionUtilisateursMetier;
 import com.mycampus.backend.metier.etudiant.StructureEtudiant.GestionStructureEtudiantMetier;
 import com.mycampus.backend.metier.security.GestionUtilisateurConnecteMetier;
@@ -18,7 +20,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,6 +31,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.net.MalformedURLException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -180,4 +188,38 @@ public class StructureAcademiqueEtudiantController {
         ReleveDeNoteEtudiantParSessionDTO result = metier.trouverLeReleverDeNoteParSessionDuEtudiant(id, semestre);
         return ResponseEntity.ok(result);
     }
+
+
+    @PreAuthorize("hasAuthority('ETUDIANT_FICHIER_TELECHARGER')")
+
+    @GetMapping("/fichiers-seance/{fichierId}/telecharger")
+    public ResponseEntity<Resource> telechargerFichierSeance(
+            Authentication authentication,
+            @PathVariable Long fichierId
+    ) throws SeancesProfesseurException {
+
+        TelechargementFichierSeanceSortieDTO telechargement =
+                metier.preparerTelechargementFichierSeance(authentication.getName(), fichierId);
+
+        try {
+            Path chemin = Paths.get(telechargement.getChemin()).toAbsolutePath().normalize();
+            Resource ressource = new UrlResource(chemin.toUri());
+
+            MediaType type = MediaType.APPLICATION_OCTET_STREAM;
+            if (telechargement.getTypeMime() != null && !telechargement.getTypeMime().isBlank()) {
+                type = MediaType.parseMediaType(telechargement.getTypeMime());
+            }
+
+            String nomFichier = telechargement.getNomOriginal() != null ? telechargement.getNomOriginal() : "fichier";
+            nomFichier = nomFichier.replace("\"", "");
+
+            return ResponseEntity.ok()
+                    .contentType(type)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + nomFichier + "\"")
+                    .body(ressource);
+
+        } catch (MalformedURLException e) {
+            throw new SeancesProfesseurException("Chemin du fichier invalide.");
+        }
+        }
 }

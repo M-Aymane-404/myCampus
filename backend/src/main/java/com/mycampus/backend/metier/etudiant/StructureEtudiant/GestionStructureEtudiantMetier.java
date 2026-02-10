@@ -5,10 +5,12 @@ import com.mycampus.backend.dto.administrateur.DonneSortie.EtudiantSortieDTO;
 import com.mycampus.backend.dto.etudiant.DonneeEntrer.EtudiantModificationEtudiantDTO;
 import com.mycampus.backend.dto.etudiant.DonneeSortie.*;
 import com.mycampus.backend.dto.etudiant.DonneeSortie.ReleveDeNote.ReleveDeNoteEtudiantParSessionDTO;
+import com.mycampus.backend.dto.professeur.DonneeSortie.fichiersSeance.TelechargementFichierSeanceSortieDTO;
 import com.mycampus.backend.enumerations.Semestre;
 import com.mycampus.backend.enumerations.StatusAbsence;
 import com.mycampus.backend.enumerations.TypeSeance;
 import com.mycampus.backend.exceptions.EtudiantException;
+import com.mycampus.backend.exceptions.SeancesProfesseurException;
 import com.mycampus.backend.exceptions.UtilisateursException;
 
 import java.time.LocalDate;
@@ -33,6 +35,9 @@ public interface GestionStructureEtudiantMetier {
 
     ReleveDeNoteEtudiantParSessionDTO trouverLeReleverDeNoteParSessionDuEtudiant(Long idEtudiant, Semestre semestre)
             throws EtudiantException;
+      TelechargementFichierSeanceSortieDTO preparerTelechargementFichierSeance(
+            String etudiantEmail,
+            Long fichierSeanceId
+    ) throws SeancesProfesseurException;
 
-
- }
+}
