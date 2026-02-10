@@ -69,7 +69,7 @@ public class TableauDeBordEtudiantMetierImpl implements TableauDeBordEtudiantMet
     }
 
     private List<DerniereNoteDTO> obtenirDernieresNotes(Etudiant etudiant) {
-     
+
         List<Resultat> resultats = resultatRepository.findTop3ByEtudiantIdOrderByDatePublicationDesc(etudiant.getId());
 
         return resultats.stream()
