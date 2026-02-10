@@ -8,28 +8,33 @@ import com.mycampus.backend.exceptions.UtilisateursException;
 import com.mycampus.backend.mappers.annonce.AnnonceEtudiantMapper;
 import com.mycampus.backend.repositorys.AnnonceRepository;
 import com.mycampus.backend.repositorys.ClasseRepository;
+import com.mycampus.backend.repositorys.EtudiantRepository;
 import com.mycampus.backend.repositorys.UtilisateurRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 @Slf4j
 public class GestionAnnoncesEtudiantMetierImpl implements GestionAnnoncesEtudiantMetier {
 
     private final AnnonceRepository annonceRepository;
-    private final UtilisateurRepository utilisateurRepository;
+   // private final UtilisateurRepository utilisateurRepository;
+    private final EtudiantRepository etudiantRepository;
      private final AnnonceEtudiantMapper annonceEtudiantMapper;
 
     @Override
+    @Transactional(readOnly=true)
     public List<AnnonceSortieEtudiantDTO> listerAnnoncesVisibles(String emailEtudiant) {
         log.info("Listage des annonces visibles pour l'étudiant: {}", emailEtudiant);
         
-        Etudiant etudiant = (Etudiant) utilisateurRepository.findByEmail(emailEtudiant)
+        Etudiant etudiant =   etudiantRepository.findByEmail(emailEtudiant)
                 .orElseThrow(() -> new UtilisateursException("Étudiant non trouvé"));
         
         if (etudiant.getClasse() == null) {
@@ -50,13 +55,14 @@ public class GestionAnnoncesEtudiantMetierImpl implements GestionAnnoncesEtudian
     }
 
     @Override
+    @Transactional(readOnly=true)
     public AnnonceSortieEtudiantDTO trouverAnnonceParId(Long id, String emailEtudiant) {
         log.info("Recherche de l'annonce {} pour l'étudiant: {}", id, emailEtudiant);
         
-        Etudiant etudiant = (Etudiant) utilisateurRepository.findByEmail(emailEtudiant)
+        Etudiant etudiant =  etudiantRepository.findByEmail(emailEtudiant)
                 .orElseThrow(() -> new UtilisateursException("Étudiant non trouvé"));
         
-        Annonce annonce = annonceRepository.findById(id)
+        Annonce annonce = annonceRepository.findByAnnonce_Id(id)
                 .orElseThrow(() -> new UtilisateursException("Annonce non trouvée"));
         
         if (!annonce.isPubliee()) {

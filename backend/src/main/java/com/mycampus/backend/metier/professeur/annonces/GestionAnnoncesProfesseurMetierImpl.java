@@ -11,6 +11,7 @@ import com.mycampus.backend.exceptions.UtilisateursException;
 import com.mycampus.backend.mappers.annonce.AnnonceMapper;
 import com.mycampus.backend.repositorys.AnnonceRepository;
 import com.mycampus.backend.repositorys.ClasseRepository;
+import com.mycampus.backend.repositorys.ProfesseurRepository;
 import com.mycampus.backend.repositorys.UtilisateurRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,27 +24,24 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 @Slf4j
 public class GestionAnnoncesProfesseurMetierImpl implements GestionAnnoncesProfesseurMetier {
 
     private final AnnonceRepository annonceRepository;
     private final ClasseRepository classeRepository;
-    private final UtilisateurRepository utilisateurRepository;
+   private final UtilisateurRepository utilisateurRepository;
+    private final ProfesseurRepository professeurRepository;
      private final AnnonceMapper  annonceMapper;
 
     @Override
     @Transactional
-    public AnnonceSortieDTO creerAnnonce(AnnonceEntrerDTO annonceDTO, String emailAuteur) {
+    public AnnonceSortieDTO creerAnnonce(AnnonceEntrerDTO annonceDTO, String emailAuteur) throws UtilisateursException {
         log.info("Création d'annonce par professeur: {}", emailAuteur);
         
-        Utilisateur auteur = utilisateurRepository.findByEmail(emailAuteur)
+        Professeur   auteur = professeurRepository.findByEmail(emailAuteur)
                 .orElseThrow(() -> new UtilisateursException("Auteur non trouvé"));
-        
-        if (!(auteur instanceof Professeur)) {
-            throw new UtilisateursException("Seul un professeur peut créer une annonce");
-        }
 
-        Professeur professeur = (Professeur) auteur;
 
         if (annonceDTO.getCibleType() == AnnonceCibleType.GLOBAL) {
             throw new UtilisateursException("Un professeur ne peut pas créer d'annonce globale");
@@ -57,7 +55,7 @@ public class GestionAnnoncesProfesseurMetierImpl implements GestionAnnoncesProfe
             Classe classe = classeRepository.findByCodeClasse(annonceDTO.getCodeClasse())
                     .orElseThrow(() -> new UtilisateursException("Classe non trouvée: " + annonceDTO.getCodeClasse()));
             
-            List<Classe> classesProfesseur = classeRepository.findClassesByProfesseur(professeur);
+            List<Classe> classesProfesseur = classeRepository.findClassesByProfesseur(auteur);
             if (!classesProfesseur.contains(classe)) {
                 throw new UtilisateursException("Le professeur n'est pas assigné à cette classe");
             }
@@ -82,13 +80,20 @@ public class GestionAnnoncesProfesseurMetierImpl implements GestionAnnoncesProfe
     }
 
     @Override
-    public List<AnnonceSortieDTO> listerAnnoncesDeSesClasses(String emailProfesseur) {
+    @Transactional(readOnly=true)
+    public List<AnnonceSortieDTO> listerAnnoncesDeSesClasses(String emailProfesseur)  throws UtilisateursException {
         log.info("Listage des annonces des classes du professeur: {}", emailProfesseur);
         
-        Professeur professeur = (Professeur) utilisateurRepository.findByEmail(emailProfesseur)
+        Professeur professeur =  professeurRepository.findByEmail(emailProfesseur)
                 .orElseThrow(() -> new UtilisateursException("Professeur non trouvé"));
         
         List<Classe> classesProfesseur = classeRepository.findClassesByProfesseur(professeur);
+        if (classesProfesseur.isEmpty()) {
+            // retourner uniquement les globales
+            return annonceRepository.findByCibleType(AnnonceCibleType.GLOBAL).stream()
+                    .map(annonceMapper::changerVersSortieDTO)
+                    .collect(Collectors.toList());
+        }
         List<Annonce> annonces = annonceRepository.findGlobalAndClassAnnonces(classesProfesseur);
         
         return annonces.stream()
@@ -97,10 +102,11 @@ public class GestionAnnoncesProfesseurMetierImpl implements GestionAnnoncesProfe
     }
 
     @Override
-    public List<AnnonceSortieDTO> listerMesAnnonces(String emailProfesseur) {
+    @Transactional(readOnly=true)
+    public List<AnnonceSortieDTO> listerMesAnnonces(String emailProfesseur) throws  UtilisateursException {
         log.info("Listage des annonces du professeur: {}", emailProfesseur);
         
-        Professeur professeur = (Professeur) utilisateurRepository.findByEmail(emailProfesseur)
+        Professeur professeur =  professeurRepository.findByEmail(emailProfesseur)
                 .orElseThrow(() -> new UtilisateursException("Professeur non trouvé"));
         
         return annonceRepository.findByAuteur_Id(professeur.getId()).stream()
@@ -109,14 +115,13 @@ public class GestionAnnoncesProfesseurMetierImpl implements GestionAnnoncesProfe
     }
 
     @Override
-    @Transactional
-    public void supprimerMonAnnonce(Long annonceId, String emailProfesseur) {
+     public void supprimerMonAnnonce(Long annonceId, String emailProfesseur) throws UtilisateursException {
         log.info("Suppression de l'annonce: {} par le professeur: {}", annonceId, emailProfesseur);
         
         Annonce annonce = annonceRepository.findById(annonceId)
                 .orElseThrow(() -> new UtilisateursException("Annonce non trouvée"));
         
-        Professeur professeur = (Professeur) utilisateurRepository.findByEmail(emailProfesseur)
+        Professeur professeur =  professeurRepository.findByEmail(emailProfesseur)
                 .orElseThrow(() -> new UtilisateursException("Professeur non trouvé"));
         
         if (!annonce.getAuteur().getId().equals(professeur.getId())) {
@@ -128,14 +133,13 @@ public class GestionAnnoncesProfesseurMetierImpl implements GestionAnnoncesProfe
     }
 
     @Override
-    @Transactional
-    public AnnonceSortieDTO publierMonAnnonce(Long annonceId, String emailProfesseur) {
+     public AnnonceSortieDTO publierMonAnnonce(Long annonceId, String emailProfesseur) throws  UtilisateursException {
         log.info("Publication de l'annonce: {} par le professeur: {}", annonceId, emailProfesseur);
         
         Annonce annonce = annonceRepository.findById(annonceId)
                 .orElseThrow(() -> new UtilisateursException("Annonce non trouvée"));
         
-        Professeur professeur = (Professeur) utilisateurRepository.findByEmail(emailProfesseur)
+        Professeur professeur =  professeurRepository.findByEmail(emailProfesseur)
                 .orElseThrow(() -> new UtilisateursException("Professeur non trouvé"));
         
         if (!annonce.getAuteur().getId().equals(professeur.getId())) {
@@ -150,14 +154,13 @@ public class GestionAnnoncesProfesseurMetierImpl implements GestionAnnoncesProfe
     }
 
     @Override
-    @Transactional
-    public AnnonceSortieDTO depublierMonAnnonce(Long annonceId, String emailProfesseur) {
+     public AnnonceSortieDTO depublierMonAnnonce(Long annonceId, String emailProfesseur) throws UtilisateursException {
         log.info("Dépublication de l'annonce: {} par le professeur: {}", annonceId, emailProfesseur);
         
         Annonce annonce = annonceRepository.findById(annonceId)
                 .orElseThrow(() -> new UtilisateursException("Annonce non trouvée"));
         
-        Professeur professeur = (Professeur) utilisateurRepository.findByEmail(emailProfesseur)
+        Professeur professeur =  professeurRepository.findByEmail(emailProfesseur)
                 .orElseThrow(() -> new UtilisateursException("Professeur non trouvé"));
         
         if (!annonce.getAuteur().getId().equals(professeur.getId())) {

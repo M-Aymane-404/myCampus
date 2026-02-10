@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 @Slf4j
 public class GestionAnnoncesAdministrateurMetierImpl implements GestionAnnoncesAdministrateurMetier {
 
@@ -51,7 +52,7 @@ public class GestionAnnoncesAdministrateurMetierImpl implements GestionAnnoncesA
                 .titre(annonceDTO.getTitre())
                 .contenu(annonceDTO.getContenu())
                 .datePublication(LocalDateTime.now())
-                 .publiee(false)
+                 .publiee(true)
                 .cibleType(annonceDTO.getCibleType())
                 .auteur(auteur)
                 .classe(classe)
@@ -64,19 +65,21 @@ public class GestionAnnoncesAdministrateurMetierImpl implements GestionAnnoncesA
     }
 
     @Override
+    @Transactional(readOnly=true)
     public List<AnnonceSortieDTO> listerToutesAnnonces() {
         log.info("Listage de toutes les annonces");
-        return annonceRepository.findAll().stream()
+        return annonceRepository.findAllWithAuteurAndClasse().stream()
                 .map(annonceMapper::changerVersSortieDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
+    @Transactional(readOnly=true)
     public List<AnnonceSortieDTO> listerAnnoncesParClasse(String codeClasse) {
         log.info("Listage des annonces pour la classe: {}", codeClasse);
         return annonceRepository.findByClasse_CodeClasse(codeClasse).stream()
                 .map(annonceMapper::changerVersSortieDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override

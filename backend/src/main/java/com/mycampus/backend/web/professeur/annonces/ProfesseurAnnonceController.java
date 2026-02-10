@@ -26,7 +26,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Gestion des Annonces - Professeur", description = "API pour la gestion des annonces par les professeurs")
-@PreAuthorize("hasAuthority('PROFESSEUR_NOTES_GERER')")
+    @PreAuthorize("hasAuthority('PROFESSEUR_ANNONCES_GERER')")
 public class ProfesseurAnnonceController {
 
     private final GestionAnnoncesProfesseurMetier gestionAnnoncesProfesseurMetier;

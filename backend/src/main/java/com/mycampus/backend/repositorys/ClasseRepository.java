@@ -32,7 +32,7 @@ where e.id =:etudiant_id
 SELECT DISTINCT c
 FROM Classe c
 JOIN c.affectationEnseignements ae
-WHERE ae.professeur.email = :professeur
+WHERE ae.professeur = :professeur
 """)
     List<Classe> findClassesByProfesseur(@Param("professeur") Professeur professeur);
 

@@ -41,4 +41,13 @@ public interface EtudiantRepository extends JpaRepository<Etudiant, Long> {
     Integer countEtudiantsByCodeFiliere(@Param("code") String codeFiliere);
 
     Optional<Etudiant> findByEmail(String email);
+
+
+    @Query("""
+        select e from Etudiant e
+        join fetch e.classe c
+        join fetch c.filiere
+        where e.email = :email
+    """)
+    Optional<Etudiant> findByEmailWithClasseAndFiliere(@Param("email") String email);
 }

@@ -6,12 +6,14 @@ import com.mycampus.backend.entites.Presence;
 import com.mycampus.backend.entites.Resultat;
 import com.mycampus.backend.enumerations.StatusAbsence;
 import com.mycampus.backend.exceptions.UtilisateursException;
+import com.mycampus.backend.repositorys.EtudiantRepository;
 import com.mycampus.backend.repositorys.PresenceRepository;
 import com.mycampus.backend.repositorys.ResultatRepository;
 import com.mycampus.backend.repositorys.UtilisateurRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -25,15 +27,20 @@ import java.util.stream.Collectors;
 @Slf4j
 public class TableauDeBordEtudiantMetierImpl implements TableauDeBordEtudiantMetier {
 
-    private final UtilisateurRepository utilisateurRepository;
-    private final ResultatRepository resultatRepository;
+     private final ResultatRepository resultatRepository;
     private final PresenceRepository presenceRepository;
+    private final EtudiantRepository etudiantRepository;
 
     @Override
-    public TableauDeBordEtudiantSortieDTO obtenirTableauDeBord(String emailEtudiant) {
+    @Transactional(readOnly = true)
+    public TableauDeBordEtudiantSortieDTO obtenirTableauDeBord(String emailEtudiant) throws  UtilisateursException {
+        if (emailEtudiant == null || emailEtudiant.isBlank()) {
+            throw new UtilisateursException("Email étudiant manquant (non authentifié)");
+        }
+
         log.info("Génération du tableau de bord pour l'étudiant: {}", emailEtudiant);
         
-        Etudiant etudiant = (Etudiant) utilisateurRepository.findByEmail(emailEtudiant)
+        Etudiant etudiant =  etudiantRepository.findByEmailWithClasseAndFiliere(emailEtudiant)
                 .orElseThrow(() -> new UtilisateursException("Étudiant non trouvé"));
         
         EnteteEtudiantDTO entete = creerEntete(etudiant);
@@ -48,6 +55,8 @@ public class TableauDeBordEtudiantMetierImpl implements TableauDeBordEtudiantMet
     }
 
     private EnteteEtudiantDTO creerEntete(Etudiant etudiant) {
+
+
         String nomComplet = etudiant.getNom() + " " + etudiant.getPrenom();
         String niveau = etudiant.getNiveau();
         String filiere = etudiant.getClasse() != null ? etudiant.getClasse().getFiliere().getNom() : "Non assignée";
@@ -60,6 +69,7 @@ public class TableauDeBordEtudiantMetierImpl implements TableauDeBordEtudiantMet
     }
 
     private List<DerniereNoteDTO> obtenirDernieresNotes(Etudiant etudiant) {
+     
         List<Resultat> resultats = resultatRepository.findTop3ByEtudiantIdOrderByDatePublicationDesc(etudiant.getId());
 
         return resultats.stream()

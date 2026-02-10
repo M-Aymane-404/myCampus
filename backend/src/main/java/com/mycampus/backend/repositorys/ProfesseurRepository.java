@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
+ import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -29,4 +29,6 @@ join a.seances s
 where s.id=:seanceId
 """)
     Professeur findBySeance_SeanceId(@Param("seanceId") Long seanceId);
+
+ Optional<Professeur> findByEmail(String email);
 }

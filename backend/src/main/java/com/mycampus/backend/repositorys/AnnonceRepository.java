@@ -14,20 +14,60 @@ import java.util.Optional;
 
 @Repository
 public interface AnnonceRepository extends JpaRepository<Annonce, Long> {
-    
-    List<Annonce> findByClasse_CodeClasse(String codeClasse);
-    
-    List<Annonce> findByAuteur_Id(Long auteurId);
-    
-    List<Annonce> findByCibleType(AnnonceCibleType cibleType);
+
+    @Query("""
+select a from Annonce a
+left join fetch a.auteur
+left join fetch a.classe c
+where c.codeClasse =:codeClasse
+""")
+    List<Annonce> findByClasse_CodeClasse(@Param("codeClasse") String codeClasse);
+
+    @Query("""
+select a from Annonce a
+left join fetch a.auteur
+left join fetch a.classe
+where a.auteur.id =:auteurId
+""")
+    List<Annonce> findByAuteur_Id(@Param("auteurId") Long auteurId);
+
+    @Query("""
+select a from Annonce a
+left join fetch a.auteur
+left join fetch a.classe
+where a.cibleType =:cibleType
+""")
+    List<Annonce> findByCibleType(@Param("cibleType") AnnonceCibleType cibleType);
+
+    @Query("""
+select a from Annonce a
+left join fetch a.auteur
+left join fetch a.classe
+""")
+    List<Annonce> findAllWithAuteurAndClasse();
     
 
-    
 
-
-    @Query("SELECT a FROM Annonce a WHERE a.cibleType = 'GLOBAL' OR a.classe.id = :classeId")
+    @Query("""
+SELECT a FROM Annonce a 
+left join fetch a.auteur
+left join fetch a.classe c
+WHERE a.cibleType =:cibleType     or (c is not null and c.id = :classeId)
+""")
     List<Annonce> findByCibleTypeOrClasseId(@Param("cibleType") AnnonceCibleType cibleType, @Param("classeId") Long classeId);
 
-    @Query("SELECT a FROM Annonce a WHERE a.cibleType = 'GLOBAL' OR a.classe IN :classes")
+    @Query("""
+SELECT a FROM Annonce a
+left join fetch a.auteur
+left join fetch a.classe
+WHERE a.cibleType = 'GLOBAL' OR a.classe IN :classes""")
     List<Annonce> findGlobalAndClassAnnonces(@Param("classes") List<Classe> classes);
+
+    @Query("""
+select a from Annonce a
+left join fetch a.auteur
+left join fetch a.classe
+where a.id =:id
+""")
+    Optional<Annonce> findByAnnonce_Id(@Param("id") Long id);
 }
