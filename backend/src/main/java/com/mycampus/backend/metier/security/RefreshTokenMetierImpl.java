@@ -1,6 +1,7 @@
 package com.mycampus.backend.metier.security;
 
 import com.mycampus.backend.dto.securite.entree.RafraichirTokenDTO;
+import com.mycampus.backend.dto.securite.sortie.RotationResult;
 import com.mycampus.backend.entites.RefreshToken;
 import com.mycampus.backend.entites.Utilisateur;
 import com.mycampus.backend.exceptions.SecuriteException;
@@ -18,7 +19,6 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
-import java.util.Objects;
 
 @Service
 @Transactional
@@ -28,34 +28,45 @@ public class RefreshTokenMetierImpl implements  RefreshTokenMetier {
     final UtilisateurRepository utilisateurRepository;
     private final StructureSecuriteMapper mapper;
 
-    // Exemple: 7 jours (tu peux changer)
     private static final int REFRESH_TOKEN_DUREE_JOURS = 7;
     private static final int MAX_TOKENS_ACTIFS = 5;
 
-    @Override
-    @Transactional
-    public RefreshToken creerRefreshToken(String email, String userAgent, String ip) throws SecuriteException {
 
+
+    @Override
+
+
+    public RefreshToken creerRefreshToken(String email, String userAgent, String ip, String tokenFamily) {
         Utilisateur utilisateur = utilisateurRepository.findByEmail(email)
                 .orElseThrow(() -> new SecuriteException("Utilisateur introuvable"));
-        limiterTokensActifs(utilisateur.getId());
 
+        limiterTokensActifs(utilisateur.getId());
 
         String tokenBrut = genererTokenSecurise();
         String tokenHash = sha256(tokenBrut);
+
         RefreshToken rt = RefreshToken.builder()
                 .utilisateur(utilisateur)
                 .tokenHash(tokenHash)
+                .tokenFamily(tokenFamily)
                 .dateCreation(LocalDateTime.now())
                 .dateExpiration(LocalDateTime.now().plusDays(REFRESH_TOKEN_DUREE_JOURS))
                 .revoque(false)
                 .userAgent(userAgent)
                 .ip(ip)
                 .build();
+
         RefreshToken saved = refreshTokenRepository.save(rt);
         saved.setToken(tokenBrut);
-        return  saved;
+        return saved;
     }
+
+    @Override
+    public RefreshToken creerRefreshTokenPourlaPremierFois(String email, String userAgent, String ip) {
+        return creerRefreshToken(email, userAgent, ip, genererFamilyId());
+    }
+
+
     @Override
 
     public RefreshToken verifierRefreshToken(String tokenBrut) throws SecuriteException {
@@ -65,8 +76,13 @@ public class RefreshTokenMetierImpl implements  RefreshTokenMetier {
                 .orElseThrow(() -> new SecuriteException("Refresh token invalide"));
 
         if (Boolean.TRUE.equals(rt.getRevoque())) {
-            revoquerTousLesTokensActifs(rt.getUtilisateur().getId());
-            throw new SecuriteException("Refresh token révoqué (compromission détectée)");
+            if (rt.getRemplaceParHash() != null) {
+
+                refreshTokenRepository.revokeFamily(rt.getUtilisateur().getId(), rt.getTokenFamily());
+                throw new SecuriteException("Refresh token réutilisé (reuse détecté) -> famille révoquée");
+            }
+
+            throw new SecuriteException("Refresh token révoqué");
         }
 
         if (rt.getDateExpiration() != null && rt.getDateExpiration().isBefore(LocalDateTime.now())) {
@@ -75,25 +91,49 @@ public class RefreshTokenMetierImpl implements  RefreshTokenMetier {
 
         return rt;
     }
-    @Override
 
-    @Transactional
-    public RefreshToken rotationRefreshToken(String tokenActuel, String userAgent, String ip) {
+    public RotationResult rotationRefreshToken(String tokenActuel, String userAgent, String ip) {
+
         RefreshToken ancien = verifierRefreshToken(tokenActuel);
-        if (ancien.getUserAgent() != null && !ancien.getUserAgent().equals(userAgent)) {
-            throw new SecuriteException("Device non reconnu (User-Agent différent)");
-        }
-        if (ancien.getIp() != null && !ancien.getIp().equals(ip)) {
-            throw new SecuriteException("Device non reconnu (IP différente)");
-        }
-        ancien.setRevoque(true);
-        refreshTokenRepository.save(ancien);
+        String email = ancien.getUtilisateur().getEmail();
 
-        return creerRefreshToken(ancien.getUtilisateur().getEmail(), userAgent, ip);
-    }
+        //  cree nouveau nouveau token
+        String newTokenBrut = genererTokenSecurise();
+        String newHash = sha256(newTokenBrut);
+
+        //  revoquer ancien token
+        int updated = refreshTokenRepository.revokeIfValid(ancien.getTokenHash(), newHash, LocalDateTime.now());
+
+        if (updated == 0) {
+            refreshTokenRepository.revokeFamily(ancien.getUtilisateur().getId(), ancien.getTokenFamily());
+            throw new SecuriteException("Refresh token réutilisé (reuse détecté) -> famille révoquée");
+
+        }
+
+
+         creerRefreshTokenAvecValeur(
+                ancien.getUtilisateur(),
+                userAgent,
+                ip,
+                ancien.getTokenFamily(),
+                newTokenBrut,
+                newHash
+        );
+
+        return new RotationResult(email,newTokenBrut);
+     }
+
+
+
+
+
+
+
+
+
 
     @Override
-    @Transactional
+
     public void revoquer(RafraichirTokenDTO refreshTokenDTO) throws SecuriteException {
         String tokenHash = sha256(refreshTokenDTO.getRefreshToken());
         RefreshToken rt = refreshTokenRepository.findByTokenHash(tokenHash)
@@ -102,11 +142,39 @@ public class RefreshTokenMetierImpl implements  RefreshTokenMetier {
         refreshTokenRepository.save(rt);
     }
 
-    private void revoquerTousLesTokensActifs(Long utilisateurId) {
-        List<RefreshToken> actifs = refreshTokenRepository
-                .findAllByUtilisateurIdAndRevoqueFalse(utilisateurId);
-        actifs.forEach(t -> t.setRevoque(true));
-        refreshTokenRepository.saveAll(actifs);
+
+    @Override
+    public void revoquerFamille(String refreshTokenBrut) {
+
+        String tokenHash = sha256(refreshTokenBrut);
+        RefreshToken rt = refreshTokenRepository.findByTokenHash(tokenHash)
+                .orElseThrow(() -> new SecuriteException("Refresh token invalide"));
+        refreshTokenRepository.revokeFamily(rt.getUtilisateur().getId(), rt.getTokenFamily());
+    }
+
+
+    private RefreshToken creerRefreshTokenAvecValeur(
+            Utilisateur utilisateur,
+            String userAgent,
+            String ip,
+            String tokenFamily,
+            String tokenBrut,
+            String tokenHash
+    ) {
+        RefreshToken rt = RefreshToken.builder()
+                .utilisateur(utilisateur)
+                .tokenHash(tokenHash)
+                .tokenFamily(tokenFamily)
+                .dateCreation(LocalDateTime.now())
+                .dateExpiration(LocalDateTime.now().plusDays(REFRESH_TOKEN_DUREE_JOURS))
+                .revoque(false)
+                .userAgent(userAgent)
+                .ip(ip)
+                .build();
+
+        RefreshToken saved = refreshTokenRepository.save(rt);
+        saved.setToken(tokenBrut);
+        return saved;
     }
 
 
@@ -130,6 +198,7 @@ public class RefreshTokenMetierImpl implements  RefreshTokenMetier {
         new SecureRandom().nextBytes(bytes);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
+
     private String sha256(String value) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -140,5 +209,12 @@ public class RefreshTokenMetierImpl implements  RefreshTokenMetier {
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("SHA-256 indisponible", e);
         }
+    }
+
+    private String genererFamilyId() {
+        byte[] bytes = new byte[32];
+        new SecureRandom().nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+
     }
 }

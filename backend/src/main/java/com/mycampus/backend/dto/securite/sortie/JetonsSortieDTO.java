@@ -9,5 +9,5 @@ import lombok.*;
 @Builder
 public class JetonsSortieDTO {
     private String access_token;
-    private String refresh_token;
+
 }

@@ -3,14 +3,23 @@ package com.mycampus.backend.web.Securite;
 import com.mycampus.backend.dto.securite.entree.ConnectionDTO;
 import com.mycampus.backend.dto.securite.entree.RafraichirTokenDTO;
 import com.mycampus.backend.dto.securite.sortie.JetonsSortieDTO;
+import com.mycampus.backend.dto.securite.sortie.RotationResult;
 import com.mycampus.backend.entites.RefreshToken;
 import com.mycampus.backend.entites.Utilisateur;
+import com.mycampus.backend.exceptions.SecuriteException;
 import com.mycampus.backend.metier.security.RefreshTokenMetier;
+import com.mycampus.backend.metier.security.RefreshTokenMetierImpl;
 import com.mycampus.backend.metier.security.UserDetailsServiceImpl;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
- import org.springframework.security.authentication.AuthenticationManager;
+import lombok.Value;
+import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseCookie;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -22,6 +31,7 @@ import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.WebUtils;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -31,12 +41,17 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
+@Slf4j
 public class SecurityController {
 
      private final AuthenticationManager authenticationManager;
      private final JwtEncoder jwtEncoder;
      private final RefreshTokenMetier refreshTokenMetier;
      private final UserDetailsServiceImpl userDetailsServiceImpl;
+
+
+    private final boolean cookieSecure =  false;
+
 
     @GetMapping("/profile")
     public Map<String, Object> profile(Authentication authentication) {
@@ -49,7 +64,9 @@ public class SecurityController {
         );
     }
     @PostMapping("/connecter")
-    public JetonsSortieDTO connecter(@Valid @RequestBody ConnectionDTO connectionDTO, HttpServletRequest request) {
+    public JetonsSortieDTO connecter(@Valid @RequestBody ConnectionDTO connectionDTO,
+                                     HttpServletRequest request,
+                                     HttpServletResponse response) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(connectionDTO.getEmail(),connectionDTO.getMotDePasse())
         );
@@ -72,29 +89,45 @@ public class SecurityController {
         String ip = extraireIp(request);
 
 
-        RefreshToken refresh = refreshTokenMetier.creerRefreshToken(authentication.getName(), userAgent, ip);
+        RefreshToken refresh = refreshTokenMetier.creerRefreshTokenPourlaPremierFois(authentication.getName(), userAgent, ip);
 
-         return JetonsSortieDTO.builder()
-                 .access_token(jwt)
-                 .refresh_token(refresh.getToken())
+        ResponseCookie cookie = ResponseCookie.from("refresh_token", refresh.getToken())
+                .httpOnly(true)
+                .secure(cookieSecure)              // en prod (https). en local: false
+                .sameSite("Lax")           // ou "None" si front/back domaines différents
+                .path("/auth")             // limite l’envoi du cookie aux endpoints auth
+                .maxAge(7 * 24 * 60 * 60)  // 7 jours
+                .build();
+
+        response.addHeader("Set-Cookie", cookie.toString());
+        log.info("cokokie in  connect " + cookie);
+
+        return JetonsSortieDTO.builder()
+                .access_token(jwt)
                  .build();
+
 
     }
 
     @PostMapping("/rafraichir-jeton")
-    public JetonsSortieDTO rafraichir(@Valid @RequestBody RafraichirTokenDTO dto,
-                                      HttpServletRequest request) {
+    public JetonsSortieDTO rafraichir(
+                                      HttpServletRequest request,HttpServletResponse response) {
 
+        Cookie cookie = WebUtils.getCookie(request, "refresh_token");
+        if (cookie == null || cookie.getValue().isBlank()) {
+            throw new SecuriteException("Refresh token manquant");
+        }
+
+        String refreshToken = cookie.getValue();
         String userAgent = request.getHeader("User-Agent");
         String ip = extraireIp(request);
 
 
-        RefreshToken nouveau = refreshTokenMetier.rotationRefreshToken(dto.getRefreshToken(), userAgent, ip);
+        RotationResult nouveau = refreshTokenMetier.rotationRefreshToken(refreshToken, userAgent, ip);
 
-        Utilisateur utilisateur = nouveau.getUtilisateur();
+        UserDetails userDetails = userDetailsServiceImpl.loadUserByUsername(nouveau.getEmail());
 
 
-        UserDetails userDetails = userDetailsServiceImpl.loadUserByUsername(utilisateur.getEmail());
 
         Instant instant = Instant.now();
         String scope  = userDetails.getAuthorities().stream()
@@ -110,12 +143,37 @@ public class SecurityController {
                 JwsHeader.with(MacAlgorithm.HS512).build(),jwtClaimsSet);
         String accessToken = jwtEncoder.encode(jwtEncoderParameters).getTokenValue();
 
-        return new JetonsSortieDTO(accessToken, nouveau.getToken());
+        ResponseCookie nouveauCookieARemplacer = ResponseCookie.from("refresh_token", nouveau.getRefreshToken())
+                .httpOnly(true)
+                .secure(cookieSecure)              // en prod (https). en local: false
+                .sameSite("Lax")           // ou "None" si front/back domaines différents
+                .path("/auth")             // limite l’envoi du cookie aux endpoints auth
+                .maxAge(7 * 24 * 60 * 60)  // 7 jours
+                .build();
+
+        response.addHeader("Set-Cookie", nouveauCookieARemplacer.toString());
+        log.info("cokokie in  refresh  " + cookie);
+
+        return new JetonsSortieDTO(accessToken);
     }
 
     @PostMapping("/deconnexion")
-    public Map<String, String> deconnexion(@Valid @RequestBody RafraichirTokenDTO dto) {
-        refreshTokenMetier.revoquer(dto);
+    public Map<String, String> deconnexion(HttpServletRequest request, HttpServletResponse response) {
+
+        Cookie cookie = WebUtils.getCookie(request, "refresh_token");
+        if (cookie != null && !cookie.getValue().isBlank()) {
+            refreshTokenMetier.revoquerFamille(cookie.getValue());
+        }
+
+        ResponseCookie deleteCookie = ResponseCookie.from("refresh_token", "")
+                .httpOnly(true)
+                .secure(cookieSecure)
+                .sameSite("Lax")
+                .path("/auth")
+                .maxAge(0)
+                .build();
+        response.addHeader("Set-Cookie", deleteCookie.toString());
+
         return Map.of("message", "Déconnexion réussie");
     }
 
