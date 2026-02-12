@@ -3,6 +3,7 @@ package com.mycampus.backend.entites;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -48,4 +49,8 @@ public class Classe {
     
     @OneToMany(mappedBy = "classe")
     private List<AffectationEnseignement> affectationEnseignements;
+
+    @OneToMany(mappedBy = "classe", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Annonce> annonces = new ArrayList<>();
+
 }

@@ -16,5 +16,7 @@ public interface FichierSeanceRepository extends JpaRepository<FichierSeance, Lo
 
     Optional<FichierSeance> findByIdAndSeance_AffectationEnseignement_Professeur_Ppr(Long id, String professeurPpr);
 
+    Optional<FichierSeance> findByIdAndSeance_AffectationEnseignement_Classe_CodeClasse(Long id, String codeClasse);
+
     void deleteBySeanceId(Long seanceId);
 }

@@ -41,43 +41,26 @@ public class ProfesseursSeeder {
 
 
             Professeur.builder()
-                .nom("Professeur").prenom("Indus").email("prof.indus@mycampus.ma")
+                .nom("Ahmed").prenom("Kamal").email("prof.info1@mycampus.ma")
                 .password(passwordEncoder.encode("password123"))
                 .active(true).cin("PC100012").ppr("PPR200012")
-                .specialite("Génie Industriel").statut("Titulaire").grade("Professeur")
+                .specialite("Génie informatique").statut("Titulaire").grade("Professeur")
                 .dateCreation(LocalDateTime.now()).tel("0600000012")
                 .dateRecrutement(LocalDate.of(2018, 9, 1))
-                .departementOuTravail(requireDepartement("INDUS"))
-                .build(),
-            Professeur.builder()
-                .nom("Professeur").prenom("GL").email("prof.gl@mycampus.ma")
-                .password(passwordEncoder.encode("password123"))
-                .active(true).cin("PC100013").ppr("PPR200013")
-                .specialite("Génie Logiciel").statut("Titulaire").grade("Professeur")
-                .dateCreation(LocalDateTime.now()).tel("0600000013")
-                .dateRecrutement(LocalDate.of(2021, 9, 1))
-                .departementOuTravail(requireDepartement("INFO"))
-                .build(),
-            Professeur.builder()
-                .nom("Professeur").prenom("Web").email("prof.web@mycampus.ma")
-                .password(passwordEncoder.encode("password123"))
-                .active(true).cin("PC100014").ppr("PPR200014")
-                .specialite("Web Development").statut("Titulaire").grade("Professeur")
-                .dateCreation(LocalDateTime.now()).tel("0600000014")
-                .dateRecrutement(LocalDate.of(2020, 9, 1))
                 .departementOuTravail(requireDepartement("INFO"))
                 .build(),
 
+                Professeur.builder()
+                        .nom("Said").prenom("Barada").email("prof.info2@mycampus.ma")
+                        .password(passwordEncoder.encode("password123"))
+                        .active(true).cin("PC200012").ppr("PPR300012")
+                        .specialite("Génie informatique").statut("Titulaire").grade("Professeur")
+                        .dateCreation(LocalDateTime.now()).tel("0610000012")
+                        .dateRecrutement(LocalDate.of(2017, 7, 5))
+                        .departementOuTravail(requireDepartement("INFO"))
+                        .build()
 
-            Professeur.builder()
-                .nom("Professeur").prenom("Physique").email("prof.physique@mycampus.ma")
-                .password(passwordEncoder.encode("password123"))
-                .active(true).cin("PC100017").ppr("PPR200017")
-                .specialite("Physique").statut("Titulaire").grade("Professeur")
-                .dateCreation(LocalDateTime.now()).tel("0600000017")
-                .dateRecrutement(LocalDate.of(2017, 9, 1))
-                .departementOuTravail(requireDepartement("INDUS"))
-                .build()
+
         );
         
         for (Professeur prof : professeurs) {
@@ -110,13 +93,8 @@ public class ProfesseursSeeder {
                 .description("Département d'Informatique")
                 .etat(com.mycampus.backend.enumerations.EtatStructure.OUVERTE)
                 .dateCreation(LocalDate.now())
-                .build(),
-            Departement.builder()
-                .codeDepartement("INDUS").typeDepartement("Département de Génie Industriel")
-                .description("Département de Génie Industriel")
-                .etat(com.mycampus.backend.enumerations.EtatStructure.OUVERTE)
-                .dateCreation(LocalDate.now())
                 .build()
+
 
         );
         
@@ -129,29 +107,21 @@ public class ProfesseursSeeder {
     }
 
     private void setDepartmentChefs() {
-        // ✅ Utilisation des méthodes requireXxx() pour garantir les dépendances
-        Departement infoDept = requireDepartement("INFO");
-        Departement indusDept = requireDepartement("INDUS");
+         Departement infoDept = requireDepartement("INFO");
 
         if (infoDept.getChefDepartement() == null) {
-            Professeur chefInfo = requireProfesseurByEmail("prof.gl@mycampus.ma");
+            Professeur chefInfo = requireProfesseurByEmail("prof.info1@mycampus.ma");
             infoDept.setChefDepartement(chefInfo);
             departementRepository.save(infoDept);
             log.info("Set chef for INFO department: {}", chefInfo.getEmail());
         }
         
-        if (indusDept.getChefDepartement() == null) {
-            Professeur chefIndus = requireProfesseurByEmail("prof.indus@mycampus.ma");
-            indusDept.setChefDepartement(chefIndus);
-            departementRepository.save(indusDept);
-            log.info("Set chef for INDUS department: {}", chefIndus.getEmail());
-        }
+
         
 
     }
 
-    // ✅ Méthodes requireXxx() défensives pour les FK obligatoires
-    private Departement requireDepartement(String codeDepartement) {
+     private Departement requireDepartement(String codeDepartement) {
         return departementRepository.findByCodeDepartement(codeDepartement)
                 .orElseThrow(() -> new RuntimeException("Departement " + codeDepartement + " not found during professor seeding"));
     }

@@ -28,4 +28,13 @@ public interface ResultatRepository extends JpaRepository<Resultat, Long> {
             @Param("etudiantId") Long etudiantId,
             @Param("examenIds") List<Long> examenIds
     );
+
+    @Query("""
+        select r
+        from Resultat r
+        where r.etudiant.id = :etudiantId
+        order by r.datePublication desc
+        limit 3
+    """)
+    List<Resultat> findTop3ByEtudiantIdOrderByDatePublicationDesc(@Param("etudiantId") Long etudiantId);
 }

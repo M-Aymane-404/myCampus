@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -49,4 +50,7 @@ public class Departement {
             unique = true
     )
     private Professeur chefDepartement;
+
+    @OneToMany(mappedBy = "departement", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Annonce> annonces = new ArrayList<>();
 }

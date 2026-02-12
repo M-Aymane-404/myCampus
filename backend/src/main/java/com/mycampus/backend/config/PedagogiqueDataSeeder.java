@@ -33,6 +33,8 @@ public class PedagogiqueDataSeeder {
     private final UtilisateurRepository utilisateurRepository;
     private final FiliereRepository filiereRepository;
     private final ClasseRepository classeRepository;
+    private final AnnonceRepository annonceRepository;
+    private final DepartementRepository departementRepository;
 
 
 
@@ -49,45 +51,71 @@ public class PedagogiqueDataSeeder {
         seedExamens();
         seedResultats();
         seedNotifications();
+        seedAnnonce();
     }
 
     private void validatePrerequisites() {
-        requireProfesseur("prof.web@mycampus.ma");
-        requireProfesseur("prof.gl@mycampus.ma");
+        requireProfesseur("prof.info1@mycampus.ma");
 
         requireClasse("ILCS1-A");
-        requireClasse("GIND1-A");
 
 
-        requireFiliere("GIND");
-        requireFiliere("ILCS");
+         requireFiliere("ILCS");
          log.info("All prerequisites validated for pedagogical seeding");
     }
 
     private void seedModules() {
         Filiere ilcs = requireFiliere("ILCS");
-         Filiere gind = requireFiliere("GIND");
-        
+
         List<Module> modules = Arrays.asList(
 
-            Module.builder()
-                .codeModule("ISI-RESEAU-S3")
-                .nom("Réseaux S3")
-                .description("Réseaux informatiques et protocoles")
-                .semestre(Semestre.S3)
-                .coefficient(3)
-                .filiere(ilcs)
-                .build(),
+                Module.builder()
+                        .codeModule("ILCS-RESEAU-S1")
+                        .nom("Réseaux S1")
+                        .description("Réseaux informatiques et protocoles")
+                        .semestre(Semestre.S1)
+                        .coefficient(3)
+                        .filiere(ilcs)
+                        .build(),
+
+                Module.builder()
+                        .codeModule("ILCS-POO-S1")
+                        .nom("Programmation Orientée Objet")
+                        .description("Concepts avancés de la programmation orientée objet")
+                        .semestre(Semestre.S1)
+                        .coefficient(4)
+                        .filiere(ilcs)
+                        .build(),
+
+                Module.builder()
+                        .codeModule("ILCS-BDD-S1")
+                        .nom("Bases de Données")
+                        .description("Modélisation et gestion des bases de données relationnelles")
+                        .semestre(Semestre.S1)
+                        .coefficient(3)
+                        .filiere(ilcs)
+                        .build(),
+
+                Module.builder()
+                        .codeModule("ILCS-SYSTEME-S1")
+                        .nom("Systèmes d’Exploitation")
+                        .description("Fonctionnement des systèmes d’exploitation")
+                        .semestre(Semestre.S1)
+                        .coefficient(3)
+                        .filiere(ilcs)
+                        .build(),
+
+                 Module.builder()
+                        .codeModule("ILCS-LANGAGES-ETRANGERE-S1")
+                        .nom("Langages  étrangère")
+                        .description("Étude des langages étrangère")
+                        .semestre(Semestre.S1)
+                        .coefficient(4)
+                        .filiere(ilcs)
+                        .build()
 
 
-            Module.builder()
-                .codeModule("GIND-PROD-S1")
-                .nom("Production Industrielle S1")
-                .description("Optimisation des processus de production")
-                .semestre(Semestre.S1)
-                .coefficient(4)
-                .filiere(gind)
-                .build()
+
         );
         
         for (Module module : modules) {
@@ -100,35 +128,65 @@ public class PedagogiqueDataSeeder {
 
     private void seedMatieres() {
 
-        Module isiReseau = requireModule("ISI-RESEAU-S3");
+        Filiere ilcs = requireFiliere("ILCS");
 
-        Module gindProd = requireModule("GIND-PROD-S1");
+// ✅ récupérer les modules ILCS S1
+        Module ilcsReseau   = requireModule("ILCS-RESEAU-S1");
+        Module ilcsPoo      = requireModule("ILCS-POO-S1");
+        Module ilcsBdd      = requireModule("ILCS-BDD-S1");
+        Module ilcsSysteme  = requireModule("ILCS-SYSTEME-S1");
+        Module ilcsLangues  = requireModule("ILCS-LANGAGES-ETRANGERE-S1");
 
-        
+// ✅ 6 matières
         List<Matiere> matieres = Arrays.asList(
 
-            Matiere.builder()
-                .codeMatiere("RESEAUX")
-                .nom("Réseaux")
-                .description("Protocoles réseau et architecture TCP/IP")
-                .module(isiReseau)
-                .build(),
+                // 1) Réseaux (même nom/description que le module)
+                Matiere.builder()
+                        .codeMatiere("ILCS-RESEAU-S1-M1")
+                        .nom("Réseaux S1")
+                        .description("Réseaux informatiques et protocoles")
+                        .module(ilcsReseau)
+                        .build(),
 
+                // 2) POO (même nom/description que le module)
+                Matiere.builder()
+                        .codeMatiere("ILCS-POO-S1-M1")
+                        .nom("Programmation Orientée Objet")
+                        .description("Concepts avancés de la programmation orientée objet")
+                        .module(ilcsPoo)
+                        .build(),
 
-            Matiere.builder()
-                .codeMatiere("LEAN")
-                .nom("Lean Manufacturing")
-                .description("Principes du Lean Manufacturing")
-                .module(gindProd)
-                .build(),
+                // 3) BDD (même nom/description que le module)
+                Matiere.builder()
+                        .codeMatiere("ILCS-BDD-S1-M1")
+                        .nom("Bases de Données")
+                        .description("Modélisation et gestion des bases de données relationnelles")
+                        .module(ilcsBdd)
+                        .build(),
 
-            Matiere.builder()
-                .codeMatiere("ISO_9001")
-                .nom("ISO 9001")
-                .description("Norme ISO 9001 qualité")
-                .module(isiReseau)
-                .build()
+                // 4) Systèmes (même nom/description que le module)
+                Matiere.builder()
+                        .codeMatiere("ILCS-SYSTEME-S1-M1")
+                        .nom("Systèmes d’Exploitation")
+                        .description("Fonctionnement des systèmes d’exploitation")
+                        .module(ilcsSysteme)
+                        .build(),
 
+                // 5) Langues étrangères - Français
+                Matiere.builder()
+                        .codeMatiere("ILCS-LANGUES-S1-FR")
+                        .nom("Français")
+                        .description("Communication écrite et orale en français")
+                        .module(ilcsLangues)
+                        .build(),
+
+                // 6) Langues étrangères - Anglais
+                Matiere.builder()
+                        .codeMatiere("ILCS-LANGUES-S1-EN")
+                        .nom("Anglais")
+                        .description("Communication écrite et orale en anglais")
+                        .module(ilcsLangues)
+                        .build()
         );
         
         for (Matiere matiere : matieres) {
@@ -140,40 +198,69 @@ public class PedagogiqueDataSeeder {
     }
 
     private void seedAffectationEnseignement() {
-        Professeur profWeb = requireProfesseur("prof.web@mycampus.ma");
-        Professeur profGl = requireProfesseur("prof.gl@mycampus.ma");
+        Professeur profInfo1 = requireProfesseur("prof.info1@mycampus.ma");
+        Professeur profInfo2 = requireProfesseur("prof.info2@mycampus.ma");
 
-        Classe gind = requireClasse("GIND1-A");
-        Classe ilcs = requireClasse("ILCS1-A");
+        Classe ilcs1A = requireClasse("ILCS1-A");
 
-        
+// 6 matières (codes selon ce que tu as créé)
+        Matiere reseauxS1   = requireMatiere("ILCS-RESEAU-S1-M1");
+        Matiere pooS1       = requireMatiere("ILCS-POO-S1-M1");
+        Matiere bddS1       = requireMatiere("ILCS-BDD-S1-M1");
+        Matiere systemeS1   = requireMatiere("ILCS-SYSTEME-S1-M1");
+        Matiere francaisS1  = requireMatiere("ILCS-LANGUES-S1-FR");
+        Matiere anglaisS1   = requireMatiere("ILCS-LANGUES-S1-EN");
 
-        Matiere reseaux = requireMatiere("RESEAUX");
-
-        Matiere lean = requireMatiere("LEAN");
-
-        Matiere iso9001 = requireMatiere("ISO_9001");
-
-        
         List<AffectationEnseignement> affectations = Arrays.asList(
-            AffectationEnseignement.builder()
-                .professeur(profWeb).classe(gind).matiere(lean)
-                .active(true)
-                .build(),
-            AffectationEnseignement.builder()
-                .professeur(profWeb).classe(gind).matiere(iso9001)
-                .active(true)
-                .build(),
+
+                // ✅ Prof 1 : 3 matières
+                AffectationEnseignement.builder()
+                        .professeur(profInfo1)
+                        .classe(ilcs1A)
+                        .matiere(reseauxS1)
+                        .active(true)
+                        .build(),
+
+                AffectationEnseignement.builder()
+                        .professeur(profInfo1)
+                        .classe(ilcs1A)
+                        .matiere(pooS1)
+                        .active(true)
+                        .build(),
 
 
-            AffectationEnseignement.builder()
-                .professeur(profGl).classe(ilcs).matiere(reseaux)
-                .active(true)
-                .build()
+                AffectationEnseignement.builder()
+                        .professeur(profInfo1)
+                        .classe(ilcs1A)
+                        .matiere(anglaisS1)
+                        .active(true)
+                        .build(),
+
+                // ✅ Prof 2 : 3 matières
+                AffectationEnseignement.builder()
+                        .professeur(profInfo2)
+                        .classe(ilcs1A)
+                        .matiere(systemeS1)
+                        .active(true)
+                        .build(),
+                AffectationEnseignement.builder()
+                        .professeur(profInfo2)
+                        .classe(ilcs1A)
+                        .matiere(bddS1)
+                        .active(true)
+                        .build(),
+
+                AffectationEnseignement.builder()
+                        .professeur(profInfo2)
+                        .classe(ilcs1A)
+                        .matiere(francaisS1)
+                        .active(true)
+                        .build()
 
 
         );
-        
+
+
         for (AffectationEnseignement affectation : affectations) {
             if (!affectationEnseignementRepository.existsByClasseAndMatiereAndProfesseur(
                     affectation.getClasse(), affectation.getMatiere(), affectation.getProfesseur())) {
@@ -188,36 +275,67 @@ public class PedagogiqueDataSeeder {
 
     private void seedSeances() {
         List<AffectationEnseignement> affectations = affectationEnseignementRepository.findByActiveTrue();
-        
-        for (AffectationEnseignement affectation : affectations) {
-            LocalDate today = LocalDate.now();
-            
-            for (int i = 0; i < 2; i++) {
-                LocalDate dateSeance = today.plusWeeks(i);
-                LocalDateTime heureDebut = LocalDateTime.now();
-                LocalDateTime heureFin = LocalDateTime.now();
-                
 
-                    
+        LocalDate today = LocalDate.now();
+
+// 3 boucles (3 séries)
+        for (int serie = 0; serie < 3; serie++) {
+
+            // base date différente pour chaque série
+            LocalDate baseDate = today.plusWeeks(serie);
+
+            for (AffectationEnseignement affectation : affectations) {
+
+                // chaque série crée 4 séances
+                for (int i = 0; i < 4; i++) {
+
+                    // date différente dans la même semaine (ex: lundi, mardi, ...)
+                    LocalDate dateSeance = baseDate.plusDays(i);
+
+                    // heures différentes
+                    LocalDateTime heureDebut = dateSeance.atTime(8 + (i * 2), 0); // 08:00, 10:00, 12:00, 14:00
+                    LocalDateTime heureFin   = heureDebut.plusHours(2);
+
+                    // type différent
+                    TypeSeance type = switch (i) {
+                        case 0 -> TypeSeance.COURS;
+                        case 1 -> TypeSeance.TD;
+                        case 2 -> TypeSeance.TP;
+                        default -> TypeSeance.COURS;
+                    };
+
+                    // état différent (par série)
+                    EtatSeance etat = switch (serie) {
+                        case 0 -> EtatSeance.PLANIFIEE;
+                        case 1 -> EtatSeance.ANNULEE;
+                        default -> EtatSeance.TERMINEE;
+                    };
+
                     Seance seance = Seance.builder()
-                        .type(TypeSeance.COURS)
-                        .date(dateSeance)
-                        .heureDebut(heureDebut)
-                        .heureFin(heureFin)
-                        .salle("Salle " + (i + 1))
-                        .etat(EtatSeance.PLANIFIEE)
-                        .contenu("Contenu de séance pour " + affectation.getMatiere().getNom())
-                        .affectationEnseignement(affectation)
-                        .build();
-                    
-                    seanceRepository.save(seance);
-                    log.info("Created seance: {} - {} - {}", 
-                        affectation.getMatiere().getCodeMatiere(),
-                        dateSeance,
-                        heureDebut);
+                            .type(type)
+                            .date(dateSeance)
+                            .heureDebut(heureDebut)
+                            .heureFin(heureFin)
+                            .salle("Salle " + (serie + 1) + "-" + (i + 1))
+                            .etat(etat)
+                            .contenu("Séance " + type + " (" + etat + ") - " + affectation.getMatiere().getNom())
+                            .affectationEnseignement(affectation)
+                            .build();
 
+                    seanceRepository.save(seance);
+
+                    log.info("Created seance: {} | {} | {} -> {} | {} | {}",
+                            affectation.getMatiere().getCodeMatiere(),
+                            type,
+                            etat,
+                            dateSeance,
+                            heureDebut.toLocalTime(),
+                            heureFin.toLocalTime()
+                    );
+                }
             }
         }
+
     }
 
     private void seedFichiersSeance() {
@@ -283,13 +401,16 @@ public class PedagogiqueDataSeeder {
     }
 
     private void seedExamens() {
-        Matiere reseaux = requireMatiere("RESEAUX");
-        Matiere iso = requireMatiere("ISO_9001");
-        Matiere lean = requireMatiere("LEAN");
+        Matiere reseauxS1   = requireMatiere("ILCS-RESEAU-S1-M1");
+        Matiere pooS1       = requireMatiere("ILCS-POO-S1-M1");
+        Matiere bddS1       = requireMatiere("ILCS-BDD-S1-M1");
+        Matiere systemeS1   = requireMatiere("ILCS-SYSTEME-S1-M1");
+        Matiere francaisS1  = requireMatiere("ILCS-LANGUES-S1-FR");
+        Matiere anglaisS1   = requireMatiere("ILCS-LANGUES-S1-EN");
         
         List<Examen> examens = Arrays.asList(
             Examen.builder()
-                .semestre(Semestre.S3)
+                .semestre(Semestre.S1)
                 .dateExamen(Date.from(LocalDateTime.of(2024, 12, 10, 9, 0)
                     .atZone(java.time.ZoneId.systemDefault()).toInstant()))
                 .numeroExamen(1)
@@ -297,31 +418,65 @@ public class PedagogiqueDataSeeder {
                 .duree(120)
                 .etat(EtatExamen.PROGRAMME)
                 .corrigePath("/corriges/html_css_normal_corrige.pdf")
-                .matiere(reseaux)
+                .matiere(reseauxS1)
                 .build(),
             Examen.builder()
-                .semestre(Semestre.S3)
-                .dateExamen(Date.from(LocalDateTime.of(2024, 12, 12, 14, 0)
+                .semestre(Semestre.S1)
+                .dateExamen(Date.from(LocalDateTime.of(2024, 12, 11, 14, 0)
                     .atZone(java.time.ZoneId.systemDefault()).toInstant()))
                 .numeroExamen(1)
                 .typeExamen(TypeExamen.NORMAL)
                 .duree(120)
                 .etat(EtatExamen.PROGRAMME)
                 .corrigePath("/corriges/javascript_normal_corrige.pdf")
-                .matiere(iso)
+                .matiere(systemeS1)
                 .build(),
 
             Examen.builder()
                 .semestre(Semestre.S1)
-                .dateExamen(Date.from(LocalDateTime.of(2024, 11, 20, 10, 0)
+                .dateExamen(Date.from(LocalDateTime.of(2024, 11, 12, 10, 0)
                     .atZone(java.time.ZoneId.systemDefault()).toInstant()))
                 .numeroExamen(1)
                 .typeExamen(TypeExamen.NORMAL)
                 .duree(90)
                 .etat(EtatExamen.PASSE)
                 .corrigePath("/corriges/lean_normal_corrige.pdf")
-                .matiere(lean)
-                .build()
+                .matiere(bddS1)
+                .build(),
+
+                Examen.builder()
+                        .semestre(Semestre.S1)
+                        .dateExamen(Date.from(LocalDateTime.of(2024, 11, 13, 10, 0)
+                                .atZone(java.time.ZoneId.systemDefault()).toInstant()))
+                        .numeroExamen(1)
+                        .typeExamen(TypeExamen.NORMAL)
+                        .duree(90)
+                        .etat(EtatExamen.PASSE)
+                        .corrigePath("/corriges/lean_normal_corrige.pdf")
+                        .matiere(pooS1)
+                        .build(),
+                Examen.builder()
+                        .semestre(Semestre.S1)
+                        .dateExamen(Date.from(LocalDateTime.of(2024, 11, 14, 10, 0)
+                                .atZone(java.time.ZoneId.systemDefault()).toInstant()))
+                        .numeroExamen(1)
+                        .typeExamen(TypeExamen.NORMAL)
+                        .duree(90)
+                        .etat(EtatExamen.PASSE)
+                        .corrigePath("/corriges/lean_normal_corrige.pdf")
+                        .matiere(francaisS1)
+                        .build(),
+                Examen.builder()
+                        .semestre(Semestre.S1)
+                        .dateExamen(Date.from(LocalDateTime.of(2024, 11, 15, 10, 0)
+                                .atZone(java.time.ZoneId.systemDefault()).toInstant()))
+                        .numeroExamen(1)
+                        .typeExamen(TypeExamen.NORMAL)
+                        .duree(90)
+                        .etat(EtatExamen.PROGRAMME)
+                        .corrigePath("/corriges/lean_normal_corrige.pdf")
+                        .matiere(anglaisS1)
+                        .build()
         );
         
         for (Examen examen : examens) {
@@ -423,10 +578,60 @@ public class PedagogiqueDataSeeder {
             }
         }
     }
+    public void seedAnnonce(){
+       Professeur prof = requireProfesseur("prof.info1@mycampus.ma");
+       Classe ilcs = requireClasse("ILCS1-A");
+       Administrateur admin = requireAdministrateur("admin1@mycampus.ma");
+        Departement infoDept = requireDepartement("INFO");
+       LocalDateTime today = LocalDateTime.now();
+       annonceRepository.save( Annonce.builder()
+                .titre("examen est annullé")
+                .contenu("examen est annullé examen est annullé examen est annullé examen est annullé")
+                .cibleType(AnnonceCibleType.ETUDIANTS_CLASSE)
+                .auteur(prof)
+                       .datePublication(today)
+                .classe(ilcs)
+                .publiee(true)
+                .build());
+
+        annonceRepository.save( Annonce.builder()
+                .titre("la rentrer scolaire")
+                .contenu("la rentrer scolaire le 20/9/2026")
+                .cibleType(AnnonceCibleType.ETUDIANTS_GLOBAL)
+                .auteur(admin)
+                        .datePublication( today.minusDays(2))
+                .publiee(true)
+                .build());
+
+        annonceRepository.save( Annonce.builder()
+                .titre("les prod de info ")
+                .contenu("il faut  que les exam doit terminer avant la semaine dernière de mois 4")
+                .cibleType(AnnonceCibleType.PROFESSEURS_DEPARTEMENT)
+                .auteur(prof)
+                .datePublication(today)
+                .departement(infoDept)
+                .publiee(true)
+                .build());
+
+        annonceRepository.save( Annonce.builder()
+                .titre("les notes ")
+                .contenu("les notees doit etre entrer au site avant le 24/2/2026")
+                .cibleType(AnnonceCibleType.PROFESSEURS_GLOBAL)
+                .auteur(admin)
+                .datePublication( today.minusDays(2))
+                .publiee(true)
+                .build());
+    }
+
 
     private Professeur requireProfesseur(String email) {
         return (Professeur) utilisateurRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Professeur " + email + " not found during pedagogical seeding"));
+    }
+
+    private Administrateur requireAdministrateur(String email) {
+        return (Administrateur) utilisateurRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Administrateur " + email + " not found during pedagogical seeding"));
     }
 
     private Filiere requireFiliere(String codeFiliere) {
@@ -447,5 +652,9 @@ public class PedagogiqueDataSeeder {
     private Matiere requireMatiere(String codeMatiere) {
         return matiereRepository.findByCodeMatiere(codeMatiere)
                 .orElseThrow(() -> new RuntimeException("Matiere " + codeMatiere + " not found during pedagogical seeding"));
+    }
+    private Departement requireDepartement(String codeDepartement) {
+        return departementRepository.findByCodeDepartement(codeDepartement)
+                .orElseThrow(() -> new RuntimeException("Departement " + codeDepartement + " not found during professor seeding"));
     }
 }

@@ -8,6 +8,7 @@ import com.mycampus.backend.dto.etudiant.DonneeSortie.ReleveDeNote.ExamenDeRelev
 import com.mycampus.backend.dto.etudiant.DonneeSortie.ReleveDeNote.MatiereDeReleveEtudiantDTO;
 import com.mycampus.backend.dto.etudiant.DonneeSortie.ReleveDeNote.ModuleDeReleveEtudiantDTO;
 import com.mycampus.backend.dto.etudiant.DonneeSortie.ReleveDeNote.ReleveDeNoteEtudiantParSessionDTO;
+import com.mycampus.backend.dto.professeur.DonneeSortie.fichiersSeance.TelechargementFichierSeanceSortieDTO;
 import com.mycampus.backend.entites.*;
 import com.mycampus.backend.entites.Module;
 import com.mycampus.backend.enumerations.Semestre;
@@ -15,6 +16,7 @@ import com.mycampus.backend.enumerations.StatusAbsence;
 import com.mycampus.backend.enumerations.TypeExamen;
 import com.mycampus.backend.enumerations.TypeSeance;
 import com.mycampus.backend.exceptions.EtudiantException;
+import com.mycampus.backend.exceptions.SeancesProfesseurException;
 import com.mycampus.backend.exceptions.UtilisateursException;
 import com.mycampus.backend.mappers.administrateur.UtilisateursMapper;
 import com.mycampus.backend.mappers.etudiant.StructureEtudiantMapper;
@@ -23,7 +25,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +55,7 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
     private final StructureEtudiantMapper mapper;
     private final UtilisateursMapper utilisateursMapper;
     private final PasswordEncoder passwordEncoder;
+    private final ClasseRepository classRepository;
 
     @Override
     public EtudiantSortieEtudiantDTO trouverEtudiantConnecter(Long id) throws EtudiantException {
@@ -416,6 +424,65 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
                 .build();
 
     }
+
+    @Override
+     public TelechargementFichierSeanceSortieDTO preparerTelechargementFichierSeance(
+            String etudiantEmail,
+            Long fichierSeanceId
+    ) throws SeancesProfesseurException {
+
+         requireEtudiantEmail(etudiantEmail);
+
+        FichierSeance fichier = requireFichierSeancePourProfesseur(etudiantEmail, fichierSeanceId);
+
+        String chemin = fichier.getChemin();
+        if (chemin == null || chemin.isBlank()) {
+            throw new SeancesProfesseurException("Chemin du fichier introuvable.");
+        }
+
+        try {
+            Path cheminNormalise = Paths.get(chemin).toAbsolutePath().normalize();
+
+            if (!Files.exists(cheminNormalise) || !Files.isReadable(cheminNormalise)) {
+                throw new SeancesProfesseurException("Fichier introuvable sur le disque.");
+            }
+
+            return TelechargementFichierSeanceSortieDTO.builder()
+                    .id(fichier.getId())
+                    .nomOriginal(fichier.getNomOriginal())
+                    .typeMime(fichier.getTypeMime())
+                    .taille(fichier.getTaille())
+                    .chemin(cheminNormalise.toString())
+                    .build();
+
+        } catch (InvalidPathException e) {
+            throw new SeancesProfesseurException("Chemin du fichier invalide.");
+        }
+    }
+
+    private void requireEtudiantEmail(String etudiantEmail) throws UtilisateursException {
+        if (etudiantEmail == null || etudiantEmail.isBlank()) {
+            throw new UtilisateursException("Le email du professeur est obligatoire.");
+        }
+    }
+
+    private FichierSeance requireFichierSeancePourProfesseur(String etudiantEmail, Long fichierSeanceId)
+            throws SeancesProfesseurException {
+
+        requireEtudiantEmail(etudiantEmail);
+
+        if (fichierSeanceId == null) {
+            throw new SeancesProfesseurException("L'identifiant du fichier est obligatoire.");
+        }
+
+       Classe classe =  classeRepository.findByEtudiant_EmailEtudiant(etudiantEmail)
+               .orElseThrow(() -> new UtilisateursException("Étudiant ne Assigne a accan classe introuvable ou non autorisé."));
+
+        return fichierSeanceRepository
+                .findByIdAndSeance_AffectationEnseignement_Classe_CodeClasse(fichierSeanceId, classe.getCodeClasse())
+                .orElseThrow(() -> new SeancesProfesseurException("Fichier introuvable ou non autorisé."));
+    }
+
 
 
 

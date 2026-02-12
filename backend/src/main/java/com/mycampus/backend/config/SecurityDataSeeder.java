@@ -30,7 +30,7 @@ public class SecurityDataSeeder {
     private final EtudiantsSeeder etudiantsSeeder;
     private final PedagogiqueDataSeeder  pedagogiqueDataSeeder;
 
-    @Bean
+   // @Bean
     public ApplicationRunner securityDataSeederRunner() {
         return args -> {
             log.info("Starting security data seeding...");
@@ -76,12 +76,12 @@ public class SecurityDataSeeder {
             
             // Student permissions
             "ETUDIANT_INFORMATION_PERSONNEL_LIRE", "ETUDIANT_MODULES_LIRE", "ETUDIANT_MATIERES_LIRE","ETUDIANT_INFORMATION_PERSONNEL_MODIFIER",
-            "ETUDIANT_SEANCES_LIRE", "ETUDIANT_RESSOURCES_LIRE", "ETUDIANT_PRESENCES_LIRE", "ETUDIANT_RELEVE_LIRE",
+            "ETUDIANT_SEANCES_LIRE", "ETUDIANT_RESSOURCES_LIRE", "ETUDIANT_PRESENCES_LIRE", "ETUDIANT_RELEVE_LIRE","ETUDIANT_ANNONCES_LIRE","ETUDIANT_TABLEAU_DE_BORD_LIRE","ETUDIANT_FICHIER_TELECHARGER",
             
             // Professor permissions
             "PROFESSEUR_INFORMATION_PERSONNEL_LIRE", "PROFESSEUR_MODULES_LIRE", "PROFESSEUR_MATIERES_LIRE",
             "PROFESSEUR_SEANCES_LIRE", "PROFESSEUR_RESSOURCES_LIRE", "PROFESSEUR_PRESENCES_LIRE",
-            "PROFESSEUR_NOTES_GERER", "PROFESSEUR_ABSENCES_GERER",
+            "PROFESSEUR_NOTES_GERER", "PROFESSEUR_ABSENCES_GERER","PROFESSEUR_ANNONCES_GERER",
             
             // Admin structure permissions
             "ADMIN_STRUCTURE_GERER",
@@ -130,8 +130,10 @@ public class SecurityDataSeeder {
         // Student role permissions
         Role studentRole = requireRole(RolesCode.ETUDIANT);
         List<String> studentPermissionCodes = Arrays.asList(
+
             "ETUDIANT_INFORMATION_PERSONNEL_LIRE", "ETUDIANT_MODULES_LIRE", "ETUDIANT_MATIERES_LIRE","ETUDIANT_INFORMATION_PERSONNEL_MODIFIER",
-            "ETUDIANT_SEANCES_LIRE", "ETUDIANT_RESSOURCES_LIRE", "ETUDIANT_PRESENCES_LIRE", "ETUDIANT_RELEVE_LIRE"
+            "ETUDIANT_SEANCES_LIRE", "ETUDIANT_RESSOURCES_LIRE", "ETUDIANT_PRESENCES_LIRE", "ETUDIANT_RELEVE_LIRE","ETUDIANT_ANNONCES_LIRE","ETUDIANT_TABLEAU_DE_BORD_LIRE","ETUDIANT_FICHIER_TELECHARGER"
+
         );
         
         for (String code : studentPermissionCodes) {
@@ -157,7 +159,7 @@ public class SecurityDataSeeder {
         List<String> professeurPermissionCodes = Arrays.asList(
             "PROFESSEUR_INFORMATION_PERSONNEL_LIRE", "PROFESSEUR_MODULES_LIRE", "PROFESSEUR_MATIERES_LIRE",
             "PROFESSEUR_SEANCES_LIRE", "PROFESSEUR_RESSOURCES_LIRE", "PROFESSEUR_PRESENCES_LIRE",
-            "PROFESSEUR_NOTES_GERER", "PROFESSEUR_ABSENCES_GERER"
+            "PROFESSEUR_NOTES_GERER", "PROFESSEUR_ABSENCES_GERER","PROFESSEUR_ANNONCES_GERER"
         );
         
         for (String code : professeurPermissionCodes) {
@@ -196,16 +198,10 @@ public class SecurityDataSeeder {
                 .ppr("ADM00001").tel("0600000001").build(),
             Administrateur.builder()
                 .nom("Admin2").prenom("System2").email("admin2@mycampus.ma")
-                .password(passwordEncoder.encode("password123"))
+                    .password(passwordEncoder.encode("password123"))
                 .active(true).cin("AD100002").grade("Grade B")
                 .dateCreation(LocalDateTime.now()).fonction("Directeur Adjoint")
-                .ppr("ADM00002").tel("0600000002").build(),
-            Administrateur.builder()
-                .nom("Admin3").prenom("System3").email("admin3@mycampus.ma")
-                .password(passwordEncoder.encode("password123"))
-                .active(true).cin("AD100003").grade("Grade C")
-                .dateCreation(LocalDateTime.now()).fonction("Administrateur")
-                .ppr("ADM00003").tel("0600000003").build()
+                .ppr("ADM00002").tel("0600000002").build()
         );
         
         for (Administrateur admin : admins) {
