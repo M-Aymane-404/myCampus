@@ -10,12 +10,15 @@ import com.mycampus.backend.dto.professeur.DonneeSortie.fichiersSeance.FichierSe
 import com.mycampus.backend.dto.professeur.DonneeSortie.fichiersSeance.TelechargementFichierSeanceSortieDTO;
 import com.mycampus.backend.dto.professeur.DonneeSortie.seances.SeanceResumeSortieDTO;
 import com.mycampus.backend.dto.professeur.DonneeSortie.seances.SeanceSortieDTO;
+import com.mycampus.backend.entites.AffectationEnseignement;
 import com.mycampus.backend.exceptions.SeancesProfesseurException;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
 public interface GestionSeancesProfesseurMetier {
+
+
 
     SeanceSortieDTO creerSeance(String professeurPpr, CreationSeanceEntrerDTO creationSeanceEntrerDTO)
             throws SeancesProfesseurException;

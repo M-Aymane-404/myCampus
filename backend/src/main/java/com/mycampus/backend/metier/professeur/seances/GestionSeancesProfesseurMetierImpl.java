@@ -62,22 +62,32 @@ public class GestionSeancesProfesseurMetierImpl implements GestionSeancesProfess
         }
     }
 
-    /*
-     This function loads an AffectationEnseignement only if it belongs to the professor (PPR).
-     It is the core ownership check when creating a seance.
-    */
-    private AffectationEnseignement requireAffectationEnseignementPourProfesseur(String professeurPpr, Long affectationId)
-            throws SeancesProfesseurException {
+    private AffectationEnseignement findActiveAffectationByProfAndCodes(
+            String professeurPpr,
+            String codeClasse,
+            String codeMatiere,
+             String anneeUniversitaire
+    ) throws SeancesProfesseurException {
 
         requireProfesseurPpr(professeurPpr);
 
-        if (affectationId == null) {
-            throw new SeancesProfesseurException("L'identifiant de l'affectation d'enseignement est obligatoire.");
+        if (!StringUtils.hasText(codeClasse)) {
+            throw new SeancesProfesseurException("Code classe obligatoire.");
+        }
+        if (!StringUtils.hasText(codeMatiere)) {
+            throw new SeancesProfesseurException("Code matière obligatoire.");
+        }
+        if (!StringUtils.hasText(anneeUniversitaire)) {
+            throw new SeancesProfesseurException("Année universitaire obligatoire.");
         }
 
         return affectationEnseignementRepository
-                .findByIdAndProfesseur_Ppr(affectationId, professeurPpr)
-                .orElseThrow(() -> new SeancesProfesseurException("Affectation introuvable ou non autorisée."));
+                .findByActiveTrueAndProfesseur_PprAndClasse_CodeClasseAndMatiere_CodeMatiereAndAnneeUniversitaire(
+                        professeurPpr, codeClasse, codeMatiere,anneeUniversitaire
+                )
+                .orElseThrow(() -> new SeancesProfesseurException(
+                        "Affectation active introuvable ou non autorisée pour ce professeur (classe/matière)."
+                ));
     }
 
     /*
@@ -115,7 +125,7 @@ public class GestionSeancesProfesseurMetierImpl implements GestionSeancesProfess
     }
 
  //validation heure
-    private void validerCoherenceHoraire(java.time.LocalDateTime heureDebut, java.time.LocalDateTime heureFin)
+    private void validerCoherenceHoraire(LocalDateTime heureDebut, LocalDateTime heureFin)
             throws SeancesProfesseurException {
         if (heureDebut != null && heureFin != null && !heureDebut.isBefore(heureFin)) {
             throw new SeancesProfesseurException("L'heure de début doit être strictement avant l'heure de fin.");
@@ -198,15 +208,15 @@ public class GestionSeancesProfesseurMetierImpl implements GestionSeancesProfess
          The affectation is required and must belong to the professor.
          This is the main ownership check for creating seances.
         */
-        AffectationEnseignement affectation = requireAffectationEnseignementPourProfesseur(
+        AffectationEnseignement affectation = findActiveAffectationByProfAndCodes(
                 professeurPpr,
-                creationSeanceEntrerDTO.getAffectationEnseignementId()
+                creationSeanceEntrerDTO.getCodeClasse(),
+                creationSeanceEntrerDTO.getCodeMatiere(),
+                creationSeanceEntrerDTO.getAnneeUniversitaire()
+
         );
 
-        /*
-         Create the seance entity from DTO fields.
-         We do not expose entities in API, but we save entity in DB then return DTO.
-        */
+
         Seance seance = new Seance();
 
         seance.setType(creationSeanceEntrerDTO.getType());
@@ -340,19 +350,26 @@ public class GestionSeancesProfesseurMetierImpl implements GestionSeancesProfess
          This avoids building complex dynamic JPQL queries.
         */
         return seances.stream()
-                .filter(s -> rechercheSeancesEntrerDTO.getAffectationEnseignementId() == null
+                .filter(s -> rechercheSeancesEntrerDTO.getCodeClasse() == null
                         || (s.getAffectationEnseignement() != null
-                        && rechercheSeancesEntrerDTO.getAffectationEnseignementId().equals(s.getAffectationEnseignement().getId())))
-                .filter(s -> rechercheSeancesEntrerDTO.getType() == null
-                        || rechercheSeancesEntrerDTO.getType().equals(s.getType()))
-                .filter(s -> rechercheSeancesEntrerDTO.getEtat() == null
-                        || rechercheSeancesEntrerDTO.getEtat().equals(s.getEtat()))
-                .filter(s -> rechercheSeancesEntrerDTO.getDateDebut() == null
-                        || (s.getDate() != null && !s.getDate().isBefore(rechercheSeancesEntrerDTO.getDateDebut())))
-                .filter(s -> rechercheSeancesEntrerDTO.getDateFin() == null
-                        || (s.getDate() != null && !s.getDate().isAfter(rechercheSeancesEntrerDTO.getDateFin())))
+                        && s.getAffectationEnseignement().getClasse() != null
+                        && rechercheSeancesEntrerDTO.getCodeClasse().equals(s.getAffectationEnseignement().getClasse().getCodeClasse())))
+                .filter(s -> rechercheSeancesEntrerDTO.getCodeMatiere() == null
+                        || (s.getAffectationEnseignement() != null
+                        && s.getAffectationEnseignement().getMatiere() != null
+                        && rechercheSeancesEntrerDTO.getCodeMatiere().equals(s.getAffectationEnseignement().getMatiere().getCodeMatiere())))
+                .filter(s -> rechercheSeancesEntrerDTO.getAnneeUniversitaire() == null
+                        || (s.getAffectationEnseignement() != null
+                        && rechercheSeancesEntrerDTO.getAnneeUniversitaire().equals(s.getAffectationEnseignement().getAnneeUniversitaire())))
+
+
+                .filter(s -> rechercheSeancesEntrerDTO.getType() == null || rechercheSeancesEntrerDTO.getType().equals(s.getType()))
+                .filter(s -> rechercheSeancesEntrerDTO.getEtat() == null || rechercheSeancesEntrerDTO.getEtat().equals(s.getEtat()))
+                .filter(s -> rechercheSeancesEntrerDTO.getDateDebut() == null || (s.getDate() != null && !s.getDate().isBefore(rechercheSeancesEntrerDTO.getDateDebut())))
+                .filter(s -> rechercheSeancesEntrerDTO.getDateFin() == null || (s.getDate() != null && !s.getDate().isAfter(rechercheSeancesEntrerDTO.getDateFin())))
                 .map(seancesProfesseurMapper::FromSeanceVersSeanceResumeSortieDTO)
                 .collect(Collectors.toList());
+
     }
 
     @Override

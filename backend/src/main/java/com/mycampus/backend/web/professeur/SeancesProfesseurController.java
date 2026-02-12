@@ -9,10 +9,16 @@ import com.mycampus.backend.dto.professeur.DonneeEntrer.seances.RechercheSeances
 import com.mycampus.backend.dto.professeur.DonneeSortie.fichiersSeance.FichierSeanceSortieDTO;
 import com.mycampus.backend.dto.professeur.DonneeSortie.seances.SeanceResumeSortieDTO;
 import com.mycampus.backend.dto.professeur.DonneeSortie.seances.SeanceSortieDTO;
+import com.mycampus.backend.entites.Professeur;
 import com.mycampus.backend.exceptions.SeancesProfesseurException;
 import com.mycampus.backend.metier.professeur.seances.GestionSeancesProfesseurMetier;
+import com.mycampus.backend.repositorys.ProfesseurRepository;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -27,113 +33,125 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-/*
- This controller exposes REST endpoints for professeur seances and files.
- It reads professeurPpr from header to allow easy API testing.
-*/
 @RestController
 @RequestMapping("/api/professeur")
 @RequiredArgsConstructor
 public class SeancesProfesseurController {
 
     private final GestionSeancesProfesseurMetier gestionSeancesProfesseurMetier;
+    private final ProfesseurRepository professeurRepository;
 
+    private String requireProfesseurPpr(Jwt jwt) throws SeancesProfesseurException {
+        if (jwt == null || jwt.getSubject() == null || jwt.getSubject().isBlank()) {
+            throw new SeancesProfesseurException("JWT invalide: email introuvable.");
+        }
+        String email = jwt.getSubject();
 
-    @PostMapping("/seances")
-    public SeanceSortieDTO creerSeance(
-            @RequestHeader("ProfesseurPpr") String professeurPpr,
-            @RequestBody CreationSeanceEntrerDTO creationSeanceEntrerDTO
-    ) throws SeancesProfesseurException {
-        return gestionSeancesProfesseurMetier.creerSeance(professeurPpr, creationSeanceEntrerDTO);
+        Professeur prof = professeurRepository.findByEmail(email)
+                .orElseThrow(() -> new SeancesProfesseurException("Professeur introuvable pour cet email."));
+
+        if (prof.getPpr() == null || prof.getPpr().isBlank()) {
+            throw new SeancesProfesseurException("PPR introuvable pour ce professeur.");
+        }
+        return prof.getPpr();
     }
 
+    @PostMapping("/seances")
+    @PreAuthorize("hasAuthority('PROFESSEUR_SEANCES_GERER')") // ou une permission plus “write” si tu la crées
+    public SeanceSortieDTO creerSeance(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestBody CreationSeanceEntrerDTO creationSeanceEntrerDTO
+    ) throws SeancesProfesseurException {
+        String ppr = requireProfesseurPpr(jwt);
+        return gestionSeancesProfesseurMetier.creerSeance(ppr, creationSeanceEntrerDTO);
+    }
 
     @PutMapping("/seances/{seanceId}")
+    @PreAuthorize("hasAuthority('PROFESSEUR_SEANCES_GERER')")
     public SeanceSortieDTO modifierSeance(
-            @RequestHeader("ProfesseurPpr") String professeurPpr,
+            @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long seanceId,
             @RequestBody ModificationSeanceEntrerDTO modificationSeanceEntrerDTO
     ) throws SeancesProfesseurException {
-        return gestionSeancesProfesseurMetier.modifierSeance(professeurPpr, seanceId, modificationSeanceEntrerDTO);
+        String ppr = requireProfesseurPpr(jwt);
+        return gestionSeancesProfesseurMetier.modifierSeance(ppr, seanceId, modificationSeanceEntrerDTO);
     }
-
 
     @DeleteMapping("/seances/{seanceId}")
+    @PreAuthorize("hasAuthority('PROFESSEUR_SEANCES_GERER')")
     public void supprimerSeance(
-            @RequestHeader("ProfesseurPpr") String professeurPpr,
+            @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long seanceId
     ) throws SeancesProfesseurException {
-        gestionSeancesProfesseurMetier.supprimerSeance(professeurPpr, seanceId);
+        String ppr = requireProfesseurPpr(jwt);
+        gestionSeancesProfesseurMetier.supprimerSeance(ppr, seanceId);
     }
-
 
     @GetMapping("/seances/{seanceId}")
+    @PreAuthorize("hasAuthority('PROFESSEUR_SEANCES_GERER')")
     public SeanceSortieDTO trouverSeanceParId(
-            @RequestHeader("ProfesseurPpr") String professeurPpr,
+            @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long seanceId
     ) throws SeancesProfesseurException {
-        return gestionSeancesProfesseurMetier.trouverSeanceParId(professeurPpr, seanceId);
+        String ppr = requireProfesseurPpr(jwt);
+        return gestionSeancesProfesseurMetier.trouverSeanceParId(ppr, seanceId);
     }
 
-    /*
-     This endpoint searches seances by filters (date range, type, etat, affectation).
-    */
     @PostMapping("/seances/recherche")
+    @PreAuthorize("hasAuthority('PROFESSEUR_SEANCES_GERER')")
     public List<SeanceResumeSortieDTO> rechercherSeances(
-            @RequestHeader("ProfesseurPpr") String professeurPpr,
+            @AuthenticationPrincipal Jwt jwt,
             @RequestBody RechercheSeancesEntrerDTO rechercheSeancesEntrerDTO
     ) throws SeancesProfesseurException {
-        return gestionSeancesProfesseurMetier.rechercherSeances(professeurPpr, rechercheSeancesEntrerDTO);
+        String ppr = requireProfesseurPpr(jwt);
+        return gestionSeancesProfesseurMetier.rechercherSeances(ppr, rechercheSeancesEntrerDTO);
     }
 
-    /*
-     This endpoint uploads one file to a seance (multipart).
-     The seanceId is taken from URL, and passed into Depot DTO.
-    */
     @PostMapping(value = "/seances/{seanceId}/fichiers", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAuthority('PROFESSEUR_SEANCES_GERER')")
     public FichierSeanceSortieDTO deposerFichierPourSeance(
-            @RequestHeader("ProfesseurPpr") String professeurPpr,
+            @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long seanceId,
             @RequestPart("fichier") MultipartFile fichier
     ) throws SeancesProfesseurException {
+        String ppr = requireProfesseurPpr(jwt);
 
         DepotFichierSeanceEntrerDTO depot = new DepotFichierSeanceEntrerDTO();
         depot.setSeanceId(seanceId);
 
-        return gestionSeancesProfesseurMetier.deposerFichierPourSeance(professeurPpr, depot, fichier);
+        return gestionSeancesProfesseurMetier.deposerFichierPourSeance(ppr, depot, fichier);
     }
 
-    /*
-     This endpoint lists all files of a seance for the professor (PPR).
-    */
     @GetMapping("/seances/{seanceId}/fichiers")
+    @PreAuthorize("hasAuthority('PROFESSEUR_SEANCES_GERER')")
     public List<FichierSeanceSortieDTO> listerFichiersDeSeance(
-            @RequestHeader("ProfesseurPpr") String professeurPpr,
+            @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long seanceId
     ) throws SeancesProfesseurException {
-        return gestionSeancesProfesseurMetier.listerFichiersDeSeance(professeurPpr, seanceId);
+        String ppr = requireProfesseurPpr(jwt);
+        return gestionSeancesProfesseurMetier.listerFichiersDeSeance(ppr, seanceId);
     }
 
-    /*
-     This endpoint deletes one file from a seance (optional feature).
-    */
     @DeleteMapping("/fichiers-seance/{fichierId}")
+    @PreAuthorize("hasAuthority('PROFESSEUR_SEANCES_GERER')")
     public void supprimerFichierDeSeance(
-            @RequestHeader("ProfesseurPpr") String professeurPpr,
+            @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long fichierId
     ) throws SeancesProfesseurException {
-        gestionSeancesProfesseurMetier.supprimerFichierDeSeance(professeurPpr, fichierId);
+        String ppr = requireProfesseurPpr(jwt);
+        gestionSeancesProfesseurMetier.supprimerFichierDeSeance(ppr, fichierId);
     }
 
-    // telechargement fichier
     @GetMapping("/fichiers-seance/{fichierId}/telecharger")
+    @PreAuthorize("hasAuthority('PROFESSEUR_SEANCES_GERER')")
     public ResponseEntity<Resource> telechargerFichierSeance(
-            @RequestHeader("ProfesseurPpr") String professeurPpr,
+            @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long fichierId
     ) throws SeancesProfesseurException {
 
+        String ppr = requireProfesseurPpr(jwt);
         TelechargementFichierSeanceSortieDTO telechargement =
-                gestionSeancesProfesseurMetier.preparerTelechargementFichierSeance(professeurPpr, fichierId);
+                gestionSeancesProfesseurMetier.preparerTelechargementFichierSeance(ppr, fichierId);
 
         try {
             Path chemin = Paths.get(telechargement.getChemin()).toAbsolutePath().normalize();
@@ -155,6 +173,9 @@ public class SeancesProfesseurController {
         } catch (MalformedURLException e) {
             throw new SeancesProfesseurException("Chemin du fichier invalide.");
         }
+      }
+
+
     }
 
 
@@ -164,5 +185,5 @@ public class SeancesProfesseurController {
 
 
 
-}
+
 

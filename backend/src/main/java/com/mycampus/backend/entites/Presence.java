@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+
 @Builder
 @ToString(exclude = {"seance", "etudiant"})
 @EqualsAndHashCode(exclude = {"seance", "etudiant"})
@@ -25,7 +26,7 @@ public class Presence {
     private StatusAbsence status;
     
     @Column(nullable = false)
-    private Boolean justifiee = false;
+    private boolean justifiee = false;
     
     private String motif;
     

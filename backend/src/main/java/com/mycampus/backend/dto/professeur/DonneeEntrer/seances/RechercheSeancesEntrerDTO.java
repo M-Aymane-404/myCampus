@@ -17,7 +17,14 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class RechercheSeancesEntrerDTO {
 
-    private Long affectationEnseignementId;
+
+    private String codeClasse;
+
+
+    private String codeMatiere;
+    //++
+    private String anneeUniversitaire;
+
 
     private LocalDate dateDebut;
 
@@ -26,4 +33,5 @@ public class RechercheSeancesEntrerDTO {
     private EtatSeance etat;
 
     private TypeSeance type;
+
 }

@@ -29,4 +29,7 @@ join a.seances s
 where s.id=:seanceId
 """)
     Professeur findBySeance_SeanceId(@Param("seanceId") Long seanceId);
+
+    Optional<Professeur> findByEmail(String email);
+
 }

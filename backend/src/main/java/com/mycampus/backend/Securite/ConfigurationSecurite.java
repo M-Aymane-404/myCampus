@@ -1,4 +1,4 @@
-    package com.mycampus.backend.Securite;
+   package com.mycampus.backend.Securite;
 
 
     import com.mycampus.backend.metier.security.UserDetailsServiceImpl;
@@ -70,13 +70,13 @@
 
 
                     .csrf(csrf -> csrf.disable())
-                     .cors(Customizer.withDefaults()).httpBasic(Customizer.withDefaults())
-                    .httpBasic(Customizer.withDefaults())
+                    .cors(Customizer.withDefaults())
+                    .httpBasic(httpBasic -> httpBasic.disable())
                     .authorizeHttpRequests(auth -> auth
                              .requestMatchers("/auth/connecter", "/auth/rafraichir-jeton", "/auth/deconnexion").permitAll()
                             .requestMatchers("/files/**").permitAll()
 
-                             .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").authenticated()
+                             .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
 
                              .anyRequest().authenticated()
                     )
