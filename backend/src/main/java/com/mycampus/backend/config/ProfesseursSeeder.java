@@ -121,8 +121,7 @@ public class ProfesseursSeeder {
 
     }
 
-    // ✅ Méthodes requireXxx() défensives pour les FK obligatoires
-    private Departement requireDepartement(String codeDepartement) {
+     private Departement requireDepartement(String codeDepartement) {
         return departementRepository.findByCodeDepartement(codeDepartement)
                 .orElseThrow(() -> new RuntimeException("Departement " + codeDepartement + " not found during professor seeding"));
     }

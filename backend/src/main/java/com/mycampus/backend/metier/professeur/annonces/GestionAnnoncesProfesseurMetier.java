@@ -13,7 +13,9 @@ public interface GestionAnnoncesProfesseurMetier {
     List<AnnonceSortieDTO> listerAnnoncesDeSesClasses(String emailProfesseur) throws UtilisateursException;
     
     List<AnnonceSortieDTO> listerMesAnnonces(String emailProfesseur) throws UtilisateursException;
-    
+
+    List<AnnonceSortieDTO> listerLesAnnoncesDeMonDepEtGlobal(String emailProfesseur) throws  UtilisateursException;
+
     void supprimerMonAnnonce(Long annonceId, String emailProfesseur) throws UtilisateursException;
     
     AnnonceSortieDTO publierMonAnnonce(Long annonceId, String emailProfesseur) throws UtilisateursException;

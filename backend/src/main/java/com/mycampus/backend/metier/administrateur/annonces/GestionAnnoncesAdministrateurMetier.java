@@ -8,7 +8,8 @@ import java.util.List;
 public interface GestionAnnoncesAdministrateurMetier {
     
     AnnonceSortieDTO creerAnnonce(AnnonceEntrerDTO annonceDTO, String emailAuteur);
-    
+
+
     List<AnnonceSortieDTO> listerToutesAnnonces();
     
     List<AnnonceSortieDTO> listerAnnoncesParClasse(String codeClasse);

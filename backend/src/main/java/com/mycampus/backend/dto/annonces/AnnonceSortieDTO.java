@@ -1,5 +1,6 @@
 package com.mycampus.backend.dto.annonces;
 
+import com.mycampus.backend.entites.Departement;
 import com.mycampus.backend.enumerations.AnnonceCibleType;
 import lombok.*;
 
@@ -20,6 +21,7 @@ public class AnnonceSortieDTO {
     private AnnonceCibleType cibleType;
     private AuteurDTO auteur;
     private ClasseDTO classe;
+    private DepartementDTO departement;
     
 
 }

@@ -1,7 +1,10 @@
 package com.mycampus.backend.enumerations;
 
 public enum AnnonceCibleType {
-    GLOBAL,
-    CLASSE
+
+    ETUDIANTS_CLASSE,
+    ETUDIANTS_GLOBAL,
+    PROFESSEURS_DEPARTEMENT,
+    PROFESSEURS_GLOBAL
 
 }

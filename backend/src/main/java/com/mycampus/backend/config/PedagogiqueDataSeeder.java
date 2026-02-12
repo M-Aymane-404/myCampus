@@ -34,6 +34,7 @@ public class PedagogiqueDataSeeder {
     private final FiliereRepository filiereRepository;
     private final ClasseRepository classeRepository;
     private final AnnonceRepository annonceRepository;
+    private final DepartementRepository departementRepository;
 
 
 
@@ -581,11 +582,12 @@ public class PedagogiqueDataSeeder {
        Professeur prof = requireProfesseur("prof.info1@mycampus.ma");
        Classe ilcs = requireClasse("ILCS1-A");
        Administrateur admin = requireAdministrateur("admin1@mycampus.ma");
+        Departement infoDept = requireDepartement("INFO");
        LocalDateTime today = LocalDateTime.now();
        annonceRepository.save( Annonce.builder()
                 .titre("examen est annullé")
                 .contenu("examen est annullé examen est annullé examen est annullé examen est annullé")
-                .cibleType(AnnonceCibleType.CLASSE)
+                .cibleType(AnnonceCibleType.ETUDIANTS_CLASSE)
                 .auteur(prof)
                        .datePublication(today)
                 .classe(ilcs)
@@ -595,9 +597,28 @@ public class PedagogiqueDataSeeder {
         annonceRepository.save( Annonce.builder()
                 .titre("la rentrer scolaire")
                 .contenu("la rentrer scolaire le 20/9/2026")
-                .cibleType(AnnonceCibleType.GLOBAL)
+                .cibleType(AnnonceCibleType.ETUDIANTS_GLOBAL)
                 .auteur(admin)
                         .datePublication( today.minusDays(2))
+                .publiee(true)
+                .build());
+
+        annonceRepository.save( Annonce.builder()
+                .titre("les prod de info ")
+                .contenu("il faut  que les exam doit terminer avant la semaine dernière de mois 4")
+                .cibleType(AnnonceCibleType.PROFESSEURS_DEPARTEMENT)
+                .auteur(prof)
+                .datePublication(today)
+                .departement(infoDept)
+                .publiee(true)
+                .build());
+
+        annonceRepository.save( Annonce.builder()
+                .titre("les notes ")
+                .contenu("les notees doit etre entrer au site avant le 24/2/2026")
+                .cibleType(AnnonceCibleType.PROFESSEURS_GLOBAL)
+                .auteur(admin)
+                .datePublication( today.minusDays(2))
                 .publiee(true)
                 .build());
     }
@@ -631,5 +652,9 @@ public class PedagogiqueDataSeeder {
     private Matiere requireMatiere(String codeMatiere) {
         return matiereRepository.findByCodeMatiere(codeMatiere)
                 .orElseThrow(() -> new RuntimeException("Matiere " + codeMatiere + " not found during pedagogical seeding"));
+    }
+    private Departement requireDepartement(String codeDepartement) {
+        return departementRepository.findByCodeDepartement(codeDepartement)
+                .orElseThrow(() -> new RuntimeException("Departement " + codeDepartement + " not found during professor seeding"));
     }
 }

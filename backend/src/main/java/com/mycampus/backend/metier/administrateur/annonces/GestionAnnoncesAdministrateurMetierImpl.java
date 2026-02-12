@@ -4,12 +4,14 @@ import com.mycampus.backend.dto.annonces.AnnonceEntrerDTO;
 import com.mycampus.backend.dto.annonces.AnnonceSortieDTO;
 import com.mycampus.backend.entites.Annonce;
 import com.mycampus.backend.entites.Classe;
+import com.mycampus.backend.entites.Departement;
 import com.mycampus.backend.entites.Utilisateur;
 import com.mycampus.backend.enumerations.AnnonceCibleType;
 import com.mycampus.backend.exceptions.UtilisateursException;
 import com.mycampus.backend.mappers.annonce.AnnonceMapper;
 import com.mycampus.backend.repositorys.AnnonceRepository;
 import com.mycampus.backend.repositorys.ClasseRepository;
+import com.mycampus.backend.repositorys.DepartementRepository;
 import com.mycampus.backend.repositorys.UtilisateurRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +31,7 @@ public class GestionAnnoncesAdministrateurMetierImpl implements GestionAnnoncesA
     private final UtilisateurRepository utilisateurRepository;
     private final ClasseRepository classeRepository;
     private final AnnonceMapper  annonceMapper;
+    private final DepartementRepository departementRepository;
 
     @Override
     @Transactional
@@ -40,13 +42,24 @@ public class GestionAnnoncesAdministrateurMetierImpl implements GestionAnnoncesA
                 .orElseThrow(() -> new UtilisateursException("Auteur non trouvé"));
         
         Classe classe = null;
-        if (annonceDTO.getCibleType() == AnnonceCibleType.CLASSE) {
+        Departement departement = null;
+
+        if (annonceDTO.getCibleType() == AnnonceCibleType.ETUDIANTS_CLASSE) {
             if (annonceDTO.getCodeClasse() == null) {
                 throw new UtilisateursException("Code classe obligatoire pour une annonce de type CLASSE");
             }
             classe = classeRepository.findByCodeClasse(annonceDTO.getCodeClasse())
                     .orElseThrow(() -> new UtilisateursException("Classe non trouvée: " + annonceDTO.getCodeClasse()));
         }
+
+        if (annonceDTO.getCibleType() == AnnonceCibleType.PROFESSEURS_DEPARTEMENT) {
+            if (annonceDTO.getCodeDepartement() == null) {
+                throw new UtilisateursException("Code Département obligatoire pour une annonce de type PROFESSEURS_DEPARTEMENT");
+            }
+            departement = departementRepository.findByCodeDepartement(annonceDTO.getCodeDepartement())
+                    .orElseThrow(() -> new UtilisateursException("Département non trouvée: " + annonceDTO.getCodeDepartement()));
+        }
+
         
         Annonce annonce = Annonce.builder()
                 .titre(annonceDTO.getTitre())
@@ -56,6 +69,7 @@ public class GestionAnnoncesAdministrateurMetierImpl implements GestionAnnoncesA
                 .cibleType(annonceDTO.getCibleType())
                 .auteur(auteur)
                 .classe(classe)
+                .departement(departement)
                 .build();
         
         Annonce savedAnnonce = annonceRepository.save(annonce);
@@ -63,6 +77,10 @@ public class GestionAnnoncesAdministrateurMetierImpl implements GestionAnnoncesA
         
         return annonceMapper.changerVersSortieDTO(savedAnnonce);
     }
+
+
+
+
 
     @Override
     @Transactional(readOnly=true)

@@ -20,8 +20,10 @@ public class Annonce {
     @Column(nullable = false)
 
     private String titre;
+
     @Column(nullable = false)
     private String contenu;
+
     @Column(nullable = false)
     private LocalDateTime datePublication;
      private boolean publiee;
@@ -38,6 +40,11 @@ public class Annonce {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "classe_id")
     private Classe classe;
+
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "departement_id")
+    private Departement departement;
 
 
 }

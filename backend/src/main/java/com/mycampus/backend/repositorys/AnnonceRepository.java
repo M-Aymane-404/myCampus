@@ -60,8 +60,8 @@ WHERE a.cibleType =:cibleType     or (c is not null and c.id = :classeId)
 SELECT a FROM Annonce a
 left join fetch a.auteur
 left join fetch a.classe
-WHERE a.cibleType = 'GLOBAL' OR a.classe IN :classes""")
-    List<Annonce> findGlobalAndClassAnnonces(@Param("classes") List<Classe> classes);
+WHERE a.cibleType = 'ETUDIANTS_CLASSE' OR a.classe IN :classes""")
+    List<Annonce> findGlobalAndClassAnnoncesDeProf(@Param("classes") List<Classe> classes);
 
     @Query("""
 select a from Annonce a
@@ -70,4 +70,12 @@ left join fetch a.classe
 where a.id =:id
 """)
     Optional<Annonce> findByAnnonce_Id(@Param("id") Long id);
+
+    @Query("""
+select a from Annonce a
+left join fetch a.auteur
+left join fetch a.departement
+where (a.departement.codeDepartement =:Codedepartement and a.cibleType= 'PROFESSEURS_DEPARTEMENT') or a.cibleType= 'PROFESSEURS_GLOBAL' 
+""")
+    List<Annonce> findAnnoncesDuProfGlobalEtDepartement(@Param("Codedepartement") String Codedepartement);
 }

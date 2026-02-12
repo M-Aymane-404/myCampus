@@ -39,14 +39,14 @@ public class GestionAnnoncesEtudiantMetierImpl implements GestionAnnoncesEtudian
         
         if (etudiant.getClasse() == null) {
             log.info("L'étudiant n'a pas de classe, retour des annonces globales uniquement");
-            return annonceRepository.findByCibleType(AnnonceCibleType.GLOBAL).stream()
+            return annonceRepository.findByCibleType(AnnonceCibleType.ETUDIANTS_GLOBAL).stream()
                     .filter(Annonce::isPubliee)
                     .map(annonceEtudiantMapper::changerVersSortieEtudiantDTO)
                     .collect(Collectors.toList());
         }
         
         List<Annonce> annoncesVisibles = annonceRepository.findByCibleTypeOrClasseId(
-                AnnonceCibleType.GLOBAL, etudiant.getClasse().getId());
+                AnnonceCibleType.ETUDIANTS_GLOBAL, etudiant.getClasse().getId());
         
         return annoncesVisibles.stream()
                 .filter(Annonce::isPubliee)
@@ -69,11 +69,11 @@ public class GestionAnnoncesEtudiantMetierImpl implements GestionAnnoncesEtudian
             throw new UtilisateursException("Annonce non publiée");
         }
         
-        if (annonce.getCibleType() == AnnonceCibleType.GLOBAL) {
+        if (annonce.getCibleType() == AnnonceCibleType.ETUDIANTS_GLOBAL) {
             return annonceEtudiantMapper.changerVersSortieEtudiantDTO(annonce);
         }
         
-        if (annonce.getCibleType() == AnnonceCibleType.CLASSE) {
+        if (annonce.getCibleType() == AnnonceCibleType.ETUDIANTS_CLASSE) {
             if (etudiant.getClasse() == null) {
                 throw new UtilisateursException("Annonce de classe non accessible");
             }

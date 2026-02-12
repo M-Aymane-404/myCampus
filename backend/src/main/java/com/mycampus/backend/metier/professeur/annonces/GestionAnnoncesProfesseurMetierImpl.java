@@ -5,7 +5,6 @@ import com.mycampus.backend.dto.annonces.AnnonceSortieDTO;
 import com.mycampus.backend.entites.Annonce;
 import com.mycampus.backend.entites.Classe;
 import com.mycampus.backend.entites.Professeur;
-import com.mycampus.backend.entites.Utilisateur;
 import com.mycampus.backend.enumerations.AnnonceCibleType;
 import com.mycampus.backend.exceptions.UtilisateursException;
 import com.mycampus.backend.mappers.annonce.AnnonceMapper;
@@ -43,11 +42,11 @@ public class GestionAnnoncesProfesseurMetierImpl implements GestionAnnoncesProfe
                 .orElseThrow(() -> new UtilisateursException("Auteur non trouvé"));
 
 
-        if (annonceDTO.getCibleType() == AnnonceCibleType.GLOBAL) {
+        if (annonceDTO.getCibleType() == AnnonceCibleType.ETUDIANTS_GLOBAL) {
             throw new UtilisateursException("Un professeur ne peut pas créer d'annonce globale");
         }
         
-        if (annonceDTO.getCibleType() == AnnonceCibleType.CLASSE) {
+        if (annonceDTO.getCibleType() == AnnonceCibleType.ETUDIANTS_CLASSE) {
             if (annonceDTO.getCodeClasse() == null) {
                 throw new UtilisateursException("Code classe obligatoire pour une annonce de type CLASSE");
             }
@@ -90,11 +89,11 @@ public class GestionAnnoncesProfesseurMetierImpl implements GestionAnnoncesProfe
         List<Classe> classesProfesseur = classeRepository.findClassesByProfesseur(professeur);
         if (classesProfesseur.isEmpty()) {
             // retourner uniquement les globales
-            return annonceRepository.findByCibleType(AnnonceCibleType.GLOBAL).stream()
+            return annonceRepository.findByCibleType(AnnonceCibleType.ETUDIANTS_GLOBAL).stream()
                     .map(annonceMapper::changerVersSortieDTO)
                     .collect(Collectors.toList());
         }
-        List<Annonce> annonces = annonceRepository.findGlobalAndClassAnnonces(classesProfesseur);
+        List<Annonce> annonces = annonceRepository.findGlobalAndClassAnnoncesDeProf(classesProfesseur);
         
         return annonces.stream()
                 .map(annonceMapper::changerVersSortieDTO)
@@ -112,6 +111,20 @@ public class GestionAnnoncesProfesseurMetierImpl implements GestionAnnoncesProfe
         return annonceRepository.findByAuteur_Id(professeur.getId()).stream()
                 .map(annonceMapper::changerVersSortieDTO)
                 .collect(Collectors.toList());
+    }
+
+
+    @Override
+    @Transactional(readOnly=true)
+    public List<AnnonceSortieDTO> listerLesAnnoncesDeMonDepEtGlobal(String emailProfesseur) throws  UtilisateursException {
+        log.info("Listage des annonces du professeur: {}", emailProfesseur);
+
+        Professeur professeur =  professeurRepository.findByEmail(emailProfesseur)
+                .orElseThrow(() -> new UtilisateursException("Professeur non trouvé"));
+
+        return annonceRepository.findAnnoncesDuProfGlobalEtDepartement(professeur.getDepartementOuTravail().getCodeDepartement()).stream()
+                .map(annonceMapper::changerVersSortieDTO)
+                .toList();
     }
 
     @Override

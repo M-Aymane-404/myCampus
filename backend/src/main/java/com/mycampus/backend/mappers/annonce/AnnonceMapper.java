@@ -3,6 +3,7 @@ package com.mycampus.backend.mappers.annonce;
 import com.mycampus.backend.dto.annonces.AnnonceSortieDTO;
 import com.mycampus.backend.dto.annonces.AuteurDTO;
 import com.mycampus.backend.dto.annonces.ClasseDTO;
+import com.mycampus.backend.dto.annonces.DepartementDTO;
 import com.mycampus.backend.entites.Annonce;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -27,17 +28,29 @@ public class AnnonceMapper {
                     annonce.getClasse().getNiveau()
             );
         }
+        DepartementDTO departementDTO = null;
+        if (annonce.getDepartement() != null) {
+            departementDTO =    DepartementDTO.builder()
+                    .codeDepartement(annonce.getDepartement().getCodeDepartement())
+                    .typeDepartement(annonce.getDepartement().getTypeDepartement())
 
-        return new AnnonceSortieDTO(
-                annonce.getId(),
-                annonce.getTitre(),
-                annonce.getContenu(),
-                annonce.getDatePublication(),
-                 annonce.isPubliee(),
-                annonce.getCibleType(),
-                auteurDTO,
-                classeDTO
-        );
+                    .build();
+        }
+
+
+        return AnnonceSortieDTO.builder()
+                .id(annonce.getId())
+                .titre(annonce.getTitre())
+                .contenu(annonce.getContenu())
+                .datePublication(annonce.getDatePublication())
+                .publiee(annonce.isPubliee())
+                .cibleType(annonce.getCibleType())
+                .auteur(auteurDTO)
+                .classe(classeDTO)
+                .departement(departementDTO)
+                .build();
+
+
     }
 
 

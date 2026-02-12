@@ -79,6 +79,21 @@ public class ProfesseurAnnonceController {
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping("/mes-prof-annonces")
+    @Operation(summary = "Lister mes Department annonces et global professeur annonces", description = "Récupère la liste des annonces créées par le admin pour profs.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Annonces du professeur récupérées avec succès"),
+            @ApiResponse(responseCode = "403", description = "Accès non autorisé")
+    })
+    public ResponseEntity<List<AnnonceSortieDTO>> listerMesDepEtGlobalAnnonces(
+            Authentication authentication) {
+
+        String emailProfesseur = authentication.getName();
+        log.info("Listage des annonces créées par le professeur: {}", emailProfesseur);
+        List<AnnonceSortieDTO> result = gestionAnnoncesProfesseurMetier.listerLesAnnoncesDeMonDepEtGlobal(emailProfesseur);
+        return ResponseEntity.ok(result);
+    }
+
     @DeleteMapping("/{annonceId}")
     @Operation(summary = "Supprimer mon annonce", description = "Supprime une annonce créée par le professeur.")
     @ApiResponses(value = {

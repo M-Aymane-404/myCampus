@@ -28,6 +28,8 @@ public class AnnonceEntrerDTO {
     private AnnonceCibleType cibleType;
     
     private String codeClasse;
+
+    private String codeDepartement;
     
 
 
