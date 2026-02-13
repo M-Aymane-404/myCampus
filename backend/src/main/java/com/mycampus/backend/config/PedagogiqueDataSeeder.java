@@ -218,6 +218,7 @@ public class PedagogiqueDataSeeder {
                         .professeur(profInfo1)
                         .classe(ilcs1A)
                         .matiere(reseauxS1)
+                        .anneeUniversitaire("2025-2026")
                         .active(true)
                         .build(),
 
@@ -225,6 +226,7 @@ public class PedagogiqueDataSeeder {
                         .professeur(profInfo1)
                         .classe(ilcs1A)
                         .matiere(pooS1)
+                        .anneeUniversitaire("2025-2026")
                         .active(true)
                         .build(),
 
@@ -233,6 +235,7 @@ public class PedagogiqueDataSeeder {
                         .professeur(profInfo1)
                         .classe(ilcs1A)
                         .matiere(anglaisS1)
+                        .anneeUniversitaire("2025-2026")
                         .active(true)
                         .build(),
 
@@ -241,12 +244,14 @@ public class PedagogiqueDataSeeder {
                         .professeur(profInfo2)
                         .classe(ilcs1A)
                         .matiere(systemeS1)
+                        .anneeUniversitaire("2025-2026")
                         .active(true)
                         .build(),
                 AffectationEnseignement.builder()
                         .professeur(profInfo2)
                         .classe(ilcs1A)
                         .matiere(bddS1)
+                        .anneeUniversitaire("2025-2026")
                         .active(true)
                         .build(),
 
@@ -254,6 +259,7 @@ public class PedagogiqueDataSeeder {
                         .professeur(profInfo2)
                         .classe(ilcs1A)
                         .matiere(francaisS1)
+                        .anneeUniversitaire("2025-2026")
                         .active(true)
                         .build()
 

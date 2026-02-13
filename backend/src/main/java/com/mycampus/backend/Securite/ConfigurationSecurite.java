@@ -76,7 +76,7 @@
                              .requestMatchers("/auth/connecter", "/auth/rafraichir-jeton", "/auth/deconnexion").permitAll()
                             .requestMatchers("/files/**").permitAll()
 
-                             .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+                             .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").authenticated()
 
                              .anyRequest().authenticated()
                     )
