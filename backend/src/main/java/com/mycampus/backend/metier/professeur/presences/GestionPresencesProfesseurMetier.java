@@ -14,7 +14,7 @@ public interface GestionPresencesProfesseurMetier {
     List<PresenceSortieDTO> saisirPresences(String professeurPpr, Long seanceId, TableauPresencesEntrerDTO dto)
             throws SeancesProfesseurException;
 
-    String TrouverProfesseurpprParemail(String email)throws UtilisateursException;
+    String TrouverProfesseurPprParemail(String email)throws UtilisateursException;
 }
 
 
