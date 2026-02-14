@@ -35,33 +35,32 @@
 
     import javax.crypto.spec.SecretKeySpec;
 
+   @Configuration
+   @EnableWebSecurity
+   @EnableMethodSecurity
+   @RequiredArgsConstructor
+   public class ConfigurationSecurite {
 
-    @Configuration
-    @EnableWebSecurity
-    @EnableMethodSecurity
-    @RequiredArgsConstructor
-    public class ConfigurationSecurite {
-
-         private final  UserDetailsServiceImpl userDetailsServiceImpl;
-
-
-        @Value("${jwt.secretKey}")
-        private String secretKey;
+       private final  UserDetailsServiceImpl userDetailsServiceImpl;
 
 
-
-        @Bean
-        public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-            JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
-            grantedAuthoritiesConverter.setAuthoritiesClaimName("scope");
-            grantedAuthoritiesConverter.setAuthorityPrefix("");
-
-            JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
-            jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);
+       @Value("${jwt.secretKey}")
+       private String secretKey;
 
 
-            return http
-                    .headers(header -> header.frameOptions(frame -> frame.disable()))
+
+       @Bean
+       public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+           JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
+           grantedAuthoritiesConverter.setAuthoritiesClaimName("scope");
+           grantedAuthoritiesConverter.setAuthorityPrefix("");
+
+           JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
+           jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);
+
+
+           return http
+                   .headers(header -> header.frameOptions(frame -> frame.disable()))
 //                    .exceptionHandling(ex -> ex
 //                            .authenticationEntryPoint(new JsonAuthenticationEntryPoint())
 //                            .accessDeniedHandler(new JsonAccessDeniedHandler())
@@ -69,55 +68,56 @@
 
 
 
-                    .csrf(csrf -> csrf.disable())
-                    .cors(Customizer.withDefaults())
-                    .httpBasic(httpBasic -> httpBasic.disable())
-                    .authorizeHttpRequests(auth -> auth
-                             .requestMatchers("/auth/connecter", "/auth/rafraichir-jeton", "/auth/deconnexion").permitAll()
-                            .requestMatchers("/files/**").permitAll()
+                   .csrf(csrf -> csrf.disable())
+                   .cors(Customizer.withDefaults()).httpBasic(Customizer.withDefaults())
+                   .httpBasic(Customizer.withDefaults())
+                   .authorizeHttpRequests(auth -> auth
+                           .requestMatchers("/auth/connecter", "/auth/rafraichir-jeton", "/auth/deconnexion").permitAll()
+                           .requestMatchers("/files/**").permitAll()
 
-                             .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+                           .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").authenticated()
 
-                             .anyRequest().authenticated()
-                    )
-                    .oauth2ResourceServer(oa -> oa.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)))
-                    .userDetailsService(userDetailsServiceImpl)
-                    .build();
-        }
-        @Bean
-        public JwtEncoder jwtEncoder() {
+                           .anyRequest().authenticated()
+                   )
+                   .oauth2ResourceServer(oa -> oa.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)))
+                   .userDetailsService(userDetailsServiceImpl)
+                   .build();
+       }
+       @Bean
+       public JwtEncoder jwtEncoder() {
 
-            return new NimbusJwtEncoder(new ImmutableSecret<>(secretKey.getBytes()));
-        }
+           return new NimbusJwtEncoder(new ImmutableSecret<>(secretKey.getBytes()));
+       }
 
-        @Bean
-        public JwtDecoder jwtDecoder() {
+       @Bean
+       public JwtDecoder jwtDecoder() {
 
-            SecretKeySpec secretKeySpec = new SecretKeySpec(secretKey.getBytes(), "HmacSHA512");
-            return NimbusJwtDecoder.withSecretKey(secretKeySpec).macAlgorithm(MacAlgorithm.HS512).build();
-        }
+           SecretKeySpec secretKeySpec = new SecretKeySpec(secretKey.getBytes(), "HmacSHA512");
+           return NimbusJwtDecoder.withSecretKey(secretKeySpec).macAlgorithm(MacAlgorithm.HS512).build();
+       }
 
-        @Bean
-        public AuthenticationManager authenticationManager(PasswordEncoder passwordEncoder, UserDetailsServiceImpl userDetailsServiceImpl) {
-            DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider(userDetailsServiceImpl);
-            daoAuthenticationProvider.setPasswordEncoder(passwordEncoder);
-            return new ProviderManager(daoAuthenticationProvider);
+       @Bean
+       public AuthenticationManager authenticationManager(PasswordEncoder passwordEncoder, UserDetailsServiceImpl userDetailsServiceImpl) {
+           DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider(userDetailsServiceImpl);
+           daoAuthenticationProvider.setPasswordEncoder(passwordEncoder);
+           return new ProviderManager(daoAuthenticationProvider);
 
-        }
+       }
 
-        @Bean
-        public CorsConfigurationSource corsConfigurationSource() {
-            CorsConfiguration config = new CorsConfiguration();
-            config.setAllowCredentials(true);
-            config.addAllowedOrigin("http://localhost:5173");
+       @Bean
+       public CorsConfigurationSource corsConfigurationSource() {
+           CorsConfiguration config = new CorsConfiguration();
+           config.setAllowCredentials(true);
+           config.addAllowedOrigin("http://localhost:5173");
 
-            config.addAllowedHeader("*");
-            config.addAllowedMethod("*");
+           config.addAllowedHeader("*");
+           config.addAllowedMethod("*");
 
-            UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-            source.registerCorsConfiguration("/**", config);
-            return source;
-        }
+           UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+           source.registerCorsConfiguration("/**", config);
+           return source;
+       }
 
 
-    }
+   }
+    

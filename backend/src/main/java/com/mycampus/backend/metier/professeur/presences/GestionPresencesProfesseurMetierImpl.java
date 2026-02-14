@@ -136,11 +136,10 @@ public class GestionPresencesProfesseurMetierImpl implements GestionPresencesPro
     }
 
     @Override
-    public String TrouverProfesseurpprParemail(String email)throws UtilisateursException {
+    public String TrouverProfesseurPprParemail(String email)throws UtilisateursException {
         Professeur prof= professeurRepository.findByEmail(email).orElseThrow(() ->
                 new UtilisateursException("prof introuvable avec l'email: " + email));
-        return prof.getPpr();
-
+         return prof.getPpr();
 
     }
 }

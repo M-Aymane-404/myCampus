@@ -35,7 +35,7 @@ public class PresencesProfesseurController {
             @PathVariable Long seanceId
     ) throws SeancesProfesseurException {
 
-         String professeurPpr = utilisateurMetier.TrouverProfesseurpprParemail(authentication.getName());
+         String professeurPpr = utilisateurMetier.TrouverProfesseurPprParemail(authentication.getName());
 
         List<PresenceSortieDTO> result =
                 metier.listerPresencesParSeance(professeurPpr, seanceId);
@@ -56,7 +56,7 @@ public class PresencesProfesseurController {
     ) throws SeancesProfesseurException {
 
         String email = authentication.getName();
-        String professeurPpr = utilisateurMetier.TrouverProfesseurpprParemail(email);
+        String professeurPpr = utilisateurMetier.TrouverProfesseurPprParemail(email);
 
         List<PresenceSortieDTO> result =
                 metier.saisirPresences(professeurPpr, seanceId, dto);
