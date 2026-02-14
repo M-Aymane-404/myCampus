@@ -10,6 +10,7 @@ export const apiEtudiants = {
           'Content-Type': 'application/json',
           ...apiAuth.getAuthHeaders(),
         },
+        credentials: 'include'
       });
 
       if (!reponse.ok) {
@@ -31,6 +32,7 @@ export const apiEtudiants = {
           'Content-Type': 'application/json',
           ...apiAuth.getAuthHeaders(),
         },
+        credentials: 'include'
       });
 
       if (!reponse.ok) {
@@ -55,6 +57,7 @@ export const apiEtudiants = {
         method: 'POST',
         headers: headers,
         body: JSON.stringify(etudiant),
+        credentials: 'include'
       });
 
       if (!reponse.ok) {
@@ -95,6 +98,7 @@ export const apiEtudiants = {
         method: 'PUT',
         headers: headers,
         body: JSON.stringify(etudiant),
+        credentials: 'include'
       });
 
       if (!reponse.ok) {
@@ -134,6 +138,7 @@ export const apiEtudiants = {
       const reponse = await fetch(`${BASE_URL}/${apogee}`, {
         method: 'DELETE',
         headers: headers,
+        credentials: 'include'
       });
 
       if (!reponse.ok) {
@@ -155,6 +160,7 @@ export const apiEtudiants = {
           'Content-Type': 'application/json',
           ...apiAuth.getAuthHeaders(),
         },
+        credentials: 'include'
       });
 
       if (!reponse.ok) {
@@ -175,6 +181,7 @@ export const apiEtudiants = {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include'
       });
 
       if (!reponse.ok) {

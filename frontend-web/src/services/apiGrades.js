@@ -20,7 +20,8 @@ export const apiGrades = {
 
         try {
             const response = await fetch(`${BASE_URL}/moi/releve-notes?semestre=${semFormatted}`, {
-                headers: apiAuth.getAuthHeaders()
+                headers: apiAuth.getAuthHeaders(),
+                credentials: 'include'
             });
 
             if (response.status === 401) {
@@ -52,7 +53,8 @@ export const apiGrades = {
 
         try {
             const response = await fetch(`${BASE_URL}/moi`, {
-                headers: apiAuth.getAuthHeaders()
+                headers: apiAuth.getAuthHeaders(),
+                credentials: 'include'
             });
             if (response.status === 401) {
                 apiAuth.logout();

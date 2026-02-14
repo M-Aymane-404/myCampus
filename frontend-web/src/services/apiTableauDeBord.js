@@ -8,6 +8,7 @@ export const apiTableauDeBord = {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include'
       });
 
       if (!reponse.ok) {
@@ -29,6 +30,7 @@ export const apiTableauDeBord = {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include'
       });
 
       if (!reponse.ok) {
@@ -49,6 +51,7 @@ export const apiTableauDeBord = {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include'
       });
 
       if (!reponse.ok) {

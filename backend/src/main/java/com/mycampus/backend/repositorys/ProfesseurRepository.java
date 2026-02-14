@@ -30,10 +30,5 @@ where s.id=:seanceId
 """)
     Professeur findBySeance_SeanceId(@Param("seanceId") Long seanceId);
 
-<<<<<<< HEAD
     Optional<Professeur> findByEmail(String email);
-
-=======
- Optional<Professeur> findByEmail(String email);
->>>>>>> 5c7b1ae2196c1252a6c997f00a357b48c945cd72
 }

@@ -10,6 +10,7 @@ export const apiAdministrateurs = {
                     'Content-Type': 'application/json',
                     ...apiAuth.getAuthHeaders(),
                 },
+                credentials: 'include'
             });
 
             if (!reponse.ok) {
@@ -34,6 +35,7 @@ export const apiAdministrateurs = {
                 method: 'POST',
                 headers: headers,
                 body: JSON.stringify(administrateur),
+                credentials: 'include'
             });
 
             if (!reponse.ok) {
@@ -63,6 +65,7 @@ export const apiAdministrateurs = {
                 method: 'PUT',
                 headers: headers,
                 body: JSON.stringify(administrateur),
+                credentials: 'include'
             });
 
             if (!reponse.ok) {
@@ -86,6 +89,7 @@ export const apiAdministrateurs = {
             const reponse = await fetch(`${BASE_URL}/${id}`, {
                 method: 'DELETE',
                 headers: headers,
+                credentials: 'include'
             });
 
             if (!reponse.ok) {
@@ -109,6 +113,7 @@ export const apiAdministrateurs = {
             const reponse = await fetch(`${BASE_URL}/${id}/activer`, {
                 method: 'PATCH',
                 headers: headers,
+                credentials: 'include'
             });
 
             if (!reponse.ok) {
@@ -132,6 +137,7 @@ export const apiAdministrateurs = {
             const reponse = await fetch(`${BASE_URL}/${id}/desactiver`, {
                 method: 'PATCH',
                 headers: headers,
+                credentials: 'include'
             });
 
             if (!reponse.ok) {

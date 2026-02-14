@@ -10,6 +10,7 @@ export const apiStructure = {
           'Content-Type': 'application/json',
           ...apiAuth.getAuthHeaders(),
         },
+        credentials: 'include'
       });
 
       if (!reponse.ok) {
@@ -43,6 +44,7 @@ export const apiStructure = {
           'Content-Type': 'application/json',
           ...apiAuth.getAuthHeaders(),
         },
+        credentials: 'include'
       });
 
       if (!reponse.ok) {
@@ -76,6 +78,7 @@ export const apiStructure = {
           'Content-Type': 'application/json',
           ...apiAuth.getAuthHeaders(),
         },
+        credentials: 'include'
       });
 
       if (!reponse.ok) {
@@ -97,6 +100,7 @@ export const apiStructure = {
           'Content-Type': 'application/json',
           ...apiAuth.getAuthHeaders(),
         },
+        credentials: 'include'
       });
 
       if (!reponse.ok) {
@@ -130,6 +134,7 @@ export const apiStructure = {
           'Content-Type': 'application/json',
           ...apiAuth.getAuthHeaders(),
         },
+        credentials: 'include'
       });
 
       if (!reponse.ok) {
@@ -163,6 +168,7 @@ export const apiStructure = {
           'Content-Type': 'application/json',
           ...apiAuth.getAuthHeaders(),
         },
+        credentials: 'include'
       });
 
       if (!reponse.ok) {
@@ -198,6 +204,7 @@ export const apiStructure = {
           ...apiAuth.getAuthHeaders(),
         },
         body: JSON.stringify(departement),
+        credentials: 'include'
       });
 
       if (!reponse.ok) {
@@ -221,6 +228,7 @@ export const apiStructure = {
           ...apiAuth.getAuthHeaders(),
         },
         body: JSON.stringify(departement),
+        credentials: 'include'
       });
 
       if (!reponse.ok) {
@@ -243,6 +251,7 @@ export const apiStructure = {
           'Content-Type': 'application/json',
           ...apiAuth.getAuthHeaders(),
         },
+        credentials: 'include'
       });
 
       if (!reponse.ok) {
@@ -267,6 +276,7 @@ export const apiStructure = {
           ...apiAuth.getAuthHeaders(),
         },
         body: JSON.stringify(filiere),
+        credentials: 'include'
       });
 
       if (!reponse.ok) {
@@ -290,6 +300,7 @@ export const apiStructure = {
           ...apiAuth.getAuthHeaders(),
         },
         body: JSON.stringify(filiere),
+        credentials: 'include'
       });
 
       if (!reponse.ok) {
@@ -312,6 +323,7 @@ export const apiStructure = {
           'Content-Type': 'application/json',
           ...apiAuth.getAuthHeaders(),
         },
+        credentials: 'include'
       });
 
       if (!reponse.ok) {
@@ -334,6 +346,7 @@ export const apiStructure = {
           'Content-Type': 'application/json',
           ...apiAuth.getAuthHeaders(),
         },
+        credentials: 'include'
       });
 
       if (!reponse.ok) {
@@ -357,6 +370,7 @@ export const apiStructure = {
           ...apiAuth.getAuthHeaders(),
         },
         body: JSON.stringify(classe),
+        credentials: 'include'
       });
 
       if (!reponse.ok) {
@@ -380,6 +394,7 @@ export const apiStructure = {
           ...apiAuth.getAuthHeaders(),
         },
         body: JSON.stringify(classe),
+        credentials: 'include'
       });
 
       if (!reponse.ok) {
@@ -402,6 +417,7 @@ export const apiStructure = {
           'Content-Type': 'application/json',
           ...apiAuth.getAuthHeaders(),
         },
+        credentials: 'include'
       });
 
       if (!reponse.ok) {
@@ -426,6 +442,7 @@ export const apiStructure = {
           ...apiAuth.getAuthHeaders(),
         },
         body: JSON.stringify(module),
+        credentials: 'include'
       });
 
       if (!reponse.ok) {
@@ -449,6 +466,7 @@ export const apiStructure = {
           ...apiAuth.getAuthHeaders(),
         },
         body: JSON.stringify(module),
+        credentials: 'include'
       });
 
       if (!reponse.ok) {
@@ -471,6 +489,7 @@ export const apiStructure = {
           'Content-Type': 'application/json',
           ...apiAuth.getAuthHeaders(),
         },
+        credentials: 'include'
       });
 
       if (!reponse.ok) {
@@ -493,6 +512,7 @@ export const apiStructure = {
           'Content-Type': 'application/json',
           ...apiAuth.getAuthHeaders(),
         },
+        credentials: 'include'
       });
 
       if (!reponse.ok) {
@@ -514,6 +534,7 @@ export const apiStructure = {
           'Content-Type': 'application/json',
           ...apiAuth.getAuthHeaders(),
         },
+        credentials: 'include'
       });
 
       if (!reponse.ok) {

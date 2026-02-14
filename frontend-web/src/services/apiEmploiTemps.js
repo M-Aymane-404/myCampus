@@ -7,6 +7,7 @@ export const apiEmploiTemps = {
             const reponse = await fetch(`${BASE_URL}/classe/${classeId}`, {
                 method: 'GET',
                 headers: apiAuth.getAuthHeaders(),
+                credentials: 'include'
             });
 
             if (!reponse.ok) {
@@ -27,6 +28,7 @@ export const apiEmploiTemps = {
             const reponse = await fetch(`${BASE_URL}/professeur/${profId}`, {
                 method: 'GET',
                 headers: apiAuth.getAuthHeaders(),
+                credentials: 'include'
             });
 
             if (!reponse.ok) {
@@ -50,6 +52,7 @@ export const apiEmploiTemps = {
                     ...apiAuth.getAuthHeaders(),
                 },
                 body: JSON.stringify(seance),
+                credentials: 'include'
             });
 
             if (!reponse.ok) {
@@ -69,6 +72,7 @@ export const apiEmploiTemps = {
             const reponse = await fetch(`${BASE_URL}/${id}`, {
                 method: 'DELETE',
                 headers: apiAuth.getAuthHeaders(),
+                credentials: 'include'
             });
 
             if (!reponse.ok) {
