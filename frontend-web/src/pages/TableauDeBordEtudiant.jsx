@@ -1,8 +1,77 @@
-import { Bell, GraduationCap, Clock, MapPin, TrendingUp, AlertCircle, BookOpen } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Bell, GraduationCap, Clock, MapPin, TrendingUp, AlertCircle, BookOpen, ChevronRight, Circle } from 'lucide-react';
+import { apiEtudiant } from '../services/apiEtudiant';
 import './TableauDeBordEtudiant.css';
 
 const TableauDeBordEtudiant = ({ surNavigation }) => {
   console.log('DEBUG: TableauDeBordEtudiant component rendered');
+
+  const [dashboardData, setDashboardData] = useState(null);
+  const [annonces, setAnnonces] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch dashboard data first
+        const dashboardResponse = await apiEtudiant.getDashboardData();
+        setDashboardData(dashboardResponse);
+        
+        // Try to fetch announcements, but don't fail the entire dashboard if it fails
+        try {
+          const annoncesResponse = await apiEtudiant.getAnnonces();
+          setAnnonces(annoncesResponse || []);
+        } catch (annoncesError) {
+          console.warn('Failed to fetch announcements, continuing without them:', annoncesError);
+          setAnnonces([]); // Set empty array as fallback
+        }
+        
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="tableau-de-bord-etudiant">
+        <div className="loading-container">
+          <div className="loading-spinner">Chargement...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="tableau-de-bord-etudiant">
+        <div className="error-container">
+          <AlertCircle size={24} />
+          <p>Erreur: {error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Helper function to calculate time ago
+  const getTimeAgo = (dateString) => {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return 'IL Y A 1H';
+    if (diffInHours < 24) return `IL Y A ${diffInHours}H`;
+    const diffInDays = Math.floor(diffInHours / 24);
+    return `IL Y A ${diffInDays}J`;
+  };
 
   return (
     <div className="tableau-de-bord-etudiant">
@@ -11,11 +80,16 @@ const TableauDeBordEtudiant = ({ surNavigation }) => {
         <div className="header-content">
           <div className="header-info">
             <h1>Espace Étudiant</h1>
-            <p>L3 Informatique • Session d'Automne 2023</p>
+            <p>
+              {dashboardData?.entete ? 
+                `${dashboardData.entete.niveau || ''} ${dashboardData.entete.filiere || ''} • ${dashboardData.entete.session || 'Session d\'Automne 2023'}` : 
+                'L3 Informatique • Session d\'Automne 2023'
+              }
+            </p>
           </div>
           <div className="session-status">
             <div className="status-indicator"></div>
-            <span>SESSION ACTIVE</span>
+            <span>{dashboardData?.entete?.statut || 'SESSION ACTIVE'}</span>
           </div>
         </div>
       </div>
@@ -31,12 +105,47 @@ const TableauDeBordEtudiant = ({ surNavigation }) => {
                 <Bell className="label-icon" size={20} />
                 <h3>Annonces de vos Professeurs</h3>
               </div>
-              <div className="announcements-badge">0 NOUVELLES</div>
+              <div className="announcements-badge">
+                {annonces.length > 0 ? `${annonces.length} NOUVELLES` : '0 NOUVELLES'}
+              </div>
             </div>
 
             <div className="announcements-container">
-              <Bell className="no-announcements-icon" size={48} />
-              <p>Aucune annonce pour votre classe pour le moment.</p>
+              {annonces.length > 0 ? (
+                <div className="annonces-list">
+                  {annonces.slice(0, 3).map((annonce) => {
+                    const timeAgo = getTimeAgo(annonce.datePublication);
+                    return (
+                      <div 
+                        key={annonce.id} 
+                        className="annonce-box"
+                        onClick={() => surNavigation('annonces')}
+                      >
+                        <div className="annonce-box-header">
+                          <div className="annonce-left">
+                            <div className="annonce-indicator">
+                              <Circle size={8} fill="#ef4444" color="#ef4444" />
+                            </div>
+                            <div className="annonce-info">
+                              <h4 className="annonce-title">{annonce.titre}</h4>
+                              <div className="annonce-details">
+                                <span className="annonce-category">{annonce.categorie || 'EXAMEN'}</span>
+                                <span className="annonce-time">{timeAgo}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <ChevronRight className="annonce-arrow" size={20} color="#94a3b8" />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <>
+                  <Bell className="no-announcements-icon" size={48} />
+                  <p>Aucune annonce pour votre classe pour le moment.</p>
+                </>
+              )}
             </div>
           </div>
 
@@ -67,7 +176,7 @@ const TableauDeBordEtudiant = ({ surNavigation }) => {
                       fill="none"
                       stroke="#5c54ed"
                       strokeWidth="8"
-                      strokeDasharray={`${2 * Math.PI * 40 * 0.85} ${2 * Math.PI * 40 * 0.15}`}
+                      strokeDasharray={`${2 * Math.PI * 40 * (dashboardData?.assiduite?.tauxPresence / 100 || 0.85)} ${2 * Math.PI * 40 * (1 - (dashboardData?.assiduite?.tauxPresence / 100 || 0.85))}`}
                       strokeDashoffset="0"
                       transform="rotate(-90 50 50)"
                       strokeLinecap="round"
@@ -80,16 +189,20 @@ const TableauDeBordEtudiant = ({ surNavigation }) => {
                       stroke="#ef4444"
                       strokeWidth="8"
                       strokeDasharray={`${2 * Math.PI * 40 * 0.05} ${2 * Math.PI * 40 * 0.95}`}
-                      strokeDashoffset={`${-2 * Math.PI * 40 * 0.85}`}
+                      strokeDashoffset={`${-2 * Math.PI * 40 * (dashboardData?.assiduite?.tauxPresence / 100 || 0.85)}`}
                       transform="rotate(-90 50 50)"
                       strokeLinecap="round"
                     />
                   </svg>
-                  <div className="gauge-percentage">85%</div>
+                  <div className="gauge-percentage">
+                    {Math.round(dashboardData?.assiduite?.tauxPresence || 85)}%
+                  </div>
                 </div>
                 <div className="attendance-details">
                   <p>Présence validée</p>
-                  <span className="excellent-tag">EXCELLENT</span>
+                  <span className="excellent-tag">
+                    {dashboardData?.assiduite?.labelQualite || 'EXCELLENT'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -98,12 +211,12 @@ const TableauDeBordEtudiant = ({ surNavigation }) => {
             <div className="card-modern next-session-card">
               <h3>Prochaine Séance</h3>
               <div className="session-info-main">
-                <div className="session-time">09:00</div>
+                <div className="session-time">--:--</div>
                 <div className="session-details-text">
-                  <h4>Algorithmique</h4>
+                  <h4>Non disponible</h4>
                   <div className="session-meta">
                     <MapPin size={14} />
-                    <span>B204 • COURS</span>
+                    <span>Endpoint non implémenté</span>
                   </div>
                 </div>
               </div>
@@ -119,38 +232,26 @@ const TableauDeBordEtudiant = ({ surNavigation }) => {
           </div>
 
           <div className="grades-list">
-            <div className="grade-list-item">
-              <div className="grade-icon-box">
-                <BookOpen size={20} />
-              </div>
-              <div className="grade-subject-info">
-                <h4>Algorithmique</h4>
-                <div className="grade-date">IL Y A 2 JOURS</div>
-              </div>
-              <div className="grade-number">16.5</div>
-            </div>
-
-            <div className="grade-list-item">
-              <div className="grade-icon-box">
-                <BookOpen size={20} />
-              </div>
-              <div className="grade-subject-info">
-                <h4>Mathématiques</h4>
-                <div className="grade-date">IL Y A 5 JOURS</div>
-              </div>
-              <div className="grade-number">14</div>
-            </div>
-
-            <div className="grade-list-item">
-              <div className="grade-icon-box">
-                <BookOpen size={20} />
-              </div>
-              <div className="grade-subject-info">
-                <h4>Physique</h4>
-                <div className="grade-date">LA SEMAINE DERNIÈRE</div>
-              </div>
-              <div className="grade-number">12</div>
-            </div>
+            {dashboardData?.dernieresNotes?.length > 0 ? (
+              dashboardData.dernieresNotes.map((grade, index) => (
+                <div key={index} className="grade-list-item">
+                  <div className="grade-icon-box">
+                    <BookOpen size={20} />
+                  </div>
+                  <div className="grade-subject-info">
+                    <h4>{grade.matiere}</h4>
+                    <div className="grade-date">
+                      {(() => {
+                        if (!grade.datePublication) return 'DATE INCONNUE';
+                        const date = new Date(grade.datePublication);
+                        return isNaN(date.getTime()) ? 'DATE INCONNUE' : date.toISOString().split('T')[0];
+                      })()}
+                    </div>
+                  </div>
+                  <div className="grade-number">{grade.note}</div>
+                </div>
+              ))
+            ) : null}
           </div>
 
           <button className="view-bulletins-btn">

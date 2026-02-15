@@ -2,6 +2,7 @@ package com.mycampus.backend.dto.professeur.DonneeEntrer.seances;
 
 import com.mycampus.backend.enumerations.EtatSeance;
 import com.mycampus.backend.enumerations.TypeSeance;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,7 +17,15 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class CreationSeanceEntrerDTO {
 
-    private Long affectationEnseignementId;
+    @NotBlank(message = "Code classe obligatoire")
+    private String codeClasse;
+
+    @NotBlank(message = "Code matière obligatoire")
+    private String codeMatiere;
+//++
+    @NotBlank(message = "Année universitaire obligatoire")
+    private String anneeUniversitaire;
+
 
     private TypeSeance type;
 
@@ -31,4 +40,9 @@ public class CreationSeanceEntrerDTO {
     private String salle;
 
     private String contenu;
+
+
+
+
+
 }

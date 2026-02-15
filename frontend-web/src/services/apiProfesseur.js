@@ -8,6 +8,7 @@ export const apiProfesseur = {
       const response = await fetch(`${BASE_URL}/courses`, {
         method: 'GET',
         headers: apiAuth.getAuthHeaders(),
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -27,6 +28,7 @@ export const apiProfesseur = {
       const response = await fetch(`${BASE_URL}/courses/${courseId}/students`, {
         method: 'GET',
         headers: apiAuth.getAuthHeaders(),
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -50,6 +52,7 @@ export const apiProfesseur = {
       const response = await fetch(url, {
         method: 'GET',
         headers: apiAuth.getAuthHeaders(),
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -70,6 +73,7 @@ export const apiProfesseur = {
         method: 'PUT',
         headers: apiAuth.getAuthHeaders(),
         body: JSON.stringify({ grades: notes }),
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -93,6 +97,7 @@ export const apiProfesseur = {
       const response = await fetch(url, {
         method: 'GET',
         headers: apiAuth.getAuthHeaders(),
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -113,6 +118,7 @@ export const apiProfesseur = {
         method: 'PUT',
         headers: apiAuth.getAuthHeaders(),
         body: JSON.stringify({ attendance: presence }),
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -132,6 +138,7 @@ export const apiProfesseur = {
       const response = await fetch(`${BASE_URL}/calendar`, {
         method: 'GET',
         headers: apiAuth.getAuthHeaders(),
+        credentials: 'include'
       });
 
       if (!response.ok) {

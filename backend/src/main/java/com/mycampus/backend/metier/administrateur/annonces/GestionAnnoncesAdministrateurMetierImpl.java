@@ -56,7 +56,7 @@ public class GestionAnnoncesAdministrateurMetierImpl implements GestionAnnoncesA
             classe = classeRepository.findByCodeClasse(annonceDTO.getCodeClasse())
                     .orElseThrow(() -> new UtilisateursException("Classe non trouvée: " + annonceDTO.getCodeClasse()));
 
-          
+
 
 
         }

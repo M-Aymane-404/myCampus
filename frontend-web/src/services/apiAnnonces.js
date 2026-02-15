@@ -8,6 +8,7 @@ export const apiAnnonces = {
       const response = await fetch(`${BASE_URL}`, {
         method: 'GET',
         headers: apiAuth.getAuthHeaders(),
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -27,6 +28,7 @@ export const apiAnnonces = {
       const response = await fetch(`${BASE_URL}/unread/count`, {
         method: 'GET',
         headers: apiAuth.getAuthHeaders(),
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -48,6 +50,7 @@ export const apiAnnonces = {
         method: 'POST',
         headers: apiAuth.getAuthHeaders(),
         body: JSON.stringify(annonce),
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -68,6 +71,7 @@ export const apiAnnonces = {
       const response = await fetch(`${BASE_URL}/${id}`, {
         method: 'DELETE',
         headers: apiAuth.getAuthHeaders(),
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -87,6 +91,7 @@ export const apiAnnonces = {
       const response = await fetch(`${BASE_URL}/${id}/read`, {
         method: 'POST',
         headers: apiAuth.getAuthHeaders(),
+        credentials: 'include'
       });
 
       if (!response.ok) {

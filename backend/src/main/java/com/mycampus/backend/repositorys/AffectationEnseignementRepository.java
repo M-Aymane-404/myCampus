@@ -5,6 +5,8 @@ import com.mycampus.backend.entites.Classe;
 import com.mycampus.backend.entites.Matiere;
 import com.mycampus.backend.entites.Professeur;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -39,6 +41,25 @@ public interface AffectationEnseignementRepository extends JpaRepository<Affecta
     Optional<AffectationEnseignement> findByIdAndProfesseur_Ppr(Long id,  String professeurPpr);
 
     boolean existsByClasseAndMatiereAndProfesseur(Classe classe, Matiere matiere, Professeur professeur);
-    
- }
+
+   /*Optional<AffectationEnseignement>
+    findByActiveTrueAndProfesseur_PprAndClasse_CodeClasseAndMatiere_CodeMatiere(
+            String ppr,
+            String codeClasse,
+            String codeMatiere
+    );
+*/
+
+
+
+    Optional<AffectationEnseignement>
+    findByActiveTrueAndProfesseur_PprAndClasse_CodeClasseAndMatiere_CodeMatiereAndAnneeUniversitaire(
+            String ppr,
+            String codeClasse,
+            String codeMatiere,
+            String anneeUniversitaire
+    );
+
+
+}
 

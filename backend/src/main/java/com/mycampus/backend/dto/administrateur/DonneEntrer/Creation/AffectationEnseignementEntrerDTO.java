@@ -37,4 +37,13 @@ public class AffectationEnseignementEntrerDTO {
             message = "Code matière doit contenir 2-20 caractères alphanumériques en majuscules"
     )
     private String codeMatiere;
+
+
+    @NotBlank(message = "Année universitaire obligatoire")
+    @Pattern(regexp = "\\d{4}-\\d{4}",
+            message = "Année universitaire  doit etre sous la forme 2025-2026"
+
+    )
+    private String anneeUniversitaire;
+
 }
