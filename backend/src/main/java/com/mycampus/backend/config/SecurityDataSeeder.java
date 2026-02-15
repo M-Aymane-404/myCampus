@@ -28,9 +28,9 @@ public class SecurityDataSeeder {
     private final PasswordEncoder passwordEncoder;
     private final ProfesseursSeeder professeursSeeder;
     private final EtudiantsSeeder etudiantsSeeder;
-    private final PedagogiqueDataSeeder  pedagogiqueDataSeeder;
+    private final PedagogiqueDataSeeder pedagogiqueDataSeeder;
 
-   // @Bean
+    @Bean
     public ApplicationRunner securityDataSeederRunner() {
         return args -> {
             log.info("Starting security data seeding...");

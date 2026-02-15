@@ -1,12 +1,12 @@
 package com.mycampus.backend.exceptions;
 
-public class EtudiantException extends RuntimeException  {
+public class NotificationException extends RuntimeException  {
 
-    public EtudiantException(String message) {
+    public NotificationException(String message) {
         super(message);
     }
 
-    public EtudiantException(String message, Throwable cause) {
+    public NotificationException(String message, Throwable cause) {
         super(message, cause);
     }
 }

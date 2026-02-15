@@ -1,5 +1,6 @@
 package com.mycampus.backend.repositorys;
 
+import com.mycampus.backend.entites.Etudiant;
 import com.mycampus.backend.entites.Professeur;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -31,4 +32,6 @@ where s.id=:seanceId
     Professeur findBySeance_SeanceId(@Param("seanceId") Long seanceId);
 
  Optional<Professeur> findByEmail(String email);
+
+    List<Professeur> findAllByDepartementOuTravail_CodeDepartement(String codeDepartement);
 }

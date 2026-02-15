@@ -50,4 +50,9 @@ public interface EtudiantRepository extends JpaRepository<Etudiant, Long> {
         where e.email = :email
     """)
     Optional<Etudiant> findByEmailWithClasseAndFiliere(@Param("email") String email);
+
+    List<Etudiant> findAllByClasse_CodeClasse(String codeClasse);
+
+
+
 }

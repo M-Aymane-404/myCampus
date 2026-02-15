@@ -1,5 +1,6 @@
 package com.mycampus.backend.metier.administrateur.annonces;
 
+import com.mycampus.backend.dto.Notification.NotificationSortieDTO;
 import com.mycampus.backend.dto.annonces.AnnonceEntrerDTO;
 import com.mycampus.backend.dto.annonces.AnnonceSortieDTO;
 import com.mycampus.backend.entites.Annonce;
@@ -7,8 +8,11 @@ import com.mycampus.backend.entites.Classe;
 import com.mycampus.backend.entites.Departement;
 import com.mycampus.backend.entites.Utilisateur;
 import com.mycampus.backend.enumerations.AnnonceCibleType;
+import com.mycampus.backend.enumerations.TypeNotification;
 import com.mycampus.backend.exceptions.UtilisateursException;
 import com.mycampus.backend.mappers.annonce.AnnonceMapper;
+import com.mycampus.backend.metier.Notification.NotificationMetier;
+import com.mycampus.backend.metier.Notification.NotificationWebSocketMetier;
 import com.mycampus.backend.repositorys.AnnonceRepository;
 import com.mycampus.backend.repositorys.ClasseRepository;
 import com.mycampus.backend.repositorys.DepartementRepository;
@@ -32,6 +36,7 @@ public class GestionAnnoncesAdministrateurMetierImpl implements GestionAnnoncesA
     private final ClasseRepository classeRepository;
     private final AnnonceMapper  annonceMapper;
     private final DepartementRepository departementRepository;
+    private final NotificationMetier notificationMetier;
 
     @Override
     @Transactional
@@ -50,6 +55,10 @@ public class GestionAnnoncesAdministrateurMetierImpl implements GestionAnnoncesA
             }
             classe = classeRepository.findByCodeClasse(annonceDTO.getCodeClasse())
                     .orElseThrow(() -> new UtilisateursException("Classe non trouvée: " + annonceDTO.getCodeClasse()));
+
+          
+
+
         }
 
         if (annonceDTO.getCibleType() == AnnonceCibleType.PROFESSEURS_DEPARTEMENT) {

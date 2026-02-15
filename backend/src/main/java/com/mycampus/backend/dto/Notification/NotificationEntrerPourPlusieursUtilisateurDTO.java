@@ -9,7 +9,7 @@ import lombok.*;
 @Builder
 @Getter
 @Setter
-public class NotificationEntrerClasseDTO {
+public class NotificationEntrerPourPlusieursUtilisateurDTO {
 
 
     private String titre;
