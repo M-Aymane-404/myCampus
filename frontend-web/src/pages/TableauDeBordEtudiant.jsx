@@ -254,7 +254,7 @@ const TableauDeBordEtudiant = ({ surNavigation }) => {
             ) : null}
           </div>
 
-          <button className="view-bulletins-btn">
+          <button className="view-bulletins-btn" onClick={() => surNavigation('notes')}>
             VOIR TOUS LES BULLETINS
           </button>
         </div>
