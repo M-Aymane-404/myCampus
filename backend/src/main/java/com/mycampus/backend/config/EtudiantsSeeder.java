@@ -1,6 +1,7 @@
 package com.mycampus.backend.config;
 
 import com.mycampus.backend.entites.*;
+import com.mycampus.backend.enumerations.NiveauAnnee;
 import com.mycampus.backend.enumerations.RolesCode;
 import com.mycampus.backend.enumerations.Semestre;
 import com.mycampus.backend.enumerations.EtatInscription;
@@ -46,7 +47,7 @@ public class EtudiantsSeeder {
                 .password(passwordEncoder.encode("password123"))
                 .active(true).cin("EC100100").apogee("APO300100")
                 .dateCreation(LocalDateTime.now()).tel("0600000100")
-                .niveau("1ère année").anneeInscription(2024)
+                .niveau(NiveauAnnee.A1).anneeInscription(2024)
                 .semestreActuel(Semestre.S1).etatInscription(EtatInscription.INSCRIT)
                 .dateNaissance(LocalDate.of(2004, 5, 15))
                 .classe(requireClasse("ILCS1-A"))

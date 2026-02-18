@@ -691,7 +691,7 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
             etudiantAModifier.setEmail(etudiantModificationDTO.getEmail());
         }
         
-        if (etudiantModificationDTO.getNiveau() != null && !etudiantModificationDTO.getNiveau().trim().isEmpty()) {
+        if (etudiantModificationDTO.getNiveau() != null ) {
             etudiantAModifier.setNiveau(etudiantModificationDTO.getNiveau());
         }
         if(etudiantModificationDTO.getActive() != null){

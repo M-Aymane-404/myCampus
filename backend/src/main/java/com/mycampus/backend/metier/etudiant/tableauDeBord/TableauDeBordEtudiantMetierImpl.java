@@ -4,6 +4,7 @@ import com.mycampus.backend.dto.etudiant.tableauDeBord.*;
 import com.mycampus.backend.entites.Etudiant;
 import com.mycampus.backend.entites.Presence;
 import com.mycampus.backend.entites.Resultat;
+import com.mycampus.backend.enumerations.NiveauAnnee;
 import com.mycampus.backend.enumerations.StatusAbsence;
 import com.mycampus.backend.exceptions.UtilisateursException;
 import com.mycampus.backend.repositorys.EtudiantRepository;
@@ -58,7 +59,7 @@ public class TableauDeBordEtudiantMetierImpl implements TableauDeBordEtudiantMet
 
 
         String nomComplet = etudiant.getNom() + " " + etudiant.getPrenom();
-        String niveau = etudiant.getNiveau();
+        NiveauAnnee niveau = etudiant.getNiveau();
         String filiere = etudiant.getClasse() != null ? etudiant.getClasse().getFiliere().getNom() : "Non assignée";
         String classe = etudiant.getClasse() != null ? etudiant.getClasse().getNom() : "Non assignée";
         String session = "Session d'Automne " + java.time.Year.now().getValue();

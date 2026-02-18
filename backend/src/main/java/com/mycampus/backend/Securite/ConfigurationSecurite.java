@@ -34,6 +34,7 @@
     import org.springframework.web.filter.CorsFilter;
 
     import javax.crypto.spec.SecretKeySpec;
+    import java.util.List;
 
    @Configuration
    @EnableWebSecurity
@@ -76,7 +77,7 @@
                            .requestMatchers("/files/**").permitAll()
 
                            .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").authenticated()
-
+                           .requestMatchers("/ws/**", "/ws-sockjs/**").permitAll()
                            .anyRequest().authenticated()
                    )
                    .oauth2ResourceServer(oa -> oa.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)))
@@ -108,7 +109,11 @@
        public CorsConfigurationSource corsConfigurationSource() {
            CorsConfiguration config = new CorsConfiguration();
            config.setAllowCredentials(true);
-           config.addAllowedOrigin("http://localhost:5173");
+           config.setAllowedOrigins(List.of(
+                   "http://localhost:5173",
+                   "http://127.0.0.1:5500",
+                   "http://localhost:5500"
+           ));
 
            config.addAllowedHeader("*");
            config.addAllowedMethod("*");

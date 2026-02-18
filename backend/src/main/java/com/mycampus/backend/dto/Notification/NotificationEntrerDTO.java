@@ -31,5 +31,5 @@ public class NotificationEntrerDTO {
 
 
 
-    private Long AuteurId;
+    private Long auteurId;
 }

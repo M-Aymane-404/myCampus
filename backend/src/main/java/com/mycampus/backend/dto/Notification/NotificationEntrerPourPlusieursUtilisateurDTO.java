@@ -28,5 +28,5 @@ public class NotificationEntrerPourPlusieursUtilisateurDTO {
 
 
 
-   private Long AuteurId;
+   private Long auteurId;
 }

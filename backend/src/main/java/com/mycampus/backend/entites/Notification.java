@@ -5,11 +5,13 @@ import com.mycampus.backend.enumerations.TypeNotification;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Date;
 
 @Entity
+@Table(name = "notification", indexes = {
+        @Index(name = "idx_notification_utilisateur_date_envoi", columnList = "utilisateur_id,date_envoi"),
+        @Index(name = "idx_notification_utilisateur_lu", columnList = "utilisateur_id,lu")
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -29,14 +31,14 @@ public class Notification {
     @Column(nullable = false)
     private String message;
     
-    @Column(nullable = false)
+    @Column(name = "date_envoi", nullable = false)
     private LocalDateTime dateEnvoi;
     
     @Column(nullable = false)
     @Builder.Default
     private boolean lu = false;
 
-
+    @Column(name = "date_lecture")
     private LocalDateTime dateLecture;
 
     @Column(nullable = false)

@@ -1,6 +1,7 @@
 package com.mycampus.backend.dto.etudiant.DonneeSortie;
 
 import com.mycampus.backend.enumerations.EtatInscription;
+import com.mycampus.backend.enumerations.NiveauAnnee;
 import com.mycampus.backend.enumerations.Semestre;
 import lombok.*;
 
@@ -33,7 +34,7 @@ public class EtudiantSortieEtudiantDTO {
 
     private String apogee;
 
-    private String niveau;
+    private NiveauAnnee niveau;
 
     private Integer anneeInscription;
 

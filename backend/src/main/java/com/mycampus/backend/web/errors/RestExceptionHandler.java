@@ -1,6 +1,7 @@
 package com.mycampus.backend.web.errors;
 
 import com.mycampus.backend.exceptions.EtudiantException;
+import com.mycampus.backend.exceptions.NotificationException;
 import com.mycampus.backend.exceptions.SeancesProfesseurException;
 import com.mycampus.backend.exceptions.StructureAcademiqueException;
 import com.mycampus.backend.exceptions.UtilisateursException;
@@ -76,6 +77,20 @@ public class RestExceptionHandler {
         Map<String, Object> body = construireBody(
                 HttpStatus.BAD_REQUEST,
                 "Requête invalide",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.badRequest().body(body);
+    }
+
+    @ExceptionHandler(NotificationException.class)
+    public ResponseEntity<Object> handleNotificationException(NotificationException ex, HttpServletRequest request) {
+        log.error("Notification exception: {}", ex.getMessage());
+
+        Map<String, Object> body = construireBody(
+                HttpStatus.BAD_REQUEST,
+                "Requete invalide",
                 ex.getMessage(),
                 request.getRequestURI()
         );

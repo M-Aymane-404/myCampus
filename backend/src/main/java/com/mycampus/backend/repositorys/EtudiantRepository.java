@@ -8,9 +8,17 @@ import org.springframework.stereotype.Repository;
 
  import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface EtudiantRepository extends JpaRepository<Etudiant, Long> {
+    interface ProjectionDestinataireNotification {
+        Long getId();
+        String getNom();
+        String getPrenom();
+        String getEmail();
+    }
+
     List<Etudiant> findByClasseId(Long classeId);
     
     Optional<Etudiant> findByApogee(String apogee);
@@ -53,6 +61,28 @@ public interface EtudiantRepository extends JpaRepository<Etudiant, Long> {
 
     List<Etudiant> findAllByClasse_CodeClasse(String codeClasse);
 
+    @Query("""
+        select e.id as id, e.nom as nom, e.prenom as prenom, e.email as email
+        from Etudiant e
+        where e.classe.codeClasse = :codeClasse
+    """)
+    List<ProjectionDestinataireNotification> trouverDestinatairesNotificationParCodeClasse(@Param("codeClasse") String codeClasse);
+
+    @Query("""
+        select e.id as id, e.nom as nom, e.prenom as prenom, e.email as email
+        from Etudiant e
+    """)
+    List<ProjectionDestinataireNotification> trouverTousDestinatairesNotification();
+
+    boolean existsByEmail(String email);
+
+    boolean existsByCin(String cin);
+
+    @Query("SELECT e.apogee FROM Etudiant e")
+    Set<String> findAllApogees();
+
+    @Query("SELECT e.email FROM Etudiant e")
+    Set<String> findAllEmails();
 
 
 }

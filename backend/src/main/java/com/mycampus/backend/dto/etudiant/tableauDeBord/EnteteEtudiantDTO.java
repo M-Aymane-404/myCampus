@@ -1,5 +1,6 @@
 package com.mycampus.backend.dto.etudiant.tableauDeBord;
 
+import com.mycampus.backend.enumerations.NiveauAnnee;
 import lombok.*;
 
 @Getter
@@ -10,7 +11,7 @@ import lombok.*;
 public class EnteteEtudiantDTO {
     
     private String nom;
-    private String niveau;
+    private NiveauAnnee niveau;
     private String filiere;
     private String classe;
     private String session;

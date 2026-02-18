@@ -19,6 +19,7 @@ import lombok.Value;
 import lombok.extern.log4j.Log4j2;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseCookie;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -48,9 +49,28 @@ public class SecurityController {
      private final JwtEncoder jwtEncoder;
      private final RefreshTokenMetier refreshTokenMetier;
      private final UserDetailsServiceImpl userDetailsServiceImpl;
+    private final SimpMessagingTemplate messagingTemplate;
+
 
 
     private final boolean cookieSecure =  false;
+
+    @PostMapping("/test/ws/global")
+    public void testGlobal() {
+        messagingTemplate.convertAndSend(
+                "/topic/global",
+                (Object) Map.of("msg", "hello global")
+        );
+    }
+
+    @PostMapping("/auth/test/ws/user")
+    public void testUser(@RequestParam String email) {
+        messagingTemplate.convertAndSendToUser(
+                email,
+                "/queue/notifications",
+                java.util.Map.of("msg", "hello user", "to", email)
+        );
+    }
 
 
     @GetMapping("/profile")

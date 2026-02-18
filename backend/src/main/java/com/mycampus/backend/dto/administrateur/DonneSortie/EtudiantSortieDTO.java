@@ -1,5 +1,6 @@
 package com.mycampus.backend.dto.administrateur.DonneSortie;
 
+import com.mycampus.backend.enumerations.NiveauAnnee;
 import com.mycampus.backend.enumerations.Semestre;
 import com.mycampus.backend.enumerations.EtatInscription;
 import lombok.AllArgsConstructor;
@@ -17,7 +18,7 @@ import java.time.LocalDate;
 @SuperBuilder
 public class EtudiantSortieDTO extends UtilisateurSortieDto {
     private String apogee;
-    private String niveau;
+    private NiveauAnnee niveau;
     private Integer anneeInscription;
     private Semestre semestreActuel;
     private String anneeFinEtude;

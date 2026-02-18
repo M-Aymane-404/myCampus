@@ -1,5 +1,6 @@
 package com.mycampus.backend.metier.administrateur.annonces;
 
+import com.mycampus.backend.dto.Notification.NotificationEntrerPourPlusieursUtilisateurDTO;
 import com.mycampus.backend.dto.Notification.NotificationSortieDTO;
 import com.mycampus.backend.dto.annonces.AnnonceEntrerDTO;
 import com.mycampus.backend.dto.annonces.AnnonceSortieDTO;
@@ -8,6 +9,7 @@ import com.mycampus.backend.entites.Classe;
 import com.mycampus.backend.entites.Departement;
 import com.mycampus.backend.entites.Utilisateur;
 import com.mycampus.backend.enumerations.AnnonceCibleType;
+import com.mycampus.backend.enumerations.ReferenceType;
 import com.mycampus.backend.enumerations.TypeNotification;
 import com.mycampus.backend.exceptions.UtilisateursException;
 import com.mycampus.backend.mappers.annonce.AnnonceMapper;
@@ -46,27 +48,28 @@ public class GestionAnnoncesAdministrateurMetierImpl implements GestionAnnoncesA
         Utilisateur auteur = utilisateurRepository.findByEmail(emailAuteur)
                 .orElseThrow(() -> new UtilisateursException("Auteur non trouvé"));
         
+
+
         Classe classe = null;
         Departement departement = null;
 
-        if (annonceDTO.getCibleType() == AnnonceCibleType.ETUDIANTS_CLASSE) {
-            if (annonceDTO.getCodeClasse() == null) {
-                throw new UtilisateursException("Code classe obligatoire pour une annonce de type CLASSE");
+        switch (annonceDTO.getCibleType()) {
+            case ETUDIANTS_CLASSE -> {
+                if (annonceDTO.getCodeClasse() == null || annonceDTO.getCodeClasse().isBlank()) {
+                    throw new UtilisateursException("Code classe obligatoire pour une annonce ETUDIANTS_CLASSE");
+                }
+                classe = classeRepository.findByCodeClasse(annonceDTO.getCodeClasse())
+                        .orElseThrow(() -> new UtilisateursException("Classe non trouvée: " + annonceDTO.getCodeClasse()));
             }
-            classe = classeRepository.findByCodeClasse(annonceDTO.getCodeClasse())
-                    .orElseThrow(() -> new UtilisateursException("Classe non trouvée: " + annonceDTO.getCodeClasse()));
-
-
-
-
-        }
-
-        if (annonceDTO.getCibleType() == AnnonceCibleType.PROFESSEURS_DEPARTEMENT) {
-            if (annonceDTO.getCodeDepartement() == null) {
-                throw new UtilisateursException("Code Département obligatoire pour une annonce de type PROFESSEURS_DEPARTEMENT");
+            case PROFESSEURS_DEPARTEMENT -> {
+                if (annonceDTO.getCodeDepartement() == null || annonceDTO.getCodeDepartement().isBlank()) {
+                    throw new UtilisateursException("Code département obligatoire pour PROFESSEURS_DEPARTEMENT");
+                }
+                departement = departementRepository.findByCodeDepartement(annonceDTO.getCodeDepartement())
+                        .orElseThrow(() -> new UtilisateursException("Département non trouvé: " + annonceDTO.getCodeDepartement()));
             }
-            departement = departementRepository.findByCodeDepartement(annonceDTO.getCodeDepartement())
-                    .orElseThrow(() -> new UtilisateursException("Département non trouvée: " + annonceDTO.getCodeDepartement()));
+            default -> {
+             }
         }
 
         
@@ -82,6 +85,33 @@ public class GestionAnnoncesAdministrateurMetierImpl implements GestionAnnoncesA
                 .build();
         
         Annonce savedAnnonce = annonceRepository.save(annonce);
+
+
+        NotificationEntrerPourPlusieursUtilisateurDTO dto = NotificationEntrerPourPlusieursUtilisateurDTO.builder()
+                .type(TypeNotification.ANNONCE_PUBLIEE)
+                .auteurId(auteur.getId())
+                .titre(savedAnnonce.getTitre())
+                .message("Nouvelle annonce: " + savedAnnonce.getTitre())
+                .referenceType(ReferenceType.ANNONCE)
+                .referenceId(savedAnnonce.getId())
+                .build();
+
+
+
+        switch (annonceDTO.getCibleType()) {
+            case ETUDIANTS_CLASSE ->
+                    notificationMetier.notifierEtudiantClasse(classe.getCodeClasse(), dto);
+
+            case PROFESSEURS_DEPARTEMENT ->
+                    notificationMetier.notifierProfesseurDepartement(departement.getCodeDepartement(), dto);
+
+            case ETUDIANTS_GLOBAL ->
+                    notificationMetier.notifierToutsEtudiant(dto);
+
+            case PROFESSEURS_GLOBAL ->
+                    notificationMetier.notifierToutsProfesseur(dto);
+        }
+
         log.info("Annonce créée avec succès: {}", savedAnnonce.getId());
         
         return annonceMapper.changerVersSortieDTO(savedAnnonce);
