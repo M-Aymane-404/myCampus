@@ -27,27 +27,64 @@
 .logo-container-header {
   display: flex;
   align-items: center;
+  gap: 12px;
+  position: relative;
 }
 
 .logo-icone-container-header {
   width: 44px;
   height: 44px;
-  background: #4F46E5;
-  /* Indigo Primary */
+  /* Purple color from the design */
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
 }
 
 .logo-icone-header-span {
-  font-size: 1.5rem;
+  font-size: 1.1rem;
   font-weight: 800;
   color: #FFFFFF;
   font-family: 'Inter', sans-serif;
   line-height: 1;
+  letter-spacing: 0.5px;
 }
+
+.logo-icone-image {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  object-fit: contain;
+}
+
+.logo-text-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.logo-main-text {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1F2937;
+  /* Dark gray for visibility */
+  font-family: 'Inter', sans-serif;
+  line-height: 1;
+}
+
+.logo-sub-text {
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: #6B7280;
+  /* Lighter gray for subtitle */
+  font-family: 'Inter', sans-serif;
+  line-height: 1;
+  margin-top: 2px;
+  letter-spacing: 0.5px;
+}
+
+
 
 /* 2. Middle Section: Pill Navigation */
 .en-tete-nav-container {
