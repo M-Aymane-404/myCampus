@@ -1,6 +1,7 @@
 package com.mycampus.backend.web.administrateur.imports;
 
 import com.mycampus.backend.dto.administrateur.imports.RapportImportEtudiantsSortieDTO;
+import com.mycampus.backend.enumerations.ModeImport;
 import com.mycampus.backend.metier.administrateur.imports.GestionImportEtudiantsMetier;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -28,7 +29,7 @@ public class ImportEtudiantsController {
     private final GestionImportEtudiantsMetier gestionImportEtudiantsMetier;
 
     @PostMapping(value = "/import-fichier", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "Importer des étudiants depuis un fichier", description = "Importe des étudiants en masse depuis un fichier CSV")
+    @Operation(summary = "Importer des étudiants depuis un fichier", description = "Importe des étudiants en masse depuis un fichier CSV, XLSX ou XLS")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Import réussi",
             content = @Content(schema = @Schema(implementation = RapportImportEtudiantsSortieDTO.class))),
@@ -37,10 +38,14 @@ public class ImportEtudiantsController {
         @ApiResponse(responseCode = "500", description = "Erreur serveur")
     })
     public ResponseEntity<RapportImportEtudiantsSortieDTO> importerEtudiants(
+
             @Parameter(description = "Code de la classe", required = true) @RequestParam String codeClasse,
-            @Parameter(description = "Fichier à importer (CSV)", required = true) @RequestPart("fichier") MultipartFile fichier,
-            @Parameter(description = "Mode d'import: PARTIEL ou ATOMIC") @RequestParam(defaultValue = "PARTIEL") String modeImport,
+            @Parameter(description = "Fichier à importer (CSV, XLSX ou XLS)", required = true) @RequestPart("fichier") MultipartFile fichier,
+            @Parameter(description = "Mode d'import: PARTIEL ou ATOMIC" +
+                    "PARTIEL : insère les lignes valides uniquement. " +
+                    "ATOMIC : annule tout l’import si une erreur est détectée.") @RequestParam(defaultValue = "PARTIEL") ModeImport modeImport,
             @Parameter(description = "Mot de passe par défaut (optionnel)") @RequestParam(required = false) String motDePasseDefaut
+
     ) {
         
         log.info("Demande d'import étudiants: classe={}, fichier={}, mode={}", codeClasse, fichier.getOriginalFilename(), modeImport);
