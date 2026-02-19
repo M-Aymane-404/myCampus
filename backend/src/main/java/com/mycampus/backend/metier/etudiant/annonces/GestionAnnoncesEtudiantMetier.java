@@ -6,7 +6,7 @@ import java.util.List;
 
 public interface GestionAnnoncesEtudiantMetier {
     
-    List<AnnonceSortieEtudiantDTO> listerAnnoncesVisibles(String emailEtudiant);
+    List<AnnonceSortieEtudiantDTO> listerAnnoncesVisibles(Long idEtudiant);
     
-    AnnonceSortieEtudiantDTO trouverAnnonceParId(Long id, String emailEtudiant);
+    AnnonceSortieEtudiantDTO trouverAnnonceParId(Long id, Long idEtudiant);
 }

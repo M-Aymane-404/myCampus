@@ -34,14 +34,14 @@ public class TableauDeBordEtudiantMetierImpl implements TableauDeBordEtudiantMet
 
     @Override
     @Transactional(readOnly = true)
-    public TableauDeBordEtudiantSortieDTO obtenirTableauDeBord(String emailEtudiant) throws  UtilisateursException {
-        if (emailEtudiant == null || emailEtudiant.isBlank()) {
+    public TableauDeBordEtudiantSortieDTO obtenirTableauDeBord(Long idEtudiant) throws  UtilisateursException {
+        if (idEtudiant == null ) {
             throw new UtilisateursException("Email étudiant manquant (non authentifié)");
         }
 
-        log.info("Génération du tableau de bord pour l'étudiant: {}", emailEtudiant);
+        log.info("Génération du tableau de bord pour l'étudiant: {}", idEtudiant);
         
-        Etudiant etudiant =  etudiantRepository.findByEmailWithClasseAndFiliere(emailEtudiant)
+        Etudiant etudiant =  etudiantRepository.findByIdWithClasseAndFiliere(idEtudiant)
                 .orElseThrow(() -> new UtilisateursException("Étudiant non trouvé"));
         
         EnteteEtudiantDTO entete = creerEntete(etudiant);

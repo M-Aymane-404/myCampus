@@ -7,9 +7,11 @@ import com.mycampus.backend.dto.securite.sortie.RotationResult;
 import com.mycampus.backend.entites.RefreshToken;
 import com.mycampus.backend.entites.Utilisateur;
 import com.mycampus.backend.exceptions.SecuriteException;
+import com.mycampus.backend.metier.security.CustomUserDetails;
 import com.mycampus.backend.metier.security.RefreshTokenMetier;
 import com.mycampus.backend.metier.security.RefreshTokenMetierImpl;
 import com.mycampus.backend.metier.security.UserDetailsServiceImpl;
+import com.mycampus.backend.repositorys.UtilisateurRepository;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,6 +26,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
@@ -50,27 +53,23 @@ public class SecurityController {
      private final RefreshTokenMetier refreshTokenMetier;
      private final UserDetailsServiceImpl userDetailsServiceImpl;
     private final SimpMessagingTemplate messagingTemplate;
+    private final UtilisateurRepository utilisateurRepository;
 
 
 
     private final boolean cookieSecure =  false;
 
-    @PostMapping("/test/ws/global")
-    public void testGlobal() {
-        messagingTemplate.convertAndSend(
-                "/topic/global",
-                (Object) Map.of("msg", "hello global")
+    @GetMapping("/me")
+    public Map<String,Object> me(@AuthenticationPrincipal CustomUserDetails user) {
+        return Map.of(
+                "id", user.getId(),
+                "email", user.getUsername(),
+                "cin", user.getCin(),
+                "active", user.isEnabled(),
+                "authorities", user.getAuthorities().stream().map(a -> a.getAuthority()).toList()
         );
     }
 
-    @PostMapping("/auth/test/ws/user")
-    public void testUser(@RequestParam String email) {
-        messagingTemplate.convertAndSendToUser(
-                email,
-                "/queue/notifications",
-                java.util.Map.of("msg", "hello user", "to", email)
-        );
-    }
 
 
     @GetMapping("/profile")
@@ -90,7 +89,8 @@ public class SecurityController {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(connectionDTO.getEmail(),connectionDTO.getMotDePasse())
         );
-
+        Utilisateur u = utilisateurRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new SecuriteException("Utilisateur introuvable"));
 
         Instant instant = Instant.now();
         String scope  = authentication.getAuthorities().stream()
@@ -101,6 +101,10 @@ public class SecurityController {
 
                 .subject(authentication.getName())
                 .claim("scope", scope)
+                .claim("userId", u.getId())
+                .claim("cin", u.getCin())
+                .claim("active", u.getActive())
+
                 .build();
         JwtEncoderParameters jwtEncoderParameters = JwtEncoderParameters.from(
                 JwsHeader.with(MacAlgorithm.HS512).build(),jwtClaimsSet);
@@ -147,7 +151,8 @@ public class SecurityController {
 
         UserDetails userDetails = userDetailsServiceImpl.loadUserByUsername(nouveau.getEmail());
 
-
+        Utilisateur u = utilisateurRepository.findByEmail(nouveau.getEmail())
+                .orElseThrow(() -> new SecuriteException("Utilisateur introuvable"));
 
         Instant instant = Instant.now();
         String scope  = userDetails.getAuthorities().stream()
@@ -158,6 +163,10 @@ public class SecurityController {
 
                 .subject(userDetails.getUsername())
                 .claim("scope", scope)
+                .claim("userId", u.getId())
+                .claim("cin", u.getCin())
+                .claim("active", u.getActive())
+
                 .build();
         JwtEncoderParameters jwtEncoderParameters = JwtEncoderParameters.from(
                 JwsHeader.with(MacAlgorithm.HS512).build(),jwtClaimsSet);

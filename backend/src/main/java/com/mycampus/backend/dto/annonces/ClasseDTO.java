@@ -1,5 +1,7 @@
 package com.mycampus.backend.dto.annonces;
 
+import com.mycampus.backend.enumerations.NiveauAnnee;
+import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 @Getter
@@ -11,5 +13,5 @@ public class ClasseDTO {
     private Long id;
     private String codeClasse;
     private String nom;
-    private String niveau;
-}
+
+     private NiveauAnnee niveau;}

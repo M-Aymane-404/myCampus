@@ -19,11 +19,11 @@ public interface NotificationMetier {
 
     void notifierToutsEtudiant(NotificationEntrerPourPlusieursUtilisateurDTO dto) throws NotificationException;
 
-    Page<NotificationSortieDTO> listerNotificationsUtilisateur(String email, Pageable pageable);
+    Page<NotificationSortieDTO> listerNotificationsUtilisateur(Long id, Pageable pageable);
 
-    long compterNotificationsNonLuesUtilisateur(String email);
+    long compterNotificationsNonLuesUtilisateur(Long id);
 
-    NotificationSortieDTO marquerNotificationCommeLue(String email, Long notificationId);
+    NotificationSortieDTO marquerNotificationCommeLue(Long id, Long notificationId);
 
-    int marquerToutesNotificationsCommeLues(String email);
+    int marquerToutesNotificationsCommeLues(Long id);
 }

@@ -4,5 +4,5 @@ import com.mycampus.backend.dto.etudiant.tableauDeBord.TableauDeBordEtudiantSort
 
 public interface TableauDeBordEtudiantMetier {
     
-    TableauDeBordEtudiantSortieDTO obtenirTableauDeBord(String emailEtudiant);
+    TableauDeBordEtudiantSortieDTO obtenirTableauDeBord(Long idEtudiant);
 }

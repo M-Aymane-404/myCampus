@@ -42,10 +42,9 @@ public class GestionAnnoncesAdministrateurMetierImpl implements GestionAnnoncesA
 
     @Override
     @Transactional
-    public AnnonceSortieDTO creerAnnonce(AnnonceEntrerDTO annonceDTO, String emailAuteur) {
-        log.info("Création d'annonce par administrateur: {}", emailAuteur);
-        
-        Utilisateur auteur = utilisateurRepository.findByEmail(emailAuteur)
+    public AnnonceSortieDTO creerAnnonce(AnnonceEntrerDTO annonceDTO, Long idAuteur) {
+
+        Utilisateur auteur = utilisateurRepository.findById(idAuteur)
                 .orElseThrow(() -> new UtilisateursException("Auteur non trouvé"));
         
 

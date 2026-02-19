@@ -477,7 +477,7 @@
             if (classeModificationDTO.getNom() != null && !classeModificationDTO.getNom().trim().isEmpty()) {
                 classe.setNom(classeModificationDTO.getNom());
             }
-            if (classeModificationDTO.getNiveau() != null && !classeModificationDTO.getNiveau().trim().isEmpty()) {
+            if (classeModificationDTO.getNiveau() != null  ) {
                 classe.setNiveau(classeModificationDTO.getNiveau());
             }
             if (classeModificationDTO.getAnneeUniversitaire() != null && !classeModificationDTO.getAnneeUniversitaire().trim().isEmpty()) {

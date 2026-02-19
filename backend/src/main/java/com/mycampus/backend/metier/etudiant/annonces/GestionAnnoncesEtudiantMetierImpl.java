@@ -31,10 +31,10 @@ public class GestionAnnoncesEtudiantMetierImpl implements GestionAnnoncesEtudian
 
     @Override
     @Transactional(readOnly=true)
-    public List<AnnonceSortieEtudiantDTO> listerAnnoncesVisibles(String emailEtudiant) {
-        log.info("Listage des annonces visibles pour l'étudiant: {}", emailEtudiant);
+    public List<AnnonceSortieEtudiantDTO> listerAnnoncesVisibles(Long idEtudiant) {
+        log.info("Listage des annonces visibles pour l'étudiant: {}", idEtudiant);
         
-        Etudiant etudiant =   etudiantRepository.findByEmail(emailEtudiant)
+        Etudiant etudiant =   etudiantRepository.findById(idEtudiant)
                 .orElseThrow(() -> new UtilisateursException("Étudiant non trouvé"));
         
         if (etudiant.getClasse() == null) {
@@ -56,10 +56,10 @@ public class GestionAnnoncesEtudiantMetierImpl implements GestionAnnoncesEtudian
 
     @Override
     @Transactional(readOnly=true)
-    public AnnonceSortieEtudiantDTO trouverAnnonceParId(Long id, String emailEtudiant) {
-        log.info("Recherche de l'annonce {} pour l'étudiant: {}", id, emailEtudiant);
+    public AnnonceSortieEtudiantDTO trouverAnnonceParId(Long id, Long idEtudiant) {
+        log.info("Recherche de l'annonce {} pour l'étudiant: {}", id, idEtudiant);
         
-        Etudiant etudiant =  etudiantRepository.findByEmail(emailEtudiant)
+        Etudiant etudiant =  etudiantRepository.findById(idEtudiant)
                 .orElseThrow(() -> new UtilisateursException("Étudiant non trouvé"));
         
         Annonce annonce = annonceRepository.findByAnnonce_Id(id)

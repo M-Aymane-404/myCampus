@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface GestionAnnoncesAdministrateurMetier {
     
-    AnnonceSortieDTO creerAnnonce(AnnonceEntrerDTO annonceDTO, String emailAuteur);
+    AnnonceSortieDTO creerAnnonce(AnnonceEntrerDTO annonceDTO, Long idAuteur);
 
 
     List<AnnonceSortieDTO> listerToutesAnnonces();

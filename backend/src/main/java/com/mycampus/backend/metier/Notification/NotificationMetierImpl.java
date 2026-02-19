@@ -126,25 +126,25 @@ public class NotificationMetierImpl implements NotificationMetier {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<NotificationSortieDTO> listerNotificationsUtilisateur(String email, Pageable pageable) {
-        return notificationRepository.trouverInboxParEmail(email, pageable).map(notificationMappers::mapperProjectionInbox);
+    public Page<NotificationSortieDTO> listerNotificationsUtilisateur(Long id, Pageable pageable) {
+        return notificationRepository.trouverInboxParId(id, pageable).map(notificationMappers::mapperProjectionInbox);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public long compterNotificationsNonLuesUtilisateur(String email) {
-        return notificationRepository.countByUtilisateur_EmailAndLuFalse(email);
+    public long compterNotificationsNonLuesUtilisateur(Long id) {
+        return notificationRepository.countByUtilisateur_IdAndLuFalse(id);
     }
 
     @Override
-    public NotificationSortieDTO marquerNotificationCommeLue(String email, Long notificationId) {
+    public NotificationSortieDTO marquerNotificationCommeLue(Long id, Long notificationId) {
         if (notificationId == null) {
             throw new NotificationException("L'identifiant de notification est obligatoire");
         }
 
-        notificationRepository.marquerCommeLue(notificationId, email, LocalDateTime.now());
+        notificationRepository.marquerCommeLueParIdUtilisateur(notificationId, id, LocalDateTime.now());
 
-        Notification notification = notificationRepository.findByIdAndUtilisateur_Email(notificationId, email)
+        Notification notification = notificationRepository.findByIdAndUtilisateur_Id(notificationId, id)
                 .orElseThrow(() -> new NotificationException("Notification introuvable pour cet utilisateur"));
 
         NotificationSortieDTO sortie = notificationMappers.notificationToNotificationSortieDTO(notification);
@@ -154,8 +154,8 @@ public class NotificationMetierImpl implements NotificationMetier {
     }
 
     @Override
-    public int marquerToutesNotificationsCommeLues(String email) {
-        return notificationRepository.marquerToutesCommeLues(email, LocalDateTime.now());
+    public int marquerToutesNotificationsCommeLues(Long id) {
+        return notificationRepository.marquerToutesCommeLuesParIdUtilisateur(id, LocalDateTime.now());
     }
 
     private Utilisateur requireAuteur(Long id) throws UtilisateursException {

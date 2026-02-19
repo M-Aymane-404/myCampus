@@ -104,7 +104,7 @@ public class EtudiantsSeeder {
         Filiere ilcs = requireFiliere("ILCS");
         List<Classe> classes = Arrays.asList(
             Classe.builder().codeClasse("ILCS1-A").nom("ILCS1-A")
-                .niveau("1ère année").anneeUniversitaire("2024-2025")
+                .niveau(NiveauAnnee.A1).anneeUniversitaire("2024-2025")
                 .effectifMax(30).filiere(ilcs)
                 .build()
         );

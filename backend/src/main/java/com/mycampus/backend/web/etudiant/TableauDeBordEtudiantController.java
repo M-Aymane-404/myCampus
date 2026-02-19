@@ -2,6 +2,7 @@ package com.mycampus.backend.web.etudiant;
 
 import com.mycampus.backend.dto.etudiant.tableauDeBord.TableauDeBordEtudiantSortieDTO;
 import com.mycampus.backend.metier.etudiant.tableauDeBord.TableauDeBordEtudiantMetier;
+import com.mycampus.backend.metier.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -13,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -34,12 +36,10 @@ public class TableauDeBordEtudiantController {
         @ApiResponse(responseCode = "404", description = "Étudiant non trouvé")
     })
     public ResponseEntity<TableauDeBordEtudiantSortieDTO> obtenirTableauDeBord(
-            Authentication authentication) {
+            @AuthenticationPrincipal CustomUserDetails user) {
         
-        String emailEtudiant = authentication.getName();
-        log.info("Demande du tableau de bord pour l'étudiant: {}", emailEtudiant);
-        
-        TableauDeBordEtudiantSortieDTO result = tableauDeBordEtudiantMetier.obtenirTableauDeBord(emailEtudiant);
+
+        TableauDeBordEtudiantSortieDTO result = tableauDeBordEtudiantMetier.obtenirTableauDeBord(user.getId());
         return ResponseEntity.ok(result);
     }
 }

@@ -5,12 +5,14 @@ import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.Administ
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.AdministrateurModificationDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.AdministrateurSortieDTO;
 import com.mycampus.backend.metier.administrateur.utilisateurs.GestionUtilisateursMetier;
+import com.mycampus.backend.metier.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -52,9 +54,9 @@ public class AdministrateurController {
 
     @PutMapping("/moi/modifier")
     public ResponseEntity<AdministrateurSortieDTO> modifierAdministrateurConnecter(
-            Authentication authentication,
+            @AuthenticationPrincipal CustomUserDetails user,
             @Valid @RequestBody AdministrateurConnecterModificationDTO administrateurModificationDTO) {
-        AdministrateurSortieDTO updated = gestionUtilisateursMetier.modifierAdministrateurConnecter(authentication.getName(), administrateurModificationDTO);
+        AdministrateurSortieDTO updated = gestionUtilisateursMetier.modifierAdministrateurConnecter(user.getId(), administrateurModificationDTO);
         return ResponseEntity.ok(updated);
     }
 

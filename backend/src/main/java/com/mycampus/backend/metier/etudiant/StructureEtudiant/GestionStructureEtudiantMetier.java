@@ -36,7 +36,7 @@ public interface GestionStructureEtudiantMetier {
     ReleveDeNoteEtudiantParSessionDTO trouverLeReleverDeNoteParSessionDuEtudiant(Long idEtudiant, Semestre semestre)
             throws EtudiantException;
       TelechargementFichierSeanceSortieDTO preparerTelechargementFichierSeance(
-            String etudiantEmail,
+            Long idEtudiant,
             Long fichierSeanceId
     ) throws SeancesProfesseurException;
 

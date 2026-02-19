@@ -1,6 +1,7 @@
    package com.mycampus.backend.Securite;
 
 
+    import com.mycampus.backend.metier.security.JwtToCustomPrincipalConverter;
     import com.mycampus.backend.metier.security.UserDetailsServiceImpl;
     import com.mycampus.backend.web.errors.JsonAccessDeniedHandler;
     import com.mycampus.backend.web.errors.JsonAuthenticationEntryPoint;
@@ -56,9 +57,7 @@
            grantedAuthoritiesConverter.setAuthoritiesClaimName("scope");
            grantedAuthoritiesConverter.setAuthorityPrefix("");
 
-           JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
-           jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);
-
+           var customConverter = new JwtToCustomPrincipalConverter(grantedAuthoritiesConverter);
 
            return http
                    .headers(header -> header.frameOptions(frame -> frame.disable()))
@@ -80,7 +79,7 @@
                            .requestMatchers("/ws/**", "/ws-sockjs/**").permitAll()
                            .anyRequest().authenticated()
                    )
-                   .oauth2ResourceServer(oa -> oa.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)))
+                   .oauth2ResourceServer(oa -> oa.jwt(jwt -> jwt.jwtAuthenticationConverter(customConverter)))
                    .userDetailsService(userDetailsServiceImpl)
                    .build();
        }

@@ -4,6 +4,7 @@ import com.mycampus.backend.entites.Role;
 import com.mycampus.backend.entites.Utilisateur;
 import com.mycampus.backend.repositorys.UtilisateurRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -11,7 +12,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -41,14 +44,24 @@ public class UserDetailsServiceImpl implements org.springframework.security.core
             }
         });
 
-        return User.withUsername(utilisateur.getEmail())
+          Collection<GrantedAuthority> grantedAuthorities = authorities.stream()
+                .distinct()
+                .map(org.springframework.security.core.authority.SimpleGrantedAuthority::new).collect(Collectors.toSet());
+
+
+
+        return CustomUserDetails.builder()
+                .id(utilisateur.getId())
+                .email(utilisateur.getEmail())
+                .cin(utilisateur.getCin())
+                .active(utilisateur.getActive())
                 .password(utilisateur.getPassword())
-                .authorities(authorities.toArray(new String[0]))
-                .accountLocked(!utilisateur.getActive())
-                .credentialsExpired(false)
-                .accountExpired(false)
-                .disabled(!utilisateur.getActive())
+                .authorities(grantedAuthorities)
                 .build();
+
+
+
+
 
     }
 }

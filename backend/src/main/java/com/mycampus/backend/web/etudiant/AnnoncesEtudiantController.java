@@ -2,6 +2,7 @@ package com.mycampus.backend.web.etudiant;
 
 import com.mycampus.backend.dto.annonces.AnnonceSortieEtudiantDTO;
 import com.mycampus.backend.metier.etudiant.annonces.GestionAnnoncesEtudiantMetier;
+import com.mycampus.backend.metier.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -14,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -36,11 +38,9 @@ public class AnnoncesEtudiantController {
         @ApiResponse(responseCode = "404", description = "Étudiant non trouvé")
     })
     public ResponseEntity<List<AnnonceSortieEtudiantDTO>> listerAnnoncesVisibles(
-            Authentication authentication) {
+            @AuthenticationPrincipal CustomUserDetails user) {
         
-        String emailEtudiant = authentication.getName();
-        log.info("Listage des annonces visibles pour l'étudiant: {}", emailEtudiant);
-        List<AnnonceSortieEtudiantDTO> result = gestionAnnoncesEtudiantMetier.listerAnnoncesVisibles(emailEtudiant);
+         List<AnnonceSortieEtudiantDTO> result = gestionAnnoncesEtudiantMetier.listerAnnoncesVisibles(user.getId());
         return ResponseEntity.ok(result);
     }
 
@@ -53,11 +53,9 @@ public class AnnoncesEtudiantController {
     })
     public ResponseEntity<AnnonceSortieEtudiantDTO> trouverAnnonceParId(
             @Parameter(description = "ID de l'annonce") @PathVariable Long id,
-            Authentication authentication) {
+            @AuthenticationPrincipal CustomUserDetails user) {
         
-        String emailEtudiant = authentication.getName();
-        log.info("Recherche de l'annonce {} pour l'étudiant: {}", id, emailEtudiant);
-        AnnonceSortieEtudiantDTO result = gestionAnnoncesEtudiantMetier.trouverAnnonceParId(id, emailEtudiant);
+         AnnonceSortieEtudiantDTO result = gestionAnnoncesEtudiantMetier.trouverAnnonceParId(id, user.getId());
         return ResponseEntity.ok(result);
     }
 }

@@ -1,5 +1,9 @@
 package com.mycampus.backend.dto.administrateur.DonneEntrer.Creation;
 
+import com.mycampus.backend.enumerations.NiveauAnnee;
+import jakarta.persistence.Column;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -25,9 +29,10 @@ public class ClasseEntrerDTO {
     @NotBlank(message = "Nom classe obligatoire")
     @Size(max = 100, message = "Nom classe ne doit pas dépasser 100 caractères")
     private String nom;
-    
-    @Size(max = 50, message = "Niveau ne doit pas dépasser 50 caractères")
-    private String niveau;
+
+
+    @NotBlank(message = "Niveau classe obligatoire")
+    private NiveauAnnee niveau;
     
     private Integer effectifMax;
     

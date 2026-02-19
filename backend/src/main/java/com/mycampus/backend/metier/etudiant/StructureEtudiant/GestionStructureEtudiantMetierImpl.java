@@ -427,13 +427,13 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
 
     @Override
      public TelechargementFichierSeanceSortieDTO preparerTelechargementFichierSeance(
-            String etudiantEmail,
+            Long idEtudiant ,
             Long fichierSeanceId
     ) throws SeancesProfesseurException {
 
-         requireEtudiantEmail(etudiantEmail);
+         requireEtudiantId(idEtudiant);
 
-        FichierSeance fichier = requireFichierSeancePourProfesseur(etudiantEmail, fichierSeanceId);
+        FichierSeance fichier = requireFichierSeancePourProfesseur(idEtudiant, fichierSeanceId);
 
         String chemin = fichier.getChemin();
         if (chemin == null || chemin.isBlank()) {
@@ -466,6 +466,12 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
         }
     }
 
+    private void requireEtudiantId(Long idEtudiant) throws UtilisateursException {
+        if (idEtudiant == null  ) {
+            throw new UtilisateursException("Le id du professeur est obligatoire.");
+        }
+    }
+
     private FichierSeance requireFichierSeancePourProfesseur(String etudiantEmail, Long fichierSeanceId)
             throws SeancesProfesseurException {
 
@@ -477,6 +483,26 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
 
        Classe classe =  classeRepository.findByEtudiant_EmailEtudiant(etudiantEmail)
                .orElseThrow(() -> new UtilisateursException("Étudiant ne Assigne a accan classe introuvable ou non autorisé."));
+
+        return fichierSeanceRepository
+                .findByIdAndSeance_AffectationEnseignement_Classe_CodeClasse(fichierSeanceId, classe.getCodeClasse())
+                .orElseThrow(() -> new SeancesProfesseurException("Fichier introuvable ou non autorisé."));
+    }
+
+    private FichierSeance requireFichierSeancePourProfesseur(Long idEtudiant, Long fichierSeanceId)
+            throws SeancesProfesseurException {
+
+        requireEtudiantId(idEtudiant);
+
+        if (fichierSeanceId == null) {
+            throw new SeancesProfesseurException("L'identifiant du fichier est obligatoire.");
+        }
+
+        Classe classe =  classeRepository.findByEtudiant_idEtudiant(idEtudiant);
+        if  (classe == null) {
+            throw new UtilisateursException("Étudiant ne Assigne a accan classe introuvable ou non autorisé.");
+        }
+
 
         return fichierSeanceRepository
                 .findByIdAndSeance_AffectationEnseignement_Classe_CodeClasse(fichierSeanceId, classe.getCodeClasse())

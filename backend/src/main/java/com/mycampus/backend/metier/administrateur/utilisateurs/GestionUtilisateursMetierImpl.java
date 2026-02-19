@@ -219,17 +219,17 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
 
 
     @Override
-    public AdministrateurSortieDTO modifierAdministrateurConnecter(String email, AdministrateurConnecterModificationDTO administrateurModificationDTO) throws UtilisateursException {
-        if (email == null || email.trim().isEmpty()) {
-            throw new UtilisateursException("Le PPR de l'administrateur ne peut pas être nul");
+    public AdministrateurSortieDTO modifierAdministrateurConnecter(Long id, AdministrateurConnecterModificationDTO administrateurModificationDTO) throws UtilisateursException {
+        if (id == null  ) {
+            throw new UtilisateursException("Le id de l'administrateur ne peut pas être nul");
         }
 
         if (administrateurModificationDTO == null) {
             throw new UtilisateursException("Les données de l'administrateur ne peuvent pas être nulles");
         }
 
-        Administrateur adminAModifier = administrateurRepository.findByEmail(email).orElseThrow(() ->
-                new UtilisateursException("Administrateur introuvable avec le PPR: " + email));
+        Administrateur adminAModifier = administrateurRepository.findById(id).orElseThrow(() ->
+                new UtilisateursException("Administrateur introuvable avec le id: " + id));
 
 
 
