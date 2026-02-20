@@ -22,8 +22,6 @@ public class ModuleModificationDTO {
     
     private Semestre semestre;
     
-    @Min(value = 1, message = "Coefficient minimum est 1")
-    private Integer coefficient;
-    
+
     private String codeFiliere;
 }

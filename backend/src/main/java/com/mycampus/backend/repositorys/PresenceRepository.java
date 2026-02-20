@@ -22,6 +22,7 @@ public interface PresenceRepository extends JpaRepository<Presence, Long> {
 
     Optional<Presence> findBySeance_IdAndEtudiant_Apogee(Long seanceId, String apogee);
 
+    Optional<Presence> findByIdAndEtudiant_Id(Long id, Long etudiantId);
 
 
 }

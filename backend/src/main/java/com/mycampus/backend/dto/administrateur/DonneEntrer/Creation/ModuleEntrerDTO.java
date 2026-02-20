@@ -33,8 +33,7 @@ public class ModuleEntrerDTO {
     @NotNull(message = "Semestre obligatoire")
     private Semestre semestre;
     
-    private Integer coefficient;
-    
+
     @Pattern(
             regexp = "^[A-Z0-9]{2,10}$",
             message = "Code filière doit contenir 2-10 caractères alphanumériques en majuscules"

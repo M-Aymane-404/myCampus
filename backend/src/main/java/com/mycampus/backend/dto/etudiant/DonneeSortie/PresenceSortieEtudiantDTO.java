@@ -1,6 +1,9 @@
 package com.mycampus.backend.dto.etudiant.DonneeSortie;
 
 import com.mycampus.backend.enumerations.StatusAbsence;
+import com.mycampus.backend.enumerations.TypeMotif;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -14,10 +17,16 @@ public class PresenceSortieEtudiantDTO {
       private Long id;
 
     private StatusAbsence status;
+     private String descriptionDeJustification;
 
-    private Boolean justifiee ;
-    
-    private String motif;
+
+     private boolean validationMotif ;
+
+      private TypeMotif typeMotif;
+
+     private String motifUrl;
+
+     private String motifNom;
 
     private LocalDateTime dateDeclaration;
 

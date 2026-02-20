@@ -1,7 +1,5 @@
 package com.mycampus.backend.metier.etudiant.StructureEtudiant;
 
-import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.EtudiantModificationDTO;
-import com.mycampus.backend.dto.administrateur.DonneSortie.EtudiantSortieDTO;
 import com.mycampus.backend.dto.etudiant.DonneeEntrer.EtudiantModificationEtudiantDTO;
 import com.mycampus.backend.dto.etudiant.DonneeSortie.*;
 import com.mycampus.backend.dto.etudiant.DonneeSortie.ReleveDeNote.ExamenDeReleveEtudiantDTO;
@@ -25,7 +23,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -35,6 +32,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 @Service
@@ -316,11 +315,16 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
         if (idEtudiant == null) throw new EtudiantException("id d'etudiant est obligatoire");
         if (semestre == null) throw new EtudiantException("semestre est obligatoire");
 
+
         List<Module> modules = moduleRepository.findByEtudiantIdEtSemester(idEtudiant, semestre);
 
         List<ModuleDeReleveEtudiantDTO> modulesDto = modules.stream()
                 .map(mapper::DuModuleVersModuleDeReleveEtudiantDTO)
                 .toList();
+           AtomicReference<Double> sommeDuMoyennesDesModule = new AtomicReference<>(0.0);
+         AtomicInteger nbModulesValider = new AtomicInteger(0);
+        AtomicInteger nbModuleQuiOntMoyenneNonNull = new AtomicInteger(0);
+
 
         List<Long> examenIds = modulesDto.stream()
                 .filter(m -> m.getMatieres() != null)
@@ -409,18 +413,39 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
                         somme += moy;
                         nbMoyennes++;
 
+
+
                     }
                  }
 
                  moduleDto.setMoyenneDuModule(nbMoyennes == nbTotal ? (somme / nbTotal) : null);
+                if(moduleDto.getMoyenneDuModule() > 10){
+                    nbModulesValider.getAndIncrement();
+                }
 
             }
 
+           if(moduleDto.getMoyenneDuModule() != null){
+               sommeDuMoyennesDesModule.set(sommeDuMoyennesDesModule.get() + moduleDto.getMoyenneDuModule());
+               nbModuleQuiOntMoyenneNonNull.getAndIncrement();
+           }
+
+
             });
+
+
+        Double moyenneSession = null;
+        if(modulesDto.size() == nbModuleQuiOntMoyenneNonNull.get() && nbModuleQuiOntMoyenneNonNull.get() != 0){
+            moyenneSession = (sommeDuMoyennesDesModule.get()/nbModuleQuiOntMoyenneNonNull.get());
+        }
 
         return ReleveDeNoteEtudiantParSessionDTO.builder()
                 .semestre(semestre)
                 .modules(modulesDto)
+                .nbModulesValider(nbModulesValider.get())
+                .nbModules(modulesDto.size())
+                .moyenneSession(moyenneSession)
+
                 .build();
 
     }

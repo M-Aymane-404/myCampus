@@ -57,7 +57,7 @@ public class PhotoStorageMetierImpl implements PhotoStorageMetier {
     public void supprimerPhotoUtilisateurSiExsist(String photoNom) {
         if (!StringUtils.hasText(photoNom)) return;
 
-        Path path = Paths.get(baseDir, "users", photoNom);
+        Path path = Paths.get(baseDir, "usersPhotos", photoNom);
         try {
             Files.deleteIfExists(path);
         } catch (IOException e) {

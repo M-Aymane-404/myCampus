@@ -611,9 +611,7 @@
             if (moduleModificationDTO.getSemestre() != null) {
                 module.setSemestre(moduleModificationDTO.getSemestre());
             }
-            if (moduleModificationDTO.getCoefficient() != null) {
-                module.setCoefficient(moduleModificationDTO.getCoefficient());
-            }
+
 
             Module moduleModifie = moduleRepository.save(module);
             return structureMapper.FromModuleVersModuleSortieDTO(moduleModifie);

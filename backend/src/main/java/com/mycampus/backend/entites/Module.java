@@ -31,8 +31,7 @@ public class Module {
     @Column(nullable = false)
     private Semestre semestre;
     
-    @Column(nullable = false)
-    private Integer coefficient;
+
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "filiere_id", nullable = false)

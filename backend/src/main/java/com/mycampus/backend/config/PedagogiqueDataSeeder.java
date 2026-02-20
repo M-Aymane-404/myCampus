@@ -77,7 +77,7 @@ public class PedagogiqueDataSeeder {
                         .nom("Réseaux S1")
                         .description("Réseaux informatiques et protocoles")
                         .semestre(Semestre.S1)
-                        .coefficient(3)
+
                         .filiere(ilcs)
                         .build(),
 
@@ -86,8 +86,7 @@ public class PedagogiqueDataSeeder {
                         .nom("Programmation Orientée Objet")
                         .description("Concepts avancés de la programmation orientée objet")
                         .semestre(Semestre.S1)
-                        .coefficient(4)
-                        .filiere(ilcs)
+                         .filiere(ilcs)
                         .build(),
 
                 Module.builder()
@@ -95,8 +94,7 @@ public class PedagogiqueDataSeeder {
                         .nom("Bases de Données")
                         .description("Modélisation et gestion des bases de données relationnelles")
                         .semestre(Semestre.S1)
-                        .coefficient(3)
-                        .filiere(ilcs)
+                         .filiere(ilcs)
                         .build(),
 
                 Module.builder()
@@ -104,8 +102,7 @@ public class PedagogiqueDataSeeder {
                         .nom("Systèmes d’Exploitation")
                         .description("Fonctionnement des systèmes d’exploitation")
                         .semestre(Semestre.S1)
-                        .coefficient(3)
-                        .filiere(ilcs)
+                         .filiere(ilcs)
                         .build(),
 
                  Module.builder()
@@ -113,8 +110,7 @@ public class PedagogiqueDataSeeder {
                         .nom("Langages  étrangère")
                         .description("Étude des langages étrangère")
                         .semestre(Semestre.S1)
-                        .coefficient(4)
-                        .filiere(ilcs)
+                         .filiere(ilcs)
                         .build()
 
 
@@ -392,8 +388,8 @@ public class PedagogiqueDataSeeder {
                     
                     Presence presence = Presence.builder()
                         .status(status)
-                        .justifiee(status == StatusAbsence.ABSENT && Math.random() > 0.5)
-                        .motif(status == StatusAbsence.ABSENT ? "Retard" : null)
+
+
                         .dateDeclaration(LocalDateTime.now())
                         .seance(seance)
                         .etudiant(etudiant)

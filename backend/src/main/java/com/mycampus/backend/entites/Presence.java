@@ -1,6 +1,7 @@
 package com.mycampus.backend.entites;
 
 import com.mycampus.backend.enumerations.StatusAbsence;
+import com.mycampus.backend.enumerations.TypeMotif;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -24,12 +25,21 @@ public class Presence {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private StatusAbsence status;
+
+
+    private String descriptionDeJustification;
+
+    @Builder.Default
+    private boolean validationMotif = false;
+
+    @Enumerated(EnumType.STRING)
+    private TypeMotif typeMotif;
     
-    @Column(nullable = false)
-    private boolean justifiee = false;
-    
-    private String motif;
-    
+    private String motifUrl;
+
+    private String motifNom;
+
+
     @Column(nullable = false)
     private LocalDateTime dateDeclaration;
 

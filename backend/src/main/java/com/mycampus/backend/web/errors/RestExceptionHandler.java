@@ -1,10 +1,6 @@
 package com.mycampus.backend.web.errors;
 
-import com.mycampus.backend.exceptions.EtudiantException;
-import com.mycampus.backend.exceptions.NotificationException;
-import com.mycampus.backend.exceptions.SeancesProfesseurException;
-import com.mycampus.backend.exceptions.StructureAcademiqueException;
-import com.mycampus.backend.exceptions.UtilisateursException;
+import com.mycampus.backend.exceptions.*;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -46,6 +42,20 @@ public class RestExceptionHandler {
     @ExceptionHandler(StructureAcademiqueException.class)
     public ResponseEntity<Object> handleStructureAcademiqueException(StructureAcademiqueException ex, HttpServletRequest  request) {
         log.error("Structure académique exception: {}", ex.getMessage());
+
+        Map<String, Object> body = construireBody(
+                HttpStatus.BAD_REQUEST,
+                "Requête invalide",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.badRequest().body(body);
+    }
+
+    @ExceptionHandler(PresenceException.class)
+    public ResponseEntity<Object> handlePresenceException(PresenceException ex, HttpServletRequest  request) {
+        log.error("Presence exception: {}", ex.getMessage());
 
         Map<String, Object> body = construireBody(
                 HttpStatus.BAD_REQUEST,

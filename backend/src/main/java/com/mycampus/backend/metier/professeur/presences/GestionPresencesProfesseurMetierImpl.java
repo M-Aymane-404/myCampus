@@ -102,8 +102,8 @@ public class GestionPresencesProfesseurMetierImpl implements GestionPresencesPro
             presence.setSeance(seance);
             presence.setEtudiant(etudiant);
             presence.setStatus(ligne.getStatus());
-            presence.setJustifiee(ligne.isJustifiee());
-            presence.setMotif(ligne.getMotif());
+           // presence.setJustifiee(ligne.isJustifiee());
+            // presence.setMotif(ligne.getMotif());
             presence.setDateDeclaration(LocalDateTime.now());
 
             presenceRepository.save(presence);
@@ -129,8 +129,8 @@ public class GestionPresencesProfesseurMetierImpl implements GestionPresencesPro
                         .idPresence(p.getSeance().getId())
                         .apogee(p.getEtudiant().getApogee())
                         .status(p.getStatus())
-                        .justifiee(p.isJustifiee())
-                        .motif(p.getMotif())
+                     //   .justifiee(p.isJustifiee())
+                      //  .motif(p.getMotif())
                         .build())
                 .toList();
     }
