@@ -13,7 +13,11 @@ import java.util.List;
 public class ReleveDeNoteEtudiantParSessionDTO {
 
     private Semestre semestre;
+
+
     private Double moyenneSession;
+    private Integer nbModules;
+    private Integer nbModulesValider;
 
    private List<ModuleDeReleveEtudiantDTO> modules;
 }

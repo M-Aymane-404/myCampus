@@ -17,6 +17,5 @@ public class ModuleSortieEtudiantDTO {
     private  String nom;
     private  String description;
     private  Semestre semestre;
-    private  Integer coefficient;
 
 }

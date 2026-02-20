@@ -214,7 +214,15 @@ const EnTete = ({ elementActif, surChangementElement }) => {
       <div className="en-tete-gauche">
         <div className="logo-container-header">
           <div className="logo-icone-container-header">
-            <span className="logo-icone-header-span">E</span>
+            <img 
+              src="/src/assets/images/university_logo.jpeg" 
+              alt="MyCampus Logo" 
+              className="logo-icone-image"
+            />
+          </div>
+          <div className="logo-text-container">
+            <span className="logo-main-text">MyCampus</span>
+            <span className="logo-sub-text">INTELLIGENT HUB</span>
           </div>
         </div>
       </div>
@@ -249,7 +257,7 @@ const EnTete = ({ elementActif, surChangementElement }) => {
                 <img
                   src={infosUtilisateur.photoProfile}
                   alt="Profil"
-                  style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
               ) : (
                 <span className="avatar-lettre">

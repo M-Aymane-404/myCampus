@@ -11,6 +11,7 @@ export const apiProfesseurs = {
       const response = await fetch(`${PROFESSEUR_PROFILE_URL}/moi`, {
         method: 'GET',
         headers: apiAuth.getAuthHeaders(),
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -32,6 +33,7 @@ export const apiProfesseurs = {
           'Content-Type': 'application/json',
           ...apiAuth.getAuthHeaders(),
         },
+        credentials: 'include'
       });
 
       if (!reponse.ok) {
@@ -53,6 +55,7 @@ export const apiProfesseurs = {
           'Content-Type': 'application/json',
           ...apiAuth.getAuthHeaders(),
         },
+        credentials: 'include'
       });
 
       if (!reponse.ok) {
@@ -77,6 +80,7 @@ export const apiProfesseurs = {
         method: 'POST',
         headers: headers,
         body: JSON.stringify(professeur),
+        credentials: 'include'
       });
 
       if (!reponse.ok) {
@@ -117,6 +121,7 @@ export const apiProfesseurs = {
         method: 'PUT',
         headers: headers,
         body: JSON.stringify(professeur),
+        credentials: 'include'
       });
 
       if (!reponse.ok) {
@@ -156,6 +161,7 @@ export const apiProfesseurs = {
       const reponse = await fetch(`${BASE_URL}/${ppr}`, {
         method: 'DELETE',
         headers: headers,
+        credentials: 'include'
       });
 
       if (!reponse.ok) {
@@ -177,6 +183,7 @@ export const apiProfesseurs = {
           'Content-Type': 'application/json',
           ...apiAuth.getAuthHeaders(),
         },
+        credentials: 'include'
       });
 
       if (!reponse.ok) {
@@ -198,6 +205,7 @@ export const apiProfesseurs = {
           'Content-Type': 'application/json',
           ...apiAuth.getAuthHeaders(),
         },
+        credentials: 'include'
       });
 
       if (!reponse.ok) {

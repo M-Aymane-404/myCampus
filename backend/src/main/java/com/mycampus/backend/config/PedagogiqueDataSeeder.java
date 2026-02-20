@@ -35,6 +35,9 @@ public class PedagogiqueDataSeeder {
     private final ClasseRepository classeRepository;
     private final AnnonceRepository annonceRepository;
     private final DepartementRepository departementRepository;
+    private final EtudiantRepository etudiantRepository;
+    private final ProfesseurRepository professeurRepository;
+    private final AdministrateurRepository administrateurRepository;
 
 
 
@@ -50,7 +53,7 @@ public class PedagogiqueDataSeeder {
         seedPresences();
         seedExamens();
         seedResultats();
-        seedNotifications();
+      //  seedNotifications();
         seedAnnonce();
     }
 
@@ -74,7 +77,7 @@ public class PedagogiqueDataSeeder {
                         .nom("Réseaux S1")
                         .description("Réseaux informatiques et protocoles")
                         .semestre(Semestre.S1)
-                        .coefficient(3)
+
                         .filiere(ilcs)
                         .build(),
 
@@ -83,8 +86,7 @@ public class PedagogiqueDataSeeder {
                         .nom("Programmation Orientée Objet")
                         .description("Concepts avancés de la programmation orientée objet")
                         .semestre(Semestre.S1)
-                        .coefficient(4)
-                        .filiere(ilcs)
+                         .filiere(ilcs)
                         .build(),
 
                 Module.builder()
@@ -92,8 +94,7 @@ public class PedagogiqueDataSeeder {
                         .nom("Bases de Données")
                         .description("Modélisation et gestion des bases de données relationnelles")
                         .semestre(Semestre.S1)
-                        .coefficient(3)
-                        .filiere(ilcs)
+                         .filiere(ilcs)
                         .build(),
 
                 Module.builder()
@@ -101,8 +102,7 @@ public class PedagogiqueDataSeeder {
                         .nom("Systèmes d’Exploitation")
                         .description("Fonctionnement des systèmes d’exploitation")
                         .semestre(Semestre.S1)
-                        .coefficient(3)
-                        .filiere(ilcs)
+                         .filiere(ilcs)
                         .build(),
 
                  Module.builder()
@@ -110,8 +110,7 @@ public class PedagogiqueDataSeeder {
                         .nom("Langages  étrangère")
                         .description("Étude des langages étrangère")
                         .semestre(Semestre.S1)
-                        .coefficient(4)
-                        .filiere(ilcs)
+                         .filiere(ilcs)
                         .build()
 
 
@@ -389,8 +388,8 @@ public class PedagogiqueDataSeeder {
                     
                     Presence presence = Presence.builder()
                         .status(status)
-                        .justifiee(status == StatusAbsence.ABSENT && Math.random() > 0.5)
-                        .motif(status == StatusAbsence.ABSENT ? "Retard" : null)
+
+
                         .dateDeclaration(LocalDateTime.now())
                         .seance(seance)
                         .etudiant(etudiant)
@@ -526,24 +525,31 @@ public class PedagogiqueDataSeeder {
     }
 
     private void seedNotifications() {
-        List<Utilisateur> utilisateurs = utilisateurRepository.findAll().stream()
+        List<Etudiant> etudiants = etudiantRepository.findAll().stream()
             .limit(5)
             .toList();
-        
+        List<Administrateur> admis = administrateurRepository.findAll().stream()
+                .limit(5)
+                .toList();
+        List<Professeur> profs = professeurRepository.findAll().stream()
+                .limit(5)
+                .toList();
+
         List<Notification> notifications = Arrays.asList(
             Notification.builder()
                 .titre("Nouveau cours disponible")
                 .message("Le cours de HTML/CSS est maintenant disponible en ligne.")
                 .dateEnvoi(LocalDateTime.now())
                 .type(TypeNotification.COURS_UPLOADE)
-                .utilisateur(utilisateurs.get(0))
+                .utilisateur(etudiants.get(0))
+                    .auteur(profs.get(0))
                 .build(),
             Notification.builder()
                 .titre("Rappel examen")
                 .message("N'oubliez pas l'examen de HTML/CSS prévu pour le 10 décembre.")
                 .dateEnvoi(LocalDateTime.now())
                 .type(TypeNotification.EXAMEN_DEMAIN)
-                .utilisateur(utilisateurs.get(1))
+                .utilisateur(etudiants.get(1))
                 .build(),
             Notification.builder()
                 .titre("Note publiée")
@@ -552,7 +558,7 @@ public class PedagogiqueDataSeeder {
                 .lu(true)
                 .dateLecture(LocalDateTime.now().minusHours(2))
                 .type(TypeNotification.RESULTAT_PUBLIE)
-                .utilisateur(utilisateurs.get(2))
+                .utilisateur(etudiants.get(2))
                 .build(),
             Notification.builder()
                 .titre("Séance ajoutée")
@@ -561,14 +567,14 @@ public class PedagogiqueDataSeeder {
                 .lu(true)
                 .dateLecture(LocalDateTime.now().minusHours(12))
                 .type(TypeNotification.SEANCE_AJOUTEE)
-                .utilisateur(utilisateurs.get(3))
+                .utilisateur(etudiants.get(3))
                 .build(),
             Notification.builder()
                 .titre("Résultat publié")
                 .message("Les résultats de l'examen de Lean Manufacturing sont publiés.")
                 .dateEnvoi(LocalDateTime.now().minusDays(2))
                 .type(TypeNotification.RESULTAT_PUBLIE)
-                .utilisateur(utilisateurs.get(4))
+                .utilisateur(etudiants.get(4))
                 .build()
         );
         

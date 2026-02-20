@@ -1,6 +1,7 @@
 package com.mycampus.backend.dto.administrateur.DonneEntrer.Creation;
 
 import com.mycampus.backend.enumerations.EtatInscription;
+import com.mycampus.backend.enumerations.NiveauAnnee;
 import com.mycampus.backend.enumerations.Semestre;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -29,7 +30,7 @@ public class EtudiantEntrerDTO extends UtilisateurEntrerDto {
     private String apogee;
     
     @Size(max = 50, message = "Niveau ne doit pas dépasser 50 caractères")
-    private String niveau;
+    private NiveauAnnee niveau;
     
     private Integer anneeInscription;
     

@@ -25,8 +25,10 @@ public class AdministrateurConnecterModificationDTO     {
     @Size(max = 100, message = "Email ne doit pas dépasser 100 caractères")
     private String email;
 
+     @Size(min = 8, max = 100, message = "Mot de passe doit contenir entre 8 et 100 caractères")
+     private String ancienPassword;
     @Size(min = 8, max = 100, message = "Mot de passe doit contenir entre 8 et 100 caractères")
-    private String password;
+    private String nouveauPassword;
 
     @Pattern(
             regexp = "^[A-Za-z0-9]{4,8}$",

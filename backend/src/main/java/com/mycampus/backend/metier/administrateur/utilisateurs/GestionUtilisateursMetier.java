@@ -29,7 +29,7 @@ public interface GestionUtilisateursMetier {
     
     AdministrateurSortieDTO modifierAdministrateur(String ppr, AdministrateurModificationDTO administrateurModificationDTO) throws UtilisateursException;
 
-    AdministrateurSortieDTO modifierAdministrateurConnecter(String email, AdministrateurConnecterModificationDTO administrateurModificationDTO) throws UtilisateursException;
+    AdministrateurSortieDTO modifierAdministrateurConnecter(Long id, AdministrateurConnecterModificationDTO administrateurModificationDTO) throws UtilisateursException;
 
     void supprimerAdministrateur(String ppr) throws UtilisateursException;
     

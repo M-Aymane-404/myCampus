@@ -101,8 +101,9 @@ const NotesEtudiant = () => {
                 // Process Modules
                 const processedModules = data.modules.map((mod, idx) => {
                     // Check logic: "Langues" -> Nested. Others -> Flattened.
-                    const isLanguages = mod.nomDuModule.toLowerCase().includes('langue');
-
+                    const normalizedName = mod.nomDuModule.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                    const isLanguages = normalizedName.includes('Langages étrangère');
+                    console.log('Module name:', mod.nomDuModule, '-> Normalized:', normalizedName, '-> isLanguages:', isLanguages);
                     if (isLanguages) {
                         // --- NESTED VIEW (Langues) ---
                         const subjects = mod.matieres.map(mat => {

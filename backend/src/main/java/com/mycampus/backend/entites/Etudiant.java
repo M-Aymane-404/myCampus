@@ -1,5 +1,6 @@
 package com.mycampus.backend.entites;
 
+import com.mycampus.backend.enumerations.NiveauAnnee;
 import com.mycampus.backend.enumerations.Semestre;
 import jakarta.persistence.*;
 import lombok.*;
@@ -22,9 +23,10 @@ public class Etudiant extends Utilisateur {
 
     @Column(nullable = false, unique = true)
     private String apogee;
-    
+
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String niveau;
+    private NiveauAnnee niveau;
     
     @Column(nullable = false)
     private Integer anneeInscription;

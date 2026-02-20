@@ -7,6 +7,7 @@ export const apiMatieres = {
             const reponse = await fetch(BASE_URL, {
                 method: 'GET',
                 headers: apiAuth.getAuthHeaders(),
+                credentials: 'include'
             });
 
             if (!reponse.ok) {
@@ -25,6 +26,7 @@ export const apiMatieres = {
             const reponse = await fetch(`${BASE_URL}/module/${codeModule}`, {
                 method: 'GET',
                 headers: apiAuth.getAuthHeaders(),
+                credentials: 'include'
             });
 
             if (!reponse.ok) {
@@ -47,6 +49,7 @@ export const apiMatieres = {
                     ...apiAuth.getAuthHeaders(),
                 },
                 body: JSON.stringify(matiere),
+                credentials: 'include'
             });
 
             if (!reponse.ok) {
@@ -70,6 +73,7 @@ export const apiMatieres = {
                     ...apiAuth.getAuthHeaders(),
                 },
                 body: JSON.stringify(matiere),
+                credentials: 'include'
             });
 
             if (!reponse.ok) {
@@ -89,6 +93,7 @@ export const apiMatieres = {
             const reponse = await fetch(`${BASE_URL}/module/${codeModule}/classe/${codeClasse}`, {
                 method: 'GET',
                 headers: apiAuth.getAuthHeaders(),
+                credentials: 'include'
             });
 
             if (!reponse.ok) {
@@ -98,6 +103,7 @@ export const apiMatieres = {
                 const fallbackReponse = await fetch(`${BASE_URL}/module/${codeModule}`, {
                     method: 'GET',
                     headers: apiAuth.getAuthHeaders(),
+                    credentials: 'include'
                 });
                 
                 if (!fallbackReponse.ok) {
@@ -121,6 +127,7 @@ export const apiMatieres = {
             const reponse = await fetch(`${BASE_URL}/${codeMatiere}`, {
                 method: 'DELETE',
                 headers: apiAuth.getAuthHeaders(),
+                credentials: 'include'
             });
 
             if (!reponse.ok) {

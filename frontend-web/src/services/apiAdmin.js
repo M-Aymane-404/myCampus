@@ -13,6 +13,7 @@ export const apiAdmin = {
             const response = await fetch(BASE_URL, {
                 method: 'GET',
                 headers: apiAuth.getAuthHeaders(),
+                credentials: 'include'
             });
 
             if (!response.ok) {
@@ -50,6 +51,7 @@ export const apiAdmin = {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(profileData),
+                credentials: 'include'
             });
 
             if (!response.ok) {
@@ -72,6 +74,46 @@ export const apiAdmin = {
             return await response.json();
         } catch (error) {
             console.error('API Error (updateProfile):', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Upload profile photo
+     * @param {File} file - The image file to upload
+     */
+    async uploadPhoto(file) {
+        try {
+            const formData = new FormData();
+            formData.append('photo', file);
+
+            // Get current admin to find their email
+            const currentAdmin = await this.getProfile();
+            
+            const token = apiAuth.getToken();
+            const response = await fetch(`${BASE_URL.replace('/administrateurs', '')}/${currentAdmin.email}/photo`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: formData,
+                credentials: 'include'
+            });
+
+            if (!response.ok) {
+                // Try to get error message from body if available
+                let errorData;
+                try {
+                    errorData = await response.json();
+                } catch (e) {
+                    errorData = { message: `Erreur ${response.status}: ${response.statusText}` };
+                }
+                throw new Error(errorData.message || 'Erreur lors de l\'envoi de la photo');
+            }
+
+            return await response.json(); // Expected to return the updated user or photo URL
+        } catch (error) {
+            console.error('API Error (uploadPhoto):', error);
             throw error;
         }
     }

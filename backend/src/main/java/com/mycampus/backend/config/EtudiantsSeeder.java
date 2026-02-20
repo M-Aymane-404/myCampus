@@ -1,14 +1,13 @@
 package com.mycampus.backend.config;
 
 import com.mycampus.backend.entites.*;
+import com.mycampus.backend.enumerations.NiveauAnnee;
 import com.mycampus.backend.enumerations.RolesCode;
 import com.mycampus.backend.enumerations.Semestre;
 import com.mycampus.backend.enumerations.EtatInscription;
 import com.mycampus.backend.repositorys.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.ApplicationRunner;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,7 +47,7 @@ public class EtudiantsSeeder {
                 .password(passwordEncoder.encode("password123"))
                 .active(true).cin("EC100100").apogee("APO300100")
                 .dateCreation(LocalDateTime.now()).tel("0600000100")
-                .niveau("1ère année").anneeInscription(2024)
+                .niveau(NiveauAnnee.A1).anneeInscription(2024)
                 .semestreActuel(Semestre.S1).etatInscription(EtatInscription.INSCRIT)
                 .dateNaissance(LocalDate.of(2004, 5, 15))
                 .classe(requireClasse("ILCS1-A"))
@@ -105,7 +104,7 @@ public class EtudiantsSeeder {
         Filiere ilcs = requireFiliere("ILCS");
         List<Classe> classes = Arrays.asList(
             Classe.builder().codeClasse("ILCS1-A").nom("ILCS1-A")
-                .niveau("1ère année").anneeUniversitaire("2024-2025")
+                .niveau(NiveauAnnee.A1).anneeUniversitaire("2024-2025")
                 .effectifMax(30).filiere(ilcs)
                 .build()
         );

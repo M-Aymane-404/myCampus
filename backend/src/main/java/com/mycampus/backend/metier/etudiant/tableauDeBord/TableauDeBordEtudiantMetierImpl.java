@@ -4,6 +4,7 @@ import com.mycampus.backend.dto.etudiant.tableauDeBord.*;
 import com.mycampus.backend.entites.Etudiant;
 import com.mycampus.backend.entites.Presence;
 import com.mycampus.backend.entites.Resultat;
+import com.mycampus.backend.enumerations.NiveauAnnee;
 import com.mycampus.backend.enumerations.StatusAbsence;
 import com.mycampus.backend.exceptions.UtilisateursException;
 import com.mycampus.backend.repositorys.EtudiantRepository;
@@ -33,14 +34,14 @@ public class TableauDeBordEtudiantMetierImpl implements TableauDeBordEtudiantMet
 
     @Override
     @Transactional(readOnly = true)
-    public TableauDeBordEtudiantSortieDTO obtenirTableauDeBord(String emailEtudiant) throws  UtilisateursException {
-        if (emailEtudiant == null || emailEtudiant.isBlank()) {
+    public TableauDeBordEtudiantSortieDTO obtenirTableauDeBord(Long idEtudiant) throws  UtilisateursException {
+        if (idEtudiant == null ) {
             throw new UtilisateursException("Email étudiant manquant (non authentifié)");
         }
 
-        log.info("Génération du tableau de bord pour l'étudiant: {}", emailEtudiant);
+        log.info("Génération du tableau de bord pour l'étudiant: {}", idEtudiant);
         
-        Etudiant etudiant =  etudiantRepository.findByEmailWithClasseAndFiliere(emailEtudiant)
+        Etudiant etudiant =  etudiantRepository.findByIdWithClasseAndFiliere(idEtudiant)
                 .orElseThrow(() -> new UtilisateursException("Étudiant non trouvé"));
         
         EnteteEtudiantDTO entete = creerEntete(etudiant);
@@ -58,7 +59,7 @@ public class TableauDeBordEtudiantMetierImpl implements TableauDeBordEtudiantMet
 
 
         String nomComplet = etudiant.getNom() + " " + etudiant.getPrenom();
-        String niveau = etudiant.getNiveau();
+        NiveauAnnee niveau = etudiant.getNiveau();
         String filiere = etudiant.getClasse() != null ? etudiant.getClasse().getFiliere().getNom() : "Non assignée";
         String classe = etudiant.getClasse() != null ? etudiant.getClasse().getNom() : "Non assignée";
         String session = "Session d'Automne " + java.time.Year.now().getValue();

@@ -7,6 +7,7 @@ export const apiClasses = {
       const response = await fetch(`${BASE_URL}`, {
         method: 'GET',
         headers: apiAuth.getAuthHeaders(),
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -27,6 +28,7 @@ export const apiClasses = {
       const response = await fetch(`${BASE_URL}/filiere/${codeFiliere}`, {
         method: 'GET',
         headers: apiAuth.getAuthHeaders(),
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -45,6 +47,7 @@ export const apiClasses = {
       const response = await fetch(`${BASE_URL}/${classeId}`, {
         method: 'GET',
         headers: apiAuth.getAuthHeaders(),
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -67,6 +70,7 @@ export const apiClasses = {
           ...apiAuth.getAuthHeaders(),
         },
         body: JSON.stringify(classe),
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -90,6 +94,7 @@ export const apiClasses = {
           ...apiAuth.getAuthHeaders(),
         },
         body: JSON.stringify(classe),
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -109,6 +114,7 @@ export const apiClasses = {
       const response = await fetch(`${BASE_URL}/${codeClasse}`, {
         method: 'DELETE',
         headers: apiAuth.getAuthHeaders(),
+        credentials: 'include'
       });
 
       if (!response.ok) {

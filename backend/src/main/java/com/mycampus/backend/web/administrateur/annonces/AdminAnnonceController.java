@@ -3,6 +3,7 @@ package com.mycampus.backend.web.administrateur.annonces;
 import com.mycampus.backend.dto.annonces.AnnonceEntrerDTO;
 import com.mycampus.backend.dto.annonces.AnnonceSortieDTO;
 import com.mycampus.backend.metier.administrateur.annonces.GestionAnnoncesAdministrateurMetier;
+import com.mycampus.backend.metier.security.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -17,6 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -41,11 +43,9 @@ public class AdminAnnonceController {
     })
     public ResponseEntity<AnnonceSortieDTO> creerAnnonce(
             @Valid @RequestBody AnnonceEntrerDTO annonceDTO,
-            Authentication authentication) {
+            @AuthenticationPrincipal CustomUserDetails user) {
         
-        String emailAuteur = authentication.getName();
-        log.info("Création d'annonce par l'administrateur: {}", emailAuteur);
-        AnnonceSortieDTO result = gestionAnnoncesAdministrateurMetier.creerAnnonce(annonceDTO, emailAuteur);
+         AnnonceSortieDTO result = gestionAnnoncesAdministrateurMetier.creerAnnonce(annonceDTO, user.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 

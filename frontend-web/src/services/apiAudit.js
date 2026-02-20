@@ -7,6 +7,7 @@ export const apiAudit = {
       const response = await fetch(`${BASE_URL}`, {
         method: 'GET',
         headers: apiAuth.getAuthHeaders(),
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -26,6 +27,7 @@ export const apiAudit = {
       const response = await fetch(`${BASE_URL}/user/${userId}`, {
         method: 'GET',
         headers: apiAuth.getAuthHeaders(),
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -44,6 +46,7 @@ export const apiAudit = {
       const response = await fetch(`${BASE_URL}?debut=${debut}&fin=${fin}`, {
         method: 'GET',
         headers: apiAuth.getAuthHeaders(),
+        credentials: 'include'
       });
 
       if (!response.ok) {

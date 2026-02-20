@@ -11,7 +11,8 @@ export const apiCours = {
     async getStudentProfile() {
         try {
             const response = await fetch(`${BASE_URL}/moi`, {
-                headers: apiAuth.getAuthHeaders()
+                headers: apiAuth.getAuthHeaders(),
+                credentials: 'include'
             });
             if (!response.ok) throw new Error('Erreur lors de la récupération du profil');
             return await response.json();
@@ -28,7 +29,8 @@ export const apiCours = {
                 url += `?semestre=${semester}`;
             }
             const response = await fetch(url, {
-                headers: apiAuth.getAuthHeaders()
+                headers: apiAuth.getAuthHeaders(),
+                credentials: 'include'
             });
             if (!response.ok) throw new Error('Erreur lors de la récupération des modules');
             return await response.json();
@@ -41,7 +43,8 @@ export const apiCours = {
     async getMatieres(codeModule) {
         try {
             const response = await fetch(`${BASE_URL}/moi/modules/${codeModule}/matieres`, {
-                headers: apiAuth.getAuthHeaders()
+                headers: apiAuth.getAuthHeaders(),
+                credentials: 'include'
             });
             if (!response.ok) throw new Error('Erreur lors de la récupération des matières');
             return await response.json();
@@ -54,7 +57,8 @@ export const apiCours = {
     async getSeances(codeMatiere) {
         try {
             const response = await fetch(`${BASE_URL}/moi/matieres/${codeMatiere}/seances`, {
-                headers: apiAuth.getAuthHeaders()
+                headers: apiAuth.getAuthHeaders(),
+                credentials: 'include'
             });
             if (!response.ok) throw new Error('Erreur lors de la récupération des séances');
             return await response.json();
@@ -67,7 +71,8 @@ export const apiCours = {
     async getRessources(seanceId) {
         try {
             const response = await fetch(`${BASE_URL}/seances/${seanceId}/ressources`, {
-                headers: apiAuth.getAuthHeaders()
+                headers: apiAuth.getAuthHeaders(),
+                credentials: 'include'
             });
             if (!response.ok) throw new Error('Erreur lors de la récupération des ressources');
             return await response.json();

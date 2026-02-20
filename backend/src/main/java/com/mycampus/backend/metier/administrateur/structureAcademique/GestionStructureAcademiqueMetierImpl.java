@@ -187,10 +187,10 @@
                 throw new StructureAcademiqueException("Suppression impossible : le département contient des filières");
             }
 
-            List<Professeur> professeurs = professeurRepository.findByDepartementDirigee_CodeDepartement(codeDepartement);
+          /*  List<Professeur> professeurs = professeurRepository.findByDepartementDirigee_CodeDepartement(codeDepartement);
             if (!professeurs.isEmpty()) {
                 throw new StructureAcademiqueException("Suppression impossible : le département a un chef assigné");
-            }
+            }*/
 
             departementRepository.delete(departement);
         }
@@ -477,7 +477,7 @@
             if (classeModificationDTO.getNom() != null && !classeModificationDTO.getNom().trim().isEmpty()) {
                 classe.setNom(classeModificationDTO.getNom());
             }
-            if (classeModificationDTO.getNiveau() != null && !classeModificationDTO.getNiveau().trim().isEmpty()) {
+            if (classeModificationDTO.getNiveau() != null  ) {
                 classe.setNiveau(classeModificationDTO.getNiveau());
             }
             if (classeModificationDTO.getAnneeUniversitaire() != null && !classeModificationDTO.getAnneeUniversitaire().trim().isEmpty()) {
@@ -611,9 +611,7 @@
             if (moduleModificationDTO.getSemestre() != null) {
                 module.setSemestre(moduleModificationDTO.getSemestre());
             }
-            if (moduleModificationDTO.getCoefficient() != null) {
-                module.setCoefficient(moduleModificationDTO.getCoefficient());
-            }
+
 
             Module moduleModifie = moduleRepository.save(module);
             return structureMapper.FromModuleVersModuleSortieDTO(moduleModifie);

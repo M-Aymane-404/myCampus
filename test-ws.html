@@ -1,0 +1,72 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>STOMP Test</title>
+</head>
+<body>
+  <h2>STOMP WebSocket Test</h2>
+
+  <label>JWT:</label>
+  <input id="jwt" style="width:900px" placeholder="Colle ici ton access_token JWT" />
+  <button onclick="connect()">Connect</button>
+  <button onclick="disconnect()">Disconnect</button>
+
+  <pre id="log"></pre>
+
+  <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js"></script>
+
+  <script>
+    let client;
+
+    function log(msg) {
+      document.getElementById("log").textContent += msg + "\n";
+    }
+
+    function connect() {
+      const token = document.getElementById("jwt").value.trim();
+      if (!token) {
+        alert("Colle le JWT d'abord (access_token)");
+        return;
+      }
+
+      client = new StompJs.Client({
+        brokerURL: "ws://localhost:8080/ws",
+        connectHeaders: {
+          Authorization: "Bearer " + token
+        },
+        debug: (str) => log(str),
+        reconnectDelay: 0
+      });
+
+      client.onConnect = () => {
+        log("✅ CONNECTED");
+
+        client.subscribe("/topic/global", (msg) => {
+          log("📩 /topic/global => " + msg.body);
+        });
+
+        client.subscribe("/user/queue/notifications", (msg) => {
+          log("📩 /user/queue/notifications => " + msg.body);
+        });
+
+        log("📡 Subscribed to /topic/global and /user/queue/notifications");
+      };
+
+      client.onStompError = (frame) => {
+        log("❌ STOMP ERROR: " + frame.headers["message"]);
+        log(frame.body);
+      };
+
+      client.onWebSocketError = (e) => log("❌ WS ERROR: " + e);
+
+      client.activate();
+    }
+
+    function disconnect() {
+      if (client) client.deactivate();
+      log("🔌 DISCONNECTED");
+    }
+  </script>
+</body>
+</html>

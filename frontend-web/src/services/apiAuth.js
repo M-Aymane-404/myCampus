@@ -50,6 +50,7 @@ export const apiAuth = {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(requestBody),
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -149,6 +150,7 @@ export const apiAuth = {
       const response = await fetch(`${BASE_URL}/profile`, {
         method: 'GET',
         headers: headers,
+        credentials: 'include'
       });
 
       if (!response.ok) {

@@ -53,7 +53,10 @@ public class Utilisateur {
     private LocalDateTime dateDerniereConnexion;
     
     @OneToMany(mappedBy = "utilisateur",cascade = CascadeType.ALL)
-    private List<Notification> notifications;
+    private List<Notification> notificationsRecoit;
+
+    @OneToMany(mappedBy = "auteur",cascade = CascadeType.ALL)
+    private List<Notification> notificationsCreer;
 
     @OneToMany(mappedBy = "utilisateur" ,cascade = CascadeType.ALL,    orphanRemoval = true)
 

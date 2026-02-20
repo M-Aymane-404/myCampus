@@ -14,6 +14,7 @@ export const apiComptes = {
                 fetch(`${BASE_URL}/professeurs`, {
                     method: 'GET',
                     headers: apiAuth.getAuthHeaders(),
+                    credentials: 'include'
                 }).then(reponse => {
                     if (!reponse.ok) throw new Error(`Erreur professeurs: ${reponse.status}`);
                     return reponse.json();
@@ -22,6 +23,7 @@ export const apiComptes = {
                 fetch(`${BASE_URL}/etudiants`, {
                     method: 'GET',
                     headers: apiAuth.getAuthHeaders(),
+                    credentials: 'include'
                 }).then(reponse => {
                     if (!reponse.ok) throw new Error(`Erreur étudiants: ${reponse.status}`);
                     return reponse.json();
@@ -30,6 +32,7 @@ export const apiComptes = {
                 fetch(`${BASE_URL}/administrateurs`, {
                     method: 'GET',
                     headers: apiAuth.getAuthHeaders(),
+                    credentials: 'include'
                 }).then(reponse => {
                     if (!reponse.ok) throw new Error(`Erreur administrateurs: ${reponse.status}`);
                     return reponse.json();

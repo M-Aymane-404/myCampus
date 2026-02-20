@@ -2,6 +2,7 @@ package com.mycampus.backend.dto.administrateur.DonneEntrer.Modification;
 
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.UtilisateurEntrerDto;
 import com.mycampus.backend.enumerations.EtatInscription;
+import com.mycampus.backend.enumerations.NiveauAnnee;
 import com.mycampus.backend.enumerations.Semestre;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
@@ -28,7 +29,7 @@ public class EtudiantModificationDTO extends UtilisateurModificationDto {
     private String apogee;
     
     @Size(max = 50, message = "Niveau ne doit pas dépasser 50 caractères")
-    private String niveau;
+    private NiveauAnnee niveau;
     
     @Min(value = 2026, message = "Année d'inscription minimum est 2020")
     private Integer anneeInscription;

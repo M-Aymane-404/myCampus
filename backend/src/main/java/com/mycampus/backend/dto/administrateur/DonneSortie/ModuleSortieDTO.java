@@ -14,8 +14,7 @@ public class ModuleSortieDTO {
     private  String nom;
     private  String description;
     private  Semestre semestre;
-    private  Integer coefficient;
-    private  String codeFiliere;
+      private  String codeFiliere;
     private  String filiereNom;
     private Integer nbMatieres;
 }

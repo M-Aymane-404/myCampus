@@ -1,5 +1,6 @@
 package com.mycampus.backend.entites;
 
+import com.mycampus.backend.enumerations.NiveauAnnee;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -27,9 +28,10 @@ public class Classe {
     
     @Column(nullable = false)
     private String nom;
-    
+
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String niveau;
+    private NiveauAnnee niveau;
     
     @Column(nullable = false)
     private String anneeUniversitaire;

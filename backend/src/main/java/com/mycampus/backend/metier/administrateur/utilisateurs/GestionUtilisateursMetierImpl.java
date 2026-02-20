@@ -219,17 +219,17 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
 
 
     @Override
-    public AdministrateurSortieDTO modifierAdministrateurConnecter(String email, AdministrateurConnecterModificationDTO administrateurModificationDTO) throws UtilisateursException {
-        if (email == null || email.trim().isEmpty()) {
-            throw new UtilisateursException("Le PPR de l'administrateur ne peut pas être nul");
+    public AdministrateurSortieDTO modifierAdministrateurConnecter(Long id, AdministrateurConnecterModificationDTO administrateurModificationDTO) throws UtilisateursException {
+        if (id == null  ) {
+            throw new UtilisateursException("Le id de l'administrateur ne peut pas être nul");
         }
 
         if (administrateurModificationDTO == null) {
             throw new UtilisateursException("Les données de l'administrateur ne peuvent pas être nulles");
         }
 
-        Administrateur adminAModifier = administrateurRepository.findByEmail(email).orElseThrow(() ->
-                new UtilisateursException("Administrateur introuvable avec le PPR: " + email));
+        Administrateur adminAModifier = administrateurRepository.findById(id).orElseThrow(() ->
+                new UtilisateursException("Administrateur introuvable avec le id: " + id));
 
 
 
@@ -271,8 +271,19 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
 
 
 
-        if(administrateurModificationDTO.getPassword() != null && !administrateurModificationDTO.getPassword().trim().isEmpty()) {
-            adminAModifier.setPassword(passwordEncoder.encode(administrateurModificationDTO.getPassword()));
+        if (administrateurModificationDTO.getNouveauPassword() != null && !administrateurModificationDTO.getNouveauPassword().trim().isEmpty()) {
+
+            if (administrateurModificationDTO.getAncienPassword() == null || administrateurModificationDTO.getAncienPassword().trim().isEmpty()) {
+                throw new UtilisateursException("Ancien mot de passe obligatoire");
+            }
+
+            boolean ok = passwordEncoder.matches(administrateurModificationDTO.getAncienPassword(), adminAModifier.getPassword());
+
+            if (!ok) {
+                throw new UtilisateursException("Mot de passe incorrect");
+            }
+
+            adminAModifier.setPassword(passwordEncoder.encode(administrateurModificationDTO.getNouveauPassword()));
         }
 
 
@@ -691,7 +702,7 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
             etudiantAModifier.setEmail(etudiantModificationDTO.getEmail());
         }
         
-        if (etudiantModificationDTO.getNiveau() != null && !etudiantModificationDTO.getNiveau().trim().isEmpty()) {
+        if (etudiantModificationDTO.getNiveau() != null ) {
             etudiantAModifier.setNiveau(etudiantModificationDTO.getNiveau());
         }
         if(etudiantModificationDTO.getActive() != null){

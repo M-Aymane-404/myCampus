@@ -1,13 +1,57 @@
-const BASE_URL = 'http://localhost:8080/api/announcements';
+const BASE_URL = 'http://localhost:8080/api';
 import { apiAuth } from './apiAuth';
 
 export const apiAnnonces = {
-  // Get all announcements
+  // Student specific endpoints
+  etudiant: {
+    // Get all announcements for student
+    async obtenirToutes() {
+      try {
+        const response = await fetch(`${BASE_URL}/etudiant/annonces`, {
+          method: 'GET',
+          headers: apiAuth.getAuthHeaders(),
+          credentials: 'include'
+        });
+
+        if (!response.ok) {
+          throw new Error(`Erreur HTTP: ${response.status}`);
+        }
+
+        return await response.json();
+      } catch (err) {
+        console.error('Error fetching student announcements:', err);
+        throw err;
+      }
+    },
+
+    // Get announcement by ID for student
+    async obtenirParId(id) {
+      try {
+        const response = await fetch(`${BASE_URL}/etudiant/annonces/${id}`, {
+          method: 'GET',
+          headers: apiAuth.getAuthHeaders(),
+          credentials: 'include'
+        });
+
+        if (!response.ok) {
+          throw new Error(`Erreur HTTP: ${response.status}`);
+        }
+
+        return await response.json();
+      } catch (err) {
+        console.error('Error fetching announcement by ID:', err);
+        throw err;
+      }
+    }
+  },
+
+  // Get all announcements (admin/professor)
   async obtenirToutes() {
     try {
-      const response = await fetch(`${BASE_URL}`, {
+      const response = await fetch(`${BASE_URL}/announcements`, {
         method: 'GET',
         headers: apiAuth.getAuthHeaders(),
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -27,6 +71,7 @@ export const apiAnnonces = {
       const response = await fetch(`${BASE_URL}/unread/count`, {
         method: 'GET',
         headers: apiAuth.getAuthHeaders(),
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -48,6 +93,7 @@ export const apiAnnonces = {
         method: 'POST',
         headers: apiAuth.getAuthHeaders(),
         body: JSON.stringify(annonce),
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -68,6 +114,7 @@ export const apiAnnonces = {
       const response = await fetch(`${BASE_URL}/${id}`, {
         method: 'DELETE',
         headers: apiAuth.getAuthHeaders(),
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -87,6 +134,7 @@ export const apiAnnonces = {
       const response = await fetch(`${BASE_URL}/${id}/read`, {
         method: 'POST',
         headers: apiAuth.getAuthHeaders(),
+        credentials: 'include'
       });
 
       if (!response.ok) {

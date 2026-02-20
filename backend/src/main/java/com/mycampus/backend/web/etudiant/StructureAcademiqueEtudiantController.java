@@ -14,6 +14,7 @@ import com.mycampus.backend.enumerations.TypeSeance;
 import com.mycampus.backend.exceptions.SeancesProfesseurException;
 import com.mycampus.backend.metier.administrateur.utilisateurs.GestionUtilisateursMetier;
 import com.mycampus.backend.metier.etudiant.StructureEtudiant.GestionStructureEtudiantMetier;
+import com.mycampus.backend.metier.security.CustomUserDetails;
 import com.mycampus.backend.metier.security.GestionUtilisateurConnecteMetier;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -28,6 +29,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -55,9 +57,8 @@ public class StructureAcademiqueEtudiantController {
                 @ApiResponse(responseCode = "404", description = "Étudiant introuvable")
         })
         @PreAuthorize("hasAuthority('ETUDIANT_INFORMATION_PERSONNEL_LIRE')")
-        public ResponseEntity<EtudiantSortieEtudiantDTO> trouverEtudiantConnecter(Authentication authentication) {
-            Long id = utilisateurMetier.trouverIdUtilisateurConnecte(authentication.getName());
-            EtudiantSortieEtudiantDTO result = metier.trouverEtudiantConnecter(id);
+        public ResponseEntity<EtudiantSortieEtudiantDTO> trouverEtudiantConnecter(@AuthenticationPrincipal CustomUserDetails user) {
+             EtudiantSortieEtudiantDTO result = metier.trouverEtudiantConnecter(user.getId());
             return ResponseEntity.ok(result);
         }
 
@@ -65,10 +66,10 @@ public class StructureAcademiqueEtudiantController {
     @PreAuthorize("hasAuthority('ETUDIANT_INFORMATION_PERSONNEL_MODIFIER')")
     @PutMapping(value = "/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public FichierStockerDTO modifierPhotoProfil(
-            Authentication authentication,
+            @AuthenticationPrincipal CustomUserDetails user,
             @RequestPart("photo") MultipartFile photo
     ) {
-        Utilisateur u = gestionUtilisateursMetier.changerPhotoProfil(authentication.getName(), photo);
+        Utilisateur u = gestionUtilisateursMetier.changerPhotoProfil(user.getEmail(), photo);
         return new FichierStockerDTO(u.getPhotoNom(),u.getPhotoUrl());
 
     }
@@ -82,8 +83,8 @@ public class StructureAcademiqueEtudiantController {
 
     @PreAuthorize("hasAuthority('ETUDIANT_INFORMATION_PERSONNEL_MODIFIER')")
     @PutMapping("/moi/modifier")
-    public ResponseEntity<EtudiantSortieEtudiantDTO> modifierEtudiant(Authentication authentication, @Valid @RequestBody EtudiantModificationEtudiantDTO etudiantModificationDTO) {
-        EtudiantSortieEtudiantDTO etudiant = metier.modifierEtudiant(authentication.getName(), etudiantModificationDTO);
+    public ResponseEntity<EtudiantSortieEtudiantDTO> modifierEtudiant(@AuthenticationPrincipal CustomUserDetails user, @Valid @RequestBody EtudiantModificationEtudiantDTO etudiantModificationDTO) {
+        EtudiantSortieEtudiantDTO etudiant = metier.modifierEtudiant(user.getEmail(), etudiantModificationDTO);
         return ResponseEntity.ok(etudiant);
     }
 
@@ -95,15 +96,14 @@ public class StructureAcademiqueEtudiantController {
     })
     @PreAuthorize("hasAuthority('ETUDIANT_MODULES_LIRE')")
     public ResponseEntity<List<ModuleSortieEtudiantDTO>> trouverModulesDEtudiantConnecter(
-            Authentication authentication,
+            @AuthenticationPrincipal CustomUserDetails user,
             @RequestParam(required = false) Semestre semestre) {
-        Long id = utilisateurMetier.trouverIdUtilisateurConnecte(authentication.getName());
 
         List<ModuleSortieEtudiantDTO> result;
         if (semestre != null) {
-            result = metier.trouverModulesDEtudiantConnecterParSemester(id, semestre);
+            result = metier.trouverModulesDEtudiantConnecterParSemester(user.getId(), semestre);
         } else {
-            result = metier.trouverModulesDEtudiantConnecter(id);
+            result = metier.trouverModulesDEtudiantConnecter(user.getId());
         }
         return ResponseEntity.ok(result);
     }
@@ -117,11 +117,10 @@ public class StructureAcademiqueEtudiantController {
     @PreAuthorize("hasAuthority('ETUDIANT_MATIERES_LIRE')")
  
     public ResponseEntity<List<MatiereSortieEtudiantDTO>> trouverMatiereParCodeModule(
-            Authentication authentication,
+            @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable String codeModule) {
-        Long id = utilisateurMetier.trouverIdUtilisateurConnecte(authentication.getName());
 
-        List<MatiereSortieEtudiantDTO> result = metier.trouverMatiereParCodeModule(id, codeModule);
+        List<MatiereSortieEtudiantDTO> result = metier.trouverMatiereParCodeModule(user.getId(), codeModule);
         return ResponseEntity.ok(result);
     }
 
@@ -134,12 +133,11 @@ public class StructureAcademiqueEtudiantController {
     @PreAuthorize("hasAuthority('ETUDIANT_SEANCES_LIRE')")
 
     public ResponseEntity<List<SeanceSortieEtudiantDTO>> trouverSeanceParCodeMatiereEtFiltrerParTypeSeanceSiExist(
-            Authentication authentication,
+            @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable String codeMatiere,
             @RequestParam(required = false) TypeSeance typeSeance) {
-        Long id = utilisateurMetier.trouverIdUtilisateurConnecte(authentication.getName());
 
-        List<SeanceSortieEtudiantDTO> result = metier.trouverSeanceParCodeMatiereEtFiltrerParTypeSeanceSiExist(id, codeMatiere, typeSeance);
+        List<SeanceSortieEtudiantDTO> result = metier.trouverSeanceParCodeMatiereEtFiltrerParTypeSeanceSiExist(user.getId(), codeMatiere, typeSeance);
         return ResponseEntity.ok(result);
     }
 
@@ -163,12 +161,11 @@ public class StructureAcademiqueEtudiantController {
     })
     @PreAuthorize("hasAuthority('ETUDIANT_PRESENCES_LIRE')")
     public ResponseEntity<List<PresenceSortieEtudiantDTO>> trouverToutPresenceDuEtudiantConnecter(
-            Authentication authentication,
+            @AuthenticationPrincipal CustomUserDetails user,
             @RequestParam(required = false) StatusAbsence status,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        Long id = utilisateurMetier.trouverIdUtilisateurConnecte(authentication.getName());
 
-        List<PresenceSortieEtudiantDTO> result = metier.trouverToutPresenceDuEtudiantConnecter(id, status, date);
+        List<PresenceSortieEtudiantDTO> result = metier.trouverToutPresenceDuEtudiantConnecter(user.getId(), status, date);
         return ResponseEntity.ok(result);
     }
 
@@ -181,11 +178,10 @@ public class StructureAcademiqueEtudiantController {
     })
     @PreAuthorize("hasAuthority('ETUDIANT_RELEVE_LIRE')")
     public ResponseEntity<ReleveDeNoteEtudiantParSessionDTO> trouverLeReleverDeNoteParSessionDuEtudiant(
-            Authentication authentication,
+            @AuthenticationPrincipal CustomUserDetails user,
             @RequestParam Semestre semestre) {
-        Long id = utilisateurMetier.trouverIdUtilisateurConnecte(authentication.getName());
 
-        ReleveDeNoteEtudiantParSessionDTO result = metier.trouverLeReleverDeNoteParSessionDuEtudiant(id, semestre);
+        ReleveDeNoteEtudiantParSessionDTO result = metier.trouverLeReleverDeNoteParSessionDuEtudiant(user.getId(), semestre);
         return ResponseEntity.ok(result);
     }
 
@@ -194,12 +190,12 @@ public class StructureAcademiqueEtudiantController {
 
     @GetMapping("/fichiers-seance/{fichierId}/telecharger")
     public ResponseEntity<Resource> telechargerFichierSeance(
-            Authentication authentication,
+            @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable Long fichierId
     ) throws SeancesProfesseurException {
 
         TelechargementFichierSeanceSortieDTO telechargement =
-                metier.preparerTelechargementFichierSeance(authentication.getName(), fichierId);
+                metier.preparerTelechargementFichierSeance(user.getId(), fichierId);
 
         try {
             Path chemin = Paths.get(telechargement.getChemin()).toAbsolutePath().normalize();

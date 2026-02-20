@@ -124,7 +124,15 @@ const EnTeteProfesseur = ({ elementActif, surChangementElement }) => {
       <div className="en-tete-gauche">
         <div className="logo-container-header">
           <div className="logo-icone-container-header">
-            <span className="logo-icone-header-span">M</span>
+            <img 
+              src="/src/assets/images/university_logo.jpeg" 
+              alt="MyCampus Logo" 
+              className="logo-icone-image"
+            />
+          </div>
+          <div className="logo-text-container">
+            <span className="logo-main-text">MyCampus</span>
+            <span className="logo-sub-text">INTELLIGENT HUB</span>
           </div>
         </div>
       </div>

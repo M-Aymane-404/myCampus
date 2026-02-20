@@ -135,8 +135,7 @@ public class StructureEtudiantMapper {
         ModuleDeReleveEtudiantDTO moduleDeReleveEtudiantDTO = new ModuleDeReleveEtudiantDTO();
         moduleDeReleveEtudiantDTO.setCodeModule(module.getCodeModule());
         moduleDeReleveEtudiantDTO.setNomDuModule(module.getNom());
-        moduleDeReleveEtudiantDTO.setCoefficient(module.getCoefficient());
-        moduleDeReleveEtudiantDTO.setId(module.getId());
+         moduleDeReleveEtudiantDTO.setId(module.getId());
 
 
         moduleDeReleveEtudiantDTO.setMatieres(

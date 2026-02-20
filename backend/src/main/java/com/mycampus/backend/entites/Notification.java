@@ -1,14 +1,17 @@
 package com.mycampus.backend.entites;
 
+import com.mycampus.backend.enumerations.ReferenceType;
 import com.mycampus.backend.enumerations.TypeNotification;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Date;
 
 @Entity
+@Table(name = "notification", indexes = {
+        @Index(name = "idx_notification_utilisateur_date_envoi", columnList = "utilisateur_id,date_envoi"),
+        @Index(name = "idx_notification_utilisateur_lu", columnList = "utilisateur_id,lu")
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -28,14 +31,22 @@ public class Notification {
     @Column(nullable = false)
     private String message;
     
-    @Column(nullable = false)
+    @Column(name = "date_envoi", nullable = false)
     private LocalDateTime dateEnvoi;
     
     @Column(nullable = false)
     @Builder.Default
-    private Boolean lu = false;
-    
+    private boolean lu = false;
+
+    @Column(name = "date_lecture")
     private LocalDateTime dateLecture;
+
+    @Column(nullable = false)
+    private Long referenceId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ReferenceType referenceType;
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -44,4 +55,12 @@ public class Notification {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "utilisateur_id", nullable = false)
     private Utilisateur utilisateur;
+
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "auteur_id", nullable = false)
+    private Utilisateur auteur;
+
+
+
 }

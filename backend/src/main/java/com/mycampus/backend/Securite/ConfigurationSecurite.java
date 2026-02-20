@@ -1,6 +1,7 @@
    package com.mycampus.backend.Securite;
 
 
+    import com.mycampus.backend.metier.security.JwtToCustomPrincipalConverter;
     import com.mycampus.backend.metier.security.UserDetailsServiceImpl;
     import com.mycampus.backend.web.errors.JsonAccessDeniedHandler;
     import com.mycampus.backend.web.errors.JsonAuthenticationEntryPoint;
@@ -34,6 +35,7 @@
     import org.springframework.web.filter.CorsFilter;
 
     import javax.crypto.spec.SecretKeySpec;
+    import java.util.List;
 
    @Configuration
    @EnableWebSecurity
@@ -55,9 +57,7 @@
            grantedAuthoritiesConverter.setAuthoritiesClaimName("scope");
            grantedAuthoritiesConverter.setAuthorityPrefix("");
 
-           JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
-           jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);
-
+           var customConverter = new JwtToCustomPrincipalConverter(grantedAuthoritiesConverter);
 
            return http
                    .headers(header -> header.frameOptions(frame -> frame.disable()))
@@ -76,10 +76,10 @@
                            .requestMatchers("/files/**").permitAll()
 
                            .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").authenticated()
-
+                           .requestMatchers("/ws/**", "/ws-sockjs/**").permitAll()
                            .anyRequest().authenticated()
                    )
-                   .oauth2ResourceServer(oa -> oa.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)))
+                   .oauth2ResourceServer(oa -> oa.jwt(jwt -> jwt.jwtAuthenticationConverter(customConverter)))
                    .userDetailsService(userDetailsServiceImpl)
                    .build();
        }
@@ -108,7 +108,11 @@
        public CorsConfigurationSource corsConfigurationSource() {
            CorsConfiguration config = new CorsConfiguration();
            config.setAllowCredentials(true);
-           config.addAllowedOrigin("http://localhost:5173");
+           config.setAllowedOrigins(List.of(
+                   "http://localhost:5173",
+                   "http://127.0.0.1:5500",
+                   "http://localhost:5500"
+           ));
 
            config.addAllowedHeader("*");
            config.addAllowedMethod("*");

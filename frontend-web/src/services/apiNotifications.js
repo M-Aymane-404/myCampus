@@ -9,6 +9,7 @@ export const apiNotifications = {
         method: 'POST',
         headers: apiAuth.getAuthHeaders(),
         body: JSON.stringify(notification),
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -29,6 +30,7 @@ export const apiNotifications = {
       const response = await fetch(`${BASE_URL}`, {
         method: 'GET',
         headers: apiAuth.getAuthHeaders(),
+        credentials: 'include'
       });
 
       if (!response.ok) {

@@ -1,0 +1,3 @@
+apogee,cin,nom,prenom,email,tel,niveau,anneeInscription,semestreActuel,etatInscription,dateNaissance
+20240001,AB123456,Karim,Test,karim1@mycampus.ma,0612345678,1A,2024,S1,INSCRIT,2004-05-10
+20240002,CD789012,Sara,Test,sara1@mycampus.ma,0698765432,1A,2024,S1,INSCRIT,2004-08-22
