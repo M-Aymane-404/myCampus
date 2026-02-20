@@ -30,7 +30,9 @@ import java.time.LocalDate;
      private String email;
 
      @Size(min = 8, max = 100, message = "Mot de passe doit contenir entre 8 et 100 caractères")
-     private String password;
+     private String ancienPassword;
+     @Size(min = 8, max = 100, message = "Mot de passe doit contenir entre 8 et 100 caractères")
+     private String nouveauPassword;
 
 
 

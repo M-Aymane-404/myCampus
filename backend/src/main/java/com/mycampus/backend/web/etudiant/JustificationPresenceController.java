@@ -18,7 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class JustificationPresenceController {
     private final GestionDeMotifDePresenceMetier gestionDeMotifDePresenceMetier;
-    
+
     @PreAuthorize("hasAuthority('ETUDIANT_INFORMATION_PERSONNEL_MODIFIER')")
     @PutMapping(value = "/justification/{presenceId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> ajouterUneJustificationDEPresence(

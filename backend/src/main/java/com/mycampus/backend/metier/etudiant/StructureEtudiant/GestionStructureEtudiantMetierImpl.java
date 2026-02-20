@@ -152,8 +152,23 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
 
 
 
-        if(etudiantModificationDTO.getPassword() != null && !etudiantModificationDTO.getPassword().trim().isEmpty()) {
-            etudiantAModifier.setPassword(passwordEncoder.encode(etudiantModificationDTO.getPassword()));
+
+
+
+
+        if (etudiantModificationDTO.getNouveauPassword() != null && !etudiantModificationDTO.getNouveauPassword().trim().isEmpty()) {
+
+            if (etudiantModificationDTO.getAncienPassword() == null || etudiantModificationDTO.getAncienPassword().trim().isEmpty()) {
+                throw new UtilisateursException("Ancien mot de passe obligatoire");
+            }
+
+            boolean ok = passwordEncoder.matches(etudiantModificationDTO.getAncienPassword(), etudiantAModifier.getPassword());
+
+            if (!ok) {
+                throw new UtilisateursException("Mot de passe incorrect");
+            }
+
+            etudiantAModifier.setPassword(passwordEncoder.encode(etudiantModificationDTO.getNouveauPassword()));
         }
 
         Etudiant etudiantModifie = etudiantRepository.save(etudiantAModifier);

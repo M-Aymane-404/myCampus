@@ -187,10 +187,10 @@
                 throw new StructureAcademiqueException("Suppression impossible : le département contient des filières");
             }
 
-            List<Professeur> professeurs = professeurRepository.findByDepartementDirigee_CodeDepartement(codeDepartement);
+          /*  List<Professeur> professeurs = professeurRepository.findByDepartementDirigee_CodeDepartement(codeDepartement);
             if (!professeurs.isEmpty()) {
                 throw new StructureAcademiqueException("Suppression impossible : le département a un chef assigné");
-            }
+            }*/
 
             departementRepository.delete(departement);
         }

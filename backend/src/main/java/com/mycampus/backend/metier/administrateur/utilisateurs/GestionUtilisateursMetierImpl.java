@@ -271,8 +271,19 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
 
 
 
-        if(administrateurModificationDTO.getPassword() != null && !administrateurModificationDTO.getPassword().trim().isEmpty()) {
-            adminAModifier.setPassword(passwordEncoder.encode(administrateurModificationDTO.getPassword()));
+        if (administrateurModificationDTO.getNouveauPassword() != null && !administrateurModificationDTO.getNouveauPassword().trim().isEmpty()) {
+
+            if (administrateurModificationDTO.getAncienPassword() == null || administrateurModificationDTO.getAncienPassword().trim().isEmpty()) {
+                throw new UtilisateursException("Ancien mot de passe obligatoire");
+            }
+
+            boolean ok = passwordEncoder.matches(administrateurModificationDTO.getAncienPassword(), adminAModifier.getPassword());
+
+            if (!ok) {
+                throw new UtilisateursException("Mot de passe incorrect");
+            }
+
+            adminAModifier.setPassword(passwordEncoder.encode(administrateurModificationDTO.getNouveauPassword()));
         }
 
 
