@@ -28,6 +28,9 @@ const PresenceEtudiant = () => {
     const [activeFilter, setActiveFilter] = useState('HISTORIQUE');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedSession, setSelectedSession] = useState(null);
+    const [uploadingFile, setUploadingFile] = useState(false);
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [typeMotif, setTypeMotif] = useState('Certificat Médical');
 
     const months = ['JAN', 'FEV', 'MAR', 'AVR', 'MAI', 'JUIN', 'JUIL', 'AOUT', 'SEPT', 'OCT', 'NOV', 'DEC'];
 
@@ -209,6 +212,78 @@ const PresenceEtudiant = () => {
         }
     };
 
+    const handleFileUpload = async () => {
+        if (!selectedFile || !selectedSession) {
+            alert('Veuillez sélectionner un fichier et une session.');
+            return;
+        }
+
+        setUploadingFile(true);
+        try {
+            // Simulate file upload delay
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // Store file info in localStorage for demo purposes
+            const fileInfo = {
+                presenceId: selectedSession.id,
+                fileName: selectedFile.name,
+                fileSize: selectedFile.size,
+                typeMotif: typeMotif,
+                uploadDate: new Date().toISOString()
+            };
+            
+            // Get existing uploaded files or create new array
+            const existingFiles = JSON.parse(localStorage.getItem('uploadedJustifications') || '[]');
+            existingFiles.push(fileInfo);
+            localStorage.setItem('uploadedJustifications', JSON.stringify(existingFiles));
+            
+            // Update the local attendance data to show as justified
+            const updatedAttendanceData = attendanceData.map(record => {
+                if (record.id === selectedSession.id) {
+                    return {
+                        ...record,
+                        justifiee: true,
+                        motif: `Fichier: ${selectedFile.name} (${typeMotif})`
+                    };
+                }
+                return record;
+            });
+            
+            setAttendanceData(updatedAttendanceData);
+            
+            alert('Justification soumise avec succès! (Simulation)');
+            setIsModalOpen(false);
+            setSelectedFile(null);
+            setTypeMotif('Certificat Médical');
+            
+        } catch (error) {
+            console.error('Upload error:', error);
+            alert('Erreur lors du téléchargement du fichier.');
+        } finally {
+            setUploadingFile(false);
+        }
+    };
+
+    const handleFileChange = (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            if (file.type !== 'application/pdf') {
+                alert('Seuls les fichiers PDF sont autorisés.');
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                alert('La taille du fichier ne doit pas dépasser 5MB.');
+                return;
+            }
+            setSelectedFile(file);
+        }
+    };
+
+    const isSessionJustified = (sessionId) => {
+        const uploadedFiles = JSON.parse(localStorage.getItem('uploadedJustifications') || '[]');
+        return uploadedFiles.some(file => file.presenceId === sessionId);
+    };
+
     return (
         <div className="presence-container">
             <div className="presence-calendar-wrapper">
@@ -363,15 +438,23 @@ const PresenceEtudiant = () => {
 
                                     <div className="action-box">
                                         {session.status?.toUpperCase() === 'ABSENT' && (
-                                            <button
-                                                className="justifier-btn"
-                                                onClick={() => {
-                                                    setSelectedSession(session);
-                                                    setIsModalOpen(true);
-                                                }}
-                                            >
-                                                JUSTIFIER
-                                            </button>
+                                            <>
+                                                {session.justifiee || isSessionJustified(session.id) ? (
+                                                    <div className="justifiee-badge">
+                                                        <span>✓ Justifiée</span>
+                                                    </div>
+                                                ) : (
+                                                    <button
+                                                        className="justifier-btn"
+                                                        onClick={() => {
+                                                            setSelectedSession(session);
+                                                            setIsModalOpen(true);
+                                                        }}
+                                                    >
+                                                        JUSTIFIER
+                                                    </button>
+                                                )}
+                                            </>
                                         )}
                                     </div>
                                 </div>
@@ -386,7 +469,11 @@ const PresenceEtudiant = () => {
                     <div className="presence-modal-content">
                         <header className="modal-header">
                             <h2>Justification</h2>
-                            <button className="modal-close-btn" onClick={() => setIsModalOpen(false)}>
+                            <button className="modal-close-btn" onClick={() => {
+                                setIsModalOpen(false);
+                                setSelectedFile(null);
+                                setTypeMotif('Certificat Médical');
+                            }}>
                                 <X size={20} />
                             </button>
                         </header>
@@ -401,7 +488,11 @@ const PresenceEtudiant = () => {
 
                             <div className="form-group">
                                 <label className="input-label">TYPE DE MOTIF</label>
-                                <select className="modal-select">
+                                <select 
+                                    className="modal-select"
+                                    value={typeMotif}
+                                    onChange={(e) => setTypeMotif(e.target.value)}
+                                >
                                     <option>Certificat Médical</option>
                                     <option>Raisons Familiales</option>
                                     <option>Autre</option>
@@ -410,15 +501,23 @@ const PresenceEtudiant = () => {
 
                             <div className="upload-zone">
                                 <UploadCloud size={32} className="upload-icon" />
-                                <span className="upload-text">IMPORTER PDF (MAX 5MO)</span>
-                                <input type="file" className="file-input-hidden" accept=".pdf" onChange={() => alert("Fonctionnalité d'upload bientôt disponible")} />
+                                <span className="upload-text">
+                                    {selectedFile ? selectedFile.name : 'IMPORTER PDF (MAX 5MO)'}
+                                </span>
+                                <input 
+                                    type="file" 
+                                    className="file-input-hidden" 
+                                    accept=".pdf" 
+                                    onChange={handleFileChange}
+                                />
                             </div>
 
-                            <button className="submit-justif-btn" onClick={() => {
-                                alert("Document soumis pour validation.");
-                                setIsModalOpen(false);
-                            }}>
-                                SOUMETTRE LE DOCUMENT
+                            <button 
+                                className="submit-justif-btn" 
+                                onClick={handleFileUpload}
+                                disabled={uploadingFile || !selectedFile}
+                            >
+                                {uploadingFile ? 'SOUMISSION EN COURS...' : 'SOUMETTRE LE DOCUMENT'}
                             </button>
                         </div>
                     </div>

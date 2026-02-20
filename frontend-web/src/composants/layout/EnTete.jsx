@@ -34,7 +34,7 @@ const EnTete = ({ elementActif, surChangementElement }) => {
           // Fetch detailed profile data based on role
           if (!currentUser.nom || !currentUser.prenom) {
             const role = (currentUser.role || '').toLowerCase();
-            
+
             try {
               if (role === 'student') {
                 const response = await fetch('http://localhost:8080/api/etudiant/moi', {
@@ -136,6 +136,7 @@ const EnTete = ({ elementActif, surChangementElement }) => {
       { id: 'departements', libelle: 'Departements' },
       { id: 'emploi-temps', libelle: 'Emploi-temps' },
       { id: 'comptes', libelle: 'Comptes' },
+      { id: 'annonces-admin', libelle: 'Annonces' },
       { id: 'journal-audit', libelle: 'Journal audit' },
     ],
     professor: [
@@ -214,9 +215,9 @@ const EnTete = ({ elementActif, surChangementElement }) => {
       <div className="en-tete-gauche">
         <div className="logo-container-header">
           <div className="logo-icone-container-header">
-            <img 
-              src="/src/assets/images/university_logo.jpeg" 
-              alt="MyCampus Logo" 
+            <img
+              src="/src/assets/images/university_logo.jpeg"
+              alt="MyCampus Logo"
               className="logo-icone-image"
             />
           </div>

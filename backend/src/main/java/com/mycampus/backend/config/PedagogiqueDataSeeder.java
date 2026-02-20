@@ -53,7 +53,7 @@ public class PedagogiqueDataSeeder {
         seedPresences();
         seedExamens();
         seedResultats();
-      //  seedNotifications();
+        seedNotifications();
         seedAnnonce();
     }
 
@@ -107,7 +107,7 @@ public class PedagogiqueDataSeeder {
 
                  Module.builder()
                         .codeModule("ILCS-LANGAGES-ETRANGERE-S1")
-                        .nom("Langages  étrangère")
+                        .nom("Langues étrangères")
                         .description("Étude des langages étrangère")
                         .semestre(Semestre.S1)
                          .filiere(ilcs)
