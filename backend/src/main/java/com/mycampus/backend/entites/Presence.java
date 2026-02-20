@@ -22,10 +22,10 @@ public class Presence {
     private Long id;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+
     private StatusAbsence status;
-    
-    @Column(nullable = false)
+
+
     private boolean justifiee = false;
     
     private String motif;

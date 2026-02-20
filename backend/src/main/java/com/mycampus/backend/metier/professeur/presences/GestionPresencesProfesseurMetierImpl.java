@@ -1,20 +1,14 @@
 package com.mycampus.backend.metier.professeur.presences;
 
-
-
 import com.mycampus.backend.dto.professeur.DonneeEntrer.presences.PresenceEntrerDTO;
-import com.mycampus.backend.dto.professeur.DonneeEntrer.presences.TableauPresencesEntrerDTO;
-import com.mycampus.backend.dto.professeur.DonneeSortie.presences.PresenceSortieDTO;
-import com.mycampus.backend.entites.Etudiant;
-import com.mycampus.backend.entites.Presence;
-import com.mycampus.backend.entites.Professeur;
-import com.mycampus.backend.entites.Seance;
+import com.mycampus.backend.dto.professeur.DonneeSortie.presences.EtudiantPresenceSortieDTO;
+import com.mycampus.backend.dto.professeur.DonneeSortie.presences.LignePresenceSortieDTO;
+import com.mycampus.backend.entites.*;
+import com.mycampus.backend.exceptions.ClasseException;
 import com.mycampus.backend.exceptions.SeancesProfesseurException;
 import com.mycampus.backend.exceptions.UtilisateursException;
-import com.mycampus.backend.repositorys.EtudiantRepository;
-import com.mycampus.backend.repositorys.PresenceRepository;
-import com.mycampus.backend.repositorys.ProfesseurRepository;
-import com.mycampus.backend.repositorys.SeanceRepository;
+import com.mycampus.backend.mappers.professeur.PresenceMapper;
+import com.mycampus.backend.repositorys.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,11 +26,15 @@ public class GestionPresencesProfesseurMetierImpl implements GestionPresencesPro
     private final SeanceRepository seanceRepository;
     private final EtudiantRepository etudiantRepository;
     private final ProfesseurRepository professeurRepository;
+    private final PresenceMapper presenceMapper;
+    private final ClasseRepository classeRepository;
 
-    private void requireProfesseurPpr(String professeurPpr) throws SeancesProfesseurException {
+    private Professeur requireProfesseurPpr(String professeurPpr) throws SeancesProfesseurException {
         if (!StringUtils.hasText(professeurPpr)) {
             throw new SeancesProfesseurException("Le PPR du professeur est obligatoire.");
         }
+        return  professeurRepository.findByPpr(professeurPpr)
+                .orElseThrow(()-> new SeancesProfesseurException("professeur  introuvable  avec ce Ppr"));
     }
 
     private Seance requireSeancePourProfesseur(String professeurPpr, Long seanceId) throws SeancesProfesseurException {
@@ -50,6 +48,18 @@ public class GestionPresencesProfesseurMetierImpl implements GestionPresencesPro
                 .findByIdAndAffectationEnseignement_Professeur_Ppr(seanceId, professeurPpr)
                 .orElseThrow(() -> new SeancesProfesseurException("Séance introuvable ou non autorisée."));
     }
+    private Classe requireClassePourProfesseur(String professeurPpr, String codeClasse) throws ClasseException {
+        requireProfesseurPpr(professeurPpr);
+
+        if (codeClasse==null){
+            throw new ClasseException("code Classe obligatoire.");
+        }
+;
+        return classeRepository.findByCodeClasse(codeClasse)
+                .orElseThrow(() -> new ClasseException("Classe introuvable ou  incorrect."));
+
+
+    }
 
     private Etudiant requireEtudiantParApogee(String apogee) throws SeancesProfesseurException {
         if (!StringUtils.hasText(apogee)) {
@@ -59,87 +69,101 @@ public class GestionPresencesProfesseurMetierImpl implements GestionPresencesPro
                 .orElseThrow(() -> new SeancesProfesseurException("Étudiant introuvable (apogée: " + apogee + ")."));
     }
 
+    public List<EtudiantPresenceSortieDTO> listerEtudiantsparCodeClasse(String professeurPpr, String codeClasse )
+        throws UtilisateursException, SeancesProfesseurException {
+        Professeur prof= requireProfesseurPpr(professeurPpr);
+
+    }
+
+
+ 
     @Override
-    public List<PresenceSortieDTO> saisirPresences(String professeurPpr,Long seanceId, TableauPresencesEntrerDTO dto)
+    public LignePresenceSortieDTO saisirPresences(String professeurPpr, Long seanceId, PresenceEntrerDTO dto)
             throws SeancesProfesseurException {
 
-        requireProfesseurPpr(professeurPpr);
+        Professeur prof = requireProfesseurPpr(professeurPpr);
 
         if (dto == null) {
             throw new SeancesProfesseurException("Les données de saisie des présences sont obligatoires.");
         }
-        if (dto.getSeanceId() == null) {
-            throw new SeancesProfesseurException("SeanceId obligatoire.");
-        }
-        if (dto.getPresences() == null || dto.getPresences().isEmpty()) {
-            throw new SeancesProfesseurException("La liste des présences est obligatoire.");
+        if (dto.getApogee() == null || dto.getApogee().isBlank()) {
+            throw new SeancesProfesseurException("Apogée obligatoire.");
         }
 
-        // 1) Ownership check
-        Seance seance = requireSeancePourProfesseur(professeurPpr, dto.getSeanceId());
-            String codeClasse= seance.getAffectationEnseignement().getClasse().getCodeClasse();
-        // 2) Upsert ligne par ligne
-        for (PresenceEntrerDTO ligne : dto.getPresences()) {
+        Etudiant etudiant = requireEtudiantParApogee(dto.getApogee());
 
-            Etudiant etudiant= requireEtudiantParApogee(ligne.getApogee());
-
-            if(etudiant.getClasse() ==null || !codeClasse.equals(etudiant.getClasse().getCodeClasse())){
-                throw new SeancesProfesseurException(
-                        "Étudiant non autorisé: l'étudiant n'appartient pas à la classe de cette séance."
-                );
-
-
-            }
-
-
-            Presence presence = presenceRepository
-                    .findBySeance_IdAndEtudiant_Apogee(
-                            seance.getId(),
-                            etudiant.getApogee()
-                    )
-                    .orElseGet(Presence::new);
-
-            presence.setSeance(seance);
-            presence.setEtudiant(etudiant);
-            presence.setStatus(ligne.getStatus());
-            presence.setJustifiee(ligne.isJustifiee());
-            presence.setMotif(ligne.getMotif());
-            presence.setDateDeclaration(LocalDateTime.now());
-
-            presenceRepository.save(presence);
+        // 1) Ownership check via PATH seanceId
+        Seance seance = requireSeancePourProfesseur(professeurPpr, seanceId);
+        boolean existe = etudiantRepository.TrouverEtudiantExistenClasse(seance.getId(), etudiant.getId());
+        if (!existe) {
+            throw new SeancesProfesseurException("etudiant n'appartient pas à cette classe ");
         }
 
-        // 3) Retourner l’état final en DB (pratique pour tester swagger)
-        return listerPresencesParSeance(professeurPpr, seance.getId());
+        Presence presence = Presence.builder()
+                .etudiant(etudiant)
+                .seance(seance)
+                .dateDeclaration(LocalDateTime.now())
+                .status(dto.getStatus())
+                .build();
+
+        presenceRepository.save(presence);
+        return presenceMapper.FromPresencetoPresencceSortieDTO(presence) ;
     }
 
+
+    @Override
+    public String TrouverProfesseurPprParemail(String email) throws UtilisateursException {
+        Professeur prof = professeurRepository.findByEmail(email).orElseThrow(() ->
+                new UtilisateursException("prof introuvable avec l'email: " + email));
+        return prof.getPpr();
+    }
+}
+    /*
     @Override
     @Transactional(readOnly = true)
     public List<PresenceSortieDTO> listerPresencesParSeance(String professeurPpr, Long seanceId)
             throws SeancesProfesseurException {
 
-        requireSeancePourProfesseur(professeurPpr, seanceId);
+        Seance seance = requireSeancePourProfesseur(professeurPpr, seanceId);
 
+        Long classeId = seance.getAffectationEnseignement().getClasse().getId();
+        if (classeId == null) {
+            throw new SeancesProfesseurException("Classe introuvable pour cette séance.");
+        }
+
+        // 1) Tous les étudiants de la classe
+        // -> Il faut un repo method : findByClasse_Id(classeId)
+        List<Etudiant> etudiants = etudiantRepository.findByClasse_Id(classeId);
+
+        // 2) Les présences déjà saisies pour la séance
         List<Presence> presences = presenceRepository
                 .findBySeance_IdAndSeance_AffectationEnseignement_Professeur_Ppr(seanceId, professeurPpr);
 
-        return presences.stream()
-                .map(p -> PresenceSortieDTO.builder()
+        Map<String, Presence> presenceByApogee = presences.stream()
+                .filter(p -> p.getEtudiant() != null && StringUtils.hasText(p.getEtudiant().getApogee()))
+                .collect(Collectors.toMap(
+                        p -> p.getEtudiant().getApogee(),
+                        Function.identity(),
+                        (a, b) -> a // si doublon, garde le premier (normalement pas de doublon)
+                ));
 
-                        .idPresence(p.getSeance().getId())
-                        .apogee(p.getEtudiant().getApogee())
-                        .status(p.getStatus())
-                        .justifiee(p.isJustifiee())
-                        .motif(p.getMotif())
-                        .build())
+        // 3) Merge : pour chaque étudiant → status existant sinon défaut
+        // Choisis ton défaut : PRESENT (souvent) ou ABSENT.
+        // Je mets PRESENT par défaut (tu peux changer).
+        return etudiants.stream()
+                .map(e -> {
+                    Presence p = presenceByApogee.get(e.getApogee());
+
+                    return PresenceSortieDTO.builder()
+                            .idPresence(p != null ? p.getId() : null)
+                            .apogee(e.getApogee())
+                            .status(p != null ? p.getStatus() : com.mycampus.backend.entites.enums.StatusPresence.PRESENT)
+                            .justifiee(p != null && p.isJustifiee())
+                            .motif(p != null ? p.getMotif() : null)
+                            .build();
+                })
                 .toList();
     }
+*/
 
-    @Override
-    public String TrouverProfesseurPprParemail(String email)throws UtilisateursException {
-        Professeur prof= professeurRepository.findByEmail(email).orElseThrow(() ->
-                new UtilisateursException("prof introuvable avec l'email: " + email));
-         return prof.getPpr();
 
-    }
-}

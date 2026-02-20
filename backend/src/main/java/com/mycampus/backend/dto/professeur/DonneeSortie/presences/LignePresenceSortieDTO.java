@@ -13,12 +13,12 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 
-public class PresenceSortieDTO {
-    private Long idPresence;
+public class LignePresenceSortieDTO {
+    private Long id;
 
 
     private String apogee;
-    private String nomEtudiant;
+private String nomEtudiant;
     private String prenomEtudiant;
 
     private StatusAbsence status;

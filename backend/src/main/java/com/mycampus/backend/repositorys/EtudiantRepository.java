@@ -50,4 +50,16 @@ public interface EtudiantRepository extends JpaRepository<Etudiant, Long> {
         where e.email = :email
     """)
     Optional<Etudiant> findByEmailWithClasseAndFiliere(@Param("email") String email);
+
+
+    @Query("""
+select count(e) > 0 from Etudiant e
+join   e.classe c
+join   c.affectationEnseignements a
+join   a.seances s
+where s.id = :seanceId and e.id = :etudiantId
+
+
+""")
+    boolean TrouverEtudiantExistenClasse(@Param("seanceId")Long seanceId,@Param("etudiantId") Long etudiantId);
 }
