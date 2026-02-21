@@ -77,6 +77,8 @@ public class GestionAnnoncesAdministrateurMetierImpl implements GestionAnnoncesA
                 .contenu(annonceDTO.getContenu())
                 .datePublication(LocalDateTime.now())
                  .publiee(true)
+                .typeAnnonce(annonceDTO.getTypeAnnonce())
+                .urgent(annonceDTO.isUrgent())
                 .cibleType(annonceDTO.getCibleType())
                 .auteur(auteur)
                 .classe(classe)
