@@ -444,20 +444,40 @@
 }
 
 .justifier-btn {
-    background-color: #0f172a;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     color: white;
     border: none;
-    padding: 0.4rem 0.3rem;
-    border-radius: 10px;
-    font-size: 0.6rem;
-    font-weight: 800;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.55rem;
+    font-weight: 700;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 60px;
 }
 
 .justifier-btn:hover {
-    background-color: #1e293b;
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
     transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+}
+
+.justifiee-badge {
+    background-color: var(--presence-green);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 /* Modal Styling */

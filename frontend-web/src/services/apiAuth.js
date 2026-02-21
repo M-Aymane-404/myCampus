@@ -20,6 +20,7 @@ export const apiAuth = {
 
     // Store mock token and user data
     const mockToken = 'mock_token_' + Date.now();
+    // In mock mode, we don't have refresh tokens since backend handles them via cookies
     localStorage.setItem('mycampus_token', mockToken);
     localStorage.setItem('mycampus_user', JSON.stringify(mockUser));
 
@@ -65,9 +66,10 @@ export const apiAuth = {
 
       const data = await response.json();
 
-      // Store token
+      // Store tokens
       if (data.access_token) {
         const token = data.access_token;
+        // Refresh token is stored in HTTP-only cookie by backend
         localStorage.setItem('mycampus_token', token);
 
         // Decode JWT to extract role from 'scope' claim
@@ -106,8 +108,9 @@ export const apiAuth = {
   },
 
   logout() {
-    // Clear all auth data
+    // Clear all auth data including refresh token
     localStorage.removeItem('mycampus_token');
+    localStorage.removeItem('mycampus_refresh_token');
     localStorage.removeItem('mycampus_user');
     sessionStorage.clear();
 
@@ -117,6 +120,17 @@ export const apiAuth = {
 
   getToken() {
     return localStorage.getItem('mycampus_token');
+  },
+
+  getRefreshToken() {
+    return localStorage.getItem('mycampus_refresh_token');
+  },
+
+  setTokens(accessToken, refreshToken) {
+    localStorage.setItem('mycampus_token', accessToken);
+    if (refreshToken) {
+      localStorage.setItem('mycampus_refresh_token', refreshToken);
+    }
   },
 
   getUser() {
@@ -140,7 +154,7 @@ export const apiAuth = {
 
   async getBackendProfile() {
     try {
-      const headers = this.getAuthHeaders();
+      const headers = await this.getAuthHeadersWithRefresh();
       console.log('Fetching backend profile from:', `${BASE_URL}/profile`);
       console.log('Request headers:', {
         ...headers,
@@ -155,9 +169,36 @@ export const apiAuth = {
 
       if (!response.ok) {
         if (response.status === 401) {
-          console.error('Authentication failed (401). logging out...');
-          this.logout();
-          throw new Error('Session expirée. Veuillez vous reconnecter.');
+          console.error('Authentication failed (401). Attempting token refresh...');
+          
+          try {
+            await this.refreshAccessToken();
+            const newHeaders = await this.getAuthHeadersWithRefresh();
+            
+            // Retry the request with new token
+            const retryResponse = await fetch(`${BASE_URL}/profile`, {
+              method: 'GET',
+              headers: newHeaders,
+              credentials: 'include'
+            });
+
+            if (!retryResponse.ok) {
+              if (retryResponse.status === 401) {
+                console.error('Authentication failed after refresh. logging out...');
+                this.logout();
+                throw new Error('Session expirée. Veuillez vous reconnecter.');
+              }
+              const errorText = await retryResponse.text();
+              console.error(`Profile fetch error after retry (${retryResponse.status}):`, errorText);
+              throw new Error(`Erreur lors de la récupération du profil (${retryResponse.status})`);
+            }
+
+            return await retryResponse.json();
+          } catch (refreshError) {
+            console.error('Token refresh failed:', refreshError);
+            this.logout();
+            throw new Error('Session expirée. Veuillez vous reconnecter.');
+          }
         }
         const errorText = await response.text();
         console.error(`Profile fetch error (${response.status}):`, errorText);
@@ -171,9 +212,86 @@ export const apiAuth = {
     }
   },
 
-  // Helper function to add auth headers to requests
+  async refreshAccessToken() {
+    try {
+      // Your backend uses HTTP-only cookies for refresh tokens
+      // No need to send refreshToken in body - it's automatically sent in cookies
+      
+      const response = await fetch(`${BASE_URL}/rafraichir-jeton`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Important: include cookies
+        body: JSON.stringify({}) // Empty body since refresh token is in cookie
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          // Refresh token is invalid or expired, logout user
+          this.logout();
+          throw new Error('Session expirée. Veuillez vous reconnecter.');
+        }
+        throw new Error('Erreur lors du rafraîchissement du token');
+      }
+
+      const data = await response.json();
+      
+      if (data.access_token) {
+        // Update access token, refresh token is handled by cookies
+        localStorage.setItem('mycampus_token', data.access_token);
+        return data.access_token;
+      }
+
+      throw new Error('Réponse de rafraîchissement invalide');
+    } catch (error) {
+      console.error('Token refresh error:', error);
+      throw error;
+    }
+  },
+
+  // Helper function to check if token is expired
+  isTokenExpired(token) {
+    try {
+      if (!token) return true;
+      
+      const payloadBase64 = token.split('.')[1];
+      const decodedPayload = JSON.parse(atob(payloadBase64));
+      const currentTime = Math.floor(Date.now() / 1000);
+      
+      // Add 30 seconds buffer to account for clock skew
+      return decodedPayload.exp < (currentTime + 30);
+    } catch (error) {
+      console.error('Error checking token expiration:', error);
+      return true; // Assume expired if we can't decode
+    }
+  },
+
+  // Helper function to add auth headers to requests (legacy)
   getAuthHeaders() {
     const token = this.getToken();
+    return {
+      'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` }),
+    };
+  },
+
+  // Enhanced auth headers with automatic token refresh
+  async getAuthHeadersWithRefresh() {
+    let token = this.getToken();
+    
+    // Check if token is expired and refresh if needed
+    if (token && this.isTokenExpired(token)) {
+      try {
+        console.log('Token expired, attempting refresh...');
+        token = await this.refreshAccessToken();
+      } catch (error) {
+        console.error('Failed to refresh token:', error);
+        // Token refresh failed, user will need to login again
+        throw error;
+      }
+    }
+
     return {
       'Content-Type': 'application/json',
       ...(token && { 'Authorization': `Bearer ${token}` }),
