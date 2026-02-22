@@ -17,6 +17,7 @@ import org.springframework.web.multipart.MultipartException;
  import jakarta.servlet.http.HttpServletRequest;
 
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -207,6 +208,17 @@ public class RestExceptionHandler {
         body.put("path", request.getDescription(false));
 
         return ResponseEntity.badRequest().body(body);
+    }
+    @ExceptionHandler({ org.springframework.security.access.AccessDeniedException.class,
+            org.springframework.security.authorization.AuthorizationDeniedException.class })
+    public ResponseEntity<?> handleAccessDenied(Exception ex, HttpServletRequest req) {
+        return ResponseEntity.status(403).body(Map.of(
+                "timestamp", Instant.now().toString(),
+                "status", 403,
+                "error", "Forbidden",
+                "message", "Access Denied",
+                "path", req.getRequestURI()
+        ));
     }
 
 

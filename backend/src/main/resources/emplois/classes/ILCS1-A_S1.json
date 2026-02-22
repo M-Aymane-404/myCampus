@@ -2,7 +2,7 @@
   "semestre": "S1",
   "slots": [
     {
-      "dayOfWeek": "MONDAY",
+      "dayOfWeek": "LUNDI",
       "start": "08:00",
       "end": "10:00",
       "matiereCode": "ILCS-POO-S1-M1",
@@ -14,7 +14,7 @@
     },
 
     {
-      "dayOfWeek": "TUESDAY",
+      "dayOfWeek": "MARDI",
       "start": "08:00",
       "end": "10:00",
       "matiereCode": "ILCS-BDD-S1-M1",
@@ -26,7 +26,7 @@
       "typeSeance": "TP"
     },
     {
-      "dayOfWeek": "TUESDAY",
+      "dayOfWeek": "MARDI",
       "start": "10:15",
       "end": "12:15",
       "matiereCode": "ILCS-RESEAU-S1-M1",
@@ -38,7 +38,7 @@
       "typeSeance": "COURS"
     },
     {
-      "dayOfWeek": "WEDNESDAY",
+      "dayOfWeek": "MERCREDI",
       "start": "08:00",
       "end": "10:00",
       "matiereCode": "ILCS-SYSTEME-S1-M1",
@@ -50,7 +50,7 @@
       "typeSeance": "TP"
     },
     {
-      "dayOfWeek": "WEDNESDAY",
+      "dayOfWeek": "MERCREDI",
       "start": "14:00",
       "end": "16:00",
       "matiereCode": "ILCS-LANGUES-S1-EN",
@@ -62,7 +62,7 @@
       "typeSeance": "TD"
     },
     {
-      "dayOfWeek": "THURSDAY",
+      "dayOfWeek": "JEUDI",
       "start": "08:00",
       "end": "10:00",
       "matiereCode": "ILCS-POO-S1-M1",
@@ -75,7 +75,7 @@
     },
 
     {
-      "dayOfWeek": "FRIDAY",
+      "dayOfWeek": "VENDREDI",
       "start": "08:00",
       "end": "10:00",
       "matiereCode": "ILCS-BDD-S1-M1",
@@ -87,7 +87,7 @@
       "typeSeance": "COURS"
     },
     {
-      "dayOfWeek": "FRIDAY",
+      "dayOfWeek": "VENDREDI",
       "start": "14:00",
       "end": "16:00",
       "matiereCode": "ILCS-LANGUES-S1-FR",
