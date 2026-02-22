@@ -1,4 +1,4 @@
-package com.mycampus.backend.web.etudiant;
+package com.mycampus.backend.web.etudiant.emploi;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

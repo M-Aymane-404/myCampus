@@ -29,7 +29,9 @@ public class EmploiTempsEtudiantMetier {
      * @return JSON content with slots array
      */
     public String chargerEmploiDuTempsEtudiant(String codeClasse, Semestre semestre) {
-        String fileName = "emplois/classes/" + codeClasse + "_" + semestre + ".json";
+
+        LocalDate date = LocalDate.now();
+        String fileName = "emplois/classes/" + codeClasse + "_" + date.getYear()+ "_" + semestre + ".json";
         try {
             ClassPathResource resource = new ClassPathResource(fileName);
 

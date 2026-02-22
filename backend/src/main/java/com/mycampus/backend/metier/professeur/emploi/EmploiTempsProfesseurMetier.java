@@ -11,6 +11,11 @@ import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,12 +29,13 @@ public class EmploiTempsProfesseurMetier {
 
     private final ResourcePatternResolver resourcePatternResolver;
 
-    public String chargerEmploiTempsProfesseur(String professeurPpr, Semestre semestre) {
+    public String chargerEmploiTempsProfesseur(String professeurPpr) {
         ObjectMapper mapper = new ObjectMapper().findAndRegisterModules();
         var slotsResult = mapper.createArrayNode();
+        LocalDate date = LocalDate.now();
 
         try {
-            String pattern = "classpath:emplois/classes/*_" + semestre.name() + ".json";
+            String pattern = "classpath:emplois/classes/*_"+date.getYear()+"_*.json";
             Resource[] resources = resourcePatternResolver.getResources(pattern);
 
             for (Resource resource : resources) {
@@ -51,13 +57,87 @@ public class EmploiTempsProfesseurMetier {
 
             var response = mapper.createObjectNode();
             response.put("professeurPpr", professeurPpr);
-            response.put("semestre", semestre.name());
             response.set("slots", slotsResult);
 
             return mapper.writeValueAsString(response);
 
         } catch (IOException e) {
             throw new UtilisateursException("Erreur lors du chargement des emplois du temps: " + e.getMessage());
+        }
+    }
+
+
+    public JsonNode getProchaineSeance(String ppr) {
+
+        String jsonString = chargerEmploiTempsProfesseur(ppr);
+
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode emploi = mapper.readTree(jsonString);
+            JsonNode slots = emploi.path("slots");
+
+            if (!slots.isArray() || slots.isEmpty()) {
+                return null;
+            }
+
+            LocalDateTime now = LocalDateTime.now();
+            LocalDate today = LocalDate.now();
+
+            JsonNode nextSlot = null;
+            LocalDateTime nextDateTime = null;
+
+            for (JsonNode slot : slots) {
+
+                DayOfWeek day = parseDayOfWeek(slot.get("dayOfWeek").asText());
+                LocalTime start = LocalTime.parse(
+                        slot.get("start").asText()
+                );
+
+                LocalDate nextDate = today.with(TemporalAdjusters.nextOrSame(day));
+                LocalDateTime slotDateTime = LocalDateTime.of(nextDate, start);
+
+                // si déjà passé aujourd’hui → semaine suivante
+                if (!slotDateTime.isAfter(now)) {
+                    slotDateTime = slotDateTime.plusWeeks(1);
+                }
+
+                if (nextDateTime == null || slotDateTime.isBefore(nextDateTime)) {
+                    nextDateTime = slotDateTime;
+                    nextSlot = slot;
+                }
+            }
+
+            return nextSlot;
+
+        } catch (Exception e) {
+            throw new UtilisateursException("Erreur calcul prochaine séance");
+        }
+    }
+
+
+    /**
+     * Supporte:
+     * - EN: MONDAY, Tuesday, monday...
+     * - FR: LUNDI, Mardi, mercredi...
+     */
+    private DayOfWeek parseDayOfWeek(String input) {
+        String s = input.trim().toUpperCase();
+
+        // EN (MONDAY...) et variantes
+        try {
+            return DayOfWeek.valueOf(s);
+        } catch (Exception ignored) {
+            // FR -> EN
+            return switch (s) {
+                case "LUNDI" -> DayOfWeek.MONDAY;
+                case "MARDI" -> DayOfWeek.TUESDAY;
+                case "MERCREDI" -> DayOfWeek.WEDNESDAY;
+                case "JEUDI" -> DayOfWeek.THURSDAY;
+                case "VENDREDI" -> DayOfWeek.FRIDAY;
+                case "SAMEDI" -> DayOfWeek.SATURDAY;
+                case "DIMANCHE" -> DayOfWeek.SUNDAY;
+                default -> throw new IllegalArgumentException("Jour invalide: " + input);
+            };
         }
     }
  }
