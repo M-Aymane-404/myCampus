@@ -53,7 +53,7 @@ public class PedagogiqueDataSeeder {
         seedPresences();
         seedExamens();
         seedResultats();
-     
+
         seedAnnonce();
     }
 

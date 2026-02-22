@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @Tag(name = "Emploi du Temps - Étudiant", description = "API pour l'emploi du temps étudiant")
-@PreAuthorize("hasAuthority('ETUDIANT_TABLEAU_DE_BORD_LIRE')")
+@PreAuthorize("hasAuthority('ETUDIANT_EMPLOI_LIRE')")
 public class EmploiTempsEtudiantController {
 
     private final EmploiTempsEtudiantMetier emploiTempsEtudiantMetier;

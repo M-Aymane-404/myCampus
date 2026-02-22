@@ -22,12 +22,7 @@ import java.time.temporal.TemporalAdjusters;
 @Slf4j
 public class EmploiTempsEtudiantMetier {
 
-     /**
-     * Load timetable JSON from classpath resources
-     * @param codeClasse class code (e.g., ILCS1-A)
-     * @param semestre semester (e.g., S1)
-     * @return JSON content with slots array
-     */
+
     public String chargerEmploiDuTempsEtudiant(String codeClasse, Semestre semestre) {
 
         LocalDate date = LocalDate.now();

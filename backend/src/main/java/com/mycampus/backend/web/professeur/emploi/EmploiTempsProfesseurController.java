@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Emploi du Temps - Professeur", description = "API pour l'emploi du temps professeur")
-@PreAuthorize("hasAuthority('PROFESSEUR_PRESENCES_LIRE')")
+@PreAuthorize("hasAuthority('PROFESSEUR_EMPLOI_LIRE')")
 public class EmploiTempsProfesseurController {
 
     private final EmploiTempsProfesseurMetier emploiTempsProfesseurMetier;
