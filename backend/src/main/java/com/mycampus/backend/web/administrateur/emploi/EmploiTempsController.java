@@ -32,7 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/etudiant/emploi")
 
 @Slf4j
-@Tag(name = "Emploi du Temps - Étudiant", description = "API pour l'emploi du temps étudiant")
+@Tag(name = "Emploi du Temps - Admin", description = "API pour l'emploi du temps ")
 @PreAuthorize("hasAuthority('ADMIN_EMPLOI_GERER')")
 public class EmploiTempsController {
 
@@ -40,12 +40,11 @@ public class EmploiTempsController {
 
 
     @GetMapping(value = "/{codeClasse}/{semester}", produces = "application/json")
-    @Operation(summary = "Obtenir l'emploi du temps", description = "Retourne l'emploi du temps de l'étudiant connecté selon sa classe et son semestre actuel.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Emploi du temps récupéré avec succès",
             content = @Content(schema = @Schema(implementation = JsonNode.class))),
         @ApiResponse(responseCode = "403", description = "Accès non autorisé"),
-        @ApiResponse(responseCode = "404", description = "Étudiant non trouvé")
+        @ApiResponse(responseCode = "404", description = "Admin non trouvé")
     })
     public ResponseEntity<String> obtenirEmploiDuTemps(
                                                        @PathVariable("semester")Semestre semestre,
