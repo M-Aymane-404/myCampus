@@ -486,9 +486,6 @@
             if (classeModificationDTO.getEffectifMax() != null) {
                 classe.setEffectifMax(classeModificationDTO.getEffectifMax());
             }
-            if (classeModificationDTO.getEmploiTemps() != null) {
-                classe.setEmploiTemps(classeModificationDTO.getEmploiTemps());
-            }
 
             Classe classeModifiee = classeRepository.save(classe);
             return structureMapper.FromClasseVersClasseSortieDTO(classeModifiee);

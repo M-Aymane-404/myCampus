@@ -14,8 +14,9 @@ public class ClasseSortieDTO {
     private  String codeClasse;
     private  String nom;
 
-     private NiveauAnnee niveau;    private  Integer effectifMax;
-    private String emploiTemps;
+     private NiveauAnnee niveau;
+     private  Integer effectifMax;
+
     private  String codeFiliere;
     private  String filiereNom;
     private  String anneeUniversitaire;
