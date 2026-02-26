@@ -31,6 +31,7 @@ const PresenceEtudiant = () => {
     const [uploadingFile, setUploadingFile] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
     const [typeMotif, setTypeMotif] = useState('Certificat Médical');
+    const [descriptionAutre, setDescriptionAutre] = useState('');
 
     const months = ['JAN', 'FEV', 'MAR', 'AVR', 'MAI', 'JUIN', 'JUIL', 'AOUT', 'SEPT', 'OCT', 'NOV', 'DEC'];
 
@@ -143,8 +144,6 @@ const PresenceEtudiant = () => {
 
         if (activeFilter === 'ABSENCES') {
             daySessions = daySessions.filter(s => s.status?.toUpperCase() === 'ABSENT');
-        } else if (activeFilter === 'RETARDS') {
-            daySessions = daySessions.filter(s => s.status?.toUpperCase() === 'RETARD');
         }
 
         return daySessions.sort((a, b) => {
@@ -218,32 +217,36 @@ const PresenceEtudiant = () => {
             return;
         }
 
+        // Validation: require description when "Autre" is selected
+        if (typeMotif === 'Autre' && (!descriptionAutre || descriptionAutre.trim().length === 0)) {
+            alert('Veuillez décrire la raison de votre absence lorsque vous sélectionnez "Autre".');
+            return;
+        }
+
         setUploadingFile(true);
         try {
-            // Simulate file upload delay
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            // Prepare description for backend (only send if "Autre" is selected)
+            const descriptionToSend = typeMotif === 'Autre' ? descriptionAutre.trim() : null;
             
-            // Store file info in localStorage for demo purposes
-            const fileInfo = {
-                presenceId: selectedSession.id,
-                fileName: selectedFile.name,
-                fileSize: selectedFile.size,
-                typeMotif: typeMotif,
-                uploadDate: new Date().toISOString()
-            };
-            
-            // Get existing uploaded files or create new array
-            const existingFiles = JSON.parse(localStorage.getItem('uploadedJustifications') || '[]');
-            existingFiles.push(fileInfo);
-            localStorage.setItem('uploadedJustifications', JSON.stringify(existingFiles));
+            // Call the real backend API
+            await apiAttendance.submitJustification(
+                selectedSession.id,
+                typeMotif,
+                descriptionToSend,
+                selectedFile
+            );
             
             // Update the local attendance data to show as justified
             const updatedAttendanceData = attendanceData.map(record => {
                 if (record.id === selectedSession.id) {
+                    const motifText = typeMotif === 'Autre' 
+                        ? `Autre: ${descriptionAutre.substring(0, 50)}${descriptionAutre.length > 50 ? '...' : ''} (Fichier: ${selectedFile.name})`
+                        : `Fichier: ${selectedFile.name} (${typeMotif})`;
+                    
                     return {
                         ...record,
                         justifiee: true,
-                        motif: `Fichier: ${selectedFile.name} (${typeMotif})`
+                        motif: motifText
                     };
                 }
                 return record;
@@ -251,14 +254,15 @@ const PresenceEtudiant = () => {
             
             setAttendanceData(updatedAttendanceData);
             
-            alert('Justification soumise avec succès! (Simulation)');
+            alert('Justification soumise avec succès!');
             setIsModalOpen(false);
             setSelectedFile(null);
             setTypeMotif('Certificat Médical');
+            setDescriptionAutre('');
             
         } catch (error) {
             console.error('Upload error:', error);
-            alert('Erreur lors du téléchargement du fichier.');
+            alert('Erreur lors de la soumission de la justification: ' + error.message);
         } finally {
             setUploadingFile(false);
         }
@@ -279,11 +283,7 @@ const PresenceEtudiant = () => {
         }
     };
 
-    const isSessionJustified = (sessionId) => {
-        const uploadedFiles = JSON.parse(localStorage.getItem('uploadedJustifications') || '[]');
-        return uploadedFiles.some(file => file.presenceId === sessionId);
-    };
-
+    
     return (
         <div className="presence-container">
             <div className="presence-calendar-wrapper">
@@ -304,6 +304,8 @@ const PresenceEtudiant = () => {
                             <div className="control-row">
                                 <span className="control-label">Année</span>
                                 <select
+                                    id="yearSelect"
+                                    name="yearSelect"
                                     className="year-select"
                                     value={currentDate.getFullYear()}
                                     onChange={(e) => handleYearChange(parseInt(e.target.value))}
@@ -378,12 +380,6 @@ const PresenceEtudiant = () => {
                         >
                             Absences
                         </button>
-                        <button
-                            className={`history-tab ${activeFilter === 'RETARDS' ? 'active' : ''}`}
-                            onClick={() => setActiveFilter('RETARDS')}
-                        >
-                            Retards
-                        </button>
                     </div>
 
                     <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -439,9 +435,9 @@ const PresenceEtudiant = () => {
                                     <div className="action-box">
                                         {session.status?.toUpperCase() === 'ABSENT' && (
                                             <>
-                                                {session.justifiee || isSessionJustified(session.id) ? (
+                                                {session.justifiee ? (
                                                     <div className="justifiee-badge">
-                                                        <span>✓ Justifiée</span>
+                                                        <span style={{ textAlign: 'center' }}>✓</span>
                                                     </div>
                                                 ) : (
                                                     <button
@@ -473,6 +469,7 @@ const PresenceEtudiant = () => {
                                 setIsModalOpen(false);
                                 setSelectedFile(null);
                                 setTypeMotif('Certificat Médical');
+                                setDescriptionAutre('');
                             }}>
                                 <X size={20} />
                             </button>
@@ -487,8 +484,10 @@ const PresenceEtudiant = () => {
                             </div>
 
                             <div className="form-group">
-                                <label className="input-label">TYPE DE MOTIF</label>
+                                <label htmlFor="typeMotif" className="input-label">TYPE DE MOTIF</label>
                                 <select 
+                                    id="typeMotif"
+                                    name="typeMotif"
                                     className="modal-select"
                                     value={typeMotif}
                                     onChange={(e) => setTypeMotif(e.target.value)}
@@ -499,6 +498,21 @@ const PresenceEtudiant = () => {
                                 </select>
                             </div>
 
+                            {typeMotif === 'Autre' && (
+                                <div className="form-group">
+                                    <label htmlFor="descriptionAutre" className="input-label">DESCRIPTION DU MOTIF</label>
+                                    <textarea 
+                                        id="descriptionAutre"
+                                        name="descriptionAutre"
+                                        className="modal-textarea"
+                                        placeholder="Veuillez décrire la raison de votre absence..."
+                                        value={descriptionAutre}
+                                        onChange={(e) => setDescriptionAutre(e.target.value)}
+                                        rows={3}
+                                    />
+                                </div>
+                            )}
+
                             <div className="upload-zone">
                                 <UploadCloud size={32} className="upload-icon" />
                                 <span className="upload-text">
@@ -506,6 +520,8 @@ const PresenceEtudiant = () => {
                                 </span>
                                 <input 
                                     type="file" 
+                                    id="pdfFile"
+                                    name="pdfFile"
                                     className="file-input-hidden" 
                                     accept=".pdf" 
                                     onChange={handleFileChange}

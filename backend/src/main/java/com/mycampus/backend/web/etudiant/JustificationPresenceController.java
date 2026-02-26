@@ -26,7 +26,7 @@ public class JustificationPresenceController {
             @PathVariable Long presenceId,
             @RequestParam("typeMotif") TypeMotif typeMotif,
             @RequestParam(value = "descriptionDeJustification", required = false) String description,
-            @RequestPart(value = "motif", required = false) MultipartFile motif
+            @RequestParam(value = "motif", required = false) MultipartFile motif
     ) {
         EtudiantJustificationPresenceDTO dto = new EtudiantJustificationPresenceDTO();
         dto.setTypeMotif(typeMotif);

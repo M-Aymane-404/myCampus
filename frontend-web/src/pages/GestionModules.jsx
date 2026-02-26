@@ -29,7 +29,6 @@ const GestionModules = ({ classeId, classeNom, onRetour }) => {
         nom: m.nom,
         description: m.description || '',
         semestre: m.semestre || '',
-        coefficient: m.coefficient || 0,
         filiere: m.codeFiliere || '',
         classeId: m.classeId || m.codeClasse || null,
         codeClasse: m.codeClasse || null,
@@ -68,9 +67,8 @@ const GestionModules = ({ classeId, classeNom, onRetour }) => {
 
   useEffect(() => {
     chargerModules();
-    if (!classeId) {
-      chargerFilieres();
-    }
+    // Always load filieres for the dropdown, regardless of classeId
+    chargerFilieres();
   }, [classeId]);
 
   const [modalOuvert, setModalOuvert] = useState(false);
@@ -80,7 +78,6 @@ const GestionModules = ({ classeId, classeNom, onRetour }) => {
     nom: '',
     description: '',
     semestre: '',
-    coefficient: '',
     filiere: '',
     nombreHeures: ''
   });
@@ -101,7 +98,6 @@ const GestionModules = ({ classeId, classeNom, onRetour }) => {
       nom: '',
       description: '',
       semestre: '',
-      coefficient: '',
       filiere: '',
       nombreHeures: ''
     });
@@ -115,7 +111,6 @@ const GestionModules = ({ classeId, classeNom, onRetour }) => {
       nom: module.nom,
       description: module.description,
       semestre: module.semestre,
-      coefficient: module.coefficient.toString(),
       filiere: module.filiere,
       nombreHeures: module.nombreHeures.toString()
     });
@@ -127,41 +122,58 @@ const GestionModules = ({ classeId, classeNom, onRetour }) => {
     setFormulaire(prev => ({ ...prev, [name]: value }));
   };
 
-  const sauvegarder = () => {
+  const sauvegarder = async () => {
     // Validation basique
     if (!formulaire.codeModule || !formulaire.nom || !formulaire.filiere || !formulaire.semestre) {
       alert('Veuillez remplir tous les champs obligatoires');
+      console.log('Formulaire validation failed:', formulaire);
       return;
     }
 
-    if (moduleCourant) {
-      setModules(prev => prev.map(m =>
-        m.id === moduleCourant.id
-          ? {
-            ...m,
-            ...formulaire,
-            coefficient: parseFloat(formulaire.coefficient),
-            nombreHeures: parseInt(formulaire.nombreHeures),
-            nombreMatieres: m.nombreMatieres
-          }
-          : m
-      ));
-    } else {
-      const nouveauModule = {
-        id: modules.length + 1,
-        ...formulaire,
-        coefficient: parseFloat(formulaire.coefficient),
-        nombreHeures: parseInt(formulaire.nombreHeures),
-        nombreMatieres: 0
+    setChargement(true);
+    try {
+      // Prepare data for backend - map frontend field names to backend field names
+      const moduleData = {
+        codeModule: formulaire.codeModule,
+        nom: formulaire.nom,
+        description: formulaire.description,
+        semestre: formulaire.semestre,
+        codeFiliere: formulaire.filiere, // Map 'filiere' to 'codeFiliere'
       };
-      setModules(prev => [...prev, nouveauModule]);
+
+      console.log('Sending module data:', moduleData);
+
+      if (moduleCourant) {
+        // Update existing module
+        await apiStructure.modifierModule(moduleCourant.codeModule, moduleData);
+      } else {
+        // Create new module
+        await apiStructure.creerModule(moduleData);
+      }
+
+      // Refresh the modules list
+      await chargerModules();
+      setModalOuvert(false);
+    } catch (err) {
+      console.error('Save failed:', err);
+      alert('Une erreur est survenue lors de la sauvegarde: ' + err.message);
+    } finally {
+      setChargement(false);
     }
-    setModalOuvert(false);
   };
 
-  const supprimer = (module) => {
+  const supprimer = async (module) => {
     if (window.confirm(`Êtes-vous sûr de vouloir supprimer le module "${module.nom}" ?`)) {
-      setModules(prev => prev.filter(m => m.id !== module.id));
+      setChargement(true);
+      try {
+        await apiStructure.supprimerModule(module.codeModule);
+        await chargerModules();
+      } catch (err) {
+        console.error('Delete failed:', err);
+        alert('Une erreur est survenue lors de la suppression: ' + err.message);
+      } finally {
+        setChargement(false);
+      }
     }
   };
 
@@ -170,7 +182,6 @@ const GestionModules = ({ classeId, classeNom, onRetour }) => {
     { key: 'nom', label: 'Nom' },
     { key: 'filiere', label: 'Filière' },
     { key: 'semestre', label: 'Semestre' },
-    { key: 'coefficient', label: 'Coefficient' },
     { key: 'nombreHeures', label: 'Heures' },
     { key: 'nombreMatieres', label: 'Matières' }
   ];
@@ -185,9 +196,7 @@ const GestionModules = ({ classeId, classeNom, onRetour }) => {
 
   const totalModules = modulesFiltres.length;
   const totalHeures = modulesFiltres.reduce((sum, m) => sum + m.nombreHeures, 0);
-  const moyenneCoefficient = modulesFiltres.length > 0
-    ? (modulesFiltres.reduce((sum, m) => sum + m.coefficient, 0) / modulesFiltres.length).toFixed(2)
-    : '0.00';
+  
 
   return (
     <div className="gestion-modules">
@@ -227,14 +236,6 @@ const GestionModules = ({ classeId, classeNom, onRetour }) => {
           icone={FileText}
           couleur="info"
           iconeCouleur="light"
-        />
-        <CarteStatistique
-          titre="Coefficient Moyen"
-          valeur={moyenneCoefficient}
-          variation={{ valeur: moyenneCoefficient, label: '', positif: true }}
-          icone={GraduationCap}
-          couleur="success"
-          iconeCouleur="dark"
         />
       </div>
 
@@ -302,16 +303,6 @@ const GestionModules = ({ classeId, classeNom, onRetour }) => {
           valeur={formulaire.semestre}
           onChange={gererChangement}
           options={semestres}
-          requis
-        />
-        <ChampFormulaire
-          label="Coefficient"
-          nom="coefficient"
-          type="number"
-          step="0.5"
-          valeur={formulaire.coefficient}
-          onChange={gererChangement}
-          placeholder="Ex: 4.0"
           requis
         />
         <ChampFormulaire
