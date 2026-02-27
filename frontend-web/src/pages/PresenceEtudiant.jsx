@@ -205,7 +205,6 @@ const PresenceEtudiant = () => {
     const getStatusLabel = (status) => {
         switch (status?.toUpperCase()) {
             case 'PRESENT': return 'Présent';
-            case 'RETARD': return 'En Retard';
             case 'ABSENT': return 'Absent';
             default: return status;
         }
@@ -338,10 +337,6 @@ const PresenceEtudiant = () => {
                                 <span className="legend-label">Présent</span>
                             </div>
                             <div className="legend-item">
-                                <div className="legend-dot-box retard"></div>
-                                <span className="legend-label">Retard</span>
-                            </div>
-                            <div className="legend-item">
                                 <div className="legend-dot-box absent"></div>
                                 <span className="legend-label">Absent</span>
                             </div>
@@ -439,7 +434,7 @@ const PresenceEtudiant = () => {
                                                     <div className="justifiee-badge">
                                                         <span style={{ textAlign: 'center' }}>✓</span>
                                                     </div>
-                                                ) : (
+                                                ) : session.justificationAllowed !== false ? (
                                                     <button
                                                         className="justifier-btn"
                                                         onClick={() => {
@@ -449,6 +444,10 @@ const PresenceEtudiant = () => {
                                                     >
                                                         JUSTIFIER
                                                     </button>
+                                                ) : (
+                                                    <div className="justification-expired-badge">
+                                                        <span>Délai dépassé</span>
+                                                    </div>
                                                 )}
                                             </>
                                         )}

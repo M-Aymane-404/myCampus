@@ -86,7 +86,7 @@
     background-color: white;
     border-right: 1px solid var(--ce-border);
     position: relative;
-    padding: 0.5rem;
+    padding: 0.2rem;
     transition: background-color 0.2s;
 }
 
@@ -109,6 +109,19 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+}
+
+/* Dynamic color classes based on seance type */
+.ce-lecture-card.ce-lecture-cours {
+    border-left-color: #5C54ED !important; /* Blue for Cours */
+}
+
+.ce-lecture-card.ce-lecture-tp {
+    border-left-color: #10B981 !important; /* Green for TP */
+}
+
+.ce-lecture-card.ce-lecture-td {
+    border-left-color: #EF4444 !important; /* Red for TD */
 }
 
 .ce-lecture-subject {

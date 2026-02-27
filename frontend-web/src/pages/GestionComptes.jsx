@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, CheckCircle, XCircle, Eye, Search, Loader } from 'lucide-react';
+import { Plus, Edit2, Trash2, CheckCircle, XCircle, Eye, Search, Loader, Upload } from 'lucide-react';
 import FormulaireModal from '../composants/communs/FormulaireModal';
 import ModalDetailsUtilisateur from '../composants/communs/ModalDetailsUtilisateur';
 import ChampFormulaire from '../composants/communs/ChampFormulaire';
@@ -27,6 +27,15 @@ const GestionComptes = () => {
   // View Details State
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [userToView, setUserToView] = useState(null);
+
+  // Import State
+  const [importModalOpen, setImportModalOpen] = useState(false);
+  const [importFile, setImportFile] = useState(null);
+  const [importClass, setImportClass] = useState('');
+  const [importMode, setImportMode] = useState('PARTIEL');
+  const [defaultPassword, setDefaultPassword] = useState('');
+  const [importLoading, setImportLoading] = useState(false);
+  const [importResult, setImportResult] = useState(null);
 
   const initialFormData = {
     nom: '',
@@ -193,6 +202,48 @@ const GestionComptes = () => {
       const userPayload = { ...formData };
       const originalUser = usersList.find(u => u.id === selectedUserId);
       
+      // Validation checks before sending to backend
+      if (formData.role === 'PROFESSOR' || formData.role === 'ADMIN') {
+        if (formData.ppr && formData.ppr.trim() !== '') {
+          // Extract numeric part from PPR (remove "PPR" prefix if present)
+          const cleanPpr = formData.ppr.toString().trim();
+          const numericPpr = cleanPpr.replace(/^PPR/i, '');
+          // Update the payload with only the numeric part
+          userPayload.ppr = numericPpr;
+          if (!/^[0-9]{8}$/.test(numericPpr)) {
+            alert("PPR doit contenir exactement 8 chiffres");
+            setIsLoading(false);
+            return;
+          }
+        }
+      } else if (formData.role === 'STUDENT') {
+        if (formData.apogee && formData.apogee.trim() !== '') {
+          // Extract numeric part from Apogee (remove "AP" prefix if present)
+          const cleanApogee = formData.apogee.toString().trim();
+          const numericApogee = cleanApogee.replace(/^AP/i, '');
+          // Update the payload with only the numeric part
+          userPayload.apogee = numericApogee;
+          
+          if (!/^[0-9]{9}$/.test(numericApogee)) {
+            alert("Apogée doit contenir exactement 9 chiffres");
+            setIsLoading(false);
+            return;
+          }
+        }
+      }
+      
+      if (formData.cin && !/^[A-Za-z0-9]{4,8}$/.test(formData.cin)) {
+        alert("Numéro de CIN non valide (doit contenir 4 à 8 caractères alphanumériques)");
+        setIsLoading(false);
+        return;
+      }
+      
+      if (formData.tel && (formData.tel.length < 10 || formData.tel.length > 20)) {
+        alert("Numéro de téléphone non valide (doit contenir entre 10 et 20 caractères)");
+        setIsLoading(false);
+        return;
+      }
+      
       // Check if the enabled status has changed
       const statusChanged = originalUser && originalUser.enabled !== formData.enabled;
 
@@ -223,6 +274,27 @@ const GestionComptes = () => {
       delete userPayload.name;
       delete userPayload.initials;
       delete userPayload.lastActivity;
+      
+      // Remove immutable identifiers during editing - but keep them if they are being modified
+      // Note: PPR and Apogee should not be removed as they might be needed for validation
+      
+      // Map frontend field names to backend expectations
+      if (userPayload.enabled !== undefined) {
+        userPayload.active = userPayload.enabled;
+        delete userPayload.enabled;
+      }
+      
+      // Remove empty fields to avoid validation issues
+      Object.keys(userPayload).forEach(key => {
+        if (userPayload[key] === '' || userPayload[key] === null || userPayload[key] === undefined) {
+          delete userPayload[key];
+        }
+      });
+      
+      // For updates, don't send password if it's empty (backend expects null for no password change)
+      if (isEditing && !userPayload.password) {
+        delete userPayload.password;
+      }
 
       // Determine service based on role
       let service;
@@ -244,7 +316,9 @@ const GestionComptes = () => {
       }
 
       // Log payload for debugging (remove in production)
-      console.log('Saving user payload:', userPayload);
+      console.log('Saving user payload:', JSON.stringify(userPayload, null, 2));
+      console.log('User ID being used:', id);
+      console.log('Service being used:', formData.role);
 
       if (isEditing) {
         // If only the status changed, use the dedicated endpoints
@@ -277,7 +351,13 @@ const GestionComptes = () => {
     } catch (err) {
       console.error("Save failed:", err);
       const errorMessage = err.message || 'Erreur inconnue';
-      alert("Une erreur est survenue lors de la sauvegarde: " + errorMessage);
+      
+      // Show error in a more user-friendly way
+      if (errorMessage.includes('Erreur de validation:')) {
+        alert("Une erreur est survenue lors de la sauvegarde:\n\n" + errorMessage);
+      } else {
+        alert("Une erreur est survenue lors de la sauvegarde: " + errorMessage);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -460,6 +540,68 @@ const GestionComptes = () => {
     }
   };
 
+  const handleOpenImportModal = () => {
+    setImportFile(null);
+    setImportClass('');
+    setImportMode('PARTIEL');
+    setDefaultPassword('');
+    setImportResult(null);
+    setImportModalOpen(true);
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Check file type
+      const allowedTypes = ['text/csv', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+      if (!allowedTypes.includes(file.type) && !file.name.match(/\.(csv|xlsx|xls)$/i)) {
+        alert('Veuillez sélectionner un fichier CSV, XLSX ou XLS');
+        return;
+      }
+      setImportFile(file);
+    }
+  };
+
+  const handleImport = async () => {
+    if (!importFile) {
+      alert('Veuillez sélectionner un fichier');
+      return;
+    }
+    if (!importClass) {
+      alert('Veuillez sélectionner une classe');
+      return;
+    }
+
+    setImportLoading(true);
+    try {
+      const result = await apiEtudiants.importerEtudiants(
+        importFile,
+        importClass,
+        importMode,
+        defaultPassword || null
+      );
+      setImportResult(result);
+      
+      // Refresh users list to show imported students
+      await fetchUsers();
+      
+      // Show success message
+      alert(`Import terminé avec succès!\n` +
+            `Total lignes: ${result.totalLignes}\n` +
+            `Insérés: ${result.nombreInseres}\n` +
+            `Ignorés: ${result.nombreIgnores}\n` +
+            `Erreurs: ${result.nombreErreurs}`);
+      
+      // Close modal after successful import
+      setImportModalOpen(false);
+    } catch (err) {
+      console.error('Import failed:', err);
+      alert('Erreur lors de l\'import: ' + (err.message || 'Erreur inconnue'));
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
   const filteredUsers = (activeFilter === 'ALL'
     ? usersList
     : usersList.filter(user => user.role === activeFilter))
@@ -483,7 +625,7 @@ const GestionComptes = () => {
       case 'ADMIN':
         return (
           <>
-            <ChampFormulaire label="PPR" nom="ppr" valeur={formData.ppr} onChange={handleInputChange} />
+            {!isEditing && <ChampFormulaire label="PPR" nom="ppr" valeur={formData.ppr} onChange={handleInputChange} requis />}
             <ChampFormulaire label="Grade" nom="grade" valeur={formData.grade} onChange={handleInputChange} />
             <ChampFormulaire label="Fonction" nom="fonction" valeur={formData.fonction} onChange={handleInputChange} />
           </>
@@ -491,7 +633,7 @@ const GestionComptes = () => {
       case 'PROFESSOR':
         return (
           <>
-            <ChampFormulaire label="PPR" nom="ppr" valeur={formData.ppr} onChange={handleInputChange} />
+            {!isEditing && <ChampFormulaire label="PPR" nom="ppr" valeur={formData.ppr} onChange={handleInputChange} requis />}
             <ChampFormulaire label="Spécialité" nom="specialite" valeur={formData.specialite} onChange={handleInputChange} />
             <ChampFormulaire label="Grade" nom="grade" valeur={formData.grade} onChange={handleInputChange} />
             <ChampFormulaire label="Date de Recrutement" nom="dateRecrutement" type="date" valeur={formData.dateRecrutement} onChange={handleInputChange} />
@@ -501,7 +643,7 @@ const GestionComptes = () => {
       case 'STUDENT':
         return (
           <>
-            <ChampFormulaire label="Apogée" nom="apogee" valeur={formData.apogee} onChange={handleInputChange} />
+            {!isEditing && <ChampFormulaire label="Apogée" nom="apogee" valeur={formData.apogee} onChange={handleInputChange} requis />}
             <ChampFormulaire label="Niveau" nom="niveau" valeur={formData.niveau} onChange={handleInputChange} />
             <ChampFormulaire label="Année Inscription" nom="anneeInscription" type="number" valeur={formData.anneeInscription} onChange={handleInputChange} />
             <ChampFormulaire label="Semestre Actuel" nom="semestreActuel" valeur={formData.semestreActuel} onChange={handleInputChange} />
@@ -572,9 +714,14 @@ const GestionComptes = () => {
               </button>
             ))}
           </div>
-          <button className="btn-add" onClick={handleOpenAddModal}>
-            <Plus size={24} color="#FFF" />
-          </button>
+          <div className="header-actions">
+            <button className="btn-import" onClick={handleOpenImportModal} title="Importer des étudiants">
+              <Upload size={20} color="#FFF" />
+            </button>
+            <button className="btn-add" onClick={handleOpenAddModal}>
+              <Plus size={24} color="#FFF" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -705,6 +852,90 @@ const GestionComptes = () => {
         utilisateur={userToView}
         surModifier={(user) => handleEditUser(user.id)}
       />
+
+      {/* Import Students Modal */}
+      <FormulaireModal
+        titre="Importer des Étudiants"
+        estOuvert={importModalOpen}
+        surFermer={() => setImportModalOpen(false)}
+        surSauvegarder={handleImport}
+        texteBoutonSauvegarder="Importer"
+        chargement={importLoading}
+      >
+        <div className="import-form">
+          <div className="form-group">
+            <label>Fichier (CSV, XLSX ou XLS)*</label>
+            <input
+              type="file"
+              accept=".csv,.xlsx,.xls"
+              onChange={handleFileChange}
+              className="file-input"
+            />
+            {importFile && (
+              <div className="file-info">
+                <span>Fichier sélectionné: {importFile.name}</span>
+                <span>({(importFile.size / 1024).toFixed(2)} KB)</span>
+              </div>
+            )}
+          </div>
+
+          <ChampFormulaire
+            label="Classe*"
+            nom="classe"
+            type="select"
+            valeur={importClass}
+            onChange={(e) => setImportClass(e.target.value)}
+            options={classesList.length > 0 
+              ? classesList.map(c => ({ 
+                  value: c.codeClasse || c.code || c.id?.toString() || '', 
+                  label: c.nom || c.nomClasse || c.codeClasse || `Classe ${c.id || ''}` 
+                }))
+              : [{ value: '', label: 'Chargement des classes...' }]
+            }
+            requis
+            disabled={classesList.length === 0}
+          />
+
+          <ChampFormulaire
+            label="Mode d'import"
+            nom="modeImport"
+            type="select"
+            valeur={importMode}
+            onChange={(e) => setImportMode(e.target.value)}
+            options={[
+              { value: 'PARTIEL', label: 'PARTIEL - Insère uniquement les lignes valides' },
+              { value: 'ATOMIC', label: 'ATOMIC - Annule tout si une erreur est détectée' }
+            ]}
+          />
+
+          <ChampFormulaire
+            label="Mot de passe par défaut (optionnel)"
+            nom="motDePasseDefaut"
+            type="password"
+            valeur={defaultPassword}
+            onChange={(e) => setDefaultPassword(e.target.value)}
+            placeholder="Laisser vide pour générer automatiquement"
+          />
+
+          {importResult && (
+            <div className="import-result">
+              <h4>Résultat de l'import:</h4>
+              <p>Total lignes: {importResult.totalLignes}</p>
+              <p>Insérés: {importResult.nombreInseres}</p>
+              <p>Ignorés: {importResult.nombreIgnores}</p>
+              <p>Erreurs: {importResult.nombreErreurs}</p>
+              {importResult.erreurs && importResult.erreurs.length > 0 && (
+                <div className="import-errors">
+                  <h5>Erreurs détaillées:</h5>
+                  {importResult.erreurs.map((erreur, index) => (
+                    <p key={index} className="error-line">Ligne {erreur.ligne}: {erreur.message}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </FormulaireModal>
     </div>
   );
 };

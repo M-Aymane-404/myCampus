@@ -40,6 +40,8 @@ const ProfilPage = () => {
 
         dateNaissance: '',
 
+        grade: '',
+
         photo: null
 
     });
@@ -98,6 +100,7 @@ const ProfilPage = () => {
 
                     apogee: data.apogee || data.ppr || '', // Handle both student apogee and admin ppr
                     dateNaissance: data.dateNaissance || '',
+                    grade: data.grade || '',
 
                     photo: data.photo || null
 
@@ -159,13 +162,18 @@ const ProfilPage = () => {
 
                 prenom: infosUtilisateur.prenom,
 
-                dateNaissance: infosUtilisateur.dateNaissance,
-
                 tel: infosUtilisateur.tel,
 
                 email: infosUtilisateur.email
 
             };
+
+            // Add grade for admin or dateNaissance for student
+            if (user.role === 'admin') {
+                profileData.grade = infosUtilisateur.grade;
+            } else {
+                profileData.dateNaissance = infosUtilisateur.dateNaissance;
+            }
 
 
 
@@ -565,15 +573,15 @@ const ProfilPage = () => {
 
                         <div className="profile-input-group">
 
-                            <label>DATE DE NAISSANCE</label>
+                            <label>{infosUtilisateur.role === 'admin' ? 'GRADE' : 'DATE DE NAISSANCE'}</label>
 
                             <input
 
-                                type="date"
+                                type={infosUtilisateur.role === 'admin' ? 'text' : 'date'}
 
-                                name="dateNaissance"
+                                name={infosUtilisateur.role === 'admin' ? 'grade' : 'dateNaissance'}
 
-                                value={infosUtilisateur.dateNaissance}
+                                value={infosUtilisateur.role === 'admin' ? infosUtilisateur.grade : infosUtilisateur.dateNaissance}
 
                                 onChange={handleChange}
 

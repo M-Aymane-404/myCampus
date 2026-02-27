@@ -39,10 +39,15 @@ export async function authenticatedFetch(url, options = {}) {
         return retryResponse;
       } catch (refreshError) {
         console.error('Token refresh failed during retry:', refreshError);
-        // Refresh failed, logout user
-        apiAuth.logout();
-        throw new Error('Session expirée. Veuillez vous reconnecter.');
+        // Refresh failed, logout user (already handled in refreshAccessToken)
+        throw refreshError;
       }
+    }
+
+    // For 500 errors, don't try to refresh - it's a backend issue
+    if (response.status === 500) {
+      console.warn('Backend internal server error (500) - not attempting token refresh');
+      return response; // Let the caller handle the 500 error
     }
 
     return response;

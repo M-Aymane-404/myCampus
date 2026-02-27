@@ -9,8 +9,9 @@ export const apiAttendance = {
      */
     fetchStudentProfile: async () => {
         try {
+            const headers = await apiAuth.getAuthHeadersWithRefresh();
             const response = await fetch(`${API_BASE_URL}/etudiant/moi`, {
-                headers: apiAuth.getAuthHeaders(),
+                headers: headers,
                 credentials: 'include'
             });
 
@@ -43,8 +44,9 @@ export const apiAttendance = {
 
             const url = `${API_BASE_URL}/etudiant/moi/presences?${params.toString()}`;
 
+            const headers = await apiAuth.getAuthHeadersWithRefresh();
             const response = await fetch(url, {
-                headers: apiAuth.getAuthHeaders(),
+                headers: headers,
                 credentials: 'include'
             });
 

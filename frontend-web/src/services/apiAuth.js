@@ -196,9 +196,14 @@ export const apiAuth = {
             return await retryResponse.json();
           } catch (refreshError) {
             console.error('Token refresh failed:', refreshError);
-            this.logout();
-            throw new Error('Session expirée. Veuillez vous reconnecter.');
+            // Error is already handled in refreshAccessToken (logout happened there)
+            throw refreshError;
           }
+        } else if (response.status === 500) {
+          // Backend internal error - don't try to refresh, just report the error
+          const errorText = await response.text();
+          console.error('Backend internal server error (500):', errorText);
+          throw new Error('Erreur serveur temporaire. Veuillez réessayer plus tard.');
         }
         const errorText = await response.text();
         console.error(`Profile fetch error (${response.status}):`, errorText);
@@ -231,6 +236,11 @@ export const apiAuth = {
           // Refresh token is invalid or expired, logout user
           this.logout();
           throw new Error('Session expirée. Veuillez vous reconnecter.');
+        } else if (response.status === 500) {
+          // Backend has an internal error - handle gracefully
+          console.warn('Backend token refresh error (500), logging out for security...');
+          this.logout();
+          throw new Error('Le service de rafraîchissement est temporairement indisponible. Veuillez vous reconnecter.');
         }
         throw new Error('Erreur lors du rafraîchissement du token');
       }
@@ -246,6 +256,10 @@ export const apiAuth = {
       throw new Error('Réponse de rafraîchissement invalide');
     } catch (error) {
       console.error('Token refresh error:', error);
+      // Ensure logout on any refresh error to prevent stuck sessions
+      if (this.getToken()) {
+        this.logout();
+      }
       throw error;
     }
   },
@@ -271,7 +285,6 @@ export const apiAuth = {
   getAuthHeaders() {
     const token = this.getToken();
     return {
-      'Content-Type': 'application/json',
       ...(token && { 'Authorization': `Bearer ${token}` }),
     };
   },
@@ -293,7 +306,6 @@ export const apiAuth = {
     }
 
     return {
-      'Content-Type': 'application/json',
       ...(token && { 'Authorization': `Bearer ${token}` }),
     };
   },

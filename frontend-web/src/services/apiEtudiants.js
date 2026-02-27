@@ -4,11 +4,12 @@ import { apiAuth } from './apiAuth';
 export const apiEtudiants = {
   async obtenirTous() {
     try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const reponse = await fetch(BASE_URL, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          ...apiAuth.getAuthHeaders(),
+          ...headers,
         },
         credentials: 'include'
       });
@@ -26,11 +27,12 @@ export const apiEtudiants = {
 
   async obtenirParApogee(apogee) {
     try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const reponse = await fetch(`${BASE_URL}/${apogee}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          ...apiAuth.getAuthHeaders(),
+          ...headers,
         },
         credentials: 'include'
       });
@@ -48,11 +50,7 @@ export const apiEtudiants = {
 
   async creer(etudiant) {
     try {
-      const headers = {
-        'Content-Type': 'application/json',
-        ...apiAuth.getAuthHeaders()
-      };
-
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const reponse = await fetch(BASE_URL, {
         method: 'POST',
         headers: headers,
@@ -89,14 +87,13 @@ export const apiEtudiants = {
 
   async modifier(apogee, etudiant) {
     try {
-      const headers = {
-        'Content-Type': 'application/json',
-        ...apiAuth.getAuthHeaders()
-      };
-
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const reponse = await fetch(`${BASE_URL}/${apogee}`, {
         method: 'PUT',
-        headers: headers,
+        headers: {
+          'Content-Type': 'application/json',
+          ...headers,
+        },
         body: JSON.stringify(etudiant),
         credentials: 'include'
       });
@@ -106,7 +103,14 @@ export const apiEtudiants = {
         try {
           const erreurData = await reponse.json();
           console.error('Réponse d\'erreur du serveur:', erreurData);
-          if (erreurData.message) {
+          
+          // Check for detailed validation errors
+          if (erreurData.details && typeof erreurData.details === 'object') {
+            const detailsMessages = Object.entries(erreurData.details)
+              .map(([field, message]) => `${field}: ${message}`)
+              .join('\n');
+            messageErreur = `Erreur de validation:\n${detailsMessages}`;
+          } else if (erreurData.message) {
             messageErreur = erreurData.message;
           } else if (erreurData.error) {
             messageErreur = erreurData.error;
@@ -130,11 +134,7 @@ export const apiEtudiants = {
 
   async supprimer(apogee) {
     try {
-      const headers = {
-        'Content-Type': 'application/json',
-        ...apiAuth.getAuthHeaders()
-      };
-
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const reponse = await fetch(`${BASE_URL}/${apogee}`, {
         method: 'DELETE',
         headers: headers,
@@ -154,11 +154,12 @@ export const apiEtudiants = {
 
   async activer(apogee) {
     try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const reponse = await fetch(`${BASE_URL}/${apogee}/activer`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          ...apiAuth.getAuthHeaders(),
+          ...headers,
         },
         credentials: 'include'
       });
@@ -176,10 +177,12 @@ export const apiEtudiants = {
 
   async desactiver(apogee) {
     try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const reponse = await fetch(`${BASE_URL}/${apogee}/desactiver`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
+          ...headers,
         },
         credentials: 'include'
       });
@@ -191,6 +194,51 @@ export const apiEtudiants = {
       return true;
     } catch (erreur) {
       console.error('Erreur lors de la désactivation de l\'étudiant:', erreur);
+      throw erreur;
+    }
+  },
+
+  async importerEtudiants(fichier, codeClasse, modeImport = 'PARTIEL', motDePasseDefaut = null) {
+    try {
+      const formData = new FormData();
+      formData.append('fichier', fichier);
+      formData.append('codeClasse', codeClasse);
+      formData.append('modeImport', modeImport);
+      if (motDePasseDefaut) {
+        formData.append('motDePasseDefaut', motDePasseDefaut);
+      }
+
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
+      const reponse = await fetch(`${BASE_URL.replace('/utilisateurs/etudiants', '/etudiants')}/import-fichier`, {
+        method: 'POST',
+        headers: {
+          ...headers,
+        },
+        body: formData,
+        credentials: 'include'
+      });
+
+      if (!reponse.ok) {
+        let messageErreur = `Erreur HTTP: ${reponse.status}`;
+        try {
+          const erreurData = await reponse.json();
+          if (erreurData.message) {
+            messageErreur = erreurData.message;
+          } else if (erreurData.error) {
+            messageErreur = erreurData.error;
+          }
+        } catch (e) {
+          const texteErreur = await reponse.text();
+          if (texteErreur) {
+            messageErreur += ': ' + texteErreur;
+          }
+        }
+        throw new Error(messageErreur);
+      }
+
+      return await reponse.json();
+    } catch (erreur) {
+      console.error('Erreur lors de l\'import des étudiants:', erreur);
       throw erreur;
     }
   },

@@ -4,11 +4,12 @@ import { apiAuth } from './apiAuth';
 export const apiAdministrateurs = {
     async obtenirTous() {
         try {
+            const headers = await apiAuth.getAuthHeadersWithRefresh();
             const reponse = await fetch(BASE_URL, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                    ...apiAuth.getAuthHeaders(),
+                    ...headers,
                 },
                 credentials: 'include'
             });
@@ -26,11 +27,7 @@ export const apiAdministrateurs = {
 
     async creer(administrateur) {
         try {
-            const headers = {
-                'Content-Type': 'application/json',
-                ...apiAuth.getAuthHeaders()
-            };
-
+            const headers = await apiAuth.getAuthHeadersWithRefresh();
             const reponse = await fetch(BASE_URL, {
                 method: 'POST',
                 headers: headers,
@@ -56,14 +53,13 @@ export const apiAdministrateurs = {
 
     async modifier(id, administrateur) {
         try {
-            const headers = {
-                'Content-Type': 'application/json',
-                ...apiAuth.getAuthHeaders()
-            };
-
+            const headers = await apiAuth.getAuthHeadersWithRefresh();
             const reponse = await fetch(`${BASE_URL}/${id}`, {
                 method: 'PUT',
-                headers: headers,
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...headers,
+                },
                 body: JSON.stringify(administrateur),
                 credentials: 'include'
             });
@@ -81,11 +77,7 @@ export const apiAdministrateurs = {
 
     async supprimer(id) {
         try {
-            const headers = {
-                'Content-Type': 'application/json',
-                ...apiAuth.getAuthHeaders()
-            };
-
+            const headers = await apiAuth.getAuthHeadersWithRefresh();
             const reponse = await fetch(`${BASE_URL}/${id}`, {
                 method: 'DELETE',
                 headers: headers,
@@ -105,11 +97,7 @@ export const apiAdministrateurs = {
 
     async activer(id) {
         try {
-            const headers = {
-                'Content-Type': 'application/json',
-                ...apiAuth.getAuthHeaders()
-            };
-
+            const headers = await apiAuth.getAuthHeadersWithRefresh();
             const reponse = await fetch(`${BASE_URL}/${id}/activer`, {
                 method: 'PATCH',
                 headers: headers,
@@ -129,11 +117,7 @@ export const apiAdministrateurs = {
 
     async desactiver(id) {
         try {
-            const headers = {
-                'Content-Type': 'application/json',
-                ...apiAuth.getAuthHeaders()
-            };
-
+            const headers = await apiAuth.getAuthHeadersWithRefresh();
             const reponse = await fetch(`${BASE_URL}/${id}/desactiver`, {
                 method: 'PATCH',
                 headers: headers,

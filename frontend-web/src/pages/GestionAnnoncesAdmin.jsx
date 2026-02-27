@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Megaphone, Info, Plus, Paperclip, Send, Users, GraduationCap, Layers } from 'lucide-react';
 import apiAnnonces from '../services/apiAnnonces';
-import apiNotifications from '../services/apiNotifications';
 import { apiStructure } from '../services/apiStructure';
 import { apiProfesseurs } from '../services/apiProfesseurs';
 import { apiAuth } from '../services/apiAuth';
@@ -15,7 +14,7 @@ const GestionAnnoncesAdmin = () => {
   const [professeurs, setProfesseurs] = useState([]);
   const [formulaire, setFormulaire] = useState({
     titre: '',
-    categorie: 'Admin',
+    categorie: 'AUTRES',
     contenu: ''
   });
 
@@ -58,10 +57,11 @@ const GestionAnnoncesAdmin = () => {
   };
 
   const typesAnnonce = [
-    { value: 'Admin', label: 'Admin' },
-    { value: 'Académique', label: 'Académique' },
-    { value: 'Événement', label: 'Événement' },
-    { value: 'Urgent', label: 'Urgent' }
+    { value: 'AUTRES', label: 'Autres' },
+    { value: 'COURS', label: 'Cours' },
+    { value: 'EVENT', label: 'Événement' },
+    { value: 'REUNION', label: 'Réunion' },
+    { value: 'EXAMEN', label: 'Examen' }
   ];
 
   const gererChangement = (e) => {
@@ -113,49 +113,44 @@ const GestionAnnoncesAdmin = () => {
 
     try {
       setChargement(true);
-      const currentUser = apiAuth.getUser();
-      const utilisateurId = currentUser?.id || 1;
 
-      const targets = cible === 'etudiants'
-        ? classes.filter(c => c.selected)
-        : professeurs.filter(p => p.selected);
+      // Prepare announcement data
+      let annonceData = {
+        titre: formulaire.titre,
+        contenu: formulaire.contenu,
+        urgent: prioriteHaute,
+        typeAnnonce: formulaire.categorie
+      };
 
-      for (const target of targets) {
-        const notificationData = {
-          titre: formulaire.titre,
-          message: formulaire.contenu,
-          type: prioriteHaute ? 'Urgent' : formulaire.categorie,
-          utilisateur_id: utilisateurId,
-          cible_id: target.id,
-          type_cible: cible,
-          lu: false,
-          date_envoi: new Date().toISOString(),
-          date_lecture: null,
-          priorite_haute: prioriteHaute
-        };
-
-        await apiNotifications.creer(notificationData);
+      if (cible === 'etudiants') {
+        const selectedClasses = classes.filter(c => c.selected);
+        
+        if (selectedClasses.length === 1) {
+          // Single class - use ETUDIANTS_CLASSE
+          annonceData.cibleType = 'ETUDIANTS_CLASSE';
+          annonceData.codeClasse = selectedClasses[0].id;
+        } else {
+          // Multiple classes - use ETUDIANTS_GLOBAL
+          annonceData.cibleType = 'ETUDIANTS_GLOBAL';
+        }
+      } else {
+        // Teachers
+        const selectedProfs = professeurs.filter(p => p.selected);
+        
+        if (selectedProfs.length === 1) {
+          // Single department - use PROFESSEURS_DEPARTEMENT
+          annonceData.cibleType = 'PROFESSEURS_DEPARTEMENT';
+          annonceData.codeDepartement = 'INFO'; // Default department code
+        } else {
+          // Multiple professors - use PROFESSEURS_GLOBAL
+          annonceData.cibleType = 'PROFESSEURS_GLOBAL';
+        }
       }
 
-      await apiAnnonces.creer({
-        titre: formulaire.titre,
-        type: prioriteHaute ? 'Urgent' : formulaire.categorie,
-        contenu: formulaire.contenu,
-        cible: cible,
-        cibles_selectionnes: targets.map(t => t.id),
-        priorite_haute: prioriteHaute
-      });
-
+      // Create announcement - backend will handle notifications automatically
+      await apiAnnonces.creer(annonceData);
       alert('Annonce diffusée avec succès !');
-
-      setFormulaire({
-        titre: '',
-        categorie: 'Admin',
-        contenu: ''
-      });
-      setPrioriteHaute(false);
-      setClasses(prev => prev.map(c => ({ ...c, selected: false })));
-      setProfesseurs(prev => prev.map(p => ({ ...p, selected: false })));
+      resetForm();
 
     } catch (err) {
       alert('Erreur: ' + (err.message || 'Erreur inconnue'));
@@ -163,6 +158,17 @@ const GestionAnnoncesAdmin = () => {
     } finally {
       setChargement(false);
     }
+  };
+
+  const resetForm = () => {
+    setFormulaire({
+      titre: '',
+      categorie: 'AUTRES',
+      contenu: ''
+    });
+    setPrioriteHaute(false);
+    setClasses(prev => prev.map(c => ({ ...c, selected: false })));
+    setProfesseurs(prev => prev.map(p => ({ ...p, selected: false })));
   };
 
   const isFormValid = formulaire.titre && formulaire.contenu && getSelectedCount() > 0;

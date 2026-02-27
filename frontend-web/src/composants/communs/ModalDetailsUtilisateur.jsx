@@ -36,9 +36,9 @@ const ModalDetailsUtilisateur = ({ estOuvert, surFermer, utilisateur, surModifie
 
     const userId = utilisateur.ppr || utilisateur.apogee || "23009845";
 
-    // Check if we have an avatar URL in the user object (mock)
-    // For demo matching screenshot, we'll try to use a real image if provided, else initials
-    const hasAvatar = false; // Toggle or use user.avatarUrl
+    // Check if user has a profile photo
+    const hasAvatar = utilisateur.photoUrl && utilisateur.photoUrl.trim() !== '';
+    const photoUrl = hasAvatar ? `http://localhost:8080${utilisateur.photoUrl}` : null;
 
     return (
         <div className="formulaire-modal-overlay" onClick={surFermer}>
@@ -54,19 +54,21 @@ const ModalDetailsUtilisateur = ({ estOuvert, surFermer, utilisateur, surModifie
                     <div className="profile-header-card">
                         <div className="large-avatar-wrapper">
                             {hasAvatar ? (
-                                <div className="large-avatar"></div>
-                            ) : (
-                                // Using style from CSS which has background image fallback or color
-                                <div className={`large-avatar ${!hasAvatar ? 'large-avatar-placeholder' : ''}`} style={!hasAvatar ? { backgroundImage: 'none' } : {}}>
-                                    {/* If explicit image not set in CSS, use initials for safety if design calls for it, 
-                         but screenshot has image. CSS has a placeholder image URL for demo. */}
-                                    {!hasAvatar && <span style={{ fontSize: '3rem' }}>{initials}</span>}
-                                </div>
-                            )}
-
-                            <div className="avatar-floating-id">
-                                <span className="dot-indicator"></span>
-                                {userId}
+                                <img 
+                                    src={photoUrl} 
+                                    alt={`${utilisateur.name} profile`}
+                                    className="large-avatar"
+                                    onError={(e) => {
+                                        // Fallback to initials if image fails to load
+                                        e.target.style.display = 'none';
+                                        e.target.nextSibling.style.display = 'flex';
+                                    }}
+                                />
+                            ) : null}
+                            {/* Fallback div - always rendered but hidden when image loads successfully */}
+                            <div className={`large-avatar ${!hasAvatar ? 'large-avatar-placeholder' : ''}`} 
+                                 style={hasAvatar ? { display: 'none' } : { backgroundImage: 'none' }}>
+                                <span style={{ fontSize: '3rem' }}>{initials}</span>
                             </div>
                         </div>
 

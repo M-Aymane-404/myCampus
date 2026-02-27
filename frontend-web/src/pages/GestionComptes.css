@@ -270,3 +270,112 @@
 .btn-delete:hover {
   background-color: #fef2f2;
 }
+
+/* Header Actions */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-import {
+  background-color: #10b981;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-import:hover {
+  background-color: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Import Form Styles */
+.import-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-width: 400px;
+}
+
+.import-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.import-form .form-group label {
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.9rem;
+}
+
+.import-form .file-input {
+  padding: 0.75rem;
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  background-color: #f9fafb;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.import-form .file-input:hover {
+  border-color: #4f46e5;
+  background-color: #f3f4f6;
+}
+
+.import-form .file-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-top: 0.5rem;
+}
+
+.import-result {
+  padding: 1rem;
+  background-color: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  margin-top: 1rem;
+}
+
+.import-result h4 {
+  margin: 0 0 0.5rem 0;
+  color: #0c4a6e;
+  font-size: 0.95rem;
+}
+
+.import-result p {
+  margin: 0.25rem 0;
+  font-size: 0.85rem;
+  color: #374151;
+}
+
+.import-errors {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #bae6fd;
+}
+
+.import-errors h5 {
+  margin: 0 0 0.5rem 0;
+  color: #dc2626;
+  font-size: 0.85rem;
+}
+
+.import-errors .error-line {
+  margin: 0.25rem 0;
+  font-size: 0.8rem;
+  color: #dc2626;
+  font-family: 'Courier New', monospace;
+}

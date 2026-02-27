@@ -28,6 +28,7 @@ public class AnnonceEtudiantMapper {
                 .titre(annonce.getTitre())
                 .contenu(annonce.getContenu())
                 .datePublication(annonce.getDatePublication())
+                .urgent(annonce.isUrgent())
                 .publiee(annonce.isPubliee())
                 .cibleType(annonce.getCibleType())
                 .codeClasse(codeClasse)

@@ -10,9 +10,10 @@ export const apiAdmin = {
     async getProfile() {
         try {
             // Get all admins and find the current one by email
+            const headers = await apiAuth.getAuthHeadersWithRefresh();
             const response = await fetch(BASE_URL, {
                 method: 'GET',
-                headers: apiAuth.getAuthHeaders(),
+                headers: headers,
                 credentials: 'include'
             });
 
@@ -44,10 +45,11 @@ export const apiAdmin = {
             // Get current admin to find their PPR
             const currentAdmin = await this.getProfile();
             
+            const headers = await apiAuth.getAuthHeadersWithRefresh();
             const response = await fetch(`${BASE_URL}/${currentAdmin.ppr}`, {
                 method: 'PUT',
                 headers: {
-                    ...apiAuth.getAuthHeaders(),
+                    ...headers,
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(profileData),
@@ -90,11 +92,11 @@ export const apiAdmin = {
             // Get current admin to find their email
             const currentAdmin = await this.getProfile();
             
-            const token = apiAuth.getToken();
+            const headers = await apiAuth.getAuthHeadersWithRefresh();
             const response = await fetch(`${BASE_URL.replace('/administrateurs', '')}/${currentAdmin.email}/photo`, {
                 method: 'PUT',
                 headers: {
-                    'Authorization': `Bearer ${token}`,
+                    ...headers,
                 },
                 body: formData,
                 credentials: 'include'
