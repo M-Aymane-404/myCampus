@@ -32,7 +32,7 @@ public class RestExceptionHandler {
                                                String path) {
 
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("timestamp", LocalDateTime.now());
+        body.put("timestamp", LocalDateTime.now().toString());
         body.put("status", status.value());
         body.put("erreur", erreur);
         body.put("message", message);
@@ -173,7 +173,7 @@ public class RestExceptionHandler {
         log.error("Séances professeur exception: {}", ex.getMessage());
 
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("timestamp", LocalDateTime.now());
+        body.put("timestamp", LocalDateTime.now().toString());
         body.put("status", HttpStatus.BAD_REQUEST.value());
         body.put("erreur", "Requête invalide");
         body.put("message", ex.getMessage());
@@ -187,7 +187,7 @@ public class RestExceptionHandler {
         log.warn("Upload trop volumineux: {}", ex.getMessage());
 
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("timestamp", LocalDateTime.now());
+        body.put("timestamp", LocalDateTime.now().toString());
         body.put("status", HttpStatus.BAD_REQUEST.value());
         body.put("erreur", "Fichier trop volumineux");
         body.put("message", "La taille du fichier dépasse la limite autorisée");
@@ -201,7 +201,7 @@ public class RestExceptionHandler {
         log.warn("Erreur multipart: {}", ex.getMessage());
 
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("timestamp", LocalDateTime.now());
+        body.put("timestamp", LocalDateTime.now().toString());
         body.put("status", HttpStatus.BAD_REQUEST.value());
         body.put("erreur", "Erreur upload");
         body.put("message", "Le fichier envoyé n'est pas valide ou la requête multipart est incorrecte");
