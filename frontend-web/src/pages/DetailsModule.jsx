@@ -328,13 +328,6 @@ const DetailsModule = ({ module, classe, filiere, departement, onRetour }) => {
                     </div>
                     <div className="stat-item">
                         <div className="stat-header">
-                            <Award size={16} />
-                            COEFFICIENT
-                        </div>
-                        <div className="stat-value">{module.coefficient || 4}</div>
-                    </div>
-                    <div className="stat-item">
-                        <div className="stat-header">
                             <Calendar size={16} />
                             SEMESTRE
                         </div>
@@ -397,7 +390,7 @@ const DetailsModule = ({ module, classe, filiere, departement, onRetour }) => {
                                 <div className="card-main">
                                     <h3>{matiere.nom}</h3>
                                     <div className="card-meta">
-                                        CODE: {matiere.codeMatiere} • COEFF: {matiere.coefficient}
+                                        CODE: {matiere.codeMatiere}
                                     </div>
                                     <div className="card-prof">
                                         <UserPlus size={14} />
@@ -450,18 +443,6 @@ const DetailsModule = ({ module, classe, filiere, departement, onRetour }) => {
                     valeur={formData.description}
                     onChange={handleInputChange}
                     placeholder="Description de la matière"
-                />
-                <ChampFormulaire
-                    label="Coefficient"
-                    nom="coefficient"
-                    type="number"
-                    step="0.5"
-                    valeur={formData.coefficient}
-                    onChange={handleInputChange}
-                    min="0.5"
-                    max="10"
-                    placeholder="Ex: 2.5"
-                    requis
                 />
             </FormulaireModal>
 

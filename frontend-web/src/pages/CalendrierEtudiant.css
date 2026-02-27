@@ -6,6 +6,9 @@
     --ce-border: #f1f5f9;
     --ce-bg-light: #f8fafc;
     --ce-active-day-bg: #f5f3ff;
+    --ce-error-bg: #fef2f2;
+    --ce-error-text: #dc2626;
+    --ce-loading-bg: #f8fafc;
 }
 
 .ce-container {
@@ -13,6 +16,42 @@
     background-color: white;
     min-height: 100vh;
     font-family: 'Inter', sans-serif;
+}
+
+/* Loading State */
+.ce-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 3rem;
+    background-color: var(--ce-loading-bg);
+    border-radius: 16px;
+    margin-bottom: 2rem;
+    border: 1px solid var(--ce-border);
+}
+
+.ce-loading-spinner {
+    font-size: 1.1rem;
+    color: var(--ce-text-muted);
+    font-weight: 500;
+}
+
+/* Error State */
+.ce-error {
+    background-color: var(--ce-error-bg);
+    border: 1px solid #fecaca;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ce-error-message {
+    color: var(--ce-error-text);
+    font-weight: 500;
+    font-size: 1rem;
 }
 
 /* Header Banner - Matches Reference Image */
@@ -202,7 +241,7 @@
     background-color: white;
     border-right: 1px solid var(--ce-border);
     position: relative;
-    padding: 0.5rem;
+    padding: 0.2rem;
     transition: background-color 0.2s;
 }
 
@@ -227,6 +266,19 @@
     justify-content: space-between;
 }
 
+/* Dynamic color classes based on session type */
+.ce-lecture-card.ce-lecture-cours {
+    border-left-color: #5C54ED !important; /* Blue for Cours */
+}
+
+.ce-lecture-card.ce-lecture-tp {
+    border-left-color: #10B981 !important; /* Green for TP */
+}
+
+.ce-lecture-card.ce-lecture-td {
+    border-left-color: #EF4444 !important; /* Red for TD */
+}
+
 .ce-lecture-subject {
     font-size: 0.8rem;
     font-weight: 800;
@@ -248,4 +300,63 @@
     display: flex;
     align-items: center;
     gap: 0.35rem;
+}
+
+/* Footer Legend Bar */
+.planning-footer-legend {
+    margin-top: 2rem;
+    padding: 1rem 1.5rem;
+    background: white;
+    border: 1px solid var(--ce-border);
+    border-radius: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.05);
+}
+
+.legend-items {
+    display: flex;
+    gap: 2rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.legend-item .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.legend-item .dot.dot-cours {
+    background-color: #5C54ED; /* Blue for Cours */
+}
+
+.legend-item .dot.dot-tp {
+    background-color: #10B981; /* Green for TP */
+}
+
+.legend-item .dot.dot-td {
+    background-color: #EF4444; /* Red for TD */
+}
+
+.legend-item .label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--ce-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.footer-timestamp {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.7rem;
+    color: var(--ce-text-muted);
+    font-weight: 500;
 }

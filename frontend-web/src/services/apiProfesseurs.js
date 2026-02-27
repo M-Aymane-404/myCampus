@@ -8,9 +8,10 @@ export const apiProfesseurs = {
    */
   async getProfile() {
     try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const response = await fetch(`${PROFESSEUR_PROFILE_URL}/moi`, {
         method: 'GET',
-        headers: apiAuth.getAuthHeaders(),
+        headers: headers,
         credentials: 'include'
       });
 
@@ -27,11 +28,12 @@ export const apiProfesseurs = {
 
   async obtenirTous() {
     try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const reponse = await fetch(BASE_URL, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          ...apiAuth.getAuthHeaders(),
+          ...headers,
         },
         credentials: 'include'
       });
@@ -49,11 +51,12 @@ export const apiProfesseurs = {
 
   async obtenirParPpr(ppr) {
     try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const reponse = await fetch(`${BASE_URL}/${ppr}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          ...apiAuth.getAuthHeaders(),
+          ...headers,
         },
         credentials: 'include'
       });
@@ -71,11 +74,7 @@ export const apiProfesseurs = {
 
   async creer(professeur) {
     try {
-      const headers = {
-        'Content-Type': 'application/json',
-        ...apiAuth.getAuthHeaders()
-      };
-
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const reponse = await fetch(BASE_URL, {
         method: 'POST',
         headers: headers,
@@ -112,14 +111,13 @@ export const apiProfesseurs = {
 
   async modifier(ppr, professeur) {
     try {
-      const headers = {
-        'Content-Type': 'application/json',
-        ...apiAuth.getAuthHeaders()
-      };
-
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const reponse = await fetch(`${BASE_URL}/${ppr}`, {
         method: 'PUT',
-        headers: headers,
+        headers: {
+          'Content-Type': 'application/json',
+          ...headers,
+        },
         body: JSON.stringify(professeur),
         credentials: 'include'
       });
@@ -129,7 +127,14 @@ export const apiProfesseurs = {
         try {
           const erreurData = await reponse.json();
           console.error('Réponse d\'erreur du serveur:', erreurData);
-          if (erreurData.message) {
+          
+          // Check for detailed validation errors
+          if (erreurData.details && typeof erreurData.details === 'object') {
+            const detailsMessages = Object.entries(erreurData.details)
+              .map(([field, message]) => `${field}: ${message}`)
+              .join('\n');
+            messageErreur = `Erreur de validation:\n${detailsMessages}`;
+          } else if (erreurData.message) {
             messageErreur = erreurData.message;
           } else if (erreurData.error) {
             messageErreur = erreurData.error;
@@ -153,11 +158,7 @@ export const apiProfesseurs = {
 
   async supprimer(ppr) {
     try {
-      const headers = {
-        'Content-Type': 'application/json',
-        ...apiAuth.getAuthHeaders()
-      };
-
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const reponse = await fetch(`${BASE_URL}/${ppr}`, {
         method: 'DELETE',
         headers: headers,
@@ -177,11 +178,12 @@ export const apiProfesseurs = {
 
   async activer(ppr) {
     try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const reponse = await fetch(`${BASE_URL}/${ppr}/activer`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          ...apiAuth.getAuthHeaders(),
+          ...headers,
         },
         credentials: 'include'
       });
@@ -199,11 +201,12 @@ export const apiProfesseurs = {
 
   async desactiver(ppr) {
     try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const reponse = await fetch(`${BASE_URL}/${ppr}/desactiver`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          ...apiAuth.getAuthHeaders(),
+          ...headers,
         },
         credentials: 'include'
       });

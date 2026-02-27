@@ -4,9 +4,10 @@ import { apiAuth } from './apiAuth';
 export const apiAudit = {
   async obtenirTous() {
     try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const response = await fetch(`${BASE_URL}`, {
         method: 'GET',
-        headers: apiAuth.getAuthHeaders(),
+        headers: headers,
         credentials: 'include'
       });
 
@@ -24,9 +25,10 @@ export const apiAudit = {
 
   async obtenirParUtilisateur(userId) {
     try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const response = await fetch(`${BASE_URL}/user/${userId}`, {
         method: 'GET',
-        headers: apiAuth.getAuthHeaders(),
+        headers: headers,
         credentials: 'include'
       });
 
@@ -43,9 +45,10 @@ export const apiAudit = {
 
   async obtenirParDate(debut, fin) {
     try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const response = await fetch(`${BASE_URL}?debut=${debut}&fin=${fin}`, {
         method: 'GET',
-        headers: apiAuth.getAuthHeaders(),
+        headers: headers,
         credentials: 'include'
       });
 

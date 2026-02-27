@@ -4,11 +4,12 @@ import { apiAuth } from './apiAuth';
 export const apiStructure = {
   async obtenirToutesFilieres() {
     try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const reponse = await fetch(`${BASE_URL}/filieres`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          ...apiAuth.getAuthHeaders(),
+          ...headers,
         },
         credentials: 'include'
       });
@@ -38,11 +39,12 @@ export const apiStructure = {
 
   async obtenirToutesClasses() {
     try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const reponse = await fetch(`${BASE_URL}/classes`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          ...apiAuth.getAuthHeaders(),
+          ...headers,
         },
         credentials: 'include'
       });
@@ -72,11 +74,12 @@ export const apiStructure = {
 
   async obtenirClassesParFiliere(codeFiliere) {
     try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const reponse = await fetch(`${BASE_URL}/classes/filiere/${codeFiliere}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          ...apiAuth.getAuthHeaders(),
+          ...headers,
         },
         credentials: 'include'
       });
@@ -94,11 +97,12 @@ export const apiStructure = {
 
   async obtenirTousDepartements() {
     try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const reponse = await fetch(`${BASE_URL}/departements`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          ...apiAuth.getAuthHeaders(),
+          ...headers,
         },
         credentials: 'include'
       });
@@ -128,11 +132,12 @@ export const apiStructure = {
 
   async obtenirToutesMatieres() {
     try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const reponse = await fetch(`${BASE_URL}/matieres`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          ...apiAuth.getAuthHeaders(),
+          ...headers,
         },
         credentials: 'include'
       });
@@ -162,11 +167,12 @@ export const apiStructure = {
 
   async obtenirTousModules() {
     try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const reponse = await fetch(`${BASE_URL}/modules`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          ...apiAuth.getAuthHeaders(),
+          ...headers,
         },
         credentials: 'include'
       });
@@ -197,11 +203,12 @@ export const apiStructure = {
   // Department CRUD Operations
   async creerDepartement(departement) {
     try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const reponse = await fetch(`${BASE_URL}/departements`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...apiAuth.getAuthHeaders(),
+          ...headers,
         },
         body: JSON.stringify(departement),
         credentials: 'include'
@@ -221,11 +228,12 @@ export const apiStructure = {
 
   async modifierDepartement(codeDepartement, departement) {
     try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const reponse = await fetch(`${BASE_URL}/departements/${codeDepartement}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          ...apiAuth.getAuthHeaders(),
+          ...headers,
         },
         body: JSON.stringify(departement),
         credentials: 'include'
@@ -245,11 +253,12 @@ export const apiStructure = {
 
   async supprimerDepartement(codeDepartement) {
     try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const reponse = await fetch(`${BASE_URL}/departements/${codeDepartement}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          ...apiAuth.getAuthHeaders(),
+          ...headers,
         },
         credentials: 'include'
       });
@@ -269,11 +278,12 @@ export const apiStructure = {
   // Filière CRUD Operations
   async creerFiliere(filiere) {
     try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const reponse = await fetch(`${BASE_URL}/filieres`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...apiAuth.getAuthHeaders(),
+          ...headers,
         },
         body: JSON.stringify(filiere),
         credentials: 'include'
@@ -293,11 +303,12 @@ export const apiStructure = {
 
   async modifierFiliere(codeFiliere, filiere) {
     try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const reponse = await fetch(`${BASE_URL}/filieres/${codeFiliere}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          ...apiAuth.getAuthHeaders(),
+          ...headers,
         },
         body: JSON.stringify(filiere),
         credentials: 'include'
@@ -317,11 +328,12 @@ export const apiStructure = {
 
   async supprimerFiliere(codeFiliere) {
     try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const reponse = await fetch(`${BASE_URL}/filieres/${codeFiliere}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          ...apiAuth.getAuthHeaders(),
+          ...headers,
         },
         credentials: 'include'
       });
@@ -340,11 +352,12 @@ export const apiStructure = {
 
   async obtenirFilieresParDepartement(codeDepartement) {
     try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const reponse = await fetch(`${BASE_URL}/filieres/departement/${codeDepartement}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          ...apiAuth.getAuthHeaders(),
+          ...headers,
         },
         credentials: 'include'
       });
@@ -363,11 +376,12 @@ export const apiStructure = {
   // Classes CRUD Operations
   async creerClasse(classe) {
     try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const reponse = await fetch(`${BASE_URL}/classes`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...apiAuth.getAuthHeaders(),
+          ...headers,
         },
         body: JSON.stringify(classe),
         credentials: 'include'
@@ -387,11 +401,12 @@ export const apiStructure = {
 
   async modifierClasse(codeClasse, classe) {
     try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const reponse = await fetch(`${BASE_URL}/classes/${codeClasse}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          ...apiAuth.getAuthHeaders(),
+          ...headers,
         },
         body: JSON.stringify(classe),
         credentials: 'include'
@@ -411,11 +426,12 @@ export const apiStructure = {
 
   async supprimerClasse(codeClasse) {
     try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const reponse = await fetch(`${BASE_URL}/classes/${codeClasse}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          ...apiAuth.getAuthHeaders(),
+          ...headers,
         },
         credentials: 'include'
       });
@@ -435,11 +451,12 @@ export const apiStructure = {
   // Modules CRUD Operations
   async creerModule(module) {
     try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const reponse = await fetch(`${BASE_URL}/modules`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...apiAuth.getAuthHeaders(),
+          ...headers,
         },
         body: JSON.stringify(module),
         credentials: 'include'
@@ -459,11 +476,12 @@ export const apiStructure = {
 
   async modifierModule(codeModule, module) {
     try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const reponse = await fetch(`${BASE_URL}/modules/${codeModule}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          ...apiAuth.getAuthHeaders(),
+          ...headers,
         },
         body: JSON.stringify(module),
         credentials: 'include'
@@ -483,11 +501,12 @@ export const apiStructure = {
 
   async supprimerModule(codeModule) {
     try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const reponse = await fetch(`${BASE_URL}/modules/${codeModule}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          ...apiAuth.getAuthHeaders(),
+          ...headers,
         },
         credentials: 'include'
       });
@@ -506,11 +525,12 @@ export const apiStructure = {
 
   async obtenirModulesParClasse(codeClasse) {
     try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const reponse = await fetch(`${BASE_URL}/modules/classe/${codeClasse}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          ...apiAuth.getAuthHeaders(),
+          ...headers,
         },
         credentials: 'include'
       });
@@ -528,11 +548,12 @@ export const apiStructure = {
 
   async obtenirModulesParFiliere(filiereId) {
     try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const reponse = await fetch(`${BASE_URL}/modules/filiere/${filiereId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          ...apiAuth.getAuthHeaders(),
+          ...headers,
         },
         credentials: 'include'
       });

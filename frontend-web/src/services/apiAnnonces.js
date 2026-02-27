@@ -7,9 +7,10 @@ export const apiAnnonces = {
     // Get all announcements for student
     async obtenirToutes() {
       try {
+        const headers = await apiAuth.getAuthHeadersWithRefresh();
         const response = await fetch(`${BASE_URL}/etudiant/annonces`, {
           method: 'GET',
-          headers: apiAuth.getAuthHeaders(),
+          headers: headers,
           credentials: 'include'
         });
 
@@ -27,9 +28,10 @@ export const apiAnnonces = {
     // Get announcement by ID for student
     async obtenirParId(id) {
       try {
+        const headers = await apiAuth.getAuthHeadersWithRefresh();
         const response = await fetch(`${BASE_URL}/etudiant/annonces/${id}`, {
           method: 'GET',
-          headers: apiAuth.getAuthHeaders(),
+          headers: headers,
           credentials: 'include'
         });
 
@@ -48,9 +50,10 @@ export const apiAnnonces = {
   // Get all announcements (admin/professor)
   async obtenirToutes() {
     try {
-      const response = await fetch(`${BASE_URL}/announcements`, {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
+      const response = await fetch(`${BASE_URL}/admin/annonces`, {
         method: 'GET',
-        headers: apiAuth.getAuthHeaders(),
+        headers: headers,
         credentials: 'include'
       });
 
@@ -68,9 +71,10 @@ export const apiAnnonces = {
   // Get unread count for professor
   async obtenirNombreNonLus() {
     try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const response = await fetch(`${BASE_URL}/unread/count`, {
         method: 'GET',
-        headers: apiAuth.getAuthHeaders(),
+        headers: headers,
         credentials: 'include'
       });
 
@@ -89,9 +93,13 @@ export const apiAnnonces = {
   // Create a new announcement (Admin only)
   async creer(annonce) {
     try {
-      const response = await fetch(`${BASE_URL}`, {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
+      const response = await fetch(`${BASE_URL}/admin/annonces`, {
         method: 'POST',
-        headers: apiAuth.getAuthHeaders(),
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify(annonce),
         credentials: 'include'
       });
@@ -111,9 +119,10 @@ export const apiAnnonces = {
   // Delete an announcement (Admin only)
   async supprimer(id) {
     try {
-      const response = await fetch(`${BASE_URL}/${id}`, {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
+      const response = await fetch(`${BASE_URL}/admin/annonces/${id}`, {
         method: 'DELETE',
-        headers: apiAuth.getAuthHeaders(),
+        headers: headers,
         credentials: 'include'
       });
 
@@ -131,9 +140,10 @@ export const apiAnnonces = {
   // Mark announcement as read (Professor)
   async marquerCommeLu(id) {
     try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
       const response = await fetch(`${BASE_URL}/${id}/read`, {
         method: 'POST',
-        headers: apiAuth.getAuthHeaders(),
+        headers: headers,
         credentials: 'include'
       });
 
