@@ -25,7 +25,7 @@ public class JsonAuthenticationEntryPoint implements AuthenticationEntryPoint {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("timestamp", LocalDateTime.now());
+        body.put("timestamp", LocalDateTime.now().toString());
         body.put("status", 401);
         body.put("erreur", "Non authentifié");
         body.put("message", "Authentification requise");

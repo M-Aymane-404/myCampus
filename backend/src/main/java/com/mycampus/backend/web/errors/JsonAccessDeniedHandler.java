@@ -25,7 +25,7 @@ public class JsonAccessDeniedHandler implements AccessDeniedHandler {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("timestamp", LocalDateTime.now());
+        body.put("timestamp", LocalDateTime.now().toString());
         body.put("status", 403);
         body.put("erreur", "Accès refusé");
         body.put("message", "Vous n'avez pas les permissions nécessaires");
