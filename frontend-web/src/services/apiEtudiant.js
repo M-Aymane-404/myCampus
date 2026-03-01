@@ -33,7 +33,10 @@ export const apiEtudiant = {
         try {
             const response = await fetch(`${BASE_URL}/moi/modifier`, {
                 method: 'PUT',
-                headers: apiAuth.getAuthHeaders(),
+                headers: {
+                    ...apiAuth.getAuthHeaders(),
+                    'Content-Type': 'application/json'
+                },
                 body: JSON.stringify(profileData),
                 credentials: 'include'
             });
@@ -188,5 +191,6 @@ export const apiEtudiant = {
             console.error('API Error (getNextSession):', error);
             throw error;
         }
-    }
-};
+    },
+
+    };

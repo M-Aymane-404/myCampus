@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 
-import { User, Plus, Calendar, Save, Loader2 } from 'lucide-react';
+import { User, Plus, Calendar, Save, Loader2, Eye, EyeOff } from 'lucide-react';
 
 import { apiAuth } from '../services/apiAuth';
 
@@ -19,6 +19,19 @@ const ProfilPage = () => {
     const [saving, setSaving] = useState(false);
 
     const [error, setError] = useState(null);
+
+    // Password change state
+    const [passwordData, setPasswordData] = useState({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+    });
+    const [showPasswords, setShowPasswords] = useState({
+        current: false,
+        new: false,
+        confirm: false
+    });
+    const [passwordError, setPasswordError] = useState('');
 
 
 
@@ -42,7 +55,7 @@ const ProfilPage = () => {
 
         grade: '',
 
-        photo: null
+        photoUrl: null
 
     });
 
@@ -102,17 +115,17 @@ const ProfilPage = () => {
                     dateNaissance: data.dateNaissance || '',
                     grade: data.grade || '',
 
-                    photo: data.photo || null
+                    photoUrl: data.photoUrl || null
 
                 });
 
 
 
-                if (data.photo) {
+                if (data.photoUrl) {
 
                     // Handle different photo URL formats
 
-                    setPhotoPreview(data.photo.startsWith('http') ? data.photo : `http://localhost:8080${data.photo}`);
+                    setPhotoPreview(data.photoUrl.startsWith('http') ? data.photoUrl : `http://localhost:8080${data.photoUrl}`);
 
                 }
 
@@ -143,6 +156,147 @@ const ProfilPage = () => {
         const { name, value } = e.target;
 
         setInfosUtilisateur(prev => ({ ...prev, [name]: value }));
+
+    };
+
+    const handlePasswordChange = (e) => {
+
+        const { name, value } = e.target;
+
+        setPasswordData(prev => ({ ...prev, [name]: value }));
+
+        setPasswordError(''); // Clear error when user types
+
+    };
+
+    const togglePasswordVisibility = (field) => {
+
+        setShowPasswords(prev => ({ ...prev, [field]: !prev[field] }));
+
+    };
+
+    const validatePasswordData = () => {
+
+        if (!passwordData.currentPassword) {
+
+            setPasswordError('Veuillez saisir votre mot de passe actuel');
+
+            return false;
+
+        }
+
+        if (!passwordData.newPassword) {
+
+            setPasswordError('Veuillez saisir votre nouveau mot de passe');
+
+            return false;
+
+        }
+
+        if (passwordData.newPassword.length < 8) {
+
+            setPasswordError('Le nouveau mot de passe doit contenir au moins 8 caractères');
+
+            return false;
+
+        }
+
+        if (passwordData.newPassword !== passwordData.confirmPassword) {
+
+            setPasswordError('Les mots de passe ne correspondent pas');
+
+            return false;
+
+        }
+
+        if (passwordData.currentPassword === passwordData.newPassword) {
+
+            setPasswordError('Le nouveau mot de passe doit être différent de l\'ancien');
+
+            return false;
+
+        }
+
+        return true;
+
+    };
+
+    const handlePasswordChangeSubmit = async () => {
+
+        if (!validatePasswordData()) {
+
+            return;
+
+        }
+
+        try {
+
+            setSaving(true);
+
+            const user = apiAuth.getUser();
+
+            const profileData = {
+
+                nom: infosUtilisateur.nom,
+
+                prenom: infosUtilisateur.prenom,
+
+                tel: infosUtilisateur.tel,
+
+                email: infosUtilisateur.email,
+
+                ancienPassword: passwordData.currentPassword,
+
+                nouveauPassword: passwordData.newPassword
+
+            };
+
+            // Add grade for admin or dateNaissance for student
+            if (user.role === 'admin') {
+                profileData.grade = infosUtilisateur.grade;
+            } else {
+                profileData.dateNaissance = infosUtilisateur.dateNaissance;
+            }
+
+            // Use different API based on user role
+
+            if (user.role === 'admin') {
+
+                await apiAdmin.updateProfile(profileData);
+
+            } else {
+
+                await apiEtudiant.updateProfile(profileData);
+
+            }
+
+            // Clear password fields
+
+            setPasswordData({
+
+                currentPassword: '',
+
+                newPassword: '',
+
+                confirmPassword: ''
+
+            });
+
+            setPasswordError('');
+
+            alert('Mot de passe modifié avec succès !');
+
+        } catch (err) {
+
+            console.error('Erreur lors du changement de mot de passe:', err);
+
+            setPasswordError(err.message || 'Erreur lors du changement de mot de passe');
+
+        } finally {
+
+            setSaving(false);
+
+        }
 
     };
 
@@ -303,7 +457,7 @@ const ProfilPage = () => {
 
                 // 3. Update photo in local state and session
 
-                const photoUrl = response.url || response.photo || response.photoUrl || response.fileName || response.photoNom; // Handle different response formats
+                const photoUrl = response.url || response.photoUrl || response.photo || response.fileName || response.photoNom; // Handle different response formats
 
                 
 
@@ -321,17 +475,37 @@ const ProfilPage = () => {
 
 
 
-                setInfosUtilisateur(prev => ({ ...prev, photo: photoUrl }));
-
+                setInfosUtilisateur(prev => ({ ...prev, photoUrl: photoUrl }));
                 setPhotoPreview(fullPhotoUrl);
 
-
-
                 apiAuth.updateUser({ photoProfile: fullPhotoUrl });
-
                 window.dispatchEvent(new Event('user-updated'));
 
-
+                // Refresh profile data to get the latest photoUrl from backend
+                try {
+                    let refreshedData;
+                    if (user.role === 'admin') {
+                        refreshedData = await apiAdmin.getProfile();
+                    } else {
+                        refreshedData = await apiEtudiant.getProfile();
+                    }
+                    
+                    // Update the photoUrl in state with the fresh data from backend
+                    if (refreshedData.photoUrl) {
+                        setInfosUtilisateur(prev => ({ 
+                            ...prev, 
+                            photoUrl: refreshedData.photoUrl 
+                        }));
+                        const refreshedPhotoUrl = refreshedData.photoUrl.startsWith('http') ? 
+                            refreshedData.photoUrl : 
+                            `http://localhost:8080${refreshedData.photoUrl}`;
+                        setPhotoPreview(refreshedPhotoUrl);
+                        apiAuth.updateUser({ photoProfile: refreshedPhotoUrl });
+                    }
+                } catch (refreshError) {
+                    console.warn('Could not refresh profile data after photo upload:', refreshError);
+                    // Continue anyway since the photo was uploaded successfully
+                }
 
                 alert("Photo de profil mise à jour !");
 
@@ -639,7 +813,95 @@ const ProfilPage = () => {
 
                     </div>
 
+                    {/* Password Change Section */}
+                    <div className="password-section">
+                        <div className="profile-section-header">
+                            <User size={20} className="section-icon" />
+                            <h3>Changement de Mot de Passe</h3>
+                        </div>
 
+                        <div className="profile-grid">
+                            <div className="profile-input-group">
+                                <label>MOT DE PASSE ACTUEL</label>
+                                <div className="password-input-wrapper">
+                                    <input
+                                        type={showPasswords.current ? "text" : "password"}
+                                        name="currentPassword"
+                                        value={passwordData.currentPassword}
+                                        onChange={handlePasswordChange}
+                                        className="profile-input-field"
+                                        placeholder="Entrez votre mot de passe actuel"
+                                    />
+                                    <button
+                                        type="button"
+                                        className="password-toggle-btn"
+                                        onClick={() => togglePasswordVisibility('current')}
+                                    >
+                                        {showPasswords.current ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="profile-input-group">
+                                <label>NOUVEAU MOT DE PASSE</label>
+                                <div className="password-input-wrapper">
+                                    <input
+                                        type={showPasswords.new ? "text" : "password"}
+                                        name="newPassword"
+                                        value={passwordData.newPassword}
+                                        onChange={handlePasswordChange}
+                                        className="profile-input-field"
+                                        placeholder="Entrez le nouveau mot de passe"
+                                    />
+                                    <button
+                                        type="button"
+                                        className="password-toggle-btn"
+                                        onClick={() => togglePasswordVisibility('new')}
+                                    >
+                                        {showPasswords.new ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="profile-input-group">
+                                <label>CONFIRMER LE MOT DE PASSE</label>
+                                <div className="password-input-wrapper">
+                                    <input
+                                        type={showPasswords.confirm ? "text" : "password"}
+                                        name="confirmPassword"
+                                        value={passwordData.confirmPassword}
+                                        onChange={handlePasswordChange}
+                                        className="profile-input-field"
+                                        placeholder="Confirmez le nouveau mot de passe"
+                                    />
+                                    <button
+                                        type="button"
+                                        className="password-toggle-btn"
+                                        onClick={() => togglePasswordVisibility('confirm')}
+                                    >
+                                        {showPasswords.confirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {passwordError && (
+                                <div className="profile-input-group full-width">
+                                    <div className="password-error-message">
+                                        {passwordError}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <button 
+                            className="btn-change-password" 
+                            onClick={handlePasswordChangeSubmit} 
+                            disabled={saving || !passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword}
+                        >
+                            {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
+                            <span>{saving ? 'Modification...' : 'Changer le mot de passe'}</span>
+                        </button>
+                    </div>
 
                     <button className="btn-save-changes" onClick={handleSave} disabled={saving}>
 

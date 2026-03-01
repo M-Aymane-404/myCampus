@@ -73,7 +73,7 @@ const EnTete = ({ elementActif, surChangementElement }) => {
                   prenom: profileData.prenom || '',
                   email: profileData.email || currentUser.email || '',
                   telephone: profileData.tel || profileData.telephone || '',
-                  photoProfile: profileData.photo || profileData.photoProfile || currentUser.photoProfile || null,
+                  photoProfile: profileData.photoUrl || profileData.photo || currentUser.photoProfile || null,
                 });
               }
             } catch (e) {
@@ -85,7 +85,7 @@ const EnTete = ({ elementActif, surChangementElement }) => {
           const userToUse = syncedUser || currentUser;
 
           const photo = userToUse.photoProfile || null;
-          const fullPhotoUrl = photo ? (photo.startsWith('http') ? photo : `http://localhost:8080/uploads/${photo}`) : null;
+          const fullPhotoUrl = photo ? (photo.startsWith('http') ? photo : `http://localhost:8080${photo}`) : null;
 
           setInfosUtilisateur({
             nom: userToUse.nom || '',
