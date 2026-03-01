@@ -1,5 +1,5 @@
 class ConfigurationApp {
-  static const String apiBaseUrl = 'http://100.88.211.36:8080';
+  static const String apiBaseUrl = 'http://100.88.209.237:8080';
   static const Duration connexionTimeout = Duration(seconds: 30);
   static const Duration receptionTimeout = Duration(seconds: 30);
 

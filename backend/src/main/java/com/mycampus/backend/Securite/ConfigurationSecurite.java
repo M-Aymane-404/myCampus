@@ -61,22 +61,21 @@
 
            return http
                    .headers(header -> header.frameOptions(frame -> frame.disable()))
-                   .exceptionHandling(ex -> ex
+                  /* .exceptionHandling(ex -> ex
                            .authenticationEntryPoint(new JsonAuthenticationEntryPoint())
                            .accessDeniedHandler(new JsonAccessDeniedHandler())
-                   )
-                   .httpBasic(httpBasic -> httpBasic.disable())
-                   .formLogin(form -> form.disable())
-                   .logout(logout -> logout.disable())
+                   )*/
+                 //  .httpBasic(httpBasic -> httpBasic.disable())
+                 //  .formLogin(form -> form.disable())
+                  // .logout(logout -> logout.disable())
 
 
 
                    .csrf(csrf -> csrf.disable())
                    .cors(Customizer.withDefaults())
-                   //.httpBasic(Customizer.withDefaults())
-                  // .httpBasic(Customizer.withDefaults())
-                   .authorizeHttpRequests(auth -> auth
-                       //    .requestMatchers("/auth/connecter", "/auth/rafraichir-jeton", "/auth/deconnexion").permitAll()
+                   .httpBasic(Customizer.withDefaults())
+                    .authorizeHttpRequests(auth -> auth
+                         .requestMatchers("/auth/connecter", "/auth/rafraichir-jeton", "/auth/deconnexion").permitAll()
                            .requestMatchers("/files/**").permitAll()
                            .requestMatchers("/auth/**").permitAll()
                            .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").authenticated()
@@ -112,13 +111,14 @@
        public CorsConfigurationSource corsConfigurationSource() {
            CorsConfiguration config = new CorsConfiguration();
            config.setAllowCredentials(true);
+
           /* config.setAllowedOrigins(List.of(
                    "http://localhost:5173",
                    "http://127.0.0.1:5500",
                    "http://localhost:5500"
            ));*/
-           config.setAllowedOriginPatterns(List.of("*"));
 
+           config.setAllowedOriginPatterns(List.of("*"));
            config.addAllowedHeader("*");
            config.addAllowedMethod("*");
 

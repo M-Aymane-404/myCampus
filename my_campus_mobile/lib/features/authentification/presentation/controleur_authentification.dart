@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+
 import '../data/depot_authentification.dart';
 
 class ControleurAuthentification extends ChangeNotifier {
@@ -17,15 +18,13 @@ class ControleurAuthentification extends ChangeNotifier {
   Future<void> initialiser() async {
     _chargement = true;
     notifyListeners();
-    
+
     try {
       _estAuthentifie = await _depot.estAuthentifie();
       if (_estAuthentifie) {
         _roleUtilisateur = (await _depot.recupererRoleUtilisateur()) ?? '';
       }
       _estInitialise = true;
-    } catch (e) {
-      debugPrint('Erreur d\'initialisation: $e');
     } finally {
       _chargement = false;
       notifyListeners();
@@ -35,13 +34,19 @@ class ControleurAuthentification extends ChangeNotifier {
   Future<void> seConnecter(String email, String motDePasse) async {
     _chargement = true;
     notifyListeners();
-    
+
     try {
+      // Le dépôt :
+      // - appelle /auth/connecter
+      // - extrait access_token
+      // - injecte le token dans ClientDio
+      // - sauvegarde token + rôle
       await _depot.seConnecter(email, motDePasse);
+
       _estAuthentifie = true;
       _roleUtilisateur = (await _depot.recupererRoleUtilisateur()) ?? '';
     } catch (e) {
-      debugPrint('Erreur de connexion: $e');
+      // Permet d’afficher une erreur propre côté UI
       rethrow;
     } finally {
       _chargement = false;
@@ -52,11 +57,12 @@ class ControleurAuthentification extends ChangeNotifier {
   Future<void> seDeconnecter() async {
     _chargement = true;
     notifyListeners();
-    
+
     try {
       await _depot.seDeconnecter();
       _estAuthentifie = false;
       _roleUtilisateur = '';
+      _estInitialise = true; // reste initialisé
     } catch (e) {
       debugPrint('Erreur de déconnexion: $e');
     } finally {

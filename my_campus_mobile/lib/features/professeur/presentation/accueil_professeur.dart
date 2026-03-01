@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../../authentification/presentation/controleur_authentification.dart';
 
 class AccueilProfesseur extends StatelessWidget {
   const AccueilProfesseur({super.key});
@@ -11,8 +14,8 @@ class AccueilProfesseur extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () {
-              // Logout functionality
+            onPressed: () async {
+              await context.read<ControleurAuthentification>().seDeconnecter();
             },
           ),
         ],

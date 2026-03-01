@@ -1,3 +1,4 @@
+import '../../../core/network/client_dio.dart';
 import '../../../core/storage/stockage_securise.dart';
 import 'service_authentification_api.dart';
 
@@ -10,36 +11,61 @@ class DepotAuthentification {
   ) async {
     final result = await _serviceApi.seConnecter(email, motDePasse);
 
-    if (result['token'] != null) {
-      await StockageSecurise.sauvegarderToken(result['token']);
+    final token = result['access_token']?.toString();
+    if (token == null || token.isEmpty) {
+      throw Exception("Réponse login invalide: access_token manquant");
     }
 
-    if (result['user'] != null) {
-      await StockageSecurise.sauvegarderUtilisateur(result['user'].toString());
+    // ✅ Token en mémoire pour les appels suivants (dashboard, etc.)
+    ClientDio.instance.setAccessToken(token);
+
+    // ✅ Token en stockage sécurisé
+    await StockageSecurise.sauvegarderToken(token);
+
+    // ✅ On récupère le profil (avec Authorization explicite)
+    final profil = await _serviceApi.recupererProfil(token);
+    final authorities = (profil['authorities'] as List?)?.cast<String>() ?? [];
+    final role = _extraireRole(authorities);
+
+    if (role == null) {
+      throw Exception(
+        "Profil invalide: ROLE_* introuvable dans authorities: $authorities",
+      );
     }
+
+    await StockageSecurise.sauvegarderRole(role);
 
     return result;
   }
 
   Future<void> seDeconnecter() async {
-    final token = await StockageSecurise.recupererToken();
-    if (token != null) {
-      await _serviceApi.seDeconnecter(token);
+    try {
+      await _serviceApi.seDeconnecter().timeout(const Duration(seconds: 5));
+    } catch (_) {
+      // ignore
+    } finally {
+      await StockageSecurise.supprimerToken();
+      await StockageSecurise.supprimerRole();
+      ClientDio.instance.viderSessionLocal();
     }
-    await StockageSecurise.supprimerToken();
-    await StockageSecurise.supprimerUtilisateur();
   }
 
   Future<bool> estAuthentifie() async {
     final token = await StockageSecurise.recupererToken();
-    return token != null;
+    if (token != null && token.isNotEmpty) {
+      ClientDio.instance.setAccessToken(token); // ✅ rehydrate
+      return true;
+    }
+    return false;
   }
 
   Future<String?> recupererRoleUtilisateur() async {
-    final utilisateur = await StockageSecurise.recupererUtilisateur();
-    if (utilisateur != null) {
-      // Parse user data to extract role
-      return 'ETUDIANT'; // Placeholder
+    return await StockageSecurise.recupererRole();
+  }
+
+  String? _extraireRole(List<String> authorities) {
+    for (final a in authorities) {
+      if (a.startsWith('ROLE_')) return a.replaceFirst('ROLE_', '');
     }
     return null;
   }

@@ -97,7 +97,7 @@ public class SecurityController {
                 .map(GrantedAuthority::getAuthority).collect(Collectors.joining(" "));
         JwtClaimsSet jwtClaimsSet = JwtClaimsSet.builder()
                 .issuedAt(instant)
-                .expiresAt(instant.plus(15, ChronoUnit.MINUTES))
+                .expiresAt(instant.plus(20, ChronoUnit.MINUTES))
 
                 .subject(authentication.getName())
                 .claim("scope", scope)
@@ -159,7 +159,7 @@ public class SecurityController {
                 .map(GrantedAuthority::getAuthority).collect(Collectors.joining(" "));
         JwtClaimsSet jwtClaimsSet = JwtClaimsSet.builder()
                 .issuedAt(instant)
-                .expiresAt(instant.plus(15, ChronoUnit.MINUTES))
+                .expiresAt(instant.plus(20, ChronoUnit.MINUTES))
 
                 .subject(userDetails.getUsername())
                 .claim("scope", scope)

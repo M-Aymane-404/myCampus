@@ -54,6 +54,20 @@ public class RestExceptionHandler {
         return ResponseEntity.badRequest().body(body);
     }
 
+    @ExceptionHandler(SecuriteException.class)
+    public ResponseEntity<Object> handleSecuriteException (SecuriteException ex, HttpServletRequest  request) {
+        log.error("Securite exception: {}", ex.getMessage());
+
+        Map<String, Object> body = construireBody(
+                HttpStatus.BAD_REQUEST,
+                "Requête invalide",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.badRequest().body(body);
+    }
+
     @ExceptionHandler(PresenceException.class)
     public ResponseEntity<Object> handlePresenceException(PresenceException ex, HttpServletRequest  request) {
         log.error("Presence exception: {}", ex.getMessage());

@@ -15,15 +15,17 @@ class StockageSecurise {
     await _storage.delete(key: 'auth_token');
   }
 
-  static Future<void> sauvegarderUtilisateur(String utilisateur) async {
-    await _storage.write(key: 'user_data', value: utilisateur);
+  //Roles
+
+  static Future<void> sauvegarderRole(String role) async {
+    await _storage.write(key: 'user_role', value: role);
   }
 
-  static Future<String?> recupererUtilisateur() async {
-    return await _storage.read(key: 'user_data');
+  static Future<String?> recupererRole() async {
+    return await _storage.read(key: 'user_role');
   }
 
-  static Future<void> supprimerUtilisateur() async {
-    await _storage.delete(key: 'user_data');
+  static Future<void> supprimerRole() async {
+    await _storage.delete(key: 'user_role');
   }
 }

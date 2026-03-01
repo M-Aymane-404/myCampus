@@ -92,6 +92,7 @@ public class RefreshTokenMetierImpl implements  RefreshTokenMetier {
         return rt;
     }
 
+    @Override
     public RotationResult rotationRefreshToken(String tokenActuel, String userAgent, String ip) {
 
         RefreshToken ancien = verifierRefreshToken(tokenActuel);
