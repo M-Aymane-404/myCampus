@@ -168,15 +168,15 @@ public class RestExceptionHandler {
     //Prof
 
     @ExceptionHandler(SeancesProfesseurException.class)
-    public ResponseEntity<Object> handleSeancesProfesseurException(SeancesProfesseurException ex, WebRequest request) {
+    public ResponseEntity<Object> handleSeancesProfesseurException(SeancesProfesseurException ex,  HttpServletRequest  request) {
         log.error("Séances professeur exception: {}", ex.getMessage());
 
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", HttpStatus.BAD_REQUEST.value());
-        body.put("erreur", "Requête invalide");
-        body.put("message", ex.getMessage());
-        body.put("path", request.getDescription(false));
+        Map<String, Object> body = construireBody(
+                HttpStatus.BAD_REQUEST,
+                "Requête invalide",
+                ex.getMessage(),
+                request.getRequestURI()
+        );;
 
         return ResponseEntity.badRequest().body(body);
     }

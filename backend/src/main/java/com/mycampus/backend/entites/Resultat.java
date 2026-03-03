@@ -31,7 +31,7 @@ public class Resultat {
     
 
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private LocalDateTime datePublication;
     
 

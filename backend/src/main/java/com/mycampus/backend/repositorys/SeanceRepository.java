@@ -40,6 +40,32 @@ where p.id =:presenceId
 Seance findByPresence_presenceId(@Param("presenceId") Long presenceId);
 
 
+    @Query("""
+select s from Seance s
+join fetch s.affectationEnseignement a
+join fetch a.classe 
+join fetch a.matiere
+where s.id=:seanceId
+ and a.professeur.ppr=:ppr
+
+""")
+
+    Optional<Seance> findByIdAndPprAvecDetails(
+            @Param("seanceId")Long seanceId,
+            @Param("ppr")String ppr);
+
+
+
+    @Query("""
+        select s from Seance s
+        join fetch s.affectationEnseignement ae
+        join fetch ae.classe
+        join fetch ae.matiere
+        where ae.professeur.ppr = :ppr
+    """)
+    List<Seance> findByPprAvecDetails(@Param("ppr") String ppr);
+
+
     Optional<Seance> findByIdAndAffectationEnseignement_Professeur_Ppr(Long id, String professeurPpr);
 
     List<Seance> findByAffectationEnseignement_Professeur_Ppr(String professeurPpr);

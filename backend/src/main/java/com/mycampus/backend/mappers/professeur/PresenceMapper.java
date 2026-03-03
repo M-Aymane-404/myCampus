@@ -1,6 +1,7 @@
 package com.mycampus.backend.mappers.professeur;
 
 import com.mycampus.backend.dto.professeur.DonneeSortie.presences.LignePresenceSortieDTO;
+import com.mycampus.backend.entites.Etudiant;
 import com.mycampus.backend.entites.Presence;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
@@ -21,12 +22,17 @@ public class PresenceMapper {
 
     }
 
-      LignePresenceSortieDTO presenceSortieDTO = new LignePresenceSortieDTO();
-            BeanUtils.copyProperties(presence,presenceSortieDTO);
+        Etudiant e = presence.getEtudiant();
 
-         return presenceSortieDTO;
-
-
-
-
+        return LignePresenceSortieDTO.builder()
+                .idPresence(presence.getId())
+                .idEtudiant(e != null ? e.getId() : null)
+                .apogee(e != null ? e.getApogee() : null)
+                .nomEtudiant(e != null ? e.getNom() : null)
+                .prenomEtudiant(e != null ? e.getPrenom() : null)
+                .status(presence.getStatus())
+                .justifiee(presence.isValidationMotif())
+                .motif(presence.getDescriptionDeJustification())
+                .dateDeclaration(presence.getDateDeclaration())
+                .build();
 }}
