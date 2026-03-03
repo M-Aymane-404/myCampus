@@ -25,6 +25,7 @@ import PresenceEtudiant from './pages/PresenceEtudiant';
 import CalendrierEtudiant from './pages/CalendrierEtudiant';
 import AnnoncesEtudiant from './pages/AnnoncesEtudiant';
 import ProfilPage from './pages/ProfilPage';
+import ChatBot from './composants/ChatBot/ChatBot';
 import { apiAuth } from './services/apiAuth';
 import { apiAuditLogs } from './services/apiAuditLogs';
 import './App.css';
@@ -227,6 +228,7 @@ function App() {
         surChangementElement={gererChangementElement}
       >
         {rendreContenuProfesseur()}
+        <ChatBot />
       </ConteneurProfesseur>
     );
   } else if (utilisateurConnecte.role === 'admin') {
@@ -236,6 +238,7 @@ function App() {
         surChangementElement={gererChangementElement}
       >
         {rendreContenuAdmin()}
+        <ChatBot />
       </ConteneurPrincipal>
     );
   } else if (utilisateurConnecte.role === 'student') {
@@ -247,6 +250,7 @@ function App() {
         surChangementElement={gererChangementElement}
       >
         {rendreContenuEtudiant()}
+        <ChatBot />
       </ConteneurEtudiant>
     );
   } else {
@@ -257,6 +261,7 @@ function App() {
         surChangementElement={gererChangementElement}
       >
         {rendreContenuAdmin()}
+        <ChatBot />
       </ConteneurPrincipal>
     );
   }

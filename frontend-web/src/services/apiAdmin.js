@@ -38,15 +38,12 @@ export const apiAdmin = {
 
     /**
      * Update current administrator's profile information
-     * @param {Object} profileData - { nom, prenom, tel, email, fonction }
+     * @param {Object} profileData - { nom, prenom, tel, email, grade, ancienPassword, nouveauPassword }
      */
     async updateProfile(profileData) {
         try {
-            // Get current admin to find their PPR
-            const currentAdmin = await this.getProfile();
-            
             const headers = await apiAuth.getAuthHeadersWithRefresh();
-            const response = await fetch(`${BASE_URL}/${currentAdmin.ppr}`, {
+            const response = await fetch(`${BASE_URL}/moi/modifier`, {
                 method: 'PUT',
                 headers: {
                     ...headers,
@@ -118,5 +115,6 @@ export const apiAdmin = {
             console.error('API Error (uploadPhoto):', error);
             throw error;
         }
-    }
-};
+    },
+
+    };
