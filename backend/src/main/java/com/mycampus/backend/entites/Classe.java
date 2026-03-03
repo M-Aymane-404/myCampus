@@ -39,7 +39,6 @@ public class Classe {
     @Column(nullable = false)
     private Integer effectifMax;
 
-    private String emploiTemps;
 
 
     @ManyToOne(fetch = FetchType.LAZY)

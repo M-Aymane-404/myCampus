@@ -21,6 +21,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.UUID;
 
@@ -113,6 +115,17 @@ public class GestionDeMotifDePresenceMetierImpl implements GestionDeMotifDePrese
 
          Presence p = presenceRepository.findByIdAndEtudiant_Id(presenceId,idEtudiant)
                  .orElseThrow(() -> new PresenceException("étudiant ou presence introuvable"));
+
+         LocalDateTime now = LocalDateTime.now();
+
+         if (p.getDateDeclaration() != null) {
+
+             Duration duration = Duration.between(p.getDateDeclaration(), now);
+
+             if (duration.toHours() >= 24) {
+                 throw new PresenceException("Délai dépassé : vous ne pouvez plus ajouter une justification après 24 heures.");
+             }
+         }
 
          if(p.getStatus().equals(StatusAbsence.PRESENT)){
              throw new PresenceException("vous être present ");

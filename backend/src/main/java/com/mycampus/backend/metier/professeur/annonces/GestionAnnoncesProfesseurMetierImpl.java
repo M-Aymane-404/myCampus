@@ -64,6 +64,8 @@ public class GestionAnnoncesProfesseurMetierImpl implements GestionAnnoncesProfe
                     .contenu(annonceDTO.getContenu())
                     .datePublication(LocalDateTime.now())
                      .publiee(false)
+                    .typeAnnonce(annonceDTO.getTypeAnnonce())
+                    .urgent(annonceDTO.isUrgent())
                     .cibleType(annonceDTO.getCibleType())
                     .auteur(auteur)
                     .classe(classe)

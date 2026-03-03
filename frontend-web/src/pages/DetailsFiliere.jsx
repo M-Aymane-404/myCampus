@@ -337,14 +337,12 @@ const DetailsFiliere = ({ filiere, departement, onRetour }) => {
                     onChange={handleInputChange}
                     options={[
                         { value: '', label: 'Sélectionner un niveau' },
-                        { value: 'L1', label: 'L1 - Licence 1ère année' },
-                        { value: 'L2', label: 'L2 - Licence 2ème année' },
-                        { value: 'L3', label: 'L3 - Licence 3ème année' },
-                        { value: 'M1', label: 'M1 - Master 1ère année' },
-                        { value: 'M2', label: 'M2 - Master 2ème année' },
-                        { value: 'D1', label: 'D1 - Doctorat 1ère année' },
-                        { value: 'D2', label: 'D2 - Doctorat 2ème année' },
-                        { value: 'D3', label: 'D3 - Doctorat 3ème année' }
+                        { value: 'A1', label: 'A1 - Année 1' },
+                        { value: 'A2', label: 'A2 - Année 2' },
+                        { value: 'A3', label: 'A3 - Année 3' },
+                        { value: 'A4', label: 'A4 - Année 4' },
+                        { value: 'A5', label: 'A5 - Année 5' },
+                        { value: 'A6', label: 'A6 - Année 6' }
                     ]}
                     requis
                 />

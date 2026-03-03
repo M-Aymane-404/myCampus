@@ -133,6 +133,8 @@ export const apiGrades = {
             return {
                 degree: "Diplôme d'Ingénieur",
                 specialization: profile.codeClasse || "Génie Informatique",
+                studentName: `${profile.prenom || ''} ${profile.nom || ''}`.trim(),
+                studentId: profile.apogee || "N/A",
                 generalAverage: generalAverage.toFixed(2),
                 validatedModules,
                 totalModules,

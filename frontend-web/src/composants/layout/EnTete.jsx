@@ -34,7 +34,7 @@ const EnTete = ({ elementActif, surChangementElement }) => {
           // Fetch detailed profile data based on role
           if (!currentUser.nom || !currentUser.prenom) {
             const role = (currentUser.role || '').toLowerCase();
-            
+
             try {
               if (role === 'student') {
                 const response = await fetch('http://localhost:8080/api/etudiant/moi', {
@@ -73,7 +73,7 @@ const EnTete = ({ elementActif, surChangementElement }) => {
                   prenom: profileData.prenom || '',
                   email: profileData.email || currentUser.email || '',
                   telephone: profileData.tel || profileData.telephone || '',
-                  photoProfile: profileData.photo || profileData.photoProfile || currentUser.photoProfile || null,
+                  photoProfile: profileData.photoUrl || profileData.photo || currentUser.photoProfile || null,
                 });
               }
             } catch (e) {
@@ -85,7 +85,7 @@ const EnTete = ({ elementActif, surChangementElement }) => {
           const userToUse = syncedUser || currentUser;
 
           const photo = userToUse.photoProfile || null;
-          const fullPhotoUrl = photo ? (photo.startsWith('http') ? photo : `http://localhost:8080/uploads/${photo}`) : null;
+          const fullPhotoUrl = photo ? (photo.startsWith('http') ? photo : `http://localhost:8080${photo}`) : null;
 
           setInfosUtilisateur({
             nom: userToUse.nom || '',
@@ -136,6 +136,7 @@ const EnTete = ({ elementActif, surChangementElement }) => {
       { id: 'departements', libelle: 'Departements' },
       { id: 'emploi-temps', libelle: 'Emploi-temps' },
       { id: 'comptes', libelle: 'Comptes' },
+      { id: 'annonces-admin', libelle: 'Annonces' },
       { id: 'journal-audit', libelle: 'Journal audit' },
     ],
     professor: [
@@ -214,9 +215,9 @@ const EnTete = ({ elementActif, surChangementElement }) => {
       <div className="en-tete-gauche">
         <div className="logo-container-header">
           <div className="logo-icone-container-header">
-            <img 
-              src="/src/assets/images/university_logo.jpeg" 
-              alt="MyCampus Logo" 
+            <img
+              src="/src/assets/images/university_logo.jpeg"
+              alt="MyCampus Logo"
               className="logo-icone-image"
             />
           </div>

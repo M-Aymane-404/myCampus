@@ -1,6 +1,7 @@
 package com.mycampus.backend.dto.annonces;
 
 import com.mycampus.backend.enumerations.AnnonceCibleType;
+import com.mycampus.backend.enumerations.TypeAnnonce;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -23,6 +24,8 @@ public class AnnonceEntrerDTO {
     @Size(max = 2000, message = "Le contenu ne doit pas dépasser 2000 caractères")
     private String contenu;
     
+    private boolean urgent;
+    private TypeAnnonce typeAnnonce;
 
     @NotNull(message = "Le type de cible est obligatoire")
     private AnnonceCibleType cibleType;

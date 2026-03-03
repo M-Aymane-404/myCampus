@@ -1,4 +1,5 @@
 import { apiAuth } from './apiAuth';
+import { authenticatedGet } from '../utils/apiInterceptor';
 
 const BASE_URL = 'http://localhost:8080/api/admin/utilisateurs';
 
@@ -11,29 +12,17 @@ export const apiComptes = {
         try {
             // Appeler les 3 APIs en parallèle pour optimiser les performances
             const [professeurs, etudiants, administrateurs] = await Promise.all([
-                fetch(`${BASE_URL}/professeurs`, {
-                    method: 'GET',
-                    headers: apiAuth.getAuthHeaders(),
-                    credentials: 'include'
-                }).then(reponse => {
+                authenticatedGet(`${BASE_URL}/professeurs`).then(reponse => {
                     if (!reponse.ok) throw new Error(`Erreur professeurs: ${reponse.status}`);
                     return reponse.json();
                 }),
 
-                fetch(`${BASE_URL}/etudiants`, {
-                    method: 'GET',
-                    headers: apiAuth.getAuthHeaders(),
-                    credentials: 'include'
-                }).then(reponse => {
+                authenticatedGet(`${BASE_URL}/etudiants`).then(reponse => {
                     if (!reponse.ok) throw new Error(`Erreur étudiants: ${reponse.status}`);
                     return reponse.json();
                 }),
 
-                fetch(`${BASE_URL}/administrateurs`, {
-                    method: 'GET',
-                    headers: apiAuth.getAuthHeaders(),
-                    credentials: 'include'
-                }).then(reponse => {
+                authenticatedGet(`${BASE_URL}/administrateurs`).then(reponse => {
                     if (!reponse.ok) throw new Error(`Erreur administrateurs: ${reponse.status}`);
                     return reponse.json();
                 })

@@ -33,7 +33,10 @@ export const apiEtudiant = {
         try {
             const response = await fetch(`${BASE_URL}/moi/modifier`, {
                 method: 'PUT',
-                headers: apiAuth.getAuthHeaders(),
+                headers: {
+                    ...apiAuth.getAuthHeaders(),
+                    'Content-Type': 'application/json'
+                },
                 body: JSON.stringify(profileData),
                 credentials: 'include'
             });
@@ -142,5 +145,52 @@ export const apiEtudiant = {
             console.error('API Error (getAnnonces):', error);
             throw error;
         }
-    }
-};
+    },
+
+    /**
+     * Fetch student's timetable for current semester
+     */
+    async getTimetable(semestre) {
+        try {
+            const response = await fetch(`${BASE_URL}/emploi/${semestre}`, {
+                method: 'GET',
+                headers: apiAuth.getAuthHeaders(),
+                credentials: 'include'
+            });
+
+            if (!response.ok) {
+                throw new Error('Erreur lors de la récupération de l\'emploi du temps');
+            }
+
+            const data = await response.json();
+            return data.slots || [];
+        } catch (error) {
+            console.error('API Error (getTimetable):', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Fetch next session for the student
+     */
+    async getNextSession() {
+        try {
+            const response = await fetch(`${BASE_URL}/emploi/prochaine`, {
+                method: 'GET',
+                headers: apiAuth.getAuthHeaders(),
+                credentials: 'include'
+            });
+
+            if (!response.ok) {
+                throw new Error('Erreur lors de la récupération de la prochaine séance');
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('API Error (getNextSession):', error);
+            throw error;
+        }
+    },
+
+    };

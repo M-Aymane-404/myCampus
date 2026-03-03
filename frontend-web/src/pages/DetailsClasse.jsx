@@ -21,6 +21,9 @@ const DetailsClasse = ({ classe, filiere, departement, onRetour }) => {
     // Navigation state
     const [selectedModule, setSelectedModule] = useState(null);
 
+    // Filter state
+    const [filtreSemestre, setFiltreSemestre] = useState('Tous');
+
     // Form data
     const [formData, setFormData] = useState({
         codeModule: '',
@@ -49,11 +52,11 @@ const DetailsClasse = ({ classe, filiere, departement, onRetour }) => {
             );
 
             setModules(data || []);
-            
+
             // Fetch all matières for these modules
             const allMatieres = await apiStructure.obtenirToutesMatieres();
             setMatieres(allMatieres || []);
-            
+
             setError(null);
         } catch (err) {
             console.error('Failed to fetch modules:', err);
@@ -147,13 +150,21 @@ const DetailsClasse = ({ classe, filiere, departement, onRetour }) => {
 
     const getElementCount = (module) => {
         // Count matières for this specific module
-        const moduleMatieres = matieres.filter(matiere => 
-            matiere.codeModule === module.codeModule || 
+        const moduleMatieres = matieres.filter(matiere =>
+            matiere.codeModule === module.codeModule ||
             matiere.moduleId === module.id ||
             matiere.module?.codeModule === module.codeModule
         );
         return moduleMatieres.length || 0;
     };
+
+    // Calculate available semesters from modules
+    const semestresDisponibles = ['Tous', ...new Set(modules.map(m => m.semestre).filter(Boolean).sort())];
+
+    // Filtered modules
+    const modulesFiltres = filtreSemestre === 'Tous'
+        ? modules
+        : modules.filter(m => m.semestre === filtreSemestre);
 
     // If a module is selected, show subjects view
     if (selectedModule) {
@@ -234,8 +245,20 @@ const DetailsClasse = ({ classe, filiere, departement, onRetour }) => {
                 </div>
             </div>
 
-            {/* Modules Grid */}
+            {/* Filter Bar */}
             <div className="details-content">
+                <div className="filter-bar">
+                    {semestresDisponibles.map(semestre => (
+                        <button
+                            key={semestre}
+                            className={`filter-btn ${filtreSemestre === semestre ? 'active' : ''}`}
+                            onClick={() => setFiltreSemestre(semestre)}
+                        >
+                            {semestre === 'Tous' ? 'TOUS LES MODULES' : `SEMESTRE ${semestre.replace('S', '')}`}
+                        </button>
+                    ))}
+                </div>
+
                 <div className="modules-grid">
                     {isLoading && modules.length === 0 ? (
                         <div className="modules-loading">Chargement...</div>
@@ -256,7 +279,7 @@ const DetailsClasse = ({ classe, filiere, departement, onRetour }) => {
                     ) : (
                         <>
                             {/* Module Cards */}
-                            {modules.map((module) => (
+                            {modulesFiltres.map((module) => (
                                 <div
                                     key={module.codeModule || module.id}
                                     className="module-card"
@@ -370,18 +393,6 @@ const DetailsClasse = ({ classe, filiere, departement, onRetour }) => {
                         { value: 'S5', label: 'Semestre 5' },
                         { value: 'S6', label: 'Semestre 6' }
                     ]}
-                    requis
-                />
-                <ChampFormulaire
-                    label="Coefficient"
-                    nom="coefficient"
-                    type="number"
-                    step="0.5"
-                    valeur={formData.coefficient}
-                    onChange={handleInputChange}
-                    min="0.5"
-                    max="10"
-                    placeholder="Ex: 2.5"
                     requis
                 />
             </FormulaireModal>

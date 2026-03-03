@@ -53,7 +53,7 @@ public class PedagogiqueDataSeeder {
         seedPresences();
         seedExamens();
         seedResultats();
-      //  seedNotifications();
+        //seedNotifications();
         seedAnnonce();
     }
 
@@ -107,7 +107,7 @@ public class PedagogiqueDataSeeder {
 
                  Module.builder()
                         .codeModule("ILCS-LANGAGES-ETRANGERE-S1")
-                        .nom("Langages  étrangère")
+                        .nom("Langues étrangères")
                         .description("Étude des langages étrangère")
                         .semestre(Semestre.S1)
                          .filiere(ilcs)
@@ -524,72 +524,7 @@ public class PedagogiqueDataSeeder {
         }
     }
 
-    private void seedNotifications() {
-        List<Etudiant> etudiants = etudiantRepository.findAll().stream()
-            .limit(5)
-            .toList();
-        List<Administrateur> admis = administrateurRepository.findAll().stream()
-                .limit(5)
-                .toList();
-        List<Professeur> profs = professeurRepository.findAll().stream()
-                .limit(5)
-                .toList();
 
-        List<Notification> notifications = Arrays.asList(
-            Notification.builder()
-                .titre("Nouveau cours disponible")
-                .message("Le cours de HTML/CSS est maintenant disponible en ligne.")
-                .dateEnvoi(LocalDateTime.now())
-                .type(TypeNotification.COURS_UPLOADE)
-                .utilisateur(etudiants.get(0))
-                    .auteur(profs.get(0))
-                .build(),
-            Notification.builder()
-                .titre("Rappel examen")
-                .message("N'oubliez pas l'examen de HTML/CSS prévu pour le 10 décembre.")
-                .dateEnvoi(LocalDateTime.now())
-                .type(TypeNotification.EXAMEN_DEMAIN)
-                .utilisateur(etudiants.get(1))
-                .build(),
-            Notification.builder()
-                .titre("Note publiée")
-                .message("Votre note pour l'examen de JavaScript est maintenant disponible.")
-                .dateEnvoi(LocalDateTime.now())
-                .lu(true)
-                .dateLecture(LocalDateTime.now().minusHours(2))
-                .type(TypeNotification.RESULTAT_PUBLIE)
-                .utilisateur(etudiants.get(2))
-                .build(),
-            Notification.builder()
-                .titre("Séance ajoutée")
-                .message("Une nouvelle séance de TD a été ajoutée à votre emploi du temps.")
-                .dateEnvoi(LocalDateTime.now().minusDays(1))
-                .lu(true)
-                .dateLecture(LocalDateTime.now().minusHours(12))
-                .type(TypeNotification.SEANCE_AJOUTEE)
-                .utilisateur(etudiants.get(3))
-                .build(),
-            Notification.builder()
-                .titre("Résultat publié")
-                .message("Les résultats de l'examen de Lean Manufacturing sont publiés.")
-                .dateEnvoi(LocalDateTime.now().minusDays(2))
-                .type(TypeNotification.RESULTAT_PUBLIE)
-                .utilisateur(etudiants.get(4))
-                .build()
-        );
-        
-        for (Notification notification : notifications) {
-            if (!notificationRepository.existsByUtilisateurAndTypeAndDateEnvoi(
-                    notification.getUtilisateur(), 
-                    notification.getType(), 
-                    notification.getDateEnvoi())) {
-                notificationRepository.save(notification);
-                log.info("Created notification: {} for {}", 
-                    notification.getTitre(),
-                    notification.getUtilisateur().getEmail());
-            }
-        }
-    }
     public void seedAnnonce(){
        Professeur prof = requireProfesseur("prof.info1@mycampus.ma");
        Classe ilcs = requireClasse("ILCS1-A");
@@ -604,6 +539,9 @@ public class PedagogiqueDataSeeder {
                        .datePublication(today)
                 .classe(ilcs)
                 .publiee(true)
+               .urgent(false)
+
+               .typeAnnonce(TypeAnnonce.EXAMEN)
                 .build());
 
         annonceRepository.save( Annonce.builder()
@@ -612,6 +550,9 @@ public class PedagogiqueDataSeeder {
                 .cibleType(AnnonceCibleType.ETUDIANTS_GLOBAL)
                 .auteur(admin)
                         .datePublication( today.minusDays(2))
+                .typeAnnonce(TypeAnnonce.AUTRES)
+                .urgent(false)
+
                 .publiee(true)
                 .build());
 
@@ -622,6 +563,9 @@ public class PedagogiqueDataSeeder {
                 .auteur(prof)
                 .datePublication(today)
                 .departement(infoDept)
+                .typeAnnonce(TypeAnnonce.COURS)
+                .urgent(false)
+
                 .publiee(true)
                 .build());
 
@@ -632,6 +576,9 @@ public class PedagogiqueDataSeeder {
                 .auteur(admin)
                 .datePublication( today.minusDays(2))
                 .publiee(true)
+                .typeAnnonce(TypeAnnonce.AUTRES)
+                        .urgent(true)
+
                 .build());
     }
 

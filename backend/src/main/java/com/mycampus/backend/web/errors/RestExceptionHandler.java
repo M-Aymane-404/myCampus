@@ -17,6 +17,7 @@ import org.springframework.web.multipart.MultipartException;
  import jakarta.servlet.http.HttpServletRequest;
 
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -31,7 +32,7 @@ public class RestExceptionHandler {
                                                String path) {
 
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("timestamp", LocalDateTime.now());
+        body.put("timestamp", LocalDateTime.now().toString());
         body.put("status", status.value());
         body.put("erreur", erreur);
         body.put("message", message);
@@ -42,6 +43,20 @@ public class RestExceptionHandler {
     @ExceptionHandler(StructureAcademiqueException.class)
     public ResponseEntity<Object> handleStructureAcademiqueException(StructureAcademiqueException ex, HttpServletRequest  request) {
         log.error("Structure académique exception: {}", ex.getMessage());
+
+        Map<String, Object> body = construireBody(
+                HttpStatus.BAD_REQUEST,
+                "Requête invalide",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.badRequest().body(body);
+    }
+
+    @ExceptionHandler(SecuriteException.class)
+    public ResponseEntity<Object> handleSecuriteException (SecuriteException ex, HttpServletRequest  request) {
+        log.error("Securite exception: {}", ex.getMessage());
 
         Map<String, Object> body = construireBody(
                 HttpStatus.BAD_REQUEST,
@@ -168,15 +183,15 @@ public class RestExceptionHandler {
     //Prof
 
     @ExceptionHandler(SeancesProfesseurException.class)
-    public ResponseEntity<Object> handleSeancesProfesseurException(SeancesProfesseurException ex,  HttpServletRequest  request) {
+    public ResponseEntity<Object> handleSeancesProfesseurException(SeancesProfesseurException ex, WebRequest request) {
         log.error("Séances professeur exception: {}", ex.getMessage());
 
-        Map<String, Object> body = construireBody(
-                HttpStatus.BAD_REQUEST,
-                "Requête invalide",
-                ex.getMessage(),
-                request.getRequestURI()
-        );;
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", LocalDateTime.now().toString());
+        body.put("status", HttpStatus.BAD_REQUEST.value());
+        body.put("erreur", "Requête invalide");
+        body.put("message", ex.getMessage());
+        body.put("path", request.getDescription(false));
 
         return ResponseEntity.badRequest().body(body);
     }
@@ -186,7 +201,7 @@ public class RestExceptionHandler {
         log.warn("Upload trop volumineux: {}", ex.getMessage());
 
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("timestamp", LocalDateTime.now());
+        body.put("timestamp", LocalDateTime.now().toString());
         body.put("status", HttpStatus.BAD_REQUEST.value());
         body.put("erreur", "Fichier trop volumineux");
         body.put("message", "La taille du fichier dépasse la limite autorisée");
@@ -200,13 +215,24 @@ public class RestExceptionHandler {
         log.warn("Erreur multipart: {}", ex.getMessage());
 
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("timestamp", LocalDateTime.now());
+        body.put("timestamp", LocalDateTime.now().toString());
         body.put("status", HttpStatus.BAD_REQUEST.value());
         body.put("erreur", "Erreur upload");
         body.put("message", "Le fichier envoyé n'est pas valide ou la requête multipart est incorrecte");
         body.put("path", request.getDescription(false));
 
         return ResponseEntity.badRequest().body(body);
+    }
+    @ExceptionHandler({ org.springframework.security.access.AccessDeniedException.class,
+            org.springframework.security.authorization.AuthorizationDeniedException.class })
+    public ResponseEntity<?> handleAccessDenied(Exception ex, HttpServletRequest req) {
+        return ResponseEntity.status(403).body(Map.of(
+                "timestamp", Instant.now().toString(),
+                "status", 403,
+                "error", "Forbidden",
+                "message", "Access Denied",
+                "path", req.getRequestURI()
+        ));
     }
 
 

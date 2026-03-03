@@ -8,10 +8,28 @@ const TimetableGrid = ({ seances, loading }) => {
     const hours = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00'];
     const days = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI'];
 
+    const getSeanceTypeClass = (typeSeance) => {
+        console.log('Processing typeSeance:', typeSeance); // Debug log
+        switch (typeSeance?.toUpperCase()) {
+            case 'COURS':
+                return 'ce-lecture-cours';
+            case 'TP':
+                return 'ce-lecture-tp';
+            case 'TD':
+                return 'ce-lecture-td';
+            default:
+                console.log('Unknown typeSeance, defaulting to cours:', typeSeance); // Debug log
+                return 'ce-lecture-cours'; // Default to cours color
+        }
+    };
+
     const getSeanceForSlot = (day, hour) => {
         return seances.find(s => {
-            const seanceDay = s.jour?.toUpperCase() || (s.date && new Intl.DateTimeFormat('fr-FR', { weekday: 'long' }).format(new Date(s.date)).toUpperCase());
-            return seanceDay === day && s.heureDebut === hour;
+            // Handle both backend field names (dayOfWeek, start) and frontend field names (jour, heureDebut)
+            const seanceDay = (s.dayOfWeek || s.jour)?.toUpperCase() || 
+                             (s.date && new Intl.DateTimeFormat('fr-FR', { weekday: 'long' }).format(new Date(s.date)).toUpperCase());
+            const seanceStart = s.start || s.heureDebut;
+            return seanceDay === day && seanceStart === hour;
         });
     };
 
@@ -43,12 +61,13 @@ const TimetableGrid = ({ seances, loading }) => {
                         return (
                             <div key={day} className={`ce-grid-cell ${day === activeDay ? 'active-day' : ''}`}>
                                 {seance && (
-                                    <div className="ce-lecture-card">
-                                        <div className="ce-lecture-subject">{seance.matiere || seance.nom}</div>
+                                    <div className={`ce-lecture-card ${getSeanceTypeClass(seance.typeSeance)}`}>
+                                        {console.log('Applied classes for', seance.matiereNom, ':', `ce-lecture-card ${getSeanceTypeClass(seance.typeSeance)}`)}
+                                        <div className="ce-lecture-subject">{seance.matiereNom || seance.matiere || seance.nom}</div>
                                         <div className="ce-lecture-meta">
                                             <div className="ce-meta-item">
                                                 <User size={10} />
-                                                <span>{seance.professeur || 'Non assigné'}</span>
+                                                <span>{seance.professeurNom || seance.professeur || 'Non assigné'}</span>
                                             </div>
                                             {seance.salle && (
                                                 <div className="ce-meta-item">

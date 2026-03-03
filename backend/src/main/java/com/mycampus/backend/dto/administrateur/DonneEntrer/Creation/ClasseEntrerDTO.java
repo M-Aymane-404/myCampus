@@ -48,6 +48,5 @@ public class ClasseEntrerDTO {
     )
     private String anneeUniversitaire;
     
-    @Size(max = 500, message = "Emploi du temps ne doit pas dépasser 500 caractères")
-    private String emploiTemps;
+
 }

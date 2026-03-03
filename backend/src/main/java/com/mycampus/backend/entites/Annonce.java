@@ -1,6 +1,7 @@
 package com.mycampus.backend.entites;
 
 import com.mycampus.backend.enumerations.AnnonceCibleType;
+import com.mycampus.backend.enumerations.TypeAnnonce;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -27,6 +28,14 @@ public class Annonce {
     @Column(nullable = false)
     private LocalDateTime datePublication;
      private boolean publiee;
+
+
+     @Enumerated(EnumType.STRING)
+     @Column(nullable = false)
+     private TypeAnnonce  typeAnnonce;
+
+     @Builder.Default
+     private boolean urgent = false;
 
 
     @Enumerated(EnumType.STRING)

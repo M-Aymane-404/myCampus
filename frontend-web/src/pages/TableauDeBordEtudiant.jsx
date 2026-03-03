@@ -8,6 +8,7 @@ const TableauDeBordEtudiant = ({ surNavigation }) => {
 
   const [dashboardData, setDashboardData] = useState(null);
   const [annonces, setAnnonces] = useState([]);
+  const [nextSession, setNextSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -19,6 +20,16 @@ const TableauDeBordEtudiant = ({ surNavigation }) => {
         // Fetch dashboard data first
         const dashboardResponse = await apiEtudiant.getDashboardData();
         setDashboardData(dashboardResponse);
+        
+        // Fetch next session
+        try {
+          const nextSessionResponse = await apiEtudiant.getNextSession();
+          console.log('Next session response:', nextSessionResponse);
+          setNextSession(nextSessionResponse);
+        } catch (nextSessionError) {
+          console.warn('Failed to fetch next session:', nextSessionError);
+          setNextSession(null);
+        }
         
         // Try to fetch announcements, but don't fail the entire dashboard if it fails
         try {
@@ -211,14 +222,35 @@ const TableauDeBordEtudiant = ({ surNavigation }) => {
             <div className="card-modern next-session-card">
               <h3>Prochaine Séance</h3>
               <div className="session-info-main">
-                <div className="session-time">--:--</div>
-                <div className="session-details-text">
-                  <h4>Non disponible</h4>
-                  <div className="session-meta">
-                    <MapPin size={14} />
-                    <span>Endpoint non implémenté</span>
-                  </div>
-                </div>
+                {nextSession?.prochaineSeance ? (
+                  <>
+                    <div className="session-time">
+                      {nextSession.prochaineSeance.start} - {nextSession.prochaineSeance.end}
+                    </div>
+                    <div className="session-details-text">
+                      <h4>{nextSession.prochaineSeance.matiereNom || 'Matière inconnue'}</h4>
+                      <div className="session-meta">
+                        <MapPin size={14} />
+                        <span>{nextSession.prochaineSeance.salle || 'Salle inconnue'}</span>
+                      </div>
+                      <div className="session-meta">
+                        <Clock size={14} />
+                        <span>{nextSession.prochaineSeance.dayOfWeek || 'Jour inconnu'}</span>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="session-time">--:--</div>
+                    <div className="session-details-text">
+                      <h4>Non disponible</h4>
+                      <div className="session-meta">
+                        <MapPin size={14} />
+                        <span>Aucune séance à venir</span>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>

@@ -1,74 +1,67 @@
 import { useState, useEffect } from 'react';
-import { Megaphone, Info, Eye } from 'lucide-react';
-import BoutonAction from '../composants/communs/BoutonAction';
-import FormulaireModal from '../composants/communs/FormulaireModal';
-import ChampFormulaire from '../composants/communs/ChampFormulaire';
+import { Megaphone, Info, Plus, Paperclip, Send, Users, GraduationCap, Layers } from 'lucide-react';
 import apiAnnonces from '../services/apiAnnonces';
-import apiNotifications from '../services/apiNotifications';
 import { apiStructure } from '../services/apiStructure';
+import { apiProfesseurs } from '../services/apiProfesseurs';
 import { apiAuth } from '../services/apiAuth';
 import './GestionAnnoncesAdmin.css';
 
 const GestionAnnoncesAdmin = () => {
-  const [annonces, setAnnonces] = useState([]);
-  const [chargement, setChargement] = useState(true);
-  const [erreur, setErreur] = useState(null);
-  const [modalNouvelleAnnonce, setModalNouvelleAnnonce] = useState(false);
+  const [chargement, setChargement] = useState(false);
+  const [cible, setCible] = useState('etudiants'); // 'etudiants' or 'enseignants'
+  const [prioriteHaute, setPrioriteHaute] = useState(false);
   const [classes, setClasses] = useState([]);
-  const [chargementClasses, setChargementClasses] = useState(true);
+  const [professeurs, setProfesseurs] = useState([]);
   const [formulaire, setFormulaire] = useState({
     titre: '',
-    type: '',
-    classe: '',
+    categorie: 'AUTRES',
     contenu: ''
   });
 
   useEffect(() => {
-    chargerAnnonces();
     chargerClasses();
+    chargerProfesseurs();
   }, []);
 
   const chargerClasses = async () => {
     try {
-      setChargementClasses(true);
       const donnees = await apiStructure.obtenirToutesClasses();
       const classesMapped = donnees.map(c => ({
-        value: c.codeClasse || c.id?.toString(),
-        label: `${c.codeClasse || ''} - ${c.nom || c.libelle || ''}`.trim()
+        id: c.codeClasse || c.id?.toString(),
+        nom: c.nom || c.libelle || c.codeClasse || '',
+        filiere: c.nomFiliere || 'GÉNIE INFORMATIQUE',
+        selected: false
       }));
       setClasses(classesMapped);
     } catch (err) {
       console.error('Erreur lors du chargement des classes:', err);
       setClasses([]);
-    } finally {
-      setChargementClasses(false);
     }
   };
 
-  const chargerAnnonces = async () => {
+  const chargerProfesseurs = async () => {
     try {
-      setChargement(true);
-      setErreur(null);
-      const annoncesChargees = await apiAnnonces.obtenirToutes();
-      setAnnonces(annoncesChargees);
+      const donnees = await apiProfesseurs.obtenirTous();
+      const profsMapped = donnees.map(p => ({
+        id: p.id,
+        nom: `Pr. ${p.prenom} ${p.nom}`,
+        specialite: p.specialite || p.departement || 'DÉPARTEMENT ENSEIGNEMENT',
+        photo: p.photoUrl || null,
+        selected: false
+      }));
+      setProfesseurs(profsMapped);
     } catch (err) {
-      console.error('Erreur lors du chargement des annonces:', err);
-      setErreur('Erreur lors du chargement des annonces');
-    } finally {
-      setChargement(false);
+      console.error('Erreur lors du chargement des professeurs:', err);
+      setProfesseurs([]);
     }
   };
 
   const typesAnnonce = [
-    { value: '', label: '-- Sélectionner --' },
-    { value: 'Urgent', label: 'Urgent (DS, Examen)' },
-    { value: 'Normal', label: 'Normal' },
-    { value: 'Info', label: 'Information' }
-  ];
-
-  const classesOptions = [
-    { value: '', label: '-- Sélectionner --' },
-    ...classes
+    { value: 'AUTRES', label: 'Autres' },
+    { value: 'COURS', label: 'Cours' },
+    { value: 'EVENT', label: 'Événement' },
+    { value: 'REUNION', label: 'Réunion' },
+    { value: 'EXAMEN', label: 'Examen' }
   ];
 
   const gererChangement = (e) => {
@@ -76,237 +69,287 @@ const GestionAnnoncesAdmin = () => {
     setFormulaire(prev => ({ ...prev, [name]: value }));
   };
 
-  const publierAnnonce = async () => {
-    if (!formulaire.titre || !formulaire.type || !formulaire.classe || !formulaire.contenu) {
-      alert('Veuillez remplir tous les champs obligatoires');
+  const toggleTarget = (id) => {
+    if (cible === 'etudiants') {
+      setClasses(prev => prev.map(classe =>
+        classe.id === id ? { ...classe, selected: !classe.selected } : classe
+      ));
+    } else {
+      setProfesseurs(prev => prev.map(prof =>
+        prof.id === id ? { ...prof, selected: !prof.selected } : prof
+      ));
+    }
+  };
+
+  const selectAllTargets = () => {
+    if (cible === 'etudiants') {
+      const allSelected = classes.every(c => c.selected);
+      setClasses(prev => prev.map(classe => ({ ...classe, selected: !allSelected })));
+    } else {
+      const allSelected = professeurs.every(p => p.selected);
+      setProfesseurs(prev => prev.map(prof => ({ ...prof, selected: !allSelected })));
+    }
+  };
+
+  const getSelectedCount = () => {
+    if (cible === 'etudiants') {
+      return classes.filter(c => c.selected).length;
+    } else {
+      return professeurs.filter(p => p.selected).length;
+    }
+  };
+
+  const diffuserAnnonce = async () => {
+    if (!formulaire.titre || !formulaire.contenu) {
+      alert('Veuillez remplir le titre et le contenu de l\'annonce');
+      return;
+    }
+
+    const selectedCount = getSelectedCount();
+    if (selectedCount === 0) {
+      alert('Veuillez sélectionner au moins une cible pour l\'annonce');
       return;
     }
 
     try {
-      // Get current user for utilisateur_id
-      const currentUser = apiAuth.getUser();
-      const utilisateurId = currentUser?.id || 1; // Default to 1 if not available
+      setChargement(true);
 
-      // Create notification in the database
-      const notificationData = {
+      // Prepare announcement data
+      let annonceData = {
         titre: formulaire.titre,
-        message: formulaire.contenu,
-        type: formulaire.type,
-        utilisateur_id: utilisateurId,
-        lu: false,
-        date_envoi: new Date().toISOString(),
-        date_lecture: null
+        contenu: formulaire.contenu,
+        urgent: prioriteHaute,
+        typeAnnonce: formulaire.categorie
       };
 
-      // Save to notification table
-      await apiNotifications.creer(notificationData);
-
-      // Also create announcement (if needed for backward compatibility)
-      try {
-        await apiAnnonces.creer({
-          titre: formulaire.titre,
-          type: formulaire.type,
-          classe: classes.find(c => c.value === formulaire.classe)?.label || formulaire.classe,
-          contenu: formulaire.contenu,
-          classeCode: formulaire.classe
-        });
-      } catch (announcementErr) {
-        console.warn('Erreur lors de la création de l\'annonce (non bloquant):', announcementErr);
+      if (cible === 'etudiants') {
+        const selectedClasses = classes.filter(c => c.selected);
+        
+        if (selectedClasses.length === 1) {
+          // Single class - use ETUDIANTS_CLASSE
+          annonceData.cibleType = 'ETUDIANTS_CLASSE';
+          annonceData.codeClasse = selectedClasses[0].id;
+        } else {
+          // Multiple classes - use ETUDIANTS_GLOBAL
+          annonceData.cibleType = 'ETUDIANTS_GLOBAL';
+        }
+      } else {
+        // Teachers
+        const selectedProfs = professeurs.filter(p => p.selected);
+        
+        if (selectedProfs.length === 1) {
+          // Single department - use PROFESSEURS_DEPARTEMENT
+          annonceData.cibleType = 'PROFESSEURS_DEPARTEMENT';
+          annonceData.codeDepartement = 'INFO'; // Default department code
+        } else {
+          // Multiple professors - use PROFESSEURS_GLOBAL
+          annonceData.cibleType = 'PROFESSEURS_GLOBAL';
+        }
       }
 
-      await chargerAnnonces();
-      alert('Annonce publiée avec succès');
-      setModalNouvelleAnnonce(false);
-      setFormulaire({
-        titre: '',
-        type: '',
-        classe: '',
-        contenu: ''
-      });
+      // Create announcement - backend will handle notifications automatically
+      await apiAnnonces.creer(annonceData);
+      alert('Annonce diffusée avec succès !');
+      resetForm();
+
     } catch (err) {
-      alert('Erreur lors de la publication de l\'annonce: ' + (err.message || 'Erreur inconnue'));
+      alert('Erreur: ' + (err.message || 'Erreur inconnue'));
       console.error(err);
+    } finally {
+      setChargement(false);
     }
   };
 
-  const supprimerAnnonce = async (id) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette annonce ?')) {
-      try {
-        await apiAnnonces.supprimer(id);
-        await chargerAnnonces();
-        console.log('Announcement deleted:', id);
-      } catch (err) {
-        alert('Erreur lors de la suppression: ' + (err.message || 'Erreur inconnue'));
-        console.error(err);
-      }
-    }
+  const resetForm = () => {
+    setFormulaire({
+      titre: '',
+      categorie: 'AUTRES',
+      contenu: ''
+    });
+    setPrioriteHaute(false);
+    setClasses(prev => prev.map(c => ({ ...c, selected: false })));
+    setProfesseurs(prev => prev.map(p => ({ ...p, selected: false })));
   };
 
-  const obtenirConseils = () => {
-    if (formulaire.type === 'Urgent') {
-      return '• Pour un DS/Examen : date, heure, salle, contenu, documents autorisés';
-    } else if (formulaire.type === 'Normal') {
-      return '• Pour un devoir : sujet, date limite, format de rendu';
-    } else if (formulaire.type === 'Info') {
-      return '• Pour une info : détails complets';
-    }
-    return '';
-  };
+  const isFormValid = formulaire.titre && formulaire.contenu && getSelectedCount() > 0;
 
   return (
-    <div className="gestion-annonces-admin">
-      <div className="gestion-annonces-admin-header">
-        <div>
-          <h1 className="gestion-annonces-admin-titre">Gestion des Annonces</h1>
-          <p className="gestion-annonces-admin-sous-titre">
-            Publiez des annonces importantes pour les étudiants
-          </p>
+    <div className="communication-center">
+      {/* Header */}
+      <div className="communication-header">
+        <div className="header-content">
+          <div className="header-icon">
+            <Megaphone size={32} />
+          </div>
+          <div className="header-text">
+            <h1>Centre de Communication</h1>
+            <p>DIFFUSEZ VOS ANNONCES STRATÉGIQUES</p>
+          </div>
         </div>
-        <BoutonAction
-          libelle="Publier une annonce"
-          variante="primaire"
-          taille="moyen"
-          icone={Megaphone}
-          onClick={() => setModalNouvelleAnnonce(true)}
-        />
+        <div className="target-buttons">
+          <button
+            className={`target-btn ${cible === 'etudiants' ? 'active' : ''}`}
+            onClick={() => setCible('etudiants')}
+          >
+            <GraduationCap size={20} />
+            CIBLER ÉTUDIANTS
+          </button>
+          <button
+            className={`target-btn ${cible === 'enseignants' ? 'active' : ''}`}
+            onClick={() => setCible('enseignants')}
+          >
+            <Users size={20} />
+            CIBLER ENSEIGNANTS
+          </button>
+        </div>
       </div>
 
-      <div className="annonces-liste">
-        {chargement ? (
-          <div className="chargement-container">Chargement des annonces...</div>
-        ) : erreur ? (
-          <div className="erreur-container">
-            <p>{erreur}</p>
-            <button onClick={chargerAnnonces} className="btn-reessayer">Réessayer</button>
+      {/* Main Content */}
+      <div className="communication-content">
+        {/* Left Section - Compose */}
+        <div className="compose-section">
+          <div className="section-title">
+            <Plus className="plus-icon" size={20} />
+            COMPOSER L'ANNONCE
           </div>
-        ) : annonces.length === 0 ? (
-          <div className="annonces-vide">
-            <p>Aucune annonce publiée</p>
-          </div>
-        ) : (
-          annonces.map((annonce) => (
-            <div key={annonce.id} className="annonce-card">
-              <div className="annonce-card-header">
-                <div className="annonce-header-gauche">
-                  <div className={`annonce-icone annonce-icone-${annonce.type?.toLowerCase() || 'normal'}`}>
-                    <Megaphone size={24} />
-                  </div>
-                  <div className="annonce-header-info">
-                    <div className="annonce-titre-container">
-                      <h3 className="annonce-titre">{annonce.titre}</h3>
-                      {annonce.type === 'Urgent' && (
-                        <span className="badge-urgent">URGENT</span>
-                      )}
-                    </div>
-                    <p className="annonce-metadata">
-                      Publié {new Date(annonce.dateCreation).toLocaleString('fr-FR')} • {annonce.classe}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  className="annonce-supprimer"
-                  onClick={() => supprimerAnnonce(annonce.id)}
-                  aria-label="Supprimer l'annonce"
+
+          <div className="compose-form">
+            <div className="form-row">
+              <div className="form-group">
+                <label>TITRE DE L'ANNONCE</label>
+                <input
+                  type="text"
+                  name="titre"
+                  value={formulaire.titre}
+                  onChange={gererChangement}
+                  placeholder="Ex: Report du CC2..."
+                  className="form-input"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>CATÉGORIE</label>
+                <select
+                  name="categorie"
+                  value={formulaire.categorie}
+                  onChange={gererChangement}
+                  className="form-input"
                 >
-                  ×
-                </button>
+                  {typesAnnonce.map(type => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
+                  ))}
+                </select>
               </div>
-
-              <div className="annonce-contenu">
-                <div className="annonce-detail-item">
-                  <div className="annonce-detail-content">
-                    <span className="annonce-detail-label">Contenu:</span>
-                    <span className="annonce-detail-valeur">{annonce.contenu}</span>
-                  </div>
-                </div>
-              </div>
-
-              {annonce.etudiantsConcernes > 0 && (
-                <div className="annonce-card-footer">
-                  <div className="annonce-etudiants-concernes">
-                    <Eye size={16} />
-                    <span>{annonce.etudiantsConcernes} étudiants concernés</span>
-                  </div>
-                </div>
-              )}
             </div>
-          ))
-        )}
+
+            <div className="form-group">
+              <label>CONTENU DÉTAILLÉ</label>
+              <textarea
+                name="contenu"
+                value={formulaire.contenu}
+                onChange={gererChangement}
+                placeholder="Saisissez le corps de votre message ici..."
+                className="form-textarea"
+              />
+            </div>
+          </div>
+
+          <div className="compose-footer">
+            <div className="priority-toggle-container">
+              <label className="switch">
+                <input
+                  type="checkbox"
+                  checked={prioriteHaute}
+                  onChange={(e) => setPrioriteHaute(e.target.checked)}
+                />
+                <span className="slider"></span>
+              </label>
+              <div className="priority-info">
+                <h4>PRIORITÉ HAUTE</h4>
+                <p>AFFICHE UNE ALERTE SUR LE DASHBOARD</p>
+              </div>
+            </div>
+
+            <button className="attachment-btn">
+              <Paperclip size={18} />
+              AJOUTER DES PIÈCES JOINTES
+            </button>
+          </div>
+        </div>
+
+        {/* Right Section - Audience */}
+        <div className="audience-section">
+          <div className="audience-header">
+            <h2>
+              <Layers size={20} color="#6366f1" />
+              AUDIENCE
+            </h2>
+            <button className="select-all-toggle" onClick={selectAllTargets}>
+              {cible === 'etudiants' ? 'TOUTES LES CLASSES' : 'TOUS LES PROFS'}
+            </button>
+          </div>
+
+          <div className="audience-list">
+            {cible === 'etudiants' ? (
+              classes.map(classe => (
+                <div
+                  key={classe.id}
+                  className={`audience-card ${classe.selected ? 'selected' : ''}`}
+                  onClick={() => toggleTarget(classe.id)}
+                >
+                  <div className="audience-info">
+                    <h3>{classe.nom}</h3>
+                    <p>{classe.filiere}</p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              professeurs.map(prof => (
+                <div
+                  key={prof.id}
+                  className={`audience-card ${prof.selected ? 'selected' : ''}`}
+                  onClick={() => toggleTarget(prof.id)}
+                >
+                  {prof.photo ? (
+                    <img src={prof.photo} alt={prof.nom} className="audience-avatar" />
+                  ) : (
+                    <div className="audience-avatar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#e2e8f0', color: '#64748b', fontWeight: '800' }}>
+                      {prof.nom.charAt(4)}
+                    </div>
+                  )}
+                  <div className="audience-info">
+                    <h3>{prof.nom}</h3>
+                    <p>{prof.specialite}</p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="audience-status-bar">
+            <Info size={16} />
+            {getSelectedCount() === 0 ? (
+              cible === 'etudiants' ? "0 CLASSE(S) RECEVRONT L'ANNONCE." : "AUCUN RECEVRA L'ANNONCE."
+            ) : (
+              `${getSelectedCount()} ${cible === 'etudiants' ? 'CLASSE(S)' : 'ENSEIGNANT(S)'} RECEVRONT L'ANNONCE.`
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Modal Nouvelle Annonce */}
-      <FormulaireModal
-        titre="Publier une annonce"
-        estOuvert={modalNouvelleAnnonce}
-        surFermer={() => {
-          setModalNouvelleAnnonce(false);
-          setFormulaire({
-            titre: '',
-            type: '',
-            classe: '',
-            contenu: ''
-          });
-        }}
-        surSauvegarder={publierAnnonce}
-        texteBoutonSauvegarder="Publier l'annonce"
-      >
-        <ChampFormulaire
-          label="Titre de l'annonce"
-          nom="titre"
-          valeur={formulaire.titre}
-          onChange={gererChangement}
-          placeholder="Ex: Devoir Surveillé - Programmation Java"
-          requis
-        />
-
-        <div className="formulaire-row">
-          <div className="formulaire-col">
-            <ChampFormulaire
-              label="Type d'annonce"
-              nom="type"
-              type="select"
-              valeur={formulaire.type}
-              onChange={gererChangement}
-              options={typesAnnonce}
-              requis
-            />
-          </div>
-          <div className="formulaire-col">
-            <ChampFormulaire
-              label="Classe concernée"
-              nom="classe"
-              type="select"
-              valeur={formulaire.classe}
-              onChange={gererChangement}
-              options={chargementClasses ? [{ value: '', label: 'Chargement...' }] : classesOptions}
-              requis
-              disabled={chargementClasses}
-            />
-          </div>
-        </div>
-
-        <ChampFormulaire
-          label="Contenu de l'annonce"
-          nom="contenu"
-          type="textarea"
-          valeur={formulaire.contenu}
-          onChange={gererChangement}
-          placeholder="Détails de l'annonce..."
-          requis
-        />
-
-        {formulaire.type && (
-          <div className="conseils-box">
-            <strong>Conseils :</strong>
-            <p>{obtenirConseils()}</p>
-          </div>
-        )}
-
-        <div className="info-box">
-          <Info size={18} />
-          <p>Les étudiants de la classe sélectionnée recevront une notification pour cette annonce.</p>
-        </div>
-      </FormulaireModal>
+      {/* Bottom Action */}
+      <div className="broadcast-section">
+        <button
+          className={`broadcast-btn ${isFormValid ? 'active' : ''}`}
+          onClick={diffuserAnnonce}
+          disabled={chargement || !isFormValid}
+        >
+          <Send size={24} />
+          {chargement ? 'DIFFUSION...' : 'DIFFUSER L\'ANNONCE'}
+        </button>
+      </div>
     </div>
   );
 };

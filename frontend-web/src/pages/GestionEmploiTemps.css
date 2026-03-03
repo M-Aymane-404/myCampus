@@ -23,15 +23,16 @@
   gap: 24px;
 }
 
-.header-icon-box {
+.gestion-emploi-temps-modern .header-icon-box {
   width: 64px;
   height: 64px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
+  background: #6366f1 !important;
+  border-radius: 50% !important;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
 }
 
 .header-titles h1 {
@@ -64,6 +65,40 @@
 /* Class Selector */
 .header-right {
   position: relative;
+  display: flex;
+  gap: 12px;
+}
+
+.semester-selector-pill {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 14px 20px;
+  border-radius: 30px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+  min-width: 120px;
+}
+
+.semester-selector-pill:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.semester-dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: 120px;
+  background: white;
+  border-radius: 24px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  overflow: hidden;
+  border: 1px solid #E2E8F0;
+  animation: fadeInDown 0.2s ease-out;
 }
 
 .class-selector-pill {
@@ -145,6 +180,7 @@
   border: 1px solid #E2E8F0;
   border-radius: 12px;
   font-size: 14px;
+  color: #0F172A;
   outline: none;
 }
 

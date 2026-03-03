@@ -21,15 +21,11 @@
 .large-avatar {
     width: 130px;
     height: 130px;
-    border-radius: 50%;
-    /* Make it round as per standard or maintain rounded square if preferred? Screenshot shows rounded square/image */
     border-radius: 24px;
-    background-image: url('https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80');
-    background-size: cover;
-    background-position: center;
     background-color: #e2e8f0;
-    /* Fallback */
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    object-fit: cover;
+    display: block;
 }
 
 .large-avatar-placeholder {

@@ -1,10 +1,10 @@
-const BASE_URL = 'http://localhost:8080/api/schedule';
+const BASE_URL = 'http://localhost:8080/api/etudiant/emploi';
 import { apiAuth } from './apiAuth';
 
 export const apiEmploiTemps = {
-    async obtenirParClasse(classeId) {
+    async obtenirParClasseEtSemestre(codeClasse, semestre) {
         try {
-            const reponse = await fetch(`${BASE_URL}/classe/${classeId}`, {
+            const reponse = await fetch(`${BASE_URL}/${codeClasse}/${semestre}`, {
                 method: 'GET',
                 headers: apiAuth.getAuthHeaders(),
                 credentials: 'include'
@@ -16,9 +16,11 @@ export const apiEmploiTemps = {
                 throw new Error(`Erreur HTTP: ${reponse.status}`);
             }
 
-            return await reponse.json();
+            const response = await reponse.json();
+            // Extract slots array from backend response
+            return response.slots || response || [];
         } catch (erreur) {
-            console.error('Erreur lors de la récupération de l\'emploi du temps par classe:', erreur);
+            console.error('Erreur lors de la récupération de l\'emploi du temps:', erreur);
             return [];
         }
     },

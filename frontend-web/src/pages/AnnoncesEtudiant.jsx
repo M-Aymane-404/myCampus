@@ -8,7 +8,9 @@ import {
     User,
     Calendar,
     Clock,
-    Paperclip
+    Paperclip,
+    Pin,
+    RefreshCw
 } from 'lucide-react';
 import { apiAnnonces } from '../services/apiAnnonces';
 import './AnnoncesEtudiant.css';
@@ -22,43 +24,54 @@ const AnnoncesEtudiant = () => {
     const [error, setError] = useState(null);
 
     // Fetch announcements from backend
-    useEffect(() => {
-        const fetchAnnonces = async () => {
-            try {
-                setLoading(true);
-                setError(null);
-                const data = await apiAnnonces.etudiant.obtenirToutes();
-                const transformedData = transformBackendData(data);
-                setAnnouncements(transformedData);
-                if (transformedData.length > 0) {
-                    setActiveAnnonce(transformedData[0]);
-                }
-            } catch (err) {
-                setError('Erreur lors du chargement des annonces');
-                console.error('Error fetching announcements:', err);
-            } finally {
-                setLoading(false);
+    const fetchAnnonces = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const data = await apiAnnonces.etudiant.obtenirToutes();
+            console.log('Raw backend data:', data); // Debug log to see the raw data
+            const transformedData = transformBackendData(data);
+            console.log('Transformed data:', transformedData); // Debug log to see transformed data
+            setAnnouncements(transformedData);
+            if (transformedData.length > 0) {
+                setActiveAnnonce(transformedData[0]);
             }
-        };
+        } catch (err) {
+            setError('Erreur lors du chargement des annonces');
+            console.error('Error fetching announcements:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    useEffect(() => {
         fetchAnnonces();
     }, []);
 
     // Transform backend data to match frontend expectations
     const transformBackendData = (backendData) => {
-        return backendData.map(annonce => ({
-            id: annonce.id,
-            title: annonce.titre,
-            date: formatDate(annonce.datePublication),
-            fullDate: formatFullDate(annonce.datePublication),
-            category: getCategoryFromCibleType(annonce.cibleType),
-            subject: annonce.codeClasse || 'Général',
-            professor: annonce.auteur ? `${annonce.auteur.prenom} ${annonce.auteur.nom}` : 'Administration',
-            priority: 'NORMALE', // Default, can be enhanced based on additional backend fields
-            hasDot: !annonce.publiee, // Assuming unpublished announcements show as unread
-            isPinned: annonce.cibleType === 'ETUDIANTS_GLOBAL', // Global announcements are pinned
-            content: annonce.contenu
-        }));
+        return backendData.map(annonce => {
+            const isPriority = annonce.urgent === 1 || annonce.urgent === '1' || annonce.urgent === true;
+            console.log(`Announcement "${annonce.titre}": urgent=${annonce.urgent} (type: ${typeof annonce.urgent}), isPriority=${isPriority}`);
+            const transformedAnnonce = {
+                id: annonce.id,
+                title: annonce.titre,
+                date: formatDate(annonce.datePublication),
+                fullDate: formatFullDate(annonce.datePublication),
+                category: getCategoryFromCibleType(annonce.cibleType),
+                subject: annonce.codeClasse || 'Général',
+                professor: annonce.auteur ? `${annonce.auteur.prenom} ${annonce.auteur.nom}` : 'Administration',
+                authorId: annonce.auteur?.id,
+                authorPhoto: annonce.auteur?.photoPath || null,
+                isPriority: isPriority,
+                priority: isPriority ? 'HAUTE' : 'NORMALE',
+                hasDot: !annonce.publiee,
+                isPinned: annonce.cibleType === 'ETUDIANTS_GLOBAL',
+                content: annonce.contenu
+            };
+            console.log(`Transformed "${transformedAnnonce.title}": isPriority=${transformedAnnonce.isPriority}`);
+            return transformedAnnonce;
+        });
     };
 
     // Format date for display
@@ -126,7 +139,16 @@ const AnnoncesEtudiant = () => {
                 <>
                     {/* Left Sidebar */}
                     <aside className="ann-sidebar">
-                        <h1 className="ann-sidebar-title">Flux d'annonces</h1>
+                        <div className="ann-sidebar-header">
+                            <h1 className="ann-sidebar-title">Flux d'annonces</h1>
+                            <button 
+                                onClick={fetchAnnonces} 
+                                className="ann-refresh-btn"
+                                title="Rafraîchir les annonces"
+                            >
+                                <RefreshCw size={18} />
+                            </button>
+                        </div>
 
                         <div className="ann-search-box">
                             <Search className="ann-search-icon" size={18} />
@@ -162,7 +184,7 @@ const AnnoncesEtudiant = () => {
                                             {ann.hasDot && <div className="ann-dot"></div>}
                                             <span className="ann-item-date">{ann.date}</span>
                                         </div>
-                                        {ann.isPinned && <Star className="ann-pin" size={16} fill="#fca311" stroke="#fca311" />}
+                                        {ann.isPriority && <Star className="ann-priority" size={16} fill="#ff6b6b" stroke="#ff6b6b" />}
                                         <div className="ann-item-title">{ann.title}</div>
                                         <div className="ann-item-subtitle">{ann.subject}</div>
                                     </div>
@@ -182,7 +204,31 @@ const AnnoncesEtudiant = () => {
                                 <header className="ann-detail-header">
                                     <div className="ann-prof-box">
                                         <div className="ann-prof-img">
-                                            <User size={30} style={{ margin: 'auto', display: 'block' }} color="#94a3b8" />
+                                            {activeAnnonce.authorPhoto ? (
+                                                <img 
+                                                    src={`http://localhost:8080/uploads/usersPhotos/${activeAnnonce.authorPhoto}`}
+                                                    alt={`${activeAnnonce.professor}`}
+                                                    onError={(e) => {
+                                                        e.target.onerror = null;
+                                                        e.target.style.display = 'none';
+                                                        e.target.nextSibling.style.display = 'block';
+                                                    }}
+                                                    style={{ 
+                                                        width: '100%', 
+                                                        height: '100%', 
+                                                        objectFit: 'cover',
+                                                        borderRadius: '50%'
+                                                    }}
+                                                />
+                                            ) : null}
+                                            <User 
+                                                size={30} 
+                                                style={{ 
+                                                    margin: 'auto', 
+                                                    display: activeAnnonce.authorPhoto ? 'none' : 'block' 
+                                                }} 
+                                                color="#94a3b8" 
+                                            />
                                         </div>
                                         <div className="ann-prof-info">
                                             <div className="ann-prof-name">{activeAnnonce.professor}</div>

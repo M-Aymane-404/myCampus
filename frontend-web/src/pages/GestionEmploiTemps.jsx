@@ -6,12 +6,16 @@ import { apiAuth } from '../services/apiAuth';
 import TimetableGrid from '../composants/emploiDuTemps/TimetableGrid';
 import './GestionEmploiTemps.css';
 
+const SEMESTERS = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8', 'S9'];
+
 const GestionEmploiTemps = () => {
   const [seances, setSeances] = useState([]);
   const [classes, setClasses] = useState([]);
   const [selectedClasse, setSelectedClasse] = useState(null);
+  const [selectedSemester, setSelectedSemester] = useState('S1');
   const [isLoading, setIsLoading] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isSemesterDropdownOpen, setIsSemesterDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const user = apiAuth.getUser();
@@ -33,13 +37,14 @@ const GestionEmploiTemps = () => {
     loadClasses();
   }, []);
 
-  // Load schedule when class changes
+  // Load schedule when class or semester changes
   useEffect(() => {
-    if (selectedClasse) {
+    if (selectedClasse && selectedSemester) {
       const loadSchedule = async () => {
         setIsLoading(true);
         try {
-          const data = await apiEmploiTemps.obtenirParClasse(selectedClasse.id);
+          const data = await apiEmploiTemps.obtenirParClasseEtSemestre(selectedClasse.codeClasse, selectedSemester);
+          console.log('API Response:', data);
           setSeances(data);
         } catch (err) {
           console.error('Failed to load schedule', err);
@@ -49,7 +54,7 @@ const GestionEmploiTemps = () => {
       };
       loadSchedule();
     }
-  }, [selectedClasse]);
+  }, [selectedClasse, selectedSemester]);
 
   const filteredClasses = classes.filter(c =>
     (c.nom?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
@@ -75,6 +80,33 @@ const GestionEmploiTemps = () => {
         </div>
 
         <div className="header-right">
+          {/* Semester Selector */}
+          <div className="semester-selector-pill" onClick={() => setIsSemesterDropdownOpen(!isSemesterDropdownOpen)}>
+            <Calendar size={18} className="selector-icon" />
+            <span className="selector-text">{selectedSemester}</span>
+            <ChevronRight size={18} className={`selector-arrow ${isSemesterDropdownOpen ? 'open' : ''}`} />
+          </div>
+
+          {isSemesterDropdownOpen && (
+            <div className="semester-dropdown">
+              <div className="dropdown-list">
+                {SEMESTERS.map(sem => (
+                  <div
+                    key={sem}
+                    className={`dropdown-item ${selectedSemester === sem ? 'active' : ''}`}
+                    onClick={() => {
+                      setSelectedSemester(sem);
+                      setIsSemesterDropdownOpen(false);
+                    }}
+                  >
+                    {sem}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Class Selector */}
           <div className="class-selector-pill" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
             <Search size={18} className="selector-icon" />
             <span className="selector-text">
@@ -130,15 +162,15 @@ const GestionEmploiTemps = () => {
         <div className="legend-items">
           <div className="legend-item">
             <span className="dot dot-tronc"></span>
-            <span className="label">TRONC COMMUN</span>
+            <span className="label">Cours</span>
           </div>
           <div className="legend-item">
             <span className="dot dot-tp"></span>
-            <span className="label">TRAVAUX PRATIQUES</span>
+            <span className="label">TP</span>
           </div>
           <div className="legend-item">
             <span className="dot dot-exam"></span>
-            <span className="label">EXAMENS</span>
+            <span className="label">TD</span>
           </div>
         </div>
 

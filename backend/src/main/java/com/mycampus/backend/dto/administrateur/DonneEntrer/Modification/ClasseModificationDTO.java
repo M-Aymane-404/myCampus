@@ -32,6 +32,5 @@ public class ClasseModificationDTO {
     
     @Size(min = 9, max = 9, message = "Année universitaire invalide")
     private String anneeUniversitaire;
-    
-    private String emploiTemps;
+
 }
