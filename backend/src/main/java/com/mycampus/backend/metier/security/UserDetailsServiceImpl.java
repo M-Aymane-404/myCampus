@@ -30,15 +30,13 @@ public class UserDetailsServiceImpl implements org.springframework.security.core
 
         List<String> authorities = new ArrayList<>();
 
-        // 1️⃣ Ajouter les ROLES
-        utilisateur.getUtilisateurRoles().forEach(ur -> {
+         utilisateur.getUtilisateurRoles().forEach(ur -> {
 
             Role role = ur.getRole();
             if(role.getActif()){
             authorities.add("ROLE_" + role.getNomRole());
 
-            // 2️⃣ Ajouter les PERMISSIONS du rôle
-            role.getRolePermissions().forEach(rp -> {
+             role.getRolePermissions().forEach(rp -> {
                 authorities.add(rp.getPermission().getCodePermission());
             });
             }

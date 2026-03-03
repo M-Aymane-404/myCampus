@@ -32,6 +32,7 @@ public class JustificationPresenceController {
         dto.setTypeMotif(typeMotif);
         dto.setDescriptionDeJustification(description);
 
+
         gestionDeMotifDePresenceMetier.ajouterJustification_Absence(user.getId(), motif, presenceId, dto);
         return ResponseEntity.noContent().build();
     }

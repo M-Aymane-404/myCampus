@@ -30,7 +30,7 @@ public class SecurityDataSeeder {
     private final EtudiantsSeeder etudiantsSeeder;
     private final PedagogiqueDataSeeder pedagogiqueDataSeeder;
 
-   // @Bean
+   //@Bean
     public ApplicationRunner securityDataSeederRunner() {
         return args -> {
             log.info("Starting security data seeding...");
@@ -82,6 +82,7 @@ public class SecurityDataSeeder {
             "PROFESSEUR_INFORMATION_PERSONNEL_LIRE", "PROFESSEUR_MODULES_LIRE", "PROFESSEUR_MATIERES_LIRE",
             "PROFESSEUR_SEANCES_LIRE", "PROFESSEUR_RESSOURCES_LIRE", "PROFESSEUR_PRESENCES_LIRE",
             "PROFESSEUR_NOTES_GERER", "PROFESSEUR_ABSENCES_GERER","PROFESSEUR_ANNONCES_GERER","PROFESSEUR_EMPLOI_LIRE",
+            "PROFESSEUR_SEANCES_GERER",
             
             // Admin structure permissions
             "ADMIN_STRUCTURE_GERER","ADMIN_EMPLOI_GERER",
@@ -174,7 +175,7 @@ public class SecurityDataSeeder {
         // Professor role permissions
         Role professeurRole = requireRole(RolesCode.PROFESSEUR);
         List<String> professeurPermissionCodes = Arrays.asList(
-            "PROFESSEUR_INFORMATION_PERSONNEL_LIRE", "PROFESSEUR_MODULES_LIRE", "PROFESSEUR_MATIERES_LIRE",
+            "PROFESSEUR_INFORMATION_PERSONNEL_LIRE", "PROFESSEUR_MODULES_LIRE", "PROFESSEUR_MATIERES_LIRE","PROFESSEUR_SEANCES_GERER",
             "PROFESSEUR_SEANCES_LIRE", "PROFESSEUR_RESSOURCES_LIRE", "PROFESSEUR_PRESENCES_LIRE",
             "PROFESSEUR_NOTES_GERER", "PROFESSEUR_ABSENCES_GERER","PROFESSEUR_ANNONCES_GERER","PROFESSEUR_EMPLOI_LIRE"
         );

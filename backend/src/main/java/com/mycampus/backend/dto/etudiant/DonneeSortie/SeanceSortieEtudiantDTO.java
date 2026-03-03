@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @AllArgsConstructor
@@ -17,11 +18,11 @@ public class SeanceSortieEtudiantDTO {
     
     private Long id;
     
-    private LocalDateTime date;
+    private LocalDate date;
     
-    private String heureDebut;
+    private LocalDateTime  heureDebut;
     
-    private String heureFin;
+    private LocalDateTime  heureFin;
     
     private String salle;
     

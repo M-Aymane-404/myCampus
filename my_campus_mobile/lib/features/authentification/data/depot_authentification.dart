@@ -16,13 +16,10 @@ class DepotAuthentification {
       throw Exception("Réponse login invalide: access_token manquant");
     }
 
-    // ✅ Token en mémoire pour les appels suivants (dashboard, etc.)
     ClientDio.instance.setAccessToken(token);
 
-    // ✅ Token en stockage sécurisé
     await StockageSecurise.sauvegarderToken(token);
 
-    // ✅ On récupère le profil (avec Authorization explicite)
     final profil = await _serviceApi.recupererProfil(token);
     final authorities = (profil['authorities'] as List?)?.cast<String>() ?? [];
     final role = _extraireRole(authorities);
@@ -42,7 +39,6 @@ class DepotAuthentification {
     try {
       await _serviceApi.seDeconnecter().timeout(const Duration(seconds: 5));
     } catch (_) {
-      // ignore
     } finally {
       await StockageSecurise.supprimerToken();
       await StockageSecurise.supprimerRole();

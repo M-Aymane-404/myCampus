@@ -1,8 +1,8 @@
 // controleur_accueil_etudiant.dart
 import 'package:flutter/foundation.dart';
 
-import '../../data/dto/tableau_bord_etudiant_dto.dart';
-import '../../data/repository/etudiant_repository.dart';
+import '../data/dto/tableau_bord_etudiant_dto.dart';
+import '../data/repository/etudiant_repository.dart';
 
 class ControleurAccueilEtudiant extends ChangeNotifier {
   final EtudiantRepository _repo;

@@ -1,9 +1,12 @@
-// page_accueil_etudiant.dart
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../data/dto/tableau_bord_etudiant_dto.dart';
+import '../../../core/config/configuration_app.dart';
+import '../../authentification/presentation/controleur_authentification.dart';
+import '../data/dto/tableau_bord_etudiant_dto.dart';
 import 'controleur_accueil_etudiant.dart';
+import 'controleur_profil_etudiant.dart';
 
 class PageAccueilEtudiant extends StatefulWidget {
   const PageAccueilEtudiant({super.key});
@@ -25,12 +28,14 @@ class _PageAccueilEtudiantState extends State<PageAccueilEtudiant> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<ControleurAccueilEtudiant>().chargerDashboard();
+      context.read<ControleurProfilEtudiant>().chargerMoi();
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final ctrl = context.watch<ControleurAccueilEtudiant>();
+    final profilCtrl = context.watch<ControleurProfilEtudiant>();
 
     if (ctrl.chargement) return const _EtatChargement();
 
@@ -51,22 +56,29 @@ class _PageAccueilEtudiantState extends State<PageAccueilEtudiant> {
       );
     }
 
+    final photoUrl = profilCtrl.moi?.photoUrl;
+    final prenom = profilCtrl.moi?.prenom ?? '';
+    final nomFamille = profilCtrl.moi?.nom ?? '';
+    final initialesProfil = _initialesPrenomNom(prenom, nomFamille);
+
     final taux = data.assiduite.tauxPresence.round().clamp(0, 100);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FB),
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh:
-              () =>
-                  context.read<ControleurAccueilEtudiant>().chargerDashboard(),
+          onRefresh: () async {
+            await context.read<ControleurAccueilEtudiant>().chargerDashboard();
+            await context.read<ControleurProfilEtudiant>().chargerMoi();
+          },
           child: CustomScrollView(
             slivers: [
               SliverToBoxAdapter(
                 child: _AppBarCompacte(
                   nom: data.entete.nom,
                   role: "ETUDIANT",
-                  initiales: _initiales(data.entete.nom),
+                  initiales: initialesProfil,
+                  photoUrl: photoUrl,
                 ),
               ),
               SliverPadding(
@@ -108,7 +120,7 @@ class _PageAccueilEtudiantState extends State<PageAccueilEtudiant> {
 }
 
 /* =========================
-   AppBar compacte
+   AppBar compacte + Dropdown Profil
    ========================= */
 
 class _AppBarCompacte extends StatelessWidget {
@@ -116,14 +128,18 @@ class _AppBarCompacte extends StatelessWidget {
     required this.nom,
     required this.role,
     required this.initiales,
+    required this.photoUrl,
   });
 
   final String nom;
   final String role;
   final String initiales;
+  final String? photoUrl;
 
   @override
   Widget build(BuildContext context) {
+    final imageUrl = _construireUrlPhoto(photoUrl);
+
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
       decoration: BoxDecoration(
@@ -189,21 +205,59 @@ class _AppBarCompacte extends StatelessWidget {
             ],
           ),
           const SizedBox(width: 12),
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: const Color(0xFF5B5BEA),
-            child: Text(
-              initiales,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w900,
-              ),
+
+          CupertinoButton(
+            padding: EdgeInsets.zero,
+            onPressed: () => _ouvrirMenu(context),
+            child: CircleAvatar(
+              radius: 16,
+              backgroundColor: const Color(0xFF5B5BEA),
+              backgroundImage: imageUrl != null ? NetworkImage(imageUrl) : null,
+              child:
+                  imageUrl == null
+                      ? Text(
+                        initiales,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
+                      )
+                      : null,
             ),
           ),
         ],
       ),
     );
   }
+}
+
+void _ouvrirMenu(BuildContext context) {
+  showCupertinoModalPopup<void>(
+    context: context,
+    builder: (ctx) {
+      return CupertinoActionSheet(
+        title: const Text("Compte"),
+        actions: [
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.pushNamed(context, "/etudiant/profil");
+            },
+            child: const Text("Profil"),
+          ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          isDestructiveAction: true,
+          onPressed: () async {
+            Navigator.pop(ctx);
+            await context.read<ControleurAuthentification>().seDeconnecter();
+          },
+          child: const Text("Déconnexion"),
+        ),
+      );
+    },
+  );
 }
 
 /* =========================
@@ -561,7 +615,6 @@ class _CarteFlux extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-
           _Segmente(
             valeur: onglet,
             onChange: onChange,
@@ -569,7 +622,6 @@ class _CarteFlux extends StatelessWidget {
             droite: "Notes",
           ),
           const SizedBox(height: 12),
-
           if (itemsCount == 0)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 18),
@@ -707,7 +759,7 @@ class _FluxAnnonceTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final estNouveau = annonce.urgent; // simple: urgent => point rouge
+    final estNouveau = annonce.urgent;
     return _FluxTileBase(
       onTap: onTap,
       leading: Container(
@@ -881,14 +933,21 @@ class _EtatErreur extends StatelessWidget {
 }
 
 /* =========================
-   Helper
+   Helpers
    ========================= */
 
-String _initiales(String nom) {
-  final parts =
-      nom.trim().split(RegExp(r"\s+")).where((p) => p.isNotEmpty).toList();
-  if (parts.isEmpty) return "U";
-  if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
-  return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
-      .toUpperCase();
+String _initialesPrenomNom(String prenom, String nom) {
+  final p = prenom.trim();
+  final n = nom.trim();
+
+  String firstLetter(String s) =>
+      s.isEmpty ? '' : s.substring(0, 1).toUpperCase();
+
+  final res = (firstLetter(p) + firstLetter(n)).trim();
+  return res.isEmpty ? "U" : res;
+}
+
+String? _construireUrlPhoto(String? photoUrl) {
+  if (photoUrl == null || photoUrl.trim().isEmpty) return null;
+  return "${ConfigurationApp.apiBaseUrl}$photoUrl";
 }
