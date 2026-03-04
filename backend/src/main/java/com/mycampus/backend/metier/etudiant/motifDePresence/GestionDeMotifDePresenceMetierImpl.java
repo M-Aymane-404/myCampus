@@ -122,7 +122,7 @@ public class GestionDeMotifDePresenceMetierImpl implements GestionDeMotifDePrese
 
              Duration duration = Duration.between(p.getDateDeclaration(), now);
 
-             if (duration.toHours() >= 24) {
+             if (duration.toHours() >= 48) {
                  throw new PresenceException("Délai dépassé : vous ne pouvez plus ajouter une justification après 24 heures.");
              }
          }

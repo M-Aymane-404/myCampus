@@ -174,10 +174,8 @@
   transition: all 0.2s;
 }
 
-.modern-form-group input:focus {
-  outline: 2px solid var(--mc-violet);
-  background: white;
-  box-shadow: 0 0 0 4px rgba(92, 84, 237, 0.1);
+.modern-password-wrapper input:focus + .modern-pass-toggle {
+  color: var(--mc-violet);
 }
 
 .modern-password-wrapper {
@@ -300,4 +298,21 @@
   .login-right-pane {
     padding: 40px;
   }
+}
+
+/* reCAPTCHA Styles */
+.modern-form-group .g-recaptcha {
+  display: flex;
+  justify-content: center;
+  margin: 1rem 0;
+}
+
+.modern-form-group .g-recaptcha div {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.modern-form-group .g-recaptcha iframe {
+  border-radius: 8px;
 }

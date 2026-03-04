@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { GraduationCap, Eye, EyeOff, LayoutDashboard, ChevronRight } from 'lucide-react';
 import { apiAuth } from '../services/apiAuth';
+import ReCAPTCHA from 'react-google-recaptcha';
 import './Login.css';
 
 const Login = ({ onLogin }) => {
@@ -11,10 +12,16 @@ const Login = ({ onLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [erreur, setErreur] = useState('');
   const [chargement, setChargement] = useState(false);
+  const [recaptchaToken, setRecaptchaToken] = useState(null);
 
   const gererChangement = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    setErreur('');
+  };
+
+  const gererRecaptchaChange = (token) => {
+    setRecaptchaToken(token);
     setErreur('');
   };
 
@@ -27,12 +34,18 @@ const Login = ({ onLogin }) => {
       return;
     }
 
+    // Validation reCAPTCHA
+    if (!recaptchaToken) {
+      setErreur('Veuillez valider le reCAPTCHA');
+      return;
+    }
+
     setChargement(true);
     setErreur('');
 
     try {
-      // Login with real backend using email and password
-      const data = await apiAuth.login(formData.email, formData.password);
+      // Login with real backend using email, password and recaptcha token
+      const data = await apiAuth.login(formData.email, formData.password, recaptchaToken);
 
       // The role is now extracted from the JWT token in apiAuth.login
       const role = data.user?.role;
@@ -147,6 +160,14 @@ const Login = ({ onLogin }) => {
                 </div>
               </div>
 
+              <div className="modern-form-group">
+                <ReCAPTCHA
+                  sitekey="6Lf2-H4sAAAAALB3KsGVPQzMHO0_pAhVZmQXBpJC"
+                  onChange={gererRecaptchaChange}
+                  theme="light"
+                  size="normal"
+                />
+              </div>
 
               <button type="submit" className="modern-submit-btn" disabled={chargement}>
                 <span>{chargement ? 'Connexion en cours...' : 'Se connecter'}</span>

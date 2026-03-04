@@ -32,7 +32,7 @@ export const apiAuth = {
     };
   },
 
-  async login(email, password) {
+  async login(email, password, recaptchaToken) {
     // MOCK MODE: Always use mock login (bypasses backend)
     if (MOCK_MODE) {
       return this.mockLogin(email, password, 'admin');
@@ -40,10 +40,12 @@ export const apiAuth = {
     try {
       const requestBody = {
         email: email,
-        motDePasse: password // Matching backend ConnectionDTO field name
+        motDePasse: password, // Matching backend ConnectionDTO field name
+        recaptchaToken: recaptchaToken
       };
 
-      console.log('Attempting login with:', { email });
+      console.log('Attempting login with:', { email, recaptchaToken: recaptchaToken ? 'present' : 'missing' });
+      console.log('Request body:', JSON.stringify(requestBody, null, 2));
 
       const response = await fetch(`${BASE_URL}/connecter`, {
         method: 'POST',
@@ -56,6 +58,14 @@ export const apiAuth = {
 
       if (!response.ok) {
         let errorMessage = 'Erreur de connexion';
+        try {
+          const errorData = await response.json();
+          console.error('Backend error response:', errorData);
+          errorMessage = errorData.message || errorData.error || errorMessage;
+        } catch (e) {
+          console.error('Could not parse error response:', response.status, response.statusText);
+        }
+        
         if (response.status === 401) {
           errorMessage = 'Email ou mot de passe incorrect';
         } else if (response.status === 500) {
