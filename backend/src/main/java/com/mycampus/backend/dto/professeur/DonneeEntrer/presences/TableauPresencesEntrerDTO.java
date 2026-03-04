@@ -18,8 +18,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 
 public class TableauPresencesEntrerDTO {
-    @NotNull(message = "SeanceId obligatoire")
-    private Long seanceId;
+
 
     @NotEmpty(message = "La liste des présences est obligatoire")
     @Valid

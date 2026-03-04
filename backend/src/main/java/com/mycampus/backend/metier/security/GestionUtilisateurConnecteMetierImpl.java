@@ -1,5 +1,6 @@
 package com.mycampus.backend.metier.security;
 
+import com.mycampus.backend.entites.Professeur;
 import com.mycampus.backend.entites.Utilisateur;
 import com.mycampus.backend.exceptions.UtilisateursException;
 import com.mycampus.backend.repositorys.UtilisateurRepository;
@@ -19,5 +20,16 @@ public class GestionUtilisateurConnecteMetierImpl implements GestionUtilisateurC
         Utilisateur u = utilisateurRepository.findByEmail(email)
                 .orElseThrow(() -> new UtilisateursException("Utilisateur introuvable"));
         return u.getId();
+    }
+    @Override
+    public String trouverProfesseurPprParId(Long id) throws UtilisateursException {
+        Utilisateur u = utilisateurRepository.findById(id)
+                .orElseThrow(() -> new UtilisateursException("Utilisateur introuvable"));
+
+        if (!(u instanceof Professeur prof)) {
+            throw new UtilisateursException("Utilisateur connecté n'est pas un professeur.");
+        }
+
+        return prof.getPpr();
     }
 }

@@ -21,4 +21,7 @@ public class ConnectionDTO {
     @Size(max = 50, message = "  mote De Passe  ne doit pas dépasser 50 caractères")
 
     private String motDePasse;
+
+    @NotBlank(message = "reCAPTCHA validation obligatoire")
+    private String recaptchaToken;
 }

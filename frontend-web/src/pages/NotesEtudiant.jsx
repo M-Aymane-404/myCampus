@@ -474,8 +474,7 @@ const NotesEtudiant = () => {
                                 <Award size={32} />
                             </div>
                             <div className="uni-names">
-                                <h1>Lumina University</h1>
-                                <span className="uni-tagline">Excellence in Digital Engineering</span>
+                                <h1>MyCampus</h1>
                                 <div className="uni-contact-info">
                                     <div className="contact-item">
                                         <MapPin size={12} />
@@ -483,7 +482,7 @@ const NotesEtudiant = () => {
                                     </div>
                                     <div className="contact-item">
                                         <Hash size={12} />
-                                        <span>+212 5 37 77 00 00 | contact@lumina.ac.ma</span>
+                                        <span>+212 5 37 77 00 00 | contact@MyCampus.ac.ma</span>
                                     </div>
                                 </div>
                             </div>
@@ -545,9 +544,8 @@ const NotesEtudiant = () => {
                     <table className="transcript-grades-table">
                         <thead>
                             <tr>
-                                <th style={{ width: '10%' }}>CODE</th>
-                                <th style={{ width: '50%' }}>INTITULÉ DU MODULE</th>
-                                <th style={{ width: '10%', textAlign: 'center' }}>CRÉDITS</th>
+                                <th style={{ width: '15%' }}>CODE</th>
+                                <th style={{ width: '55%' }}>INTITULÉ DU MODULE</th>
                                 <th style={{ width: '15%', textAlign: 'center' }}>NOTE / 20</th>
                                 <th style={{ width: '15%', textAlign: 'right' }}>RÉSULTAT</th>
                             </tr>
@@ -558,7 +556,6 @@ const NotesEtudiant = () => {
                                     <tr className="row-module">
                                         <td className="col-code">{module.letter || 'M'}</td>
                                         <td className="col-name">{module.name}</td>
-                                        <td className="col-credits">{module.ects || 6}</td>
                                         <td className="col-grade">{module.average?.toFixed(2)}</td>
                                         <td className="col-result">{module.average >= 10 ? 'VALIDÉ' : 'AJOURNÉ'}</td>
                                     </tr>
@@ -566,7 +563,6 @@ const NotesEtudiant = () => {
                                         <tr key={`${idx}-sub-${sIdx}`} className="row-sub">
                                             <td className="col-code"></td>
                                             <td className="col-name">{sub.name}</td>
-                                            <td className="col-credits"></td>
                                             <td className="col-grade">{sub.average?.toFixed(2)}</td>
                                             <td className="col-result"></td>
                                         </tr>
@@ -574,7 +570,7 @@ const NotesEtudiant = () => {
                                 </Fragment>
                             )) : (
                                 <tr>
-                                    <td colSpan="5" style={{ textAlign: 'center', padding: '2rem' }}>Aucun module disponible pour ce semestre.</td>
+                                    <td colSpan="4" style={{ textAlign: 'center', padding: '2rem' }}>Aucun module disponible pour ce semestre.</td>
                                 </tr>
                             )}
                         </tbody>

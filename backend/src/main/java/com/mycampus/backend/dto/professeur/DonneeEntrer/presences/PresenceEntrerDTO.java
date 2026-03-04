@@ -15,16 +15,15 @@ import lombok.NoArgsConstructor;
 
 public class PresenceEntrerDTO {
 
-    private Long seanceId;
+
 
     @NotBlank(message = "Apogée obligatoire")
     private String apogee;
 
+
     @NotNull(message = "Statut obligatoire")
     private StatusAbsence status;
 
-    private boolean justifiee;
 
-    private String motif;
 }
 

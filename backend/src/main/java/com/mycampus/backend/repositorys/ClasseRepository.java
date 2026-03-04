@@ -1,7 +1,9 @@
 package com.mycampus.backend.repositorys;
 
+import com.mycampus.backend.entites.AffectationEnseignement;
 import com.mycampus.backend.entites.Classe;
 import com.mycampus.backend.entites.Professeur;
+import org.springframework.data.domain.Example;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -45,4 +47,5 @@ WHERE ae.professeur = :professeur
 """)
     List<Classe> findClassesByProfesseur(@Param("professeur") Professeur professeur);
 
+    boolean existsByCodeClasseAndAffectationEnseignements_Professeur_Ppr(String codeClasse, String affectationEnseignementsProfesseurPpr);
 }

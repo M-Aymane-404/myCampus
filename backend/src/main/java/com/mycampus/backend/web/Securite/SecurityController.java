@@ -12,6 +12,7 @@ import com.mycampus.backend.metier.security.RefreshTokenMetier;
 import com.mycampus.backend.metier.security.RefreshTokenMetierImpl;
 import com.mycampus.backend.metier.security.UserDetailsServiceImpl;
 import com.mycampus.backend.repositorys.UtilisateurRepository;
+import com.mycampus.backend.services.RecaptchaService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -54,6 +55,7 @@ public class SecurityController {
      private final UserDetailsServiceImpl userDetailsServiceImpl;
     private final SimpMessagingTemplate messagingTemplate;
     private final UtilisateurRepository utilisateurRepository;
+    private final RecaptchaService recaptchaService;
 
 
 
@@ -86,6 +88,14 @@ public class SecurityController {
     public JetonsSortieDTO connecter(@Valid @RequestBody ConnectionDTO connectionDTO,
                                      HttpServletRequest request,
                                      HttpServletResponse response) {
+        
+        // Valider le token reCAPTCHA
+        log.info("reCAPTCHA token received: {}", connectionDTO.getRecaptchaToken());
+        if (!recaptchaService.validateRecaptcha(connectionDTO.getRecaptchaToken())) {
+            log.error("reCAPTCHA validation failed for token: {}", connectionDTO.getRecaptchaToken());
+            throw new SecuriteException("Validation reCAPTCHA échouée. Veuillez réessayer.");
+        }
+        
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(connectionDTO.getEmail(),connectionDTO.getMotDePasse())
         );

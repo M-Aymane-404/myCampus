@@ -4,6 +4,7 @@ package com.mycampus.backend.mappers.professeur;
 
 import com.mycampus.backend.dto.professeur.DonneeSortie.seances.SeanceResumeSortieDTO;
 import com.mycampus.backend.dto.professeur.DonneeSortie.seances.SeanceSortieDTO;
+import com.mycampus.backend.entites.AffectationEnseignement;
 import com.mycampus.backend.entites.Seance;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
@@ -25,27 +26,21 @@ public class SeancesProfesseurMapper {
             return null;
         }
 
-        SeanceSortieDTO seanceSortieDTO = new SeanceSortieDTO();
+        AffectationEnseignement ae = seance.getAffectationEnseignement();
 
-        BeanUtils.copyProperties(seance, seanceSortieDTO);
-
-        seanceSortieDTO.setAffectationEnseignementId(
-                seance.getAffectationEnseignement() != null ? seance.getAffectationEnseignement().getId() : null
-        );
-
-        seanceSortieDTO.setClasseId(
-                seance.getAffectationEnseignement() != null && seance.getAffectationEnseignement().getClasse() != null
-                        ? seance.getAffectationEnseignement().getClasse().getId()
-                        : null
-        );
-
-        seanceSortieDTO.setMatiereId(
-                seance.getAffectationEnseignement() != null && seance.getAffectationEnseignement().getMatiere() != null
-                        ? seance.getAffectationEnseignement().getMatiere().getId()
-                        : null
-        );
-
-        return seanceSortieDTO;
+        return SeanceSortieDTO.builder()
+                .id(seance.getId())
+                .affectationEnseignementId(ae != null ? ae.getId() : null)
+                .type(seance.getType())
+                .date(seance.getDate())
+                .heureDebut(seance.getHeureDebut())
+                .heureFin(seance.getHeureFin())
+                .salle(seance.getSalle())
+                .etat(seance.getEtat())
+                .contenu(seance.getContenu())
+                .classeId(ae != null && ae.getClasse()  != null ? ae.getClasse().getId()  : null)
+                .matiereId(ae != null && ae.getMatiere() != null ? ae.getMatiere().getId() : null)
+                .build();
     }
 
     /**
@@ -57,10 +52,15 @@ public class SeancesProfesseurMapper {
             return null;
         }
 
-        SeanceResumeSortieDTO seanceResumeSortieDTO = new SeanceResumeSortieDTO();
-        BeanUtils.copyProperties(seance, seanceResumeSortieDTO);
-
-        return seanceResumeSortieDTO;
+        return SeanceResumeSortieDTO.builder()
+                .id(seance.getId())
+                .date(seance.getDate())
+                .heureDebut(seance.getHeureDebut())
+                .heureFin(seance.getHeureFin())
+                .type(seance.getType())
+                .salle(seance.getSalle())
+                .etat(seance.getEtat())
+                .build();
     }
 
     /**

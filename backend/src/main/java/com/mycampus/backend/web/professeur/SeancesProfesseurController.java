@@ -2,6 +2,7 @@ package com.mycampus.backend.web.professeur;
 
 
 
+import com.mycampus.backend.dto.administrateur.DonneSortie.AffectationEnseignementSortieDTO;
 import com.mycampus.backend.dto.professeur.DonneeEntrer.fichiersSeance.DepotFichierSeanceEntrerDTO;
 import com.mycampus.backend.dto.professeur.DonneeEntrer.seances.CreationSeanceEntrerDTO;
 import com.mycampus.backend.dto.professeur.DonneeEntrer.seances.ModificationSeanceEntrerDTO;
@@ -11,12 +12,16 @@ import com.mycampus.backend.dto.professeur.DonneeSortie.seances.SeanceResumeSort
 import com.mycampus.backend.dto.professeur.DonneeSortie.seances.SeanceSortieDTO;
 import com.mycampus.backend.entites.Professeur;
 import com.mycampus.backend.exceptions.SeancesProfesseurException;
+import com.mycampus.backend.exceptions.UtilisateursException;
 import com.mycampus.backend.metier.professeur.seances.GestionSeancesProfesseurMetier;
+import com.mycampus.backend.metier.security.CustomUserDetails;
+import com.mycampus.backend.metier.security.GestionUtilisateurConnecteMetier;
 import com.mycampus.backend.repositorys.ProfesseurRepository;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
@@ -33,125 +38,125 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
+import static org.springframework.data.jpa.domain.AbstractPersistable_.id;
+
 @RestController
 @RequestMapping("/api/professeur")
 @RequiredArgsConstructor
 public class SeancesProfesseurController {
 
-    private final GestionSeancesProfesseurMetier gestionSeancesProfesseurMetier;
-    private final ProfesseurRepository professeurRepository;
+    private final GestionSeancesProfesseurMetier gestionSeancesProfMetier;
+   // private final ProfesseurRepository professeurRepository;
+    private final GestionUtilisateurConnecteMetier utilisateurMetier;
 
-    private String requireProfesseurPpr(Jwt jwt) throws SeancesProfesseurException {
-        if (jwt == null || jwt.getSubject() == null || jwt.getSubject().isBlank()) {
-            throw new SeancesProfesseurException("JWT invalide: email introuvable.");
-        }
-        String email = jwt.getSubject();
 
-        Professeur prof = professeurRepository.findByEmail(email)
-                .orElseThrow(() -> new SeancesProfesseurException("Professeur introuvable pour cet email."));
 
-        if (prof.getPpr() == null || prof.getPpr().isBlank()) {
-            throw new SeancesProfesseurException("PPR introuvable pour ce professeur.");
-        }
-        return prof.getPpr();
+    @GetMapping("/enseignements")
+    @PreAuthorize("hasAuthority('PROFESSEUR_SEANCES_GERER')")
+    public List<AffectationEnseignementSortieDTO> listerEnseignements(
+            @AuthenticationPrincipal CustomUserDetails user
+            ) throws SeancesProfesseurException , UtilisateursException {
+        String ppr = utilisateurMetier.trouverProfesseurPprParId(user.getId());
+        return gestionSeancesProfMetier.listerEnseignements(ppr);
     }
 
     @PostMapping("/seances")
     @PreAuthorize("hasAuthority('PROFESSEUR_SEANCES_GERER')") // ou une permission plus “write” si tu la crées
     public SeanceSortieDTO creerSeance(
-            @AuthenticationPrincipal Jwt jwt,
+            @AuthenticationPrincipal CustomUserDetails user,
             @RequestBody CreationSeanceEntrerDTO creationSeanceEntrerDTO
     ) throws SeancesProfesseurException {
-        String ppr = requireProfesseurPpr(jwt);
-        return gestionSeancesProfesseurMetier.creerSeance(ppr, creationSeanceEntrerDTO);
+
+        String ppr = utilisateurMetier.trouverProfesseurPprParId(user.getId());
+        return gestionSeancesProfMetier.creerSeance(ppr,creationSeanceEntrerDTO);
     }
 
     @PutMapping("/seances/{seanceId}")
     @PreAuthorize("hasAuthority('PROFESSEUR_SEANCES_GERER')")
     public SeanceSortieDTO modifierSeance(
-            @AuthenticationPrincipal Jwt jwt,
+            @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable Long seanceId,
             @RequestBody ModificationSeanceEntrerDTO modificationSeanceEntrerDTO
     ) throws SeancesProfesseurException {
-        String ppr = requireProfesseurPpr(jwt);
-        return gestionSeancesProfesseurMetier.modifierSeance(ppr, seanceId, modificationSeanceEntrerDTO);
+        String ppr = utilisateurMetier.trouverProfesseurPprParId(user.getId());
+        return gestionSeancesProfMetier.modifierSeance(ppr, seanceId, modificationSeanceEntrerDTO);
     }
 
     @DeleteMapping("/seances/{seanceId}")
     @PreAuthorize("hasAuthority('PROFESSEUR_SEANCES_GERER')")
     public void supprimerSeance(
-            @AuthenticationPrincipal Jwt jwt,
+            @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable Long seanceId
     ) throws SeancesProfesseurException {
-        String ppr = requireProfesseurPpr(jwt);
-        gestionSeancesProfesseurMetier.supprimerSeance(ppr, seanceId);
+        String ppr = utilisateurMetier.trouverProfesseurPprParId(user.getId());
+        gestionSeancesProfMetier.supprimerSeance(ppr, seanceId);
     }
 
     @GetMapping("/seances/{seanceId}")
     @PreAuthorize("hasAuthority('PROFESSEUR_SEANCES_GERER')")
     public SeanceSortieDTO trouverSeanceParId(
-            @AuthenticationPrincipal Jwt jwt,
+            @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable Long seanceId
     ) throws SeancesProfesseurException {
-        String ppr = requireProfesseurPpr(jwt);
-        return gestionSeancesProfesseurMetier.trouverSeanceParId(ppr, seanceId);
+        String ppr = utilisateurMetier.trouverProfesseurPprParId(user.getId());
+        return gestionSeancesProfMetier.trouverSeanceParId(ppr, seanceId);
     }
 
     @PostMapping("/seances/recherche")
     @PreAuthorize("hasAuthority('PROFESSEUR_SEANCES_GERER')")
     public List<SeanceResumeSortieDTO> rechercherSeances(
-            @AuthenticationPrincipal Jwt jwt,
+            @AuthenticationPrincipal CustomUserDetails user,
             @RequestBody RechercheSeancesEntrerDTO rechercheSeancesEntrerDTO
     ) throws SeancesProfesseurException {
-        String ppr = requireProfesseurPpr(jwt);
-        return gestionSeancesProfesseurMetier.rechercherSeances(ppr, rechercheSeancesEntrerDTO);
+        String ppr = utilisateurMetier.trouverProfesseurPprParId(user.getId());
+        return gestionSeancesProfMetier.rechercherSeances(ppr, rechercheSeancesEntrerDTO);
     }
 
     @PostMapping(value = "/seances/{seanceId}/fichiers", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAuthority('PROFESSEUR_SEANCES_GERER')")
     public FichierSeanceSortieDTO deposerFichierPourSeance(
-            @AuthenticationPrincipal Jwt jwt,
+            @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable Long seanceId,
             @RequestPart("fichier") MultipartFile fichier
     ) throws SeancesProfesseurException {
-        String ppr = requireProfesseurPpr(jwt);
+        String ppr = utilisateurMetier.trouverProfesseurPprParId(user.getId());
 
         DepotFichierSeanceEntrerDTO depot = new DepotFichierSeanceEntrerDTO();
         depot.setSeanceId(seanceId);
 
-        return gestionSeancesProfesseurMetier.deposerFichierPourSeance(ppr, depot, fichier);
+        return gestionSeancesProfMetier.deposerFichierPourSeance(ppr, depot, fichier);
     }
 
     @GetMapping("/seances/{seanceId}/fichiers")
     @PreAuthorize("hasAuthority('PROFESSEUR_SEANCES_GERER')")
     public List<FichierSeanceSortieDTO> listerFichiersDeSeance(
-            @AuthenticationPrincipal Jwt jwt,
+            @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable Long seanceId
     ) throws SeancesProfesseurException {
-        String ppr = requireProfesseurPpr(jwt);
-        return gestionSeancesProfesseurMetier.listerFichiersDeSeance(ppr, seanceId);
+        String ppr = utilisateurMetier.trouverProfesseurPprParId(user.getId());
+        return gestionSeancesProfMetier.listerFichiersDeSeance(ppr, seanceId);
     }
 
     @DeleteMapping("/fichiers-seance/{fichierId}")
     @PreAuthorize("hasAuthority('PROFESSEUR_SEANCES_GERER')")
     public void supprimerFichierDeSeance(
-            @AuthenticationPrincipal Jwt jwt,
+            @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable Long fichierId
     ) throws SeancesProfesseurException {
-        String ppr = requireProfesseurPpr(jwt);
-        gestionSeancesProfesseurMetier.supprimerFichierDeSeance(ppr, fichierId);
+        String ppr = utilisateurMetier.trouverProfesseurPprParId(user.getId());
+        gestionSeancesProfMetier.supprimerFichierDeSeance(ppr, fichierId);
     }
 
     @GetMapping("/fichiers-seance/{fichierId}/telecharger")
     @PreAuthorize("hasAuthority('PROFESSEUR_SEANCES_GERER')")
     public ResponseEntity<Resource> telechargerFichierSeance(
-            @AuthenticationPrincipal Jwt jwt,
+            @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable Long fichierId
     ) throws SeancesProfesseurException {
 
-        String ppr = requireProfesseurPpr(jwt);
+        String ppr = utilisateurMetier.trouverProfesseurPprParId(user.getId());
         TelechargementFichierSeanceSortieDTO telechargement =
-                gestionSeancesProfesseurMetier.preparerTelechargementFichierSeance(ppr, fichierId);
+                gestionSeancesProfMetier.preparerTelechargementFichierSeance(ppr, fichierId);
 
         try {
             Path chemin = Paths.get(telechargement.getChemin()).toAbsolutePath().normalize();
