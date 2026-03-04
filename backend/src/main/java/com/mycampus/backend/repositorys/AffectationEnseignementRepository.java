@@ -49,6 +49,16 @@ public interface AffectationEnseignementRepository extends JpaRepository<Affecta
             String codeMatiere
     );
 */
+    //new test
+   @Query("""
+        select count(ae) > 0
+        from AffectationEnseignement ae
+        where ae.professeur.id = :profId
+          and ae.classe.id = :classeId
+    """)
+   boolean existsByProfesseurIdAndClasseId(@Param("profId") Long profId,
+                                           @Param("classeId") Long classeId);
+
 
 
 
@@ -59,6 +69,18 @@ public interface AffectationEnseignementRepository extends JpaRepository<Affecta
             String codeMatiere,
             String anneeUniversitaire
     );
+
+
+    @Query("""
+        select ae from AffectationEnseignement ae
+        join fetch ae.professeur p
+        join fetch ae.classe c
+        join fetch ae.matiere m
+        where ae.active = true
+          and p.ppr = :ppr
+    """)
+    List<AffectationEnseignement> findActivesParProfesseurAvecDetails(@Param("ppr") String ppr);
+
 
 
 }

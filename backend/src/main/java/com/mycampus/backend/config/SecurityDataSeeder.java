@@ -30,7 +30,7 @@ public class SecurityDataSeeder {
     private final EtudiantsSeeder etudiantsSeeder;
     private final PedagogiqueDataSeeder pedagogiqueDataSeeder;
 
-   // @Bean
+    @Bean
     public ApplicationRunner securityDataSeederRunner() {
         return args -> {
             log.info("Starting security data seeding...");
@@ -77,14 +77,14 @@ public class SecurityDataSeeder {
             // Student permissions
             "ETUDIANT_INFORMATION_PERSONNEL_LIRE", "ETUDIANT_MODULES_LIRE", "ETUDIANT_MATIERES_LIRE","ETUDIANT_INFORMATION_PERSONNEL_MODIFIER",
             "ETUDIANT_SEANCES_LIRE", "ETUDIANT_RESSOURCES_LIRE", "ETUDIANT_PRESENCES_LIRE", "ETUDIANT_RELEVE_LIRE","ETUDIANT_ANNONCES_LIRE","ETUDIANT_TABLEAU_DE_BORD_LIRE","ETUDIANT_FICHIER_TELECHARGER",
-            "ETUDIANT_EMPLOI_LIRE",
+            
             // Professor permissions
             "PROFESSEUR_INFORMATION_PERSONNEL_LIRE", "PROFESSEUR_MODULES_LIRE", "PROFESSEUR_MATIERES_LIRE",
-            "PROFESSEUR_SEANCES_LIRE", "PROFESSEUR_RESSOURCES_LIRE", "PROFESSEUR_PRESENCES_LIRE",
-            "PROFESSEUR_NOTES_GERER", "PROFESSEUR_ABSENCES_GERER","PROFESSEUR_ANNONCES_GERER","PROFESSEUR_EMPLOI_LIRE",
+            "PROFESSEUR_SEANCES_LIRE","PROFESSEUR_SEANCES_GERER", "PROFESSEUR_RESSOURCES_LIRE", "PROFESSEUR_PRESENCES_LIRE",
+            "PROFESSEUR_PRESENCES_MODIFIER", "PROFESSEUR_NOTES_GERER", "PROFESSEUR_ABSENCES_GERER","PROFESSEUR_ANNONCES_GERER",
             
             // Admin structure permissions
-            "ADMIN_STRUCTURE_GERER","ADMIN_EMPLOI_GERER",
+            "ADMIN_STRUCTURE_GERER",
             
             // Admin user permissions
             "ADMIN_UTILISATEUR_GERER",
@@ -109,39 +109,22 @@ public class SecurityDataSeeder {
     private void seedRolePermissions() {
         // Admin role gets all permissions
         Role adminRole = requireRole(RolesCode.ADMIN);
-        List<String> PermissionCodes = Arrays.asList(
-
-                // Admin structure permissions
-                "ADMIN_STRUCTURE_GERER","ADMIN_EMPLOI_GERER",
-
-                // Admin user permissions
-                "ADMIN_UTILISATEUR_GERER",
-
-                // Admin security permissions
-                "ADMIN_SECURITE_GERER",
-                "SECURITE_ROLE_LIRE", "SECURITE_ROLE_CREER", "SECURITE_ROLE_MODIFIER", "SECURITE_ROLE_SUPPRIMER",
-                "SECURITE_PERMISSION_LIRE", "SECURITE_PERMISSION_CREER", "SECURITE_PERMISSION_MODIFIER", "SECURITE_PERMISSION_SUPPRIMER",
-                "SECURITE_ROLE_PERMISSION_ATTRIBUER", "SECURITE_ROLE_PERMISSION_RETIRER", "SECURITE_ROLE_PERMISSION_LIRE",
-                "SECURITE_UTILISATEUR_ROLE_ATTRIBUER", "SECURITE_UTILISATEUR_ROLE_RETIRER", "SECURITE_UTILISATEUR_ROLE_LIRE"
-
-                );
+        List<Permission> allPermissions = permissionRepository.findAll();
         
-        for (String code : PermissionCodes) {
-            permissionRepository.findByCodePermission(code).ifPresent(permission -> {
-                boolean exists = rolePermissionRepository
-                        .existsByRole_NomRoleAndPermission_CodePermission(
-                                RolesCode.ADMIN, code
-                        );
+        for (Permission permission : allPermissions) {
+            boolean exists = rolePermissionRepository
+                    .existsByRole_NomRoleAndPermission_CodePermission(
+                            RolesCode.ADMIN, permission.getCodePermission()
+                    );
 
-                if (!exists) {
-                    rolePermissionRepository.save(RolePermission.builder()
-                            .role(adminRole)
-                            .permission(permission)
-                            .dateAttribution(LocalDateTime.now())
-                            .build());
-                    log.info("Assigned {} to ADMIN", permission.getCodePermission());
-                }
-            });
+            if (!exists) {
+                rolePermissionRepository.save(RolePermission.builder()
+                        .role(adminRole)
+                        .permission(permission)
+                        .dateAttribution(LocalDateTime.now())
+                        .build());
+                log.info("Assigned {} to ADMIN", permission.getCodePermission());
+            }
         }
 
         // Student role permissions
@@ -149,7 +132,7 @@ public class SecurityDataSeeder {
         List<String> studentPermissionCodes = Arrays.asList(
 
             "ETUDIANT_INFORMATION_PERSONNEL_LIRE", "ETUDIANT_MODULES_LIRE", "ETUDIANT_MATIERES_LIRE","ETUDIANT_INFORMATION_PERSONNEL_MODIFIER",
-            "ETUDIANT_SEANCES_LIRE", "ETUDIANT_RESSOURCES_LIRE", "ETUDIANT_PRESENCES_LIRE", "ETUDIANT_RELEVE_LIRE","ETUDIANT_ANNONCES_LIRE","ETUDIANT_TABLEAU_DE_BORD_LIRE","ETUDIANT_FICHIER_TELECHARGER","ETUDIANT_EMPLOI_LIRE"
+            "ETUDIANT_SEANCES_LIRE", "ETUDIANT_RESSOURCES_LIRE", "ETUDIANT_PRESENCES_LIRE", "ETUDIANT_RELEVE_LIRE","ETUDIANT_ANNONCES_LIRE","ETUDIANT_TABLEAU_DE_BORD_LIRE","ETUDIANT_FICHIER_TELECHARGER"
 
         );
         
@@ -175,8 +158,8 @@ public class SecurityDataSeeder {
         Role professeurRole = requireRole(RolesCode.PROFESSEUR);
         List<String> professeurPermissionCodes = Arrays.asList(
             "PROFESSEUR_INFORMATION_PERSONNEL_LIRE", "PROFESSEUR_MODULES_LIRE", "PROFESSEUR_MATIERES_LIRE",
-            "PROFESSEUR_SEANCES_LIRE", "PROFESSEUR_RESSOURCES_LIRE", "PROFESSEUR_PRESENCES_LIRE",
-            "PROFESSEUR_NOTES_GERER", "PROFESSEUR_ABSENCES_GERER","PROFESSEUR_ANNONCES_GERER","PROFESSEUR_EMPLOI_LIRE"
+            "PROFESSEUR_SEANCES_LIRE", "PROFESSEUR_SEANCES_GERER","PROFESSEUR_RESSOURCES_LIRE", "PROFESSEUR_PRESENCES_LIRE",
+            "PROFESSEUR_PRESENCES_MODIFIER","PROFESSEUR_NOTES_GERER", "PROFESSEUR_ABSENCES_GERER","PROFESSEUR_ANNONCES_GERER"
         );
         
         for (String code : professeurPermissionCodes) {

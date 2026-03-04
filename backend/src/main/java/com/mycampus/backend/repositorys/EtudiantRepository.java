@@ -1,6 +1,7 @@
 package com.mycampus.backend.repositorys;
 
 import com.mycampus.backend.entites.Etudiant;
+import com.mycampus.backend.enumerations.Semestre;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,6 +13,18 @@ import java.util.Set;
 
 @Repository
 public interface EtudiantRepository extends JpaRepository<Etudiant, Long> {
+
+    @Query("""
+        select count(e) > 0
+        from Etudiant e
+        join e.classe c
+        join c.affectationEnseignements a
+        join a.seances s
+        where s.id = :seanceId
+          and e.id = :etudiantId
+    """)
+    boolean TrouverEtudiantExistenClasse(@Param("seanceId")  Long seanceId, @Param("etudiantId") Long etudiantId);
+
     interface ProjectionDestinataireNotification {
         Long getId();
         String getNom();
@@ -91,5 +104,12 @@ public interface EtudiantRepository extends JpaRepository<Etudiant, Long> {
     @Query("SELECT e.email FROM Etudiant e")
     Set<String> findAllEmails();
 
+
+    @Query("""
+  select count(e) > 0
+  from Etudiant e
+  where e.id = :idEtudiant and e.classe.codeClasse = :codeClasse
+""")
+    boolean existsByIdAndClasseCode(@Param("idEtudiant") Long idEtudiant, @Param("codeClasse") String codeClasse);
 
 }

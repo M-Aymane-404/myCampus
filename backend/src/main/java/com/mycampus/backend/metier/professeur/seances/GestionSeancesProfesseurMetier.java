@@ -2,6 +2,7 @@ package com.mycampus.backend.metier.professeur.seances;
 
 
 
+import com.mycampus.backend.dto.administrateur.DonneSortie.AffectationEnseignementSortieDTO;
 import com.mycampus.backend.dto.professeur.DonneeEntrer.fichiersSeance.DepotFichierSeanceEntrerDTO;
 import com.mycampus.backend.dto.professeur.DonneeEntrer.seances.CreationSeanceEntrerDTO;
 import com.mycampus.backend.dto.professeur.DonneeEntrer.seances.ModificationSeanceEntrerDTO;
@@ -18,7 +19,8 @@ import java.util.List;
 
 public interface GestionSeancesProfesseurMetier {
 
-
+    List<AffectationEnseignementSortieDTO> listerEnseignements(String professeurPpr)
+            throws SeancesProfesseurException;
 
     SeanceSortieDTO creerSeance(String professeurPpr, CreationSeanceEntrerDTO creationSeanceEntrerDTO)
             throws SeancesProfesseurException;

@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ResultatRepository extends JpaRepository<Resultat, Long> {
@@ -37,4 +38,14 @@ public interface ResultatRepository extends JpaRepository<Resultat, Long> {
         limit 3
     """)
     List<Resultat> findTop3ByEtudiantIdOrderByDatePublicationDesc(@Param("etudiantId") Long etudiantId);
+
+    Optional<Resultat> findByExamen_IdAndEtudiant_Id(Long examenId, Long etudiantId);
+
+    @Query("""
+    select r
+    from Resultat r
+    join fetch r.etudiant e
+    where r.examen.id = :examenId
+""")
+    List<Resultat> findByExamenIdWithEtudiant(@Param("examenId") Long examenId);
 }

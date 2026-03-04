@@ -1,6 +1,7 @@
 package com.mycampus.backend.metier.professeur.seances;
 
 
+import com.mycampus.backend.dto.administrateur.DonneSortie.AffectationEnseignementSortieDTO;
 import com.mycampus.backend.dto.professeur.DonneeEntrer.fichiersSeance.DepotFichierSeanceEntrerDTO;
 import com.mycampus.backend.dto.professeur.DonneeEntrer.seances.CreationSeanceEntrerDTO;
 import com.mycampus.backend.dto.professeur.DonneeEntrer.seances.ModificationSeanceEntrerDTO;
@@ -13,6 +14,7 @@ import com.mycampus.backend.entites.AffectationEnseignement;
 import com.mycampus.backend.entites.FichierSeance;
 import com.mycampus.backend.entites.Seance;
 import com.mycampus.backend.exceptions.SeancesProfesseurException;
+import com.mycampus.backend.mappers.administrateur.StructureMapper;
 import com.mycampus.backend.mappers.professeur.FichiersSeanceProfesseurMapper;
 import com.mycampus.backend.mappers.professeur.SeancesProfesseurMapper;
 import com.mycampus.backend.repositorys.AffectationEnseignementRepository;
@@ -51,7 +53,7 @@ public class GestionSeancesProfesseurMetierImpl implements GestionSeancesProfess
     /* Mappers convert entities to DTOs to avoid exposing JPA entities. */
     private final SeancesProfesseurMapper seancesProfesseurMapper;
     private final FichiersSeanceProfesseurMapper fichiersSeanceProfesseurMapper;
-
+    private final StructureMapper structureMapper;
     /*
      This function checks that the professor PPR is provided.
      It prevents empty or null PPR from reaching database queries.
@@ -60,6 +62,22 @@ public class GestionSeancesProfesseurMetierImpl implements GestionSeancesProfess
         if (!StringUtils.hasText(professeurPpr)) {
             throw new SeancesProfesseurException("Le PPR du professeur est obligatoire.");
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AffectationEnseignementSortieDTO> listerEnseignements(String professeurPpr)
+            throws SeancesProfesseurException {
+
+        requireProfesseurPpr(professeurPpr);
+
+        // StructureMapper peut accéder à .getNom(), .getCodeClasse() etc. sans LazyException
+        List<AffectationEnseignement> affectations =
+                affectationEnseignementRepository.findActivesParProfesseurAvecDetails(professeurPpr);
+
+        return affectations.stream()
+                .map(structureMapper::FromAffectationEnseignementVersAffectationEnseignementSortieDTO)
+                .collect(Collectors.toList());
     }
 
     private AffectationEnseignement findActiveAffectationByProfAndCodes(
@@ -90,10 +108,8 @@ public class GestionSeancesProfesseurMetierImpl implements GestionSeancesProfess
                 ));
     }
 
-    /*
-     This function loads a Seance only if it belongs to the professor (PPR) through the affectation.
-     It prevents accessing another professor seance by guessing an ID.
-    */
+    //ownership seance prof
+
     private Seance requireSeancePourProfesseur(String professeurPpr, Long seanceId) throws SeancesProfesseurException {
         requireProfesseurPpr(professeurPpr);
 
@@ -102,14 +118,13 @@ public class GestionSeancesProfesseurMetierImpl implements GestionSeancesProfess
         }
 
         return seanceRepository
-                .findByIdAndAffectationEnseignement_Professeur_Ppr(seanceId, professeurPpr)
+                .findByIdAndPprAvecDetails(seanceId, professeurPpr)
                 .orElseThrow(() -> new SeancesProfesseurException("Séance introuvable ou non autorisée."));
     }
 
-    /*
-     This function loads a FichierSeance only if it belongs to the professor (PPR).
-     It prevents deleting files from another professor.
-    */
+
+    //FichierSeance belongs to PPR.
+
     private FichierSeance requireFichierSeancePourProfesseur(String professeurPpr, Long fichierSeanceId)
             throws SeancesProfesseurException {
 
@@ -134,7 +149,6 @@ public class GestionSeancesProfesseurMetierImpl implements GestionSeancesProfess
 
     /*
      This function stores an uploaded file in a local folder and returns the saved path.
-     It uses a UUID name to avoid collisions and keeps original name in DB.
      Security: prevents writing outside the target folder.
     */
     private String sauvegarderFichierSurDisque(MultipartFile fichier) throws SeancesProfesseurException {
@@ -320,9 +334,7 @@ public class GestionSeancesProfesseurMetierImpl implements GestionSeancesProfess
 
         requireProfesseurPpr(professeurPpr);
 
-        /*
-         Ownership-safe load.
-        */
+        
         Seance seance = requireSeancePourProfesseur(professeurPpr, seanceId);
 
         return seancesProfesseurMapper.FromSeanceVersSeanceSortieDTO(seance);
@@ -343,7 +355,7 @@ public class GestionSeancesProfesseurMetierImpl implements GestionSeancesProfess
          First step: load all seances of this professor (PPR scope).
          This is safe and easy to maintain.
         */
-        List<Seance> seances = seanceRepository.findByAffectationEnseignement_Professeur_Ppr(professeurPpr);
+        List<Seance> seances = seanceRepository.findByPprAvecDetails(professeurPpr);
 
         /*
          Second step: apply filters in memory.
