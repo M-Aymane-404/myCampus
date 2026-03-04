@@ -414,6 +414,17 @@ public class PedagogiqueDataSeeder {
         Matiere anglaisS1   = requireMatiere("ILCS-LANGUES-S1-EN");
         
         List<Examen> examens = Arrays.asList(
+                Examen.builder()
+                        .semestre(Semestre.S1)
+                        .dateExamen(Date.from(LocalDateTime.of(2024, 1, 10, 9, 0)
+                                .atZone(java.time.ZoneId.systemDefault()).toInstant()))
+                        .numeroExamen(2)
+                        .typeExamen(TypeExamen.NORMAL)
+                        .duree(120)
+                        .etat(EtatExamen.PASSE)
+                        .corrigePath("/corriges/html_css_normal_corrige.pdf")
+                        .matiere(reseauxS1)
+                        .build(),
             Examen.builder()
                 .semestre(Semestre.S1)
                 .dateExamen(Date.from(LocalDateTime.of(2024, 12, 10, 9, 0)
@@ -436,6 +447,17 @@ public class PedagogiqueDataSeeder {
                 .corrigePath("/corriges/javascript_normal_corrige.pdf")
                 .matiere(systemeS1)
                 .build(),
+                Examen.builder()
+                        .semestre(Semestre.S1)
+                        .dateExamen(Date.from(LocalDateTime.of(2025, 3, 11, 14, 0)
+                                .atZone(java.time.ZoneId.systemDefault()).toInstant()))
+                        .numeroExamen(1)
+                        .typeExamen(TypeExamen.RATTRAPAGE)
+                        .duree(120)
+                        .etat(EtatExamen.PROGRAMME)
+                        .corrigePath("/corriges/javascript_normal_corrige.pdf")
+                        .matiere(systemeS1)
+                        .build(),
 
             Examen.builder()
                 .semestre(Semestre.S1)

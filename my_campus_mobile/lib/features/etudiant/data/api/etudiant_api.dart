@@ -1,6 +1,10 @@
 // etudiant_api.dart
 import 'package:dio/dio.dart';
+
+import '../../../../core/config/configuration_app.dart';
 import '../dto/cours_etudiant_dto.dart';
+import '../dto/emploi_du_temps_etudiant_dto.dart';
+import '../dto/releve_notes_dto.dart';
 
 class EtudiantApi {
   final Dio _dio;
@@ -29,36 +33,81 @@ class EtudiantApi {
   Future<List<ModuleSortieEtudiantDTO>> trouverModules() async {
     final resp = await _dio.get('/api/etudiant/moi/modules');
     return (resp.data as List)
-        .map((e) => ModuleSortieEtudiantDTO.fromJson((e as Map).cast<String, dynamic>()))
+        .map(
+          (e) => ModuleSortieEtudiantDTO.fromJson(
+            (e as Map).cast<String, dynamic>(),
+          ),
+        )
         .toList();
   }
 
-  Future<List<MatiereSortieEtudiantDTO>> trouverMatieres(String codeModule) async {
-    final resp = await _dio.get('/api/etudiant/moi/modules/$codeModule/matieres');
+  Future<List<MatiereSortieEtudiantDTO>> trouverMatieres(
+    String codeModule,
+  ) async {
+    final resp = await _dio.get(
+      '/api/etudiant/moi/modules/$codeModule/matieres',
+    );
     return (resp.data as List)
-        .map((e) => MatiereSortieEtudiantDTO.fromJson((e as Map).cast<String, dynamic>()))
+        .map(
+          (e) => MatiereSortieEtudiantDTO.fromJson(
+            (e as Map).cast<String, dynamic>(),
+          ),
+        )
         .toList();
   }
 
-  Future<List<SeanceSortieEtudiantDTO>> trouverSeances(String codeMatiere, {String? typeSeance}) async {
+  Future<List<SeanceSortieEtudiantDTO>> trouverSeances(
+    String codeMatiere, {
+    String? typeSeance,
+  }) async {
     String url = '/api/etudiant/moi/matieres/$codeMatiere/seances';
     if (typeSeance != null && typeSeance != 'TOUS') {
       url += '?typeSeance=$typeSeance';
     }
     final resp = await _dio.get(url);
     return (resp.data as List)
-        .map((e) => SeanceSortieEtudiantDTO.fromJson((e as Map).cast<String, dynamic>()))
+        .map(
+          (e) => SeanceSortieEtudiantDTO.fromJson(
+            (e as Map).cast<String, dynamic>(),
+          ),
+        )
         .toList();
   }
 
-  Future<List<FichierSeanceSortieEtudiantDTO>> trouverRessources(int seanceId) async {
+  Future<List<FichierSeanceSortieEtudiantDTO>> trouverRessources(
+    int seanceId,
+  ) async {
     final resp = await _dio.get('/api/etudiant/seances/$seanceId/ressources');
     return (resp.data as List)
-        .map((e) => FichierSeanceSortieEtudiantDTO.fromJson((e as Map).cast<String, dynamic>()))
+        .map(
+          (e) => FichierSeanceSortieEtudiantDTO.fromJson(
+            (e as Map).cast<String, dynamic>(),
+          ),
+        )
         .toList();
   }
 
   Future<Response> telechargerFichier(int fichierId) async {
-    return await _dio.get('/api/etudiant/fichiers-seance/$fichierId/telecharger');
+    return await _dio.get(
+      '/api/etudiant/fichiers-seance/$fichierId/telecharger',
+    );
+  }
+
+  Future<EmploiDuTempsEtudiantDTO> getEmploi(String semestre) async {
+    final res = await _dio.get(
+      "${ConfigurationApp.apiBaseUrl}/api/etudiant/emploi/$semestre",
+      options: Options(headers: {"Accept": "application/json"}),
+    );
+    return EmploiDuTempsEtudiantDTO.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<ReleveNotesDTO> getReleveNotes(String semestre) async {
+    final res = await _dio.get(
+      "${ConfigurationApp.apiBaseUrl}/api/etudiant/moi/releve-notes",
+      queryParameters: {"semestre": semestre},
+      options: Options(headers: {"Accept": "application/json"}),
+    );
+
+    return ReleveNotesDTO.fromJson(res.data as Map<String, dynamic>);
   }
 }

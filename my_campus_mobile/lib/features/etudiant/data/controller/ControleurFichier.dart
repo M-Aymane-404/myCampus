@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:open_filex/open_filex.dart';
 
-import '../data/repository/fichier_repository.dart';
+import '../repository/fichier_repository.dart';
 
 class ControleurFichier extends ChangeNotifier {
   final FichierRepository repo;

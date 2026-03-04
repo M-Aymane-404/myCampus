@@ -1,3 +1,4 @@
+import 'package:dwm_bot/features/etudiant/presentation/page_notes_etudiant.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -6,13 +7,16 @@ import 'core/storage/app_file_storage.dart';
 import 'features/authentification/presentation/controleur_authentification.dart';
 import 'features/authentification/presentation/page_connexion.dart';
 import 'features/etudiant/data/api/etudiant_api.dart';
+import 'features/etudiant/data/controller/ControleurFichier.dart';
+import 'features/etudiant/data/controller/controleur_accueil_etudiant.dart';
+import 'features/etudiant/data/controller/controleur_cours_etudiant.dart';
+import 'features/etudiant/data/controller/controleur_emploi_etudiant.dart';
+import 'features/etudiant/data/controller/controleur_profil_etudiant.dart';
+import 'features/etudiant/data/controller/controleur_releve_notes_etudiant.dart';
 import 'features/etudiant/data/repository/etudiant_repository.dart';
 import 'features/etudiant/data/repository/fichier_repository.dart';
-import 'features/etudiant/presentation/ControleurFichier.dart';
+import 'features/etudiant/data/repository/releve_notes_repo.dart';
 import 'features/etudiant/presentation/accueil_etudiant.dart';
-import 'features/etudiant/presentation/controleur_accueil_etudiant.dart';
-import 'features/etudiant/presentation/controleur_cours_etudiant.dart';
-import 'features/etudiant/presentation/controleur_profil_etudiant.dart';
 import 'features/etudiant/presentation/etudiant_shell.dart';
 import 'features/etudiant/presentation/page_cours_etudiant.dart';
 import 'features/professeur/presentation/accueil_professeur.dart';
@@ -33,7 +37,16 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (ctx) => ControleurAuthentification()..initialiser(),
         ),
-
+        // API étudiant
+        Provider<EtudiantApi>(
+          create: (_) => EtudiantApi(ClientDio.dioInstance),
+        ),
+        ChangeNotifierProvider(
+          create:
+              (ctx) => ControleurReleveNotesEtudiant(
+                repo: ReleveNotesRepo(api: ctx.read<EtudiantApi>()),
+              ),
+        ),
         // Storage option A
         Provider<AppFileStorage>(create: (_) => AppFileStorage()),
 
@@ -56,7 +69,7 @@ class MyApp extends StatelessWidget {
         Provider<EtudiantRepository>(
           create: (ctx) {
             final dio = ClientDio.dioInstance;
-            final api = EtudiantApi(dio);
+            final api = ctx.read<EtudiantApi>();
             return EtudiantRepository(api, dio);
           },
         ),
@@ -88,6 +101,13 @@ class MyApp extends StatelessWidget {
               (ctx) => ControleurCoursEtudiant(ctx.read<EtudiantRepository>()),
           update: (ctx, repo, ctrl) => ctrl ?? ControleurCoursEtudiant(repo),
         ),
+
+        ChangeNotifierProxyProvider<EtudiantApi, ControleurEmploiEtudiant>(
+          create:
+              (ctx) => ControleurEmploiEtudiant(api: ctx.read<EtudiantApi>()),
+          update:
+              (ctx, api, ctrl) => ctrl ?? ControleurEmploiEtudiant(api: api),
+        ),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -111,9 +131,7 @@ class MyApp extends StatelessWidget {
             case '/etudiant/notes':
               return MaterialPageRoute(
                 settings: settings,
-                builder:
-                    (_) =>
-                        const Scaffold(body: Center(child: Text('Page Notes'))),
+                builder: (ctx) => const PageNotesEtudiant(),
               );
 
             case '/etudiant/presence':

@@ -4,9 +4,9 @@ import 'package:provider/provider.dart';
 
 import '../../../core/config/configuration_app.dart';
 import '../../authentification/presentation/controleur_authentification.dart';
+import '../data/controller/controleur_accueil_etudiant.dart';
+import '../data/controller/controleur_profil_etudiant.dart';
 import '../data/dto/tableau_bord_etudiant_dto.dart';
-import 'controleur_accueil_etudiant.dart';
-import 'controleur_profil_etudiant.dart';
 
 class PageAccueilEtudiant extends StatefulWidget {
   const PageAccueilEtudiant({super.key});

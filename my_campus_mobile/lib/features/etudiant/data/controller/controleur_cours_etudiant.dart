@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
-import '../data/dto/cours_etudiant_dto.dart';
-import '../data/repository/etudiant_repository.dart';
+import '../dto/cours_etudiant_dto.dart';
+import '../repository/etudiant_repository.dart';
 
 class ControleurCoursEtudiant extends ChangeNotifier {
   final EtudiantRepository _repo;

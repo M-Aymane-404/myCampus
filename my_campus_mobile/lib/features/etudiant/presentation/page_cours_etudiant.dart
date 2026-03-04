@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/config/configuration_app.dart';
+import '../data/controller/ControleurFichier.dart';
+import '../data/controller/controleur_cours_etudiant.dart';
+import '../data/controller/controleur_profil_etudiant.dart';
 import '../data/dto/cours_etudiant_dto.dart';
-import 'ControleurFichier.dart';
-import 'controleur_cours_etudiant.dart';
-import 'controleur_profil_etudiant.dart';
 
 class PageCoursEtudiant extends StatefulWidget {
   const PageCoursEtudiant({super.key});
@@ -208,84 +208,93 @@ class _PageCoursEtudiantState extends State<PageCoursEtudiant> {
   }) {
     return showModalBottomSheet<T>(
       context: context,
+      isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (_) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: _bg,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 10),
-              Container(
-                width: 44,
-                height: 5,
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(999),
+        return FractionallySizedBox(
+          heightFactor: 0.8,
+          child: Container(
+            decoration: const BoxDecoration(
+              color: _bg,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+            ),
+            child: Column(
+              children: [
+                const SizedBox(height: 10),
+                Container(
+                  width: 44,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w900,
-                          color: _textDark,
+                const SizedBox(height: 10),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                            color: _textDark,
+                          ),
                         ),
                       ),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      style: TextButton.styleFrom(foregroundColor: _accent),
-                      child: const Text("Fermer"),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                color: Colors.white,
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  itemCount: items.length,
-                  separatorBuilder:
-                      (_, __) => Divider(
-                        height: 1,
-                        thickness: 1,
-                        color: Colors.black.withOpacity(0.05),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        style: TextButton.styleFrom(foregroundColor: _accent),
+                        child: const Text("Fermer"),
                       ),
-                  itemBuilder: (context, i) {
-                    final it = items[i];
-                    final isSel = (selected != null) && equals(it, selected);
-                    return ListTile(
-                      title: Text(
-                        label(it),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontWeight: isSel ? FontWeight.w900 : FontWeight.w700,
-                          color: _textDark,
-                        ),
-                      ),
-                      trailing:
-                          isSel
-                              ? const Icon(Icons.check_rounded, color: _accent)
-                              : null,
-                      onTap: () => Navigator.of(context).pop(it),
-                    );
-                  },
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 10),
-            ],
+                Expanded(
+                  child: Container(
+                    color: Colors.white,
+                    child: ListView.separated(
+                      itemCount: items.length,
+                      separatorBuilder:
+                          (_, __) => Divider(
+                            height: 1,
+                            thickness: 1,
+                            color: Colors.black.withOpacity(0.05),
+                          ),
+                      itemBuilder: (context, i) {
+                        final it = items[i];
+                        final isSel =
+                            (selected != null) && equals(it, selected);
+                        return ListTile(
+                          title: Text(
+                            label(it),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontWeight:
+                                  isSel ? FontWeight.w900 : FontWeight.w700,
+                              color: _textDark,
+                            ),
+                          ),
+                          trailing:
+                              isSel
+                                  ? const Icon(
+                                    Icons.check_rounded,
+                                    color: _accent,
+                                  )
+                                  : null,
+                          onTap: () => Navigator.of(context).pop(it),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+              ],
+            ),
           ),
         );
       },
