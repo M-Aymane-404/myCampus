@@ -144,8 +144,7 @@ public class SecurityController {
     }
 
     @PostMapping("/rafraichir-jeton")
-    public JetonsSortieDTO rafraichir(
-                                      HttpServletRequest request,HttpServletResponse response) {
+    public JetonsSortieDTO rafraichir(HttpServletRequest request,HttpServletResponse response) {
 
         Cookie cookie = WebUtils.getCookie(request, "refresh_token");
         if (cookie == null || cookie.getValue().isBlank()) {

@@ -63,6 +63,18 @@ class _PageCoursEtudiantState extends State<PageCoursEtudiant> {
 
     return Scaffold(
       backgroundColor: _bg,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: const Text(
+          "Cours",
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF0B1220),
+          ),
+        ),
+        iconTheme: const IconThemeData(color: Color(0xFF0B1220)),
+      ),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () => coursCtrl.reinitialiser(),

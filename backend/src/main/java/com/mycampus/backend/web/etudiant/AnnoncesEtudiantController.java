@@ -37,9 +37,7 @@ public class AnnoncesEtudiantController {
         @ApiResponse(responseCode = "403", description = "Accès non autorisé"),
         @ApiResponse(responseCode = "404", description = "Étudiant non trouvé")
     })
-    public ResponseEntity<List<AnnonceSortieEtudiantDTO>> listerAnnoncesVisibles(
-            @AuthenticationPrincipal CustomUserDetails user) {
-        
+    public ResponseEntity<List<AnnonceSortieEtudiantDTO>> listerAnnoncesVisibles(@AuthenticationPrincipal CustomUserDetails user) {
          List<AnnonceSortieEtudiantDTO> result = gestionAnnoncesEtudiantMetier.listerAnnoncesVisibles(user.getId());
         return ResponseEntity.ok(result);
     }

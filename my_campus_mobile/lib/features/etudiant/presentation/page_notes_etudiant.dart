@@ -16,14 +16,7 @@ class PageNotesEtudiant extends StatefulWidget {
 class _PageNotesEtudiantState extends State<PageNotesEtudiant> {
   static const Color _bg = Color(0xFFF5F7FB);
   static const Color _primaire = Color(0xFF5B5BEA);
-  static const List<String> _semestres = <String>[
-    'S1',
-    'S2',
-    'S3',
-    'S4',
-    'S5',
-    'S6',
-  ];
+  static const List<String> _semestres = <String>['S1', 'S2', 'S3', 'S4'];
 
   late String _semestreSelectionne;
 
@@ -96,6 +89,18 @@ class _PageNotesEtudiantState extends State<PageNotesEtudiant> {
 
     return Scaffold(
       backgroundColor: _bg,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: const Text(
+          "Note",
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF0B1220),
+          ),
+        ),
+        iconTheme: const IconThemeData(color: Color(0xFF0B1220)),
+      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -247,7 +252,7 @@ class _HeaderNotes extends StatelessWidget {
         children: [
           const Expanded(
             child: Text(
-              'Notes',
+              '',
               style: TextStyle(fontWeight: FontWeight.w900, fontSize: 26),
             ),
           ),
@@ -453,12 +458,11 @@ class _LigneMatiereState extends State<_LigneMatiere> {
 
   @override
   Widget build(BuildContext context) {
-    final examensList = [...widget.examens]
-      ..sort((a, b) {
-        final t = a.typeExamen.compareTo(b.typeExamen);
-        if (t != 0) return t;
-        return a.numeroExamen.compareTo(b.numeroExamen);
-      });
+    final examensList = [...widget.examens]..sort((a, b) {
+      final t = a.typeExamen.compareTo(b.typeExamen);
+      if (t != 0) return t;
+      return a.numeroExamen.compareTo(b.numeroExamen);
+    });
 
     return Container(
       decoration: BoxDecoration(
@@ -504,11 +508,7 @@ class _LigneMatiereState extends State<_LigneMatiere> {
                       ],
                     ),
                     const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        _EtatChip(validee: widget.validee),
-                      ],
-                    ),
+                    Row(children: [_EtatChip(validee: widget.validee)]),
                     if (_ouvert && examensList.isEmpty) ...[
                       const SizedBox(height: 8),
                       Text(
@@ -569,16 +569,21 @@ class _LigneMatiereState extends State<_LigneMatiere> {
                               _ActionFichier(
                                 icon: Icons.picture_as_pdf_rounded,
                                 enabled:
-                                    (ex.copieEtudiantPath ?? '').trim().isNotEmpty,
+                                    (ex.copieEtudiantPath ?? '')
+                                        .trim()
+                                        .isNotEmpty,
                                 onTap:
-                                    (ex.copieEtudiantPath ?? '').trim().isNotEmpty
+                                    (ex.copieEtudiantPath ?? '')
+                                            .trim()
+                                            .isNotEmpty
                                         ? () => widget.onOuvrirCopie(ex)
                                         : null,
                               ),
                               const SizedBox(width: 8),
                               _ActionFichier(
                                 icon: Icons.task_alt_rounded,
-                                enabled: (ex.corrigePath ?? '').trim().isNotEmpty,
+                                enabled:
+                                    (ex.corrigePath ?? '').trim().isNotEmpty,
                                 onTap:
                                     (ex.corrigePath ?? '').trim().isNotEmpty
                                         ? () => widget.onOuvrirCorrige(ex)
