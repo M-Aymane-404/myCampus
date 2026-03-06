@@ -1,0 +1,12 @@
+package com.mycampus.backend.dto.professeur.DonneeSortie.examens;
+
+import lombok.*;
+
+import java.util.List;
+ @Getter @Setter
+ @NoArgsConstructor
+ @AllArgsConstructor
+ @Builder
+public class FiltreExamensSortieDTO {
+    List<ClasseFiltreExamensDTO> classes;
+}

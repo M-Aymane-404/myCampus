@@ -81,6 +81,20 @@ public interface AffectationEnseignementRepository extends JpaRepository<Affecta
     """)
     List<AffectationEnseignement> findActivesParProfesseurAvecDetails(@Param("ppr") String ppr);
 
+    @Query("""
+        select ae
+        from AffectationEnseignement ae
+        where ae.active = true
+          and ae.professeur.ppr = :ppr
+          and ae.classe.codeClasse = :codeClasse
+          and ae.matiere.codeMatiere = :codeMatiere
+    """)
+    List<AffectationEnseignement> findActiveByProfClasseMatiere(@Param("ppr") String ppr,
+                                                                @Param("codeClasse") String codeClasse,
+                                                                @Param("codeMatiere") String codeMatiere);
+
+
+    List<AffectationEnseignement> findByProfesseur_PprAndActiveTrue(String ppr);
 
 
 }
