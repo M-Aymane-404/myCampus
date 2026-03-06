@@ -30,7 +30,7 @@ class ServiceAuthentificationApi {
       print('DioException.error = ${e.error}');
       print('DioException.response = ${e.response?.statusCode}');
       print('DioException.data = ${e.response?.data}');
-      throw Exception('Erreur réseau: ${e.type} | ${e.message} | ${e.error}');
+      rethrow;
     }
   }
 
@@ -59,3 +59,4 @@ class ServiceAuthentificationApi {
     );
   }
 }
+

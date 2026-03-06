@@ -108,32 +108,9 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
         Etudiant etudiantAModifier = etudiantRepository.findByEmail(email).orElseThrow(() ->
                 new UtilisateursException("Étudiant introuvable avec l'apogée: " + email));
 
-        if (etudiantModificationDTO.getNom() != null && !etudiantModificationDTO.getNom().trim().isEmpty()) {
-            etudiantAModifier.setNom(etudiantModificationDTO.getNom());
-        }
-
-        if (etudiantModificationDTO.getPrenom() != null && !etudiantModificationDTO.getPrenom().trim().isEmpty()) {
-            etudiantAModifier.setPrenom(etudiantModificationDTO.getPrenom());
-        }
-
-        if (etudiantModificationDTO.getEmail() != null && !etudiantModificationDTO.getEmail().trim().isEmpty()) {
-            if (!etudiantAModifier.getEmail().equals(etudiantModificationDTO.getEmail()) &&
-                    utilisateurRepository.existsByEmail(etudiantModificationDTO.getEmail())) {
-                throw new UtilisateursException("Un utilisateur avec cet email existe déjà");
-            }
-            etudiantAModifier.setEmail(etudiantModificationDTO.getEmail());
-        }
 
 
 
-
-
-
-
-
-        if (etudiantModificationDTO.getDateNaissance() != null) {
-            etudiantAModifier.setDateNaissance(etudiantModificationDTO.getDateNaissance());
-        }
 
 
 
@@ -145,13 +122,6 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
             }
             etudiantAModifier.setTel(etudiantModificationDTO.getTel());
         }
-
-
-
-
-
-
-
 
 
 

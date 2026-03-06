@@ -233,33 +233,9 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
 
 
 
-        if (administrateurModificationDTO.getNom() != null && !administrateurModificationDTO.getNom().trim().isEmpty()) {
-            adminAModifier.setNom(administrateurModificationDTO.getNom());
-        }
-
-        if (administrateurModificationDTO.getPrenom() != null && !administrateurModificationDTO.getPrenom().trim().isEmpty()) {
-            adminAModifier.setPrenom(administrateurModificationDTO.getPrenom());
-        }
-
-        if (administrateurModificationDTO.getEmail() != null && !administrateurModificationDTO.getEmail().trim().isEmpty()) {
-            if (!adminAModifier.getEmail().equals(administrateurModificationDTO.getEmail()) &&
-                    utilisateurRepository.existsByEmail(administrateurModificationDTO.getEmail())) {
-                throw new UtilisateursException("Un utilisateur avec cet email existe déjà");
-            }
-            adminAModifier.setEmail(administrateurModificationDTO.getEmail());
-        }
 
 
 
-
-        if (administrateurModificationDTO.getCin() != null && !administrateurModificationDTO.getCin().trim().isEmpty()) {
-            if(!adminAModifier.getCin().equals(administrateurModificationDTO.getCin()) && utilisateurRepository.existsByCin(administrateurModificationDTO.getCin())){
-                throw new UtilisateursException("Un utilisateur avec cet Cin existe déjà");
-
-            }
-            adminAModifier.setCin(administrateurModificationDTO.getCin());
-
-        }
 
 
         if(administrateurModificationDTO.getTel() != null && !administrateurModificationDTO.getTel().trim().isEmpty()) {

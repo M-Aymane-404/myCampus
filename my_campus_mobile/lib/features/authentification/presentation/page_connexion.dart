@@ -54,12 +54,15 @@ class _PageConnexionState extends State<PageConnexion> {
         email,
         motDePasse,
       );
-    } catch (e) {
+    } catch (_) {
       if (!mounted) return;
+      final message =
+          context.read<ControleurAuthentification>().erreur ??
+          'Erreur de connexion';
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Échec connexion: $e'),
+          content: Text(message),
           behavior: SnackBarBehavior.floating,
         ),
       );

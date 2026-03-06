@@ -19,15 +19,8 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
  public class EtudiantModificationEtudiantDTO     {
-     @Size(min = 2, max = 50, message = "Nom doit contenir entre 2 et 50 caractères")
-     private String nom;
 
-     @Size(min = 2, max = 50, message = "Prénom doit contenir entre 2 et 50 caractères")
-     private String prenom;
 
-     @Email(message = "Email invalide")
-     @Size(max = 100, message = "Email ne doit pas dépasser 100 caractères")
-     private String email;
 
      @Size(min = 8, max = 100, message = "Mot de passe doit contenir entre 8 et 100 caractères")
      private String ancienPassword;
@@ -46,7 +39,6 @@ import java.time.LocalDate;
 
 
     
-    private LocalDate dateNaissance;
-    
+
 
 }
