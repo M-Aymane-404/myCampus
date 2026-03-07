@@ -8,10 +8,13 @@ import com.mycampus.backend.entites.*;
 import com.mycampus.backend.enumerations.EtatExamen;
 import com.mycampus.backend.exceptions.NotesProfesseurException;
 import com.mycampus.backend.mappers.professeur.NotesProfesseurMapper;
+import com.mycampus.backend.metier.professeur.StockageFichiersService;
 import com.mycampus.backend.repositorys.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -31,6 +34,7 @@ public class GestionNotesProfesseurMetierImpl implements GestionNotesProfesseurM
     private final ResultatRepository resultatRepo;
     private final AffectationEnseignementRepository affectationRepo;
     private final NotesProfesseurMapper notesProfesseurMapper;
+    private final StockageFichiersService stockage;
 
     private Examen requireExamen(Long examenId) {
         return examenRepo.findByIdWithMatiere(examenId)
@@ -197,4 +201,69 @@ public class GestionNotesProfesseurMetierImpl implements GestionNotesProfesseurM
                 .filter(r -> r.getDatePublication() != null)
                 .count();
     }
+
+
+
+    @Override
+    public LigneNoteSortieDTO deposerCopieCorrigeeEtudiant(String ppr, String codeClasse, Long examenId, Long idEtudiant, MultipartFile pdf) {
+
+        Examen examen = requireExamen(examenId);
+        String codeMatiere = examen.getMatiere().getCodeMatiere();
+
+        requireOwnership(ppr, codeClasse, codeMatiere);
+
+        if (!etudiantRepo.existsByIdAndClasse_CodeClasse(idEtudiant, codeClasse)) {
+            throw new NotesProfesseurException("Étudiant ne fait pas partie de la classe.");
+        }
+
+        Etudiant etudiant = etudiantRepo.findById(idEtudiant)
+                .orElseThrow(() -> new NotesProfesseurException("Étudiant introuvable."));
+
+        Resultat resultat = resultatRepo.findByExamen_IdAndEtudiant_Id(examenId, idEtudiant)
+                .orElseGet(() -> {
+                    Resultat r = new Resultat();
+                    r.setExamen(examen);
+                    r.setEtudiant(etudiant);
+                    r.setDatePublication(null); // draft
+                    return r;
+                });
+
+        String ancien = resultat.getCopieEtudiantPath();
+
+        String path = stockage.sauvegarderPdf(pdf, "resultats/copies");
+        resultat.setCopieEtudiantPath(path);
+
+        Resultat saved = resultatRepo.save(resultat);
+
+        if (ancien != null && !ancien.isBlank() && !ancien.equals(path)) {
+            stockage.supprimerSilencieusement(ancien);
+        }
+
+        // tu renvoies une ligne complète comme autosave (avec nom/prenom)
+        return notesProfesseurMapper.toLigneDTO(etudiant, saved);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public Resource telechargerCopieCorrigeeEtudiantProf(String ppr, String codeClasse, Long examenId, Long idEtudiant) {
+
+        Examen examen = requireExamen(examenId);
+        String codeMatiere = examen.getMatiere().getCodeMatiere();
+
+        requireOwnership(ppr, codeClasse, codeMatiere);
+
+        if (!etudiantRepo.existsByIdAndClasse_CodeClasse(idEtudiant, codeClasse)) {
+            throw new NotesProfesseurException("Étudiant ne fait pas partie de la classe.");
+        }
+
+        Resultat r = resultatRepo.findByExamen_IdAndEtudiant_Id(examenId, idEtudiant)
+                .orElseThrow(() -> new NotesProfesseurException("Résultat introuvable."));
+
+        if (r.getCopieEtudiantPath() == null || r.getCopieEtudiantPath().isBlank()) {
+            throw new NotesProfesseurException("Aucune copie disponible.");
+        }
+
+        return stockage.chargerCommeResource(r.getCopieEtudiantPath());
+    }
+
 }

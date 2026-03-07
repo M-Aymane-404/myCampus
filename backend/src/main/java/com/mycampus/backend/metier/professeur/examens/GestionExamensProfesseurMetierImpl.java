@@ -7,12 +7,16 @@ import com.mycampus.backend.entites.AffectationEnseignement;
 import com.mycampus.backend.entites.Examen;
 import com.mycampus.backend.enumerations.EtatExamen;
 import com.mycampus.backend.exceptions.NotesProfesseurException;
+import com.mycampus.backend.metier.professeur.StockageFichiersService;
 import com.mycampus.backend.repositorys.AffectationEnseignementRepository;
 import com.mycampus.backend.repositorys.ExamenRepository;
 import com.mycampus.backend.repositorys.ResultatRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -24,6 +28,7 @@ public class GestionExamensProfesseurMetierImpl  implements GestionExamensProfes
     private final AffectationEnseignementRepository affectationRepo;
     private final ExamenRepository examenRepo;
     private final ResultatRepository resultatRepo;
+    private final StockageFichiersService stockage;
 
     private void validateCreationDto(ExamenCreationEntrerDTO dto) {
         if (dto == null) throw new NotesProfesseurException("DTO obligatoire.");
@@ -193,6 +198,60 @@ public class GestionExamensProfesseurMetierImpl  implements GestionExamensProfes
 
         examenRepo.delete(examen);
     }
+    @Transactional
+    @Override
+    public ExamenSortieDTO deposerCorrigeExamen(String ppr, Long examenId, MultipartFile pdf) {
+
+        Examen examen = examenRepo.findByIdWithMatiere(examenId)
+                .orElseThrow(() -> new NotesProfesseurException("Examen introuvable."));
+
+        // ownership par matière (Option B) - même logique que modifier/supprimer
+        boolean affecte = affectationRepo.findActivesParProfesseurAvecDetails(ppr).stream()
+                .anyMatch(ae -> ae.getMatiere() != null
+                        && examen.getMatiere().getCodeMatiere().equals(ae.getMatiere().getCodeMatiere()));
+
+        if (!affecte) {
+            throw new NotesProfesseurException("Accès refusé: vous n'êtes pas affecté à cette matière.");
+        }
+
+        // si remplacement : supprimer l'ancien fichier
+        String ancien = examen.getCorrigePath();
+
+        String path = stockage.sauvegarderPdf(pdf, "examens/corriges");
+        examen.setCorrigePath(path);
+
+        Examen saved = examenRepo.save(examen);
+
+        if (ancien != null && !ancien.isBlank() && !ancien.equals(path)) {
+            stockage.supprimerSilencieusement(ancien);
+        }
+
+        return toSortieDTO(saved);
+    }
+
+
+    @Transactional(readOnly = true)
+    @Override
+    public Resource telechargerCorrigeExamenProf(String ppr, Long examenId) {
+
+        Examen examen = examenRepo.findByIdWithMatiere(examenId)
+                .orElseThrow(() -> new NotesProfesseurException("Examen introuvable."));
+
+        boolean affecte = affectationRepo.findActivesParProfesseurAvecDetails(ppr).stream()
+                .anyMatch(ae -> ae.getMatiere() != null
+                        && examen.getMatiere().getCodeMatiere().equals(ae.getMatiere().getCodeMatiere()));
+
+        if (!affecte) {
+            throw new NotesProfesseurException("Accès refusé: vous n'êtes pas affecté à cette matière.");
+        }
+
+        if (examen.getCorrigePath() == null || examen.getCorrigePath().isBlank()) {
+            throw new NotesProfesseurException("Aucun corrigé disponible.");
+        }
+
+        return stockage.chargerCommeResource(examen.getCorrigePath());
+    }
+
 
 
 }
