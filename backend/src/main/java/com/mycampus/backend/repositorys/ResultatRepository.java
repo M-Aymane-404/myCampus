@@ -15,7 +15,7 @@ import java.util.Optional;
 public interface ResultatRepository extends JpaRepository<Resultat, Long> {
 
     boolean existsByEtudiantIdAndExamenId(Long etudiantId, Long examenId);
-    
+
     boolean existsByExamenAndEtudiant(Examen examen, Etudiant etudiant);
 
 
@@ -52,5 +52,12 @@ public interface ResultatRepository extends JpaRepository<Resultat, Long> {
     boolean existsByExamen_Id(Long examenId);
 
     long countByExamen_Id(Long examenId);
-    
+
+    @Query("""
+        select r
+        from Resultat r
+        where r.examen.id = :examenId
+    """)
+    List<Resultat> findAllByExamenId(@Param("examenId") Long examenId);
 }
+

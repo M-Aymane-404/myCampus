@@ -2,8 +2,7 @@ package com.mycampus.backend.web.professeur;
 
 import com.mycampus.backend.dto.professeur.DonneeEntrer.examens.ExamenCreationEntrerDTO;
 import com.mycampus.backend.dto.professeur.DonneeEntrer.examens.ExamenModificationEntrerDTO;
-import com.mycampus.backend.dto.professeur.DonneeEntrer.examens.ExamenRechercheEntrerDTO;
-import com.mycampus.backend.dto.professeur.DonneeSortie.examens.ExamenRechercheSortieDTO;
+
 import com.mycampus.backend.dto.professeur.DonneeSortie.examens.ExamenSortieDTO;
 import com.mycampus.backend.dto.professeur.DonneeSortie.examens.FiltreExamensSortieDTO;
 import com.mycampus.backend.metier.professeur.examens.GestionExamensProfesseurMetier;

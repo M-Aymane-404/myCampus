@@ -1,109 +1,200 @@
 package com.mycampus.backend.metier.professeur.notes;
 
 import com.mycampus.backend.dto.professeur.DonneeEntrer.notes.SaisieNoteEntrerDTO;
+import com.mycampus.backend.dto.professeur.DonneeSortie.notes.FeuilleNotesSortieDTO;
 import com.mycampus.backend.dto.professeur.DonneeSortie.notes.LigneNoteSortieDTO;
-import com.mycampus.backend.dto.professeur.DonneeSortie.notes.PublierNotesSortieDTO;
-  /*  import com.mycampus.backend.entites.Etudiant;
-import com.mycampus.backend.entites.Examen;
-import com.mycampus.backend.entites.Resultat;
+import com.mycampus.backend.dto.professeur.DonneeSortie.notes.StatsNotesSortieDTO;
+import com.mycampus.backend.entites.*;
+import com.mycampus.backend.enumerations.EtatExamen;
+import com.mycampus.backend.exceptions.NotesProfesseurException;
+import com.mycampus.backend.mappers.professeur.NotesProfesseurMapper;
+import com.mycampus.backend.repositorys.*;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@Transactional
+@Service
+@RequiredArgsConstructor
 public class GestionNotesProfesseurMetierImpl implements GestionNotesProfesseurMetier {
-    @Transactional
-    @Override
-    public LigneNoteSortieDTO upsertNote(String ppr,
-                                         Long examenId,
-                                         String codeClasse,
-                                         String anneeUniversitaire,
-                                         SaisieNoteEntrerDTO dto) {
 
-        if (dto == null || dto.getIdEtudiant() == null) throw new NotesProfesseurException("idEtudiant obligatoire.");
-        if (dto.getNote() == null) throw new NotesProfesseurException("note obligatoire.");
-        if (dto.getNote() < 0 || dto.getNote() > 20) throw new NotesProfesseurException("Note doit être entre 0 et 20.");
 
-        Examen examen = examenRepository.findById(examenId)
+    private final ExamenRepository examenRepo;
+    private final ClasseRepository classeRepo;
+    private final EtudiantRepository etudiantRepo;
+    private final ResultatRepository resultatRepo;
+    private final AffectationEnseignementRepository affectationRepo;
+    private final NotesProfesseurMapper notesProfesseurMapper;
+
+    private Examen requireExamen(Long examenId) {
+        return examenRepo.findByIdWithMatiere(examenId)
                 .orElseThrow(() -> new NotesProfesseurException("Examen introuvable."));
+    }
 
-        // Ownership (Option B)
+    private void requireOwnership(String ppr, String codeClasse, String codeMatiere) {
+        List<AffectationEnseignement> aes =
+                affectationRepo.findActiveByProfClasseMatiere(ppr, codeClasse, codeMatiere);
+
+        if (aes.isEmpty()) {
+            throw new NotesProfesseurException("Accès refusé: affectation inexistante ou inactive.");
+        }
+    }
+
+    private Classe requireClasse(String codeClasse) {
+        return classeRepo.findByCodeClasse(codeClasse)
+                .orElseThrow(() -> new NotesProfesseurException("Classe introuvable: " + codeClasse));
+    }
+
+    private static double round2(double v) {
+        return Math.round(v * 100.0) / 100.0;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public FeuilleNotesSortieDTO chargerFeuilleNotes(String ppr, String codeClasse, Long examenId) {
+        Examen examen = requireExamen(examenId);
         String codeMatiere = examen.getMatiere().getCodeMatiere();
-        affectationEnseignementRepository
-                .findByActiveTrueAndProfesseur_PprAndClasse_CodeClasseAndMatiere_CodeMatiereAndAnneeUniversitaire(
-                        ppr, codeClasse, codeMatiere, anneeUniversitaire
-                )
-                .orElseThrow(() -> new NotesProfesseurException("Accès refusé: affectation inexistante/inactive."));
 
-        // Étudiant ∈ classe
-        if (!etudiantRepository.existsByIdAndClasseCode(dto.getIdEtudiant(), codeClasse)) {
-            throw new NotesProfesseurException("Accès refusé: étudiant n'appartient pas à la classe.");
+        requireOwnership(ppr, codeClasse, codeMatiere);
+        Classe classe = requireClasse(codeClasse);
+
+        List<Etudiant> etudiants =
+                etudiantRepo.findByClasse_CodeClasseOrderByNomAscPrenomAsc(codeClasse);
+
+        List<Resultat> resultats = resultatRepo.findAllByExamenId(examenId);
+
+        Map<Long, Resultat> mapRes = resultats.stream()
+                .filter(r -> r.getEtudiant() != null)
+                .collect(Collectors.toMap(r -> r.getEtudiant().getId(), r -> r, (a, b) -> a));
+
+        List<LigneNoteSortieDTO> lignes = new ArrayList<>();
+        List<Double> notes = new ArrayList<>();
+        int nbSaisies = 0;
+
+        for (Etudiant etudiant : etudiants) {
+            Resultat resultat = mapRes.get(etudiant.getId());
+
+            LigneNoteSortieDTO ligne = notesProfesseurMapper.toLigneDTO(etudiant, resultat);
+            lignes.add(ligne);
+
+            if (ligne.getNote() != null) {
+                nbSaisies++;
+                notes.add(ligne.getNote());
+            }
         }
 
-        Etudiant etudiant = etudiantRepository.findById(dto.getIdEtudiant())
-                .orElseThrow(() -> new NotesProfesseurException("Étudiant introuvable."));
+        StatsNotesSortieDTO stats = buildStats(etudiants.size(), nbSaisies, notes);
 
-        Resultat resultat = resultatRepository.findByExamen_IdAndEtudiant_Id(examenId, dto.getIdEtudiant())
-                .orElseGet(() -> Resultat.builder()
-                        .examen(examen)
-                        .etudiant(etudiant)
-                        .build());
-
-        // politique simple: si déjà publié => interdit de modifier (tu peux changer plus tard)
-        if (resultat.getId() != null && resultat.getDatePublication() != null) {
-            throw new NotesProfesseurException("Impossible: note déjà publiée.");
-        }
-
-        resultat.setNote(dto.getNote());
-        resultat.setDatePublication(null); // autosave brouillon (invisible étudiant)
-
-        Resultat saved = resultatRepository.save(resultat);
-
-        return LigneNoteSortieDTO.builder()
-                .idResultat(saved.getId())
-                .idEtudiant(etudiant.getId())
-                .apogee(etudiant.getApogee())
-                .nom(etudiant.getNom())
-                .prenom(etudiant.getPrenom())
-                .note(saved.getNote())
-                .publiee(false)
+        return FeuilleNotesSortieDTO.builder()
+                .codeClasse(codeClasse)
+                .nomClasse(classe.getNom())
+                .idExamen(examen.getId())
+                .codeMatiere(codeMatiere)
+                .nomMatiere(examen.getMatiere().getNom())
+                .semestre(examen.getSemestre())
+                .numeroExamen(examen.getNumeroExamen())
+                .typeExamen(examen.getTypeExamen())
+                .dateExamen(examen.getDateExamen())
+                .duree(examen.getDuree())
+                .etat(examen.getEtat())
+                .lignes(lignes)
+                .stats(stats)
                 .build();
     }
 
-    @Transactional
+    private StatsNotesSortieDTO buildStats(int total, int nbSaisies, List<Double> notes) {
+        Double min = null;
+        Double max = null;
+        Double moy = null;
+
+        if (!notes.isEmpty()) {
+            min = notes.stream().min(Double::compareTo).orElse(null);
+            max = notes.stream().max(Double::compareTo).orElse(null);
+            moy = round2(notes.stream().mapToDouble(Double::doubleValue).average().orElse(0.0));
+        }
+
+        return StatsNotesSortieDTO.builder()
+                .totalEtudiants(total)
+                .nbNotesSaisies(nbSaisies)
+                .min(min)
+                .max(max)
+                .moyenne(moy)
+                .build();
+    }
+
     @Override
-    public PublierNotesSortieDTO publierNotes(String ppr,
-                                              Long examenId,
-                                              String codeClasse,
-                                              String anneeUniversitaire) {
 
-        Examen examen = examenRepository.findById(examenId)
-                .orElseThrow(() -> new NotesProfesseurException("Examen introuvable."));
+    public LigneNoteSortieDTO autosaveNote(String ppr, String codeClasse, Long examenId, SaisieNoteEntrerDTO dto) {
+        if (dto == null || dto.getIdEtudiant() == null) {
+            throw new NotesProfesseurException("idEtudiant obligatoire.");
+        }
 
+        if (dto.getNote() != null && (dto.getNote() < 0 || dto.getNote() > 20)) {
+            throw new NotesProfesseurException("La note doit être entre 0 et 20.");
+        }
+
+        Examen examen = requireExamen(examenId);
         String codeMatiere = examen.getMatiere().getCodeMatiere();
-        affectationEnseignementRepository
-                .findByActiveTrueAndProfesseur_PprAndClasse_CodeClasseAndMatiere_CodeMatiereAndAnneeUniversitaire(
-                        ppr, codeClasse, codeMatiere, anneeUniversitaire
-                )
-                .orElseThrow(() -> new NotesProfesseurException("Accès refusé."));
+        requireOwnership(ppr, codeClasse, codeMatiere);
 
-        var resultats = resultatRepository.findByExamenIdWithEtudiant(examenId);
-        if (resultats.isEmpty()) throw new NotesProfesseurException("Aucune note à publier.");
+        Etudiant etudiant = etudiantRepo.findById(dto.getIdEtudiant())
+                .orElseThrow(() -> new NotesProfesseurException("Étudiant introuvable."));
 
-        // Option: forcer complétude
-        for (Resultat r : resultats) {
-            if (r.getNote() == null) throw new NotesProfesseurException("Notes incomplètes.");
-            if (r.getDatePublication() != null) throw new NotesProfesseurException("Déjà publié.");
+        if (!etudiantRepo.existsByIdAndClasse_CodeClasse(dto.getIdEtudiant(), codeClasse)) {
+            throw new NotesProfesseurException("Étudiant ne fait pas partie de la classe.");
+        }
+
+        Resultat resultat = resultatRepo.findByExamen_IdAndEtudiant_Id(examenId, dto.getIdEtudiant())
+                .orElseGet(() -> {
+                    Resultat r = new Resultat();
+                    r.setExamen(examen);
+                    r.setEtudiant(etudiant);
+                    return r;
+                });
+
+        resultat.setNote(dto.getNote());
+        resultat.setDatePublication(null);
+
+        Resultat saved = resultatRepo.save(resultat);
+
+        return notesProfesseurMapper.toLigneDTO(etudiant, saved);
+    }
+
+    @Override
+
+
+    public int publierNotes(String ppr, String codeClasse, Long examenId) {
+        Examen examen = requireExamen(examenId);
+        String codeMatiere = examen.getMatiere().getCodeMatiere();
+        requireOwnership(ppr, codeClasse, codeMatiere);
+
+        List<Resultat> resultats = resultatRepo.findAllByExamenId(examenId);
+
+        if (resultats.isEmpty()) {
+            throw new NotesProfesseurException("Aucun résultat à publier.");
         }
 
         LocalDateTime now = LocalDateTime.now();
-        for (Resultat r : resultats) r.setDatePublication(now);
-        resultatRepository.saveAll(resultats);
 
-        examen.setEtat(com.mycampus.backend.enumerations.EtatExamen.CORRIGE);
-        examenRepository.save(examen);
+        for (Resultat r : resultats) {
+            if (r.getNote() != null) {
+                r.setDatePublication(now);
+            }
+        }
 
-        return PublierNotesSortieDTO.builder()
-                .examenId(examenId)
-                .nbResultatsPublies(resultats.size())
-                .build();
+        resultatRepo.saveAll(resultats);
+
+        examen.setEtat(EtatExamen.CORRIGE);
+        examenRepo.save(examen);
+
+        return (int) resultats.stream()
+                .filter(r -> r.getDatePublication() != null)
+                .count();
     }
 }
-*/
