@@ -15,7 +15,7 @@ public interface GestionExamensProfesseurMetier {
 
     FiltreExamensSortieDTO chargerFiltresExamens(String ppr);
 
-    //List<ExamenRechercheSortieDTO> rechercherExamens(String ppr, ExamenRechercheEntrerDTO filtre);
+    List<ExamenSortieDTO> listerExamens(String ppr, String codeClasse, String codeMatiere);
 
     ExamenSortieDTO creerExamen(String ppr, String codeClasse, String codeMatiere, ExamenCreationEntrerDTO dto);
 

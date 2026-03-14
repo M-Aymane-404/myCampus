@@ -38,6 +38,18 @@ public class ExamensProfesseurController {
     public FiltreExamensSortieDTO filtres(@AuthenticationPrincipal CustomUserDetails principal) {
         return examensMetier.chargerFiltresExamens(ppr(principal));
     }
+
+
+    @GetMapping("/classes/{codeClasse}/matieres/{codeMatiere}")
+    @PreAuthorize("hasAuthority('PROFESSEUR_EXAMENS_GERER')")
+    public List<ExamenSortieDTO> listerExamens(
+            @AuthenticationPrincipal CustomUserDetails principal,
+            @PathVariable String codeClasse,
+            @PathVariable String codeMatiere
+    ) {
+        return examensMetier.listerExamens(ppr(principal), codeClasse, codeMatiere);
+    }
+
     @PostMapping("/classes/{codeClasse}/matieres/{codeMatiere}")
     @PreAuthorize("hasAuthority('PROFESSEUR_EXAMENS_GERER')")
     public ExamenSortieDTO creer(

@@ -1,266 +1,279 @@
-/* Page Layout */
-.gestion-cours-container {
-  width: 100%;
-  font-family: 'Inter', sans-serif;
-  padding-bottom: 2rem;
-}
+/* GestionCoursProfesseur.css — ajout des styles séance Classroom */
 
-/* Header */
-.page-header {
+/* ── Spin animation ─────────────────────────────────────────────────────── */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { animation: spin 0.8s linear infinite; }
+
+/* ── Liste des séances ───────────────────────────────────────────────────── */
+.seances-classroom-list {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid #e2e8f0;
+  border-top: none;
+  border-radius: 0 0 12px 12px;
+  overflow: hidden;
+  background: white;
+}
+
+/* ── Carte séance (Google Classroom style) ──────────────────────────────── */
+.seance-classroom-card {
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.15s;
+}
+.seance-classroom-card:last-child { border-bottom: none; }
+.seance-classroom-card:hover { background: #fafbff; }
+
+/* En-tête */
+.seance-classroom-header {
+  display: flex;
   align-items: flex-start;
-  margin-bottom: 1.5rem;
+  justify-content: space-between;
+  padding: 16px 20px;
+  gap: 16px;
 }
 
-.header-text h1 {
-  font-size: 1.6rem;
-  font-weight: 800;
-  color: #0F172A;
-  margin: 0 0 0.5rem 0;
+.seance-classroom-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  flex: 1;
+  min-width: 0;
 }
 
-.header-text p {
-  color: #64748B;
-  font-size: 0.95rem;
+/* Barre colorée gauche (type) */
+.seance-type-strip {
+  width: 4px;
+  min-height: 42px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.strip-blue   { background: #3b82f6; }
+.strip-green  { background: #22c55e; }
+.strip-purple { background: #a855f7; }
+.strip-grey   { background: #94a3b8; }
+
+.seance-classroom-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.seance-classroom-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Type pill */
+.type-pill-inline {
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.pill-blue   { background: #eff6ff; color: #3b82f6; }
+.pill-green  { background: #f0fdf4; color: #16a34a; }
+.pill-purple { background: #faf5ff; color: #9333ea; }
+.pill-grey   { background: #f1f5f9; color: #64748b; }
+
+.seance-salle-text {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.seance-classroom-date {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.seance-heure-text {
+  color: #94a3b8;
+}
+
+.seance-contenu-preview {
+  font-size: 13px;
+  color: #94a3b8;
   margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 420px;
 }
 
-.btn-add-doc {
+/* Actions droite */
+.seance-classroom-actions {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #4F46E5;
-  /* Indigo 600 */
-  color: white;
-  border: none;
-  padding: 10px 20px;
+  flex-shrink: 0;
+}
+
+.btn-seance-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
   border-radius: 8px;
-  font-weight: 600;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.btn-add-doc:hover {
-  background: #4338CA;
-}
-
-/* Tabs */
-.tabs-container {
-  display: flex;
-  gap: 2rem;
-  border-bottom: 1px solid #E2E8F0;
-  margin-bottom: 2rem;
-}
-
-.tab-btn {
-  background: transparent;
-  border: none;
-  padding: 0 0 1rem 0;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #64748B;
-  cursor: pointer;
-  position: relative;
-  transition: color 0.2s;
-}
-
-.tab-btn:hover {
-  color: #4F46E5;
-}
-
-.tab-btn.active {
-  color: #4F46E5;
-}
-
-.tab-btn.active::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: #4F46E5;
-}
-
-/* Content Card */
-.content-card {
-  background: white;
-  border-radius: 20px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-  border: 1px solid #F1F5F9;
-  overflow: hidden;
-  padding-bottom: 1rem;
-}
-
-.card-header-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 2rem 2rem 1rem 2rem;
-}
-
-.card-header-bar h2 {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #0F172A;
-  margin: 0;
-}
-
-.file-count {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #94A3B8;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-/* Table */
-.resources-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.resources-table th {
-  text-align: left;
-  padding: 1rem 2rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: #94A3B8;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.resources-table td {
-  padding: 1.5rem 2rem;
-  /* Taller rows */
-  border-top: 1px solid #F8FAFC;
-  vertical-align: middle;
-}
-
-.th-action,
-.td-action {
-  text-align: right;
-}
-
-/* File Visuals */
-.td-name {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  /* More gap */
-}
-
-.file-icon-wrapper {
-  width: 50px;
-  /* Larger icon box */
-  height: 50px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.bg-red {
-  background: #FEE2E2;
-}
-
-.bg-blue {
-  background: #E0F2FE;
-}
-
-.bg-green {
-  background: #DCFCE7;
-}
-
-.icon-red {
-  color: #EF4444;
-}
-
-.icon-blue {
-  color: #3B82F6;
-}
-
-.icon-green {
-  color: #10B981;
-}
-
-.file-name {
+  font-size: 13px;
   font-weight: 500;
-  color: #0F172A;
-  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  border: 1px solid;
+  text-decoration: none;
 }
 
-/* Badges */
-.type-badge {
-  display: inline-block;
-  padding: 6px 12px;
-  border-radius: 8px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  min-width: 60px;
-  text-align: center;
+.btn-upload-seance {
+  background: #f0f9ff;
+  border-color: #bae6fd;
+  color: #0284c7;
 }
+.btn-upload-seance:hover { background: #e0f2fe; }
 
-.badge-red {
-  background: #FEE2E2;
-  color: #991B1B;
-}
-
-.badge-blue {
-  background: #E0F2FE;
-  color: #075985;
-}
-
-.badge-green {
-  background: #F1F5F9;
+.btn-toggle-fichiers {
+  background: #f8fafc;
+  border-color: #e2e8f0;
   color: #475569;
-  /* TP styling */
 }
+.btn-toggle-fichiers:hover { background: #f1f5f9; }
 
-.td-date {
-  color: #64748B;
-  font-size: 0.95rem;
-}
-
-/* Action Buttons */
-.action-buttons {
+/* Erreur inline */
+.seance-error-bar {
   display: flex;
-  justify-content: flex-end;
   align-items: center;
-  gap: 12px;
+  justify-content: space-between;
+  padding: 8px 20px;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 13px;
+  border-top: 1px solid #fecaca;
 }
-
-.btn-icon-action {
-  background: transparent;
+.seance-error-bar button {
+  background: none;
   border: none;
   cursor: pointer;
-  color: #94A3B8;
+  color: #b91c1c;
+  padding: 0;
+  display: flex;
+}
+
+/* ── Zone fichiers ───────────────────────────────────────────────────────── */
+.seance-fichiers-zone {
+  padding: 0 20px 16px 38px;
+  animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fichiers-loading-row,
+.fichiers-empty-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+/* Grille de chips fichiers */
+.fichiers-chips-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.fichier-chip-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 8px 12px;
+  min-width: 200px;
+  max-width: 280px;
+  transition: border-color 0.15s, background 0.15s;
+}
+.fichier-chip-card:hover {
+  border-color: #c7d2fe;
+  background: #eef2ff;
+}
+
+.fichier-chip-icon-box {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: white;
+  border: 1px solid #e2e8f0;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color 0.2s;
-  padding: 0;
+  color: #4f46e5;
+  flex-shrink: 0;
 }
 
-.btn-icon-action:hover {
-  color: #64748B;
+.fichier-chip-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
 }
 
-.btn-delete {
-  border: 1px solid #CBD5E1;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
+.fichier-chip-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.btn-delete:hover {
-  border-color: #EF4444;
-  color: #EF4444;
+.fichier-chip-meta {
+  font-size: 11px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
-.btn-open:hover {
-  color: #4F46E5;
+.fichier-chip-btns {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
 }
+
+.fichier-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.fichier-btn-dl {
+  background: #f0f9ff;
+  border-color: #bae6fd;
+  color: #0284c7;
+}
+.fichier-btn-dl:hover { background: #e0f2fe; }
+
+.fichier-btn-del {
+  background: #fff5f5;
+  border-color: #fecaca;
+  color: #ef4444;
+}
+.fichier-btn-del:hover { background: #fee2e2; }

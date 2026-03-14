@@ -113,6 +113,17 @@ public class GestionExamensProfesseurMetierImpl  implements GestionExamensProfes
 
         return FiltreExamensSortieDTO.builder().classes(classes).build();
     }
+    @Override
+    @Transactional(readOnly = true)
+    public List<ExamenSortieDTO> listerExamens(String ppr, String codeClasse, String codeMatiere) {
+        // Vérification : le prof est bien affecté à cette classe/matière
+        requireAffectationUniqueActive(ppr, codeClasse, codeMatiere);
+
+        return examenRepo.findByCodeMatiere(codeMatiere)
+                .stream()
+                .map(this::toSortieDTO)
+                .collect(Collectors.toList());
+    }
 
 
 
