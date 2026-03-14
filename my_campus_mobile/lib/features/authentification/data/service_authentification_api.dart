@@ -11,7 +11,7 @@ class ServiceAuthentificationApi {
   ) async {
     try {
       final response = await _dio.post(
-        '/auth/connecter',
+        '/auth/connecter-mobile',
         data: {'email': email, 'motDePasse': motDePasse},
         options: Options(
           headers: {
@@ -20,7 +20,7 @@ class ServiceAuthentificationApi {
           },
         ),
       );
-      print('POST URL = ${_dio.options.baseUrl}/auth/connecter');
+      print('POST URL = ${_dio.options.baseUrl}/auth/connecter-mobile');
       print('BODY = ${{'email': email, 'motDePasse': motDePasse}}');
       return Map<String, dynamic>.from(response.data);
     } on DioException catch (e) {
@@ -59,4 +59,3 @@ class ServiceAuthentificationApi {
     );
   }
 }
-

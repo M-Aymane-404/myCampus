@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import '../../../../core/config/configuration_app.dart';
 import '../dto/cours_etudiant_dto.dart';
 import '../dto/emploi_du_temps_etudiant_dto.dart';
+import '../dto/presence_etudiant_dto.dart';
 import '../dto/releve_notes_dto.dart';
 
 class EtudiantApi {
@@ -109,5 +110,58 @@ class EtudiantApi {
     );
 
     return ReleveNotesDTO.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  Future<List<PresenceEtudiantDTO>> recupererMesPresences({
+    String? status,
+    String? dateIso,
+  }) async {
+    final query = <String, dynamic>{};
+    if (status != null && status.trim().isNotEmpty) query['status'] = status;
+    if (dateIso != null && dateIso.trim().isNotEmpty) query['date'] = dateIso;
+
+    final resp = await _dio.get(
+      '/api/etudiant/moi/presences',
+      queryParameters: query,
+    );
+
+    return (resp.data as List)
+        .map(
+          (e) => PresenceEtudiantDTO.fromJson(
+            (e as Map).cast<String, dynamic>(),
+          ),
+        )
+        .toList();
+  }
+
+  Future<void> ajouterJustificationPresence({
+    required int presenceId,
+    required String typeMotif,
+    String? description,
+    String? fichierPath,
+  }) async {
+    final query = <String, dynamic>{'typeMotif': typeMotif};
+    if (description != null && description.trim().isNotEmpty) {
+      query['descriptionDeJustification'] = description.trim();
+    }
+
+    final formData = FormData();
+    if (fichierPath != null && fichierPath.trim().isNotEmpty) {
+      final cleanPath = fichierPath.trim();
+      final fileName = cleanPath.split(RegExp(r'[\\/]')).last;
+      formData.files.add(
+        MapEntry(
+          'motif',
+          await MultipartFile.fromFile(cleanPath, filename: fileName),
+        ),
+      );
+    }
+
+    await _dio.put(
+      '/justification/$presenceId',
+      queryParameters: query,
+      data: formData,
+      options: Options(contentType: 'multipart/form-data'),
+    );
   }
 }

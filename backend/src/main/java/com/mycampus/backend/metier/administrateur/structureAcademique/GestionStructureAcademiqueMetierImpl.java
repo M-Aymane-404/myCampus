@@ -1,5 +1,7 @@
     package com.mycampus.backend.metier.administrateur.structureAcademique;
 
+    import com.mycampus.backend.dto.Notification.NotificationEntrerDTO;
+    import com.mycampus.backend.dto.Notification.NotificationEntrerPourPlusieursUtilisateurDTO;
     import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.DepartementEntrerDTO;
     import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.FiliereEntrerDTO;
     import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.ClasseEntrerDTO;
@@ -12,10 +14,16 @@
     import com.mycampus.backend.entites.*;
     import com.mycampus.backend.entites.Module;
     import com.mycampus.backend.enumerations.EtatStructure;
+    import com.mycampus.backend.enumerations.ReferenceType;
+    import com.mycampus.backend.enumerations.TypeNotification;
+    import com.mycampus.backend.metier.Notification.NotificationMetier;
+    import com.mycampus.backend.metier.security.CustomUserDetails;
     import com.mycampus.backend.repositorys.*;
     import com.mycampus.backend.mappers.administrateur.StructureMapper;
     import com.mycampus.backend.exceptions.StructureAcademiqueException;
     import lombok.RequiredArgsConstructor;
+    import org.springframework.security.core.Authentication;
+    import org.springframework.security.core.context.SecurityContextHolder;
     import org.springframework.stereotype.Service;
     import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +45,7 @@
         private final ExamenRepository examenRepository;
         private final StructureMapper structureMapper;
         private final ProfesseurRepository professeurRepository;
+        private final NotificationMetier notificationMetier;
 
         // Méthodes utilitaires requireX
         private Departement requireDepartement(String codeDepartement) {
@@ -803,7 +812,14 @@
             affectationEnseignement.setClasse(requireClasse(affectationEnseignementEntrerDTO.getCodeClasse()));
             affectationEnseignement.setMatiere(requireMatiere(affectationEnseignementEntrerDTO.getCodeMatiere()));
 
-            return structureMapper.FromAffectationEnseignementVersAffectationEnseignementSortieDTO(affectationEnseignementRepository.save(affectationEnseignement));
+            AffectationEnseignement saved = affectationEnseignementRepository.save(affectationEnseignement);
+            notifierAffectation(
+                    saved,
+                    TypeNotification.AFFECTATION_CREEE,
+                    "Affectation creee",
+                    "Nouvelle affectation de cours."
+            );
+            return structureMapper.FromAffectationEnseignementVersAffectationEnseignementSortieDTO(saved);
         }
 
         @Override
@@ -854,6 +870,12 @@
             }
 
             AffectationEnseignement affectationModifiee = affectationEnseignementRepository.save(affectationExistante);
+            notifierAffectation(
+                    affectationModifiee,
+                    TypeNotification.AFFECTATION_MODIFIEE,
+                    "Affectation modifiee",
+                    "Une affectation de cours a ete modifiee."
+            );
             return structureMapper.FromAffectationEnseignementVersAffectationEnseignementSortieDTO(affectationModifiee);
         }
 
@@ -867,7 +889,13 @@
                     new StructureAcademiqueException("Affectation introuvable avec l'identifiant: " + id));
 
             affectation.setActive(true);
-            affectationEnseignementRepository.save(affectation);
+            AffectationEnseignement saved = affectationEnseignementRepository.save(affectation);
+            notifierAffectation(
+                    saved,
+                    TypeNotification.AFFECTATION_ACTIVEE,
+                    "Affectation activee",
+                    "Une affectation de cours a ete activee."
+            );
         }
 
         @Override
@@ -958,7 +986,13 @@
                     new StructureAcademiqueException("Affectation introuvable avec l'identifiant: " + id));
 
             affectation.setActive(false);
-            affectationEnseignementRepository.save(affectation);
+            AffectationEnseignement saved = affectationEnseignementRepository.save(affectation);
+            notifierAffectation(
+                    saved,
+                    TypeNotification.AFFECTATION_DESACTIVEE,
+                    "Affectation desactivee",
+                    "Une affectation de cours a ete desactivee."
+            );
         }
 
         @Override
@@ -971,5 +1005,47 @@
                     new StructureAcademiqueException("Affectation introuvable avec l'identifiant: " + id));
 
             affectationEnseignementRepository.delete(affectation);
+        }
+
+        private Long trouverAuteurNotification(Long fallbackUserId) {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetails principal) {
+                return principal.getId();
+            }
+            return fallbackUserId;
+        }
+
+        private void notifierAffectation(
+                AffectationEnseignement affectation,
+                TypeNotification type,
+                String titre,
+                String message
+        ) {
+            Long auteurId = trouverAuteurNotification(affectation.getProfesseur().getId());
+
+            NotificationEntrerDTO notifProf = NotificationEntrerDTO.builder()
+                    .titre(titre)
+                    .message(message)
+                    .type(type)
+                    .referenceType(ReferenceType.AFFECTATION)
+                    .referenceId(affectation.getId())
+                    .utilisateurRecoitId(affectation.getProfesseur().getId())
+                    .auteurId(auteurId)
+                    .build();
+            notificationMetier.notifierUtilisateur(notifProf);
+
+            NotificationEntrerPourPlusieursUtilisateurDTO notifClasse =
+                    NotificationEntrerPourPlusieursUtilisateurDTO.builder()
+                            .titre(titre)
+                            .message(message)
+                            .type(type)
+                            .referenceType(ReferenceType.AFFECTATION)
+                            .referenceId(affectation.getId())
+                            .auteurId(auteurId)
+                            .build();
+            notificationMetier.notifierEtudiantClasse(
+                    affectation.getClasse().getCodeClasse(),
+                    notifClasse
+            );
         }
     }

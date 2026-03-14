@@ -67,4 +67,18 @@ class ControleurNotificationEtudiant extends ChangeNotifier {
       await _repo.marquerToutesCommeLues();
     } catch (_) {}
   }
+
+  void ajouterNotificationRealtime(NotificationEtudiantDTO notification) {
+    final index = _notifications.indexWhere((n) => n.id == notification.id);
+    if (index >= 0) {
+      _notifications = _notifications
+          .map((n) => n.id == notification.id ? notification : n)
+          .toList();
+    } else {
+      _notifications = [notification, ..._notifications];
+    }
+
+    _compteurNonLues = _notifications.where((n) => !n.lu).length;
+    notifyListeners();
+  }
 }
