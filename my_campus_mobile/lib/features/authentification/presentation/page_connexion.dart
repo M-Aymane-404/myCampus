@@ -61,10 +61,7 @@ class _PageConnexionState extends State<PageConnexion> {
           'Erreur de connexion';
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          behavior: SnackBarBehavior.floating,
-        ),
+        SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
       );
     }
   }

@@ -1,9 +1,7 @@
 package com.mycampus.backend.dto.Notification;
 
-import com.mycampus.backend.entites.Utilisateur;
 import com.mycampus.backend.enumerations.ReferenceType;
 import com.mycampus.backend.enumerations.TypeNotification;
-import jakarta.persistence.*;
 import lombok.*;
 
  @NoArgsConstructor
@@ -27,7 +25,7 @@ public class NotificationEntrerDTO {
     private TypeNotification type;
 
 
-    private Long  UtilisateurRecoitId;
+     private Long utilisateurRecoitId;
 
 
 

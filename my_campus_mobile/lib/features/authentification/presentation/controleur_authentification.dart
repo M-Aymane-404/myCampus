@@ -75,7 +75,9 @@ class ControleurAuthentification extends ChangeNotifier {
       final status = e.response?.statusCode;
       final data = e.response?.data;
       final path = e.requestOptions.path;
-      final isLoginRequest = path.contains('/auth/connecter');
+      final isLoginRequest =
+          path.contains('/auth/connecter') ||
+          path.contains('/auth/connecter-mobile');
 
       // Backend may return 500 with a generic message for bad credentials.
       // For login endpoint, force a user-friendly auth error.
