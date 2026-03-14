@@ -123,6 +123,20 @@ public class RestExceptionHandler {
         return ResponseEntity.badRequest().body(body);
     }
 
+    @ExceptionHandler(NotesProfesseurException.class)
+    public ResponseEntity<Object> handleNotesProfesseurException(NotesProfesseurException ex, HttpServletRequest request) {
+        log.error("Notes professeur exception: {}", ex.getMessage());
+
+        Map<String, Object> body = construireBody(
+                HttpStatus.BAD_REQUEST,
+                "Requete invalide",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.badRequest().body(body);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpServletRequest  request) {
         log.warn("Erreur de validation @RequestBody: {}", ex.getMessage());
