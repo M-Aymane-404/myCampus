@@ -923,7 +923,7 @@ const GestionCoursProfesseur = () => {
                                                 }}
                                             >
                                               <Pencil size={15}/>
-                                              Modifier la séance
+                                              Modifier
                                             </button>
 
                                             <button
@@ -940,7 +940,7 @@ const GestionCoursProfesseur = () => {
                                               ) : (
                                                   <Trash2 size={15}/>
                                               )}
-                                              Supprimer la séance
+                                              Supprimer
                                             </button>
                                           </div>
                                       )}
