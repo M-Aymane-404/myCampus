@@ -1,4 +1,4 @@
-import { apiAuth } from './apiAuth';
+import { authenticatedFetch } from '../utils/apiInterceptor';
 
 const BASE_URL = 'http://localhost:8080/api/etudiant';
 
@@ -8,14 +8,13 @@ export const apiEtudiant = {
      */
     async getProfile() {
         try {
-            const response = await fetch(`${BASE_URL}/moi`, {
+            const response = await authenticatedFetch(`${BASE_URL}/moi`, {
                 method: 'GET',
-                headers: apiAuth.getAuthHeaders(),
                 credentials: 'include'
             });
 
             if (!response.ok) {
-                throw new Error('Erreur lors de la récupération du profil');
+                throw new Error('Erreur lors de la recuperation du profil');
             }
 
             return await response.json();
@@ -31,10 +30,9 @@ export const apiEtudiant = {
      */
     async updateProfile(profileData) {
         try {
-            const response = await fetch(`${BASE_URL}/moi/modifier`, {
+            const response = await authenticatedFetch(`${BASE_URL}/moi/modifier`, {
                 method: 'PUT',
                 headers: {
-                    ...apiAuth.getAuthHeaders(),
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(profileData),
@@ -42,19 +40,17 @@ export const apiEtudiant = {
             });
 
             if (!response.ok) {
-                // Try to get error message from body if available
                 let errorData;
                 try {
                     errorData = await response.json();
                 } catch (e) {
                     errorData = { message: `Erreur ${response.status}: ${response.statusText}` };
                 }
-                throw new Error(errorData.message || 'Erreur lors de la mise à jour du profil');
+                throw new Error(errorData.message || 'Erreur lors de la mise a jour du profil');
             }
 
-            // Handle 204 No Content or empty bodies
-            const contentType = response.headers.get("content-type");
-            if (response.status === 204 || !contentType || !contentType.includes("application/json")) {
+            const contentType = response.headers.get('content-type');
+            if (response.status === 204 || !contentType || !contentType.includes('application/json')) {
                 return { success: true };
             }
 
@@ -74,19 +70,13 @@ export const apiEtudiant = {
             const formData = new FormData();
             formData.append('photo', file);
 
-            const token = apiAuth.getToken();
-            const response = await fetch(`${BASE_URL}/photo`, {
+            const response = await authenticatedFetch(`${BASE_URL}/photo`, {
                 method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    // Note: Do not set Content-Type for FormData, the browser will set it with the boundary
-                },
                 body: formData,
                 credentials: 'include'
             });
 
             if (!response.ok) {
-                // Try to get error message from body if available
                 let errorData;
                 try {
                     errorData = await response.json();
@@ -96,7 +86,7 @@ export const apiEtudiant = {
                 throw new Error(errorData.message || 'Erreur lors de l\'envoi de la photo');
             }
 
-            return await response.json(); // Expected to return the updated user or photo URL
+            return await response.json();
         } catch (error) {
             console.error('API Error (uploadPhoto):', error);
             throw error;
@@ -108,14 +98,13 @@ export const apiEtudiant = {
      */
     async getDashboardData() {
         try {
-            const response = await fetch(`${BASE_URL}/tableau-de-bord`, {
+            const response = await authenticatedFetch(`${BASE_URL}/tableau-de-bord`, {
                 method: 'GET',
-                headers: apiAuth.getAuthHeaders(),
                 credentials: 'include'
             });
 
             if (!response.ok) {
-                throw new Error('Erreur lors de la récupération des données du tableau de bord');
+                throw new Error('Erreur lors de la recuperation des donnees du tableau de bord');
             }
 
             return await response.json();
@@ -130,14 +119,13 @@ export const apiEtudiant = {
      */
     async getAnnonces() {
         try {
-            const response = await fetch(`${BASE_URL}/annonces`, {
+            const response = await authenticatedFetch(`${BASE_URL}/annonces`, {
                 method: 'GET',
-                headers: apiAuth.getAuthHeaders(),
                 credentials: 'include'
             });
 
             if (!response.ok) {
-                throw new Error('Erreur lors de la récupération des annonces');
+                throw new Error('Erreur lors de la recuperation des annonces');
             }
 
             return await response.json();
@@ -152,14 +140,13 @@ export const apiEtudiant = {
      */
     async getTimetable(semestre) {
         try {
-            const response = await fetch(`${BASE_URL}/emploi/${semestre}`, {
+            const response = await authenticatedFetch(`${BASE_URL}/emploi/${semestre}`, {
                 method: 'GET',
-                headers: apiAuth.getAuthHeaders(),
                 credentials: 'include'
             });
 
             if (!response.ok) {
-                throw new Error('Erreur lors de la récupération de l\'emploi du temps');
+                throw new Error('Erreur lors de la recuperation de l\'emploi du temps');
             }
 
             const data = await response.json();
@@ -175,14 +162,13 @@ export const apiEtudiant = {
      */
     async getNextSession() {
         try {
-            const response = await fetch(`${BASE_URL}/emploi/prochaine`, {
+            const response = await authenticatedFetch(`${BASE_URL}/emploi/prochaine`, {
                 method: 'GET',
-                headers: apiAuth.getAuthHeaders(),
                 credentials: 'include'
             });
 
             if (!response.ok) {
-                throw new Error('Erreur lors de la récupération de la prochaine séance');
+                throw new Error('Erreur lors de la recuperation de la prochaine seance');
             }
 
             const data = await response.json();
@@ -192,5 +178,4 @@ export const apiEtudiant = {
             throw error;
         }
     },
-
-    };
+};

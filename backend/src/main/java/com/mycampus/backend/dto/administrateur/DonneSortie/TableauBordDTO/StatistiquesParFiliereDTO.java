@@ -1,7 +1,13 @@
 package com.mycampus.backend.dto.administrateur.DonneSortie.TableauBordDTO;
 
-public class StatistiquesParFiliereDTO {
-    String filiere;
-    Integer totaleProfesseurs;
+import lombok.*;
 
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class StatistiquesParFiliereDTO {
+    private String filiere;
+    private Long totalEtudiants;
 }

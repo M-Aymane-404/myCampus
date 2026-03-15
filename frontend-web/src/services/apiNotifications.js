@@ -1,19 +1,21 @@
+import { authenticatedFetch } from '../utils/apiInterceptor';
+
 const BASE_URL = 'http://localhost:8080/api/notifications';
-import { apiAuth } from './apiAuth';
 
 export const apiNotifications = {
-  // Create a notification (for announcements)
   async creer(notification) {
     try {
-      const response = await fetch(`${BASE_URL}`, {
+      const response = await authenticatedFetch(`${BASE_URL}`, {
         method: 'POST',
-        headers: apiAuth.getAuthHeaders(),
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(notification),
         credentials: 'include'
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Erreur lors de la création' }));
+        const errorData = await response.json().catch(() => ({ message: 'Erreur lors de la creation' }));
         throw new Error(errorData.message || `Erreur HTTP: ${response.status}`);
       }
 
@@ -24,12 +26,10 @@ export const apiNotifications = {
     }
   },
 
-  // Get all notifications
   async obtenirToutes() {
     try {
-      const response = await fetch(`${BASE_URL}`, {
+      const response = await authenticatedFetch(`${BASE_URL}`, {
         method: 'GET',
-        headers: apiAuth.getAuthHeaders(),
         credentials: 'include'
       });
 

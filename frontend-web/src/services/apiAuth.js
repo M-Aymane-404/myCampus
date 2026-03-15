@@ -58,15 +58,18 @@ export const apiAuth = {
 
       if (!response.ok) {
         let errorMessage = 'Erreur de connexion';
+        let errorData = null;
         try {
-          const errorData = await response.json();
+          errorData = await response.json();
           console.error('Backend error response:', errorData);
           errorMessage = errorData.message || errorData.error || errorMessage;
         } catch (e) {
           console.error('Could not parse error response:', response.status, response.statusText);
         }
         
-        if (response.status === 401) {
+        if (response.status === 400) {
+          errorMessage = errorData?.message || 'Requete invalide. Verifiez les informations saisies.';
+        } else if (response.status === 401) {
           errorMessage = 'Email ou mot de passe incorrect';
         } else if (response.status === 500) {
           errorMessage = 'Erreur serveur. Veuillez réessayer plus tard.';

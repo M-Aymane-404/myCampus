@@ -2,6 +2,7 @@ package com.mycampus.backend.repositorys;
 
 import com.mycampus.backend.entites.Matiere;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -19,4 +20,16 @@ public interface MatiereRepository extends JpaRepository<Matiere, Long> {
     List<Matiere> findByModule_CodeModule(String codeModule);
 
     Integer countByModule_CodeModule(String moduleCodeModule);
+
+    @Query("""
+        select count(m)
+        from Matiere m
+        where not exists (
+            select 1
+            from AffectationEnseignement ae
+            where ae.matiere = m
+              and ae.active = true
+        )
+    """)
+    long countMatieresSansProfesseurActif();
 }
