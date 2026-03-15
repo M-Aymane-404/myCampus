@@ -17,6 +17,7 @@ public class AnnonceMapper {
                 .id(annonce.getAuteur().getId())
                 .nom(annonce.getAuteur().getNom())
                 .prenom(annonce.getAuteur().getPrenom())
+                .email(annonce.getAuteur().getEmail())
                 .build();
 
          ClasseDTO classeDTO = null;

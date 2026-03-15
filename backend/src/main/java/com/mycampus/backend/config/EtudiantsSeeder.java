@@ -84,7 +84,7 @@ public class EtudiantsSeeder {
             Filiere.builder()
                 .codeFiliere("ILCS").nom("Ingénierie Logicielle et Conception de Systèmes")
                 .description("Filière ILCS")
-                .dureeFormation("2 ans").niveauDiplome("Ingénieur")
+                .dureeFormation(2).niveauDiplome("Ingénieur")
                 .etat(com.mycampus.backend.enumerations.EtatStructure.OUVERTE)
                 .departement(infoDept)
                 .build());

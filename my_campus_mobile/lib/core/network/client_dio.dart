@@ -14,7 +14,7 @@ class ClientDio {
 
   static ClientDio get instance => _instance;
   static Dio get dioInstance => _instance.dio;
-
+  
   late final Dio _dio;
   bool _initialise = false;
 

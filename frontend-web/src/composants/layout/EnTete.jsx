@@ -1,10 +1,7 @@
-import {
-  Bell, GraduationCap, LayoutDashboard, Users, UserCheck,
-  BookOpen, Building2, FileText, Calendar, ChevronDown,
-  User, LogOut, Megaphone, Shield as ShieldData
-} from 'lucide-react';
+import { User, LogOut } from 'lucide-react';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { apiAuth } from '../../services/apiAuth';
+import NotificationHeart from './NotificationHeart';
 import './EnTete.css';
 
 const EnTete = ({ elementActif, surChangementElement }) => {
@@ -246,6 +243,11 @@ const EnTete = ({ elementActif, surChangementElement }) => {
 
       {/* 3. Right Section: Profile */}
       <div className="en-tete-actions">
+        <NotificationHeart
+          currentRole={currentRole}
+          surChangementElement={surChangementElement}
+        />
+
         <div className="profil-admin-container" ref={menuRef} onClick={() => setMenuOuvert(!menuOuvert)}>
           <div className="info-profil-text">
             <span className="nom-profil">{getDisplayName()}</span>

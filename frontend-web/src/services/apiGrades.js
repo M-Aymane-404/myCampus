@@ -2,7 +2,24 @@ import { authenticatedFetch } from '../utils/apiInterceptor';
 
 const BASE_URL = 'http://localhost:8080/api/etudiant';
 
-const SEMESTRES = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8', 'S9'];
+const parseFormationDuration = (profile) => {
+    if (typeof profile?.nombreSemestres === 'number' && profile.nombreSemestres > 0) {
+        return profile.nombreSemestres;
+    }
+
+    if (typeof profile?.dureeFormation === 'number' && profile.dureeFormation > 0) {
+        return profile.dureeFormation * 2;
+    }
+
+    if (typeof profile?.dureeFormation === 'string') {
+        const match = profile.dureeFormation.match(/(\d+)/);
+        if (match) {
+            return parseInt(match[1], 10) * 2;
+        }
+    }
+
+    return 2;
+};
 
 export const apiGrades = {
     /**
@@ -59,11 +76,12 @@ export const apiGrades = {
     async fetchGlobalStats() {
         try {
             const profile = await this.fetchStudentProfile();
+            const totalSemesters = parseFormationDuration(profile);
 
-            const dynamicSemesters = [];
-            for (let i = 1; i <= SEMESTRES.length; i++) {
-                dynamicSemesters.push(`S${i}`);
-            }
+            const dynamicSemesters = Array.from(
+                { length: totalSemesters },
+                (_, index) => `S${index + 1}`
+            );
 
             const promises = dynamicSemesters.map((s) => this.fetchStudentGrades(s));
             const results = await Promise.all(promises);
@@ -99,13 +117,10 @@ export const apiGrades = {
             else if (generalAverage >= 12) finalMention = 'Assez Bien';
             else if (generalAverage < 10) finalMention = 'Ajourne';
 
-            const availableSemesters = validSemesters
-                .map((s) => {
-                    const match = s.semestre ? s.semestre.match(/S(\d+)/i) : null;
-                    return match ? parseInt(match[1], 10) : null;
-                })
-                .filter((n) => n !== null)
-                .sort((a, b) => a - b);
+            const availableSemesters = Array.from(
+                { length: totalSemesters },
+                (_, index) => index + 1
+            );
 
             return {
                 degree: "Diplome d'Ingenieur",

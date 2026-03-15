@@ -1,88 +1,108 @@
 import { useState, useEffect, Fragment } from 'react';
 import {
+    Award,
     BookOpen,
+    Calendar,
+    ChevronDown,
     ChevronRight,
-    Download,
-    FileText,
-    Printer,
-    Trophy,
-    History,
     Eye,
-    Sparkles,
+    FileText,
     Filter,
+    Hash,
+    History,
     Languages,
     MapPin,
-    Hash,
-    User,
-    Calendar,
-    Award
+    Printer,
+    Sparkles,
+    Trophy,
+    User
 } from 'lucide-react';
 import './NotesEtudiant.css';
 import { apiGrades } from '../services/apiGrades';
-import { getSpectializationFromClass, parseExams } from '../utils/academicUtils';
+import { parseExams } from '../utils/academicUtils';
+
+const buildMatiereKey = (moduleId, matiereId) => `${moduleId || 'module'}-${matiereId || 'matiere'}`;
+
+const formatNote = (note) => (note || note === 0 ? Number(note).toFixed(2) : '-');
+
+const sortExamEntries = (exams = []) => {
+    const order = { NORMAL: 0, RATTRAPAGE: 1 };
+
+    return [...exams].sort((a, b) => {
+        const typeDiff = (order[a.typeExamen] ?? 99) - (order[b.typeExamen] ?? 99);
+        if (typeDiff !== 0) return typeDiff;
+        return (a.numeroExamen || 0) - (b.numeroExamen || 0);
+    });
+};
+
+const normalizeExamLabel = (exam) => {
+    if (exam.typeExamen === 'RATTRAPAGE') {
+        return `Rattrapage ${exam.numeroExamen || ''}`.trim();
+    }
+
+    if (exam.numeroExamen === 1) return 'DS';
+    if (exam.numeroExamen === 2) return 'Examen final';
+    return `Examen ${exam.numeroExamen || ''}`.trim();
+};
 
 const NotesEtudiant = () => {
     const [activeSemester, setActiveSemester] = useState(1);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [selectedMatiereKey, setSelectedMatiereKey] = useState(null);
+    const [collapsedExamLists, setCollapsedExamLists] = useState({});
 
-    // Stats State
     const [studentStats, setStudentStats] = useState({
-        degree: "Diplôme d'Ingénieur",
-        specialization: "Chargement...",
-        studentName: "Chargement...",
-        studentId: "...",
+        degree: "Diplome d'Ingenieur",
+        specialization: 'Chargement...',
+        studentName: 'Chargement...',
+        studentId: '...',
         generalAverage: 0,
         validatedModules: 0,
         totalModules: 0,
-        sessionStatus: "...",
-        sessionMessage: "En attente...",
-        finalMention: "...",
-        certId: "LUM-2024-PENDING",
+        sessionStatus: '...',
+        sessionMessage: 'En attente...',
+        finalMention: '...',
+        certId: 'LUM-2024-PENDING',
         maxSemester: 1,
         availableSemesters: []
     });
 
-    // Grades Data State
     const [currentData, setCurrentData] = useState({
         label: `Semestre ${activeSemester}`,
         average: 0,
-        ects: "0/30",
-        status: "EN COURS",
+        ects: '0/30',
+        status: 'EN COURS',
         modules: [],
         totalModules: 0,
         validatedModules: 0
     });
 
-    // Fetch Global Stats on Mount
     useEffect(() => {
         const fetchStats = async () => {
             try {
                 const stats = await apiGrades.fetchGlobalStats();
-                setStudentStats(prev => ({
+                setStudentStats((prev) => ({
                     ...prev,
                     ...stats,
-                    sessionMessage: stats.currentSessionStatus === 'Admis' ? "Félicitations pour vos résultats !" : "Continuez vos efforts."
+                    sessionMessage: stats.currentSessionStatus === 'Admis'
+                        ? 'Felicitations pour vos resultats !'
+                        : 'Continuez vos efforts.'
                 }));
-                // Set active semester to the latest one found
-                if (stats.availableSemesters && stats.availableSemesters.length > 0) {
-                    const lastSem = stats.availableSemesters[stats.availableSemesters.length - 1];
-                    setActiveSemester(lastSem);
-                } else if (stats.maxSemester) {
-                    setActiveSemester(stats.maxSemester);
-                }
+                setActiveSemester(1);
             } catch (err) {
-                console.error("Failed to fetch stats", err);
+                console.error('Failed to fetch stats', err);
             }
         };
+
         fetchStats();
     }, []);
 
-    // Fetch Grades when Active Semester Changes
     useEffect(() => {
         const fetchGrades = async () => {
             setLoading(true);
             setError(null);
+
             try {
                 const data = await apiGrades.fetchStudentGrades(activeSemester);
 
@@ -90,78 +110,81 @@ const NotesEtudiant = () => {
                     setCurrentData({
                         label: `Semestre ${activeSemester}`,
                         average: 0,
-                        ects: "0/30",
-                        status: "NON DISPONIBLE",
+                        ects: '0/30',
+                        status: 'NON DISPONIBLE',
                         modules: [],
                         totalModules: 0,
                         validatedModules: 0
                     });
+                    setSelectedMatiereKey(null);
+                    setCollapsedExamLists({});
                     setLoading(false);
                     return;
                 }
 
-                const processedModules = data.modules.map((mod, idx) => {
-                    const normalizedName = mod.nomDuModule.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-                    const isLanguages = normalizedName.includes('Langues étrangères') || normalizedName.includes('langues');
+                const processedModules = (data.modules || []).map((mod, idx) => {
+                    const normalizedName = (mod.nomDuModule || '')
+                        .toLowerCase()
+                        .normalize('NFD')
+                        .replace(/[\u0300-\u036f]/g, '');
+                    const isLanguages = normalizedName.includes('langues');
 
-                    if (isLanguages) {
-                        const subjects = mod.matieres.map(mat => {
-                            const exams = parseExams(mat.examens);
-                            return {
-                                name: mat.nomDuMatiere,
-                                ds: exams.ds,
-                                exam: exams.exam,
-                                average: mat.moyenneDuMatiere,
-                                hasDsCopy: exams.hasDsCopy,
-                                hasExamCopy: exams.hasExamCopy,
-                                dsCopyPath: exams.dsCopyPath,
-                                examCopyPath: exams.examCopyPath,
-                                isRattrapage: exams.isRattrapage
-                            };
-                        });
-
-                        return {
-                            id: mod.id || idx,
-                            name: mod.nomDuModule,
-                            ects: mod.coefficient,
-                            coeff: mod.coefficient,
-                            mention: getMentionFromGrade(mod.moyenneDuModule),
-                            average: mod.moyenneDuModule,
-                            letter: mod.nomDuModule.charAt(0).toUpperCase(),
-                            isParent: true,
-                            subjects: subjects,
-                            isRattrapage: subjects.some(s => s.isRattrapage)
-                        };
-
-                    } else {
-                        const sub1 = mod.matieres?.[0] || null;
-                        const sub2 = mod.matieres?.[1] || null;
-                        const sub1Exams = sub1 ? parseExams(sub1.examens) : null;
-                        const sub2Exams = sub2 ? parseExams(sub2.examens) : null;
-                        const sub1CopyPath = sub1Exams?.dsCopyPath || sub1Exams?.examCopyPath || null;
-                        const sub2CopyPath = sub2Exams?.dsCopyPath || sub2Exams?.examCopyPath || null;
-                        const correctionPath = sub2Exams?.examCorrection || sub2Exams?.dsCorrection || sub1Exams?.examCorrection || sub1Exams?.dsCorrection;
+                    const subjects = (mod.matieres || []).map((mat, matIdx) => {
+                        const parsedExams = parseExams(mat.examens || []);
+                        const exams = sortExamEntries(parsedExams.exams || []).map((exam, examIdx) => ({
+                            id: exam.id || `${mod.id || idx}-${mat.id || matIdx}-${examIdx}`,
+                            typeExamen: exam.typeExamen,
+                            numeroExamen: exam.numeroExamen,
+                            label: normalizeExamLabel(exam),
+                            note: exam.note,
+                            corrigePath: exam.corrigePath,
+                            copieEtudiantPath: exam.copieEtudiantPath
+                        }));
 
                         return {
-                            id: mod.id || idx,
-                            name: mod.nomDuModule,
-                            ects: mod.coefficient,
-                            coeff: mod.coefficient,
-                            ds: sub1 ? sub1.moyenneDuMatiere : null,
-                            hasDsCopy: !!sub1CopyPath,
-                            dsCopyPath: sub1CopyPath,
-                            exam: sub2 ? sub2.moyenneDuMatiere : null,
-                            hasExamCopy: !!sub2CopyPath,
-                            examCopyPath: sub2CopyPath,
-                            hasCorrection: !!correctionPath,
-                            correctionPath: correctionPath,
-                            mention: getMentionFromGrade(mod.moyenneDuModule),
-                            average: mod.moyenneDuModule,
-                            letter: mod.nomDuModule.charAt(0).toUpperCase(),
-                            isParent: false,
-                            isRattrapage: (sub1Exams?.isRattrapage || sub2Exams?.isRattrapage)
+                            id: mat.id || `${mod.id || idx}-mat-${matIdx}`,
+                            code: mat.codeMatiere,
+                            name: mat.nomDuMatiere,
+                            ds: parsedExams.ds,
+                            exam: parsedExams.exam,
+                            average: mat.moyenneDuMatiere,
+                            hasDsCopy: parsedExams.hasDsCopy,
+                            hasExamCopy: parsedExams.hasExamCopy,
+                            dsCopyPath: parsedExams.dsCopyPath,
+                            examCopyPath: parsedExams.examCopyPath,
+                            hasCorrection: !!(parsedExams.examCorrection || parsedExams.dsCorrection || parsedExams.retakeCorrection),
+                            correctionPath: parsedExams.examCorrection || parsedExams.dsCorrection || parsedExams.retakeCorrection,
+                            isRattrapage: parsedExams.isRattrapage,
+                            exams
                         };
-                    }
+                    });
+
+                    const sub1 = subjects[0] || null;
+                    const sub2 = subjects[1] || null;
+                    const sub1CopyPath = sub1?.dsCopyPath || sub1?.examCopyPath || null;
+                    const sub2CopyPath = sub2?.dsCopyPath || sub2?.examCopyPath || null;
+                    const correctionPath = sub2?.correctionPath || sub1?.correctionPath || null;
+
+                    return {
+                        id: mod.id || idx,
+                        name: mod.nomDuModule,
+                        ects: mod.coefficient,
+                        coeff: mod.coefficient,
+                        ds: sub1 ? sub1.average : null,
+                        hasDsCopy: !!sub1CopyPath,
+                        dsCopyPath: sub1CopyPath,
+                        exam: sub2 ? sub2.average : null,
+                        hasExamCopy: !!sub2CopyPath,
+                        examCopyPath: sub2CopyPath,
+                        hasCorrection: !!correctionPath,
+                        correctionPath,
+                        mention: getMentionFromGrade(mod.moyenneDuModule),
+                        average: mod.moyenneDuModule,
+                        letter: (mod.nomDuModule || 'M').charAt(0).toUpperCase(),
+                        isParent: isLanguages,
+                        subjects,
+                        isRattrapage: subjects.some((subject) => subject.isRattrapage)
+                    };
                 });
 
                 const calculatedSessionAverage = processedModules.length > 0
@@ -171,13 +194,14 @@ const NotesEtudiant = () => {
                 setCurrentData({
                     label: `Semestre ${activeSemester}`,
                     average: data.moyenneSession || calculatedSessionAverage,
-                    ects: `${processedModules.reduce((acc, m) => acc + (m.average >= 10 ? 30 / processedModules.length : 0), 0).toFixed(0)}/30`,
-                    status: (data.moyenneSession || calculatedSessionAverage) >= 10 ? "VALIDÉ" : "AJOURNÉ",
+                    ects: `${processedModules.reduce((acc, mod) => acc + (mod.average >= 10 ? 30 / processedModules.length : 0), 0).toFixed(0)}/30`,
+                    status: (data.moyenneSession || calculatedSessionAverage) >= 10 ? 'VALIDE' : 'AJOURNE',
                     modules: processedModules,
                     totalModules: data.totalModules || processedModules.length,
-                    validatedModules: data.validatedModules || processedModules.filter(m => m.average >= 10).length
+                    validatedModules: data.validatedModules || processedModules.filter((mod) => mod.average >= 10).length
                 });
-
+                setSelectedMatiereKey(null);
+                setCollapsedExamLists({});
             } catch (err) {
                 console.error(err);
                 setError(err);
@@ -191,16 +215,15 @@ const NotesEtudiant = () => {
 
     const getMentionFromGrade = (grade) => {
         if (!grade && grade !== 0) return '-';
-        if (grade >= 16) return 'TRÈS BIEN';
+        if (grade >= 16) return 'TRES BIEN';
         if (grade >= 14) return 'BIEN';
         if (grade >= 12) return 'ASSEZ BIEN';
         if (grade >= 10) return 'PASSABLE';
-        return 'AJOURNÉ';
+        return 'AJOURNE';
     };
 
     const openPdf = (path) => {
         if (!path) return;
-        // If path is relative, prepend the backend host
         const fullUrl = path.startsWith('http') ? path : `http://localhost:8080/${path}`;
         window.open(fullUrl, '_blank');
     };
@@ -209,31 +232,103 @@ const NotesEtudiant = () => {
         window.print();
     };
 
+    const toggleMatiere = (moduleId, matiereId) => {
+        const nextKey = buildMatiereKey(moduleId, matiereId);
+        setSelectedMatiereKey((current) => (current === nextKey ? null : nextKey));
+    };
+
+    const toggleExamList = (moduleId, matiereId) => {
+        const key = buildMatiereKey(moduleId, matiereId);
+        setCollapsedExamLists((current) => ({
+            ...current,
+            [key]: !current[key]
+        }));
+    };
+
+    const renderMatiereDetails = (module, subject) => {
+        const subjectKey = buildMatiereKey(module.id, subject.id);
+        const isCollapsed = !!collapsedExamLists[subjectKey];
+
+        return (
+            <div className="exam-detail-panel">
+                <div className="exam-detail-header">
+                    <div>
+                        <span className="exam-detail-eyebrow">Examens passes</span>
+                        <h3>{subject.name}</h3>
+                        <p>{module.name}</p>
+                    </div>
+                    <div className="exam-detail-header-actions">
+                        <button
+                            type="button"
+                            className="exam-collapse-button"
+                            onClick={() => toggleExamList(module.id, subject.id)}
+                        >
+                            {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+                            {isCollapsed ? 'Afficher les examens' : 'Masquer les examens'}
+                        </button>
+                    </div>
+                </div>
+
+                {!isCollapsed && (
+                    subject.exams?.length > 0 ? (
+                        <div className="exam-compact-list">
+                            {subject.exams.map((exam) => (
+                                <div key={exam.id} className="exam-compact-row">
+                                    <div className="exam-compact-name">{exam.label}</div>
+                                    <div className="exam-compact-status">
+                                        <span className={`status-badge ${exam.typeExamen === 'RATTRAPAGE' ? 'pending' : 'validated'}`}>
+                                            {exam.typeExamen === 'RATTRAPAGE' ? 'Rattrapage' : 'Normal'}
+                                        </span>
+                                    </div>
+                                    <div className="exam-compact-grade">{formatNote(exam.note)}</div>
+                                    <div className="exam-compact-actions">
+                                        {exam.copieEtudiantPath && (
+                                            <button type="button" className="btn-grade-copy" onClick={() => openPdf(exam.copieEtudiantPath)}>
+                                                <Eye size={12} />
+                                                Copie etudiant
+                                            </button>
+                                        )}
+                                        {exam.corrigePath && (
+                                            <button type="button" className="btn-grade-copy secondary" onClick={() => openPdf(exam.corrigePath)}>
+                                                <FileText size={12} />
+                                                Correction
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="exam-empty-state">Aucun examen note pour cette matiere.</div>
+                    )
+                )}
+            </div>
+        );
+    };
+
     return (
         <div className="notes-container">
-            {/* Horizontal Layout Container */}
             <div className="notes-header-layout">
-                {/* Main Banner */}
                 <header className="notes-main-banner">
                     <div className="banner-title-box">
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                             <Trophy size={20} color="#818cf8" />
-                            <span style={{ margin: 0, fontSize: '12px', color: '#94a3b8', letterSpacing: '2px' }}>PORTAIL ACADÉMIQUE</span>
+                            <span style={{ margin: 0, fontSize: '12px', color: '#94a3b8', letterSpacing: '2px' }}>PORTAIL ACADEMIQUE</span>
                         </div>
                         <h1>{studentStats.degree}</h1>
-                        <span>Spécialité: {studentStats.specialization}</span>
+                        <span>Specialite: {studentStats.specialization}</span>
                     </div>
 
                     <div className="action-buttons-container">
                         <button className="btn-premium" onClick={handlePrint}>
                             <Printer size={16} />
-                            IMPRIMER LE RELEVÉ DE NOTES
+                            IMPRIMER LE RELEVE DE NOTES
                         </button>
                     </div>
 
                     <div className="banner-metrics">
                         <div className="metric-item">
-                            <span className="metric-label">MOYENNE GÉNÉRALE</span>
+                            <span className="metric-label">MOYENNE GENERALE</span>
                             <div className="metric-value highlight">
                                 {studentStats.generalAverage}<span>/20</span>
                             </div>
@@ -247,7 +342,6 @@ const NotesEtudiant = () => {
                     </div>
                 </header>
 
-                {/* Sidebar Summary Card */}
                 <div className="session-summary-card">
                     <div className="session-summary-header">
                         <div className="session-icon-box">
@@ -277,31 +371,30 @@ const NotesEtudiant = () => {
             </div>
 
             <div className="notes-main-grid">
-                {/* Grades Table Section */}
                 <div className="grades-detail-card">
                     <div className="grades-header">
                         <div className="grades-title">
                             <div className="title-icon-box">
                                 <BookOpen size={20} />
                             </div>
-                            <h2>Détails des Modules</h2>
+                            <h2>Details des Modules</h2>
                         </div>
 
                         <div className="semester-selector">
                             <Filter size={14} color="#6366f1" />
                             <select
                                 value={activeSemester}
-                                onChange={(e) => setActiveSemester(parseInt(e.target.value))}
+                                onChange={(e) => setActiveSemester(parseInt(e.target.value, 10))}
                             >
-                                {(studentStats.availableSemesters || [1]).map(s => (
-                                    <option key={s} value={s}>Semestre {s}</option>
+                                {(studentStats.availableSemesters || [1]).map((semester) => (
+                                    <option key={semester} value={semester}>Semestre {semester}</option>
                                 ))}
                             </select>
                         </div>
 
                         <div className="modules-count-info">
                             <span className="modules-count-text">
-                                Modules validés: {currentData.validatedModules}/{currentData.totalModules}
+                                Modules valides: {currentData.validatedModules}/{currentData.totalModules}
                             </span>
                         </div>
                     </div>
@@ -310,164 +403,146 @@ const NotesEtudiant = () => {
                         <table className="notes-table">
                             <thead>
                                 <tr>
-                                    <th style={{ width: '40%' }}>Module / Composante</th>
-                                    <th>DS</th>
-                                    <th>Examen</th>
-                                    <th>Correction</th>
+                                    <th style={{ width: '60%' }}>Module / Matiere</th>
                                     <th>Session</th>
                                     <th>Moyenne</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {loading ? (
-                                    <tr><td colSpan="6" style={{ textAlign: 'center', padding: '48px' }}>Chargement en cours...</td></tr>
+                                    <tr><td colSpan="3" style={{ textAlign: 'center', padding: '48px' }}>Chargement en cours...</td></tr>
                                 ) : error ? (
-                                    <tr><td colSpan="6" style={{ textAlign: 'center', padding: '48px', color: '#ef4444' }}>Erreur de chargement.</td></tr>
+                                    <tr><td colSpan="3" style={{ textAlign: 'center', padding: '48px', color: '#ef4444' }}>Erreur de chargement.</td></tr>
                                 ) : currentData.modules.length === 0 ? (
-                                    <tr><td colSpan="6" style={{ textAlign: 'center', padding: '48px' }}>Aucun résultat pour ce semestre.</td></tr>
+                                    <tr><td colSpan="3" style={{ textAlign: 'center', padding: '48px' }}>Aucun resultat pour ce semestre.</td></tr>
                                 ) : (
-                                    currentData.modules.map((module, idx) => (
-                                        <Fragment key={module.id || idx}>
-                                            <tr className="module-row">
-                                                <td>
-                                                    <div className="module-info-cell">
-                                                        <div className="module-icon">
-                                                            {module.letter}
-                                                        </div>
-                                                        <div className="module-name">{module.name}</div>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    {!module.isParent && module.ds !== null && (
-                                                        <div className="grade-pill">
-                                                            {module.ds}
-                                                            {module.hasDsCopy && (
-                                                                <button className="btn-copy-small" onClick={() => openPdf(module.dsCopyPath)}>
-                                                                    <Eye size={10} /> Copie
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </td>
-                                                <td>
-                                                    {!module.isParent && module.exam !== null && (
-                                                        <div className="grade-pill">
-                                                            {module.exam}
-                                                            {module.hasExamCopy && (
-                                                                <button className="btn-copy-small" onClick={() => openPdf(module.examCopyPath)}>
-                                                                    <Eye size={10} /> Copie
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </td>
-                                                <td style={{ textAlign: 'center' }}>
-                                                    {!module.isParent && module.hasCorrection && (
-                                                        <div className="correction-icon" onClick={() => openPdf(module.correctionPath)} style={{ cursor: 'pointer' }}>
-                                                            <FileText size={14} />
-                                                        </div>
-                                                    )}
-                                                </td>
-                                                <td>
-                                                    <span className={`status-badge ${module.isRattrapage ? 'pending' : 'validated'}`}>
-                                                        {module.isRattrapage ? 'Rattrapage' : 'Normal'}
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <div className="grade-pill" style={{ background: '#eef2ff', color: '#6366f1' }}>
-                                                        {module.average?.toFixed(2)}
-                                                    </div>
-                                                </td>
-                                            </tr>
+                                    currentData.modules.map((module, idx) => {
+                                        const hasSingleSubject = (module.subjects?.length || 0) === 1;
+                                        const moduleSubject = hasSingleSubject ? module.subjects[0] : null;
+                                        const moduleSubjectKey = moduleSubject
+                                            ? buildMatiereKey(module.id, moduleSubject.id)
+                                            : null;
+                                        const selectedSubject = module.subjects?.find(
+                                            (subject) => buildMatiereKey(module.id, subject.id) === selectedMatiereKey
+                                        ) || null;
 
-                                            {module.isParent && module.subjects?.map((sub, sIdx) => (
-                                                <tr key={`${module.id}-sub-${sIdx}`} className="sub-module-row">
+                                        return (
+                                            <Fragment key={module.id || idx}>
+                                                <tr
+                                                    className={`module-row ${selectedSubject && !module.isParent ? 'selected' : ''} ${hasSingleSubject ? 'clickable' : ''}`}
+                                                    onClick={hasSingleSubject ? () => toggleMatiere(module.id, moduleSubject.id) : undefined}
+                                                >
                                                     <td>
-                                                        <div className="sub-module-info-cell">
-                                                            <div className="sub-module-dash"></div>
-                                                            <div className="sub-module-icon-box">
-                                                                <Languages size={16} />
+                                                        <div className="module-info-cell">
+                                                            <div className="module-icon">
+                                                                {module.letter}
                                                             </div>
-                                                            <span className="sub-module-name">{sub.name}</span>
-                                                        </div>
-                                                    </td>
-                                                    <td>
-                                                        <div className="grade-display-stacked">
-                                                            {sub.ds !== null ? (
-                                                                <div className="grade-card">
-                                                                    <div className="grade-card-left">
-                                                                        <span className="grade-number">{sub.ds}</span>
+                                                            <div className="module-name-block">
+                                                                <div className="module-name">{module.name}</div>
+                                                                {hasSingleSubject && moduleSubject && (
+                                                                    <div className="single-subject-hint">
+                                                                        {selectedMatiereKey === moduleSubjectKey ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                                                                        {moduleSubject.code || moduleSubject.name}
                                                                     </div>
-                                                                    <div className="grade-card-right">
-                                                                        {sub.hasDsCopy && (
-                                                                            <button className="btn-grade-copy" onClick={() => openPdf(sub.dsCopyPath)}>
-                                                                                <Eye size={12} /> COPIE
-                                                                            </button>
-                                                                        )}
+                                                                )}
+                                                                {(module.subjects?.length || 0) > 1 && (
+                                                                    <div className="subject-selector-inline">
+                                                                        {module.subjects.map((subject) => {
+                                                                            const subjectKey = buildMatiereKey(module.id, subject.id);
+                                                                            const isActive = selectedMatiereKey === subjectKey;
+
+                                                                            return (
+                                                                                <button
+                                                                                    key={subjectKey}
+                                                                                    type="button"
+                                                                                    className={`subject-chip ${isActive ? 'active' : ''}`}
+                                                                                    onClick={() => toggleMatiere(module.id, subject.id)}
+                                                                                >
+                                                                                    {isActive ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                                                                                    {subject.code || subject.name}
+                                                                                </button>
+                                                                            );
+                                                                        })}
                                                                     </div>
-                                                                </div>
-                                                            ) : (
-                                                                <div className="grade-card" style={{ opacity: 0.6 }}>
-                                                                    <div className="grade-card-left">
-                                                                        <span className="grade-number">-</span>
-                                                                    </div>
-                                                                    <div className="grade-card-right">
-                                                                        <span style={{ fontSize: '11px', color: '#94a3b8' }}>Non noté</span>
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </td>
-                                                    <td>
-                                                        <div className="grade-display-stacked">
-                                                            {sub.exam !== null ? (
-                                                                <div className="grade-card">
-                                                                    <div className="grade-card-left">
-                                                                        <span className="grade-number">{sub.exam}</span>
-                                                                    </div>
-                                                                    <div className="grade-card-right">
-                                                                        {sub.hasExamCopy && (
-                                                                            <button className="btn-grade-copy" onClick={() => openPdf(sub.examCopyPath)}>
-                                                                                <Eye size={12} /> COPIE
-                                                                            </button>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                            ) : (
-                                                                <div className="grade-card" style={{ opacity: 0.6 }}>
-                                                                    <div className="grade-card-left">
-                                                                        <span className="grade-number">-</span>
-                                                                    </div>
-                                                                    <div className="grade-card-right">
-                                                                        <span style={{ fontSize: '11px', color: '#94a3b8' }}>Non noté</span>
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </td>
-                                                    <td></td>
-                                                    <td></td>
-                                                    <td>
-                                                        <div className="sub-module-average-cell">
-                                                            <div className="grade-pill" style={{ background: '#eef2ff', color: '#6366f1' }}>
-                                                                {sub.average?.toFixed(2)}
+                                                                )}
                                                             </div>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <span className={`status-badge ${module.isRattrapage ? 'pending' : 'validated'}`}>
+                                                            {module.isRattrapage ? 'Rattrapage' : 'Normal'}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <div className="grade-pill" style={{ background: '#eef2ff', color: '#6366f1' }}>
+                                                            {formatNote(module.average)}
                                                         </div>
                                                     </td>
                                                 </tr>
-                                            ))}
-                                        </Fragment>
-                                    ))
+
+                                                {!module.isParent && selectedSubject && (
+                                                    <tr className="exam-detail-row">
+                                                        <td colSpan="3">
+                                                            {renderMatiereDetails(module, selectedSubject)}
+                                                        </td>
+                                                    </tr>
+                                                )}
+
+                                                {module.isParent && module.subjects?.map((subject, subjectIdx) => {
+                                                    const subjectKey = buildMatiereKey(module.id, subject.id);
+                                                    const isSelected = selectedMatiereKey === subjectKey;
+
+                                                    return (
+                                                        <Fragment key={`${module.id}-sub-${subjectIdx}`}>
+                                                            <tr
+                                                                className={`sub-module-row ${isSelected ? 'selected' : ''}`}
+                                                                onClick={() => toggleMatiere(module.id, subject.id)}
+                                                            >
+                                                                <td>
+                                                                    <div className="sub-module-info-cell">
+                                                                        <div className="sub-module-dash"></div>
+                                                                        <div className="sub-module-icon-box">
+                                                                            <Languages size={16} />
+                                                                        </div>
+                                                                        <span className="sub-module-name">{subject.name}</span>
+                                                                    </div>
+                                                                </td>
+                                                                <td>
+                                                                    <span className={`status-badge ${subject.isRattrapage ? 'pending' : 'validated'}`}>
+                                                                        {subject.isRattrapage ? 'Rattrapage' : 'Normal'}
+                                                                    </span>
+                                                                </td>
+                                                                <td>
+                                                                    <div className="sub-module-average-cell">
+                                                                        <div className="grade-pill" style={{ background: '#eef2ff', color: '#6366f1' }}>
+                                                                            {formatNote(subject.average)}
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+
+                                                            {isSelected && (
+                                                                <tr className="exam-detail-row">
+                                                                    <td colSpan="3">
+                                                                        {renderMatiereDetails(module, subject)}
+                                                                    </td>
+                                                                </tr>
+                                                            )}
+                                                        </Fragment>
+                                                    );
+                                                })}
+                                            </Fragment>
+                                        );
+                                    })
                                 )}
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
-            {/* --- PRINTABLE TRANSCRIPT TEMPLATE --- */}
+
             <div className="transcript-printable-area">
                 <div className="transcript-content">
-                    {/* Official Header */}
                     <header className="transcript-header">
                         <div className="uni-branding">
                             <div className="uni-logo-box">
@@ -490,7 +565,7 @@ const NotesEtudiant = () => {
                         <div className="transcript-ref-container">
                             <div className="transcript-ref-badge">Document Officiel</div>
                             <div className="transcript-ref-details">
-                                <span className="ref-label">Référence Document</span>
+                                <span className="ref-label">Reference Document</span>
                                 <span className="ref-value">RN-S{activeSemester}-2024-X</span>
                             </div>
                         </div>
@@ -498,9 +573,8 @@ const NotesEtudiant = () => {
 
                     <hr style={{ border: 'none', height: '3px', background: '#0f172a', margin: '1.5rem 0' }} />
 
-                    {/* Title Section */}
                     <div className="transcript-title-section">
-                        <h2>RELEVÉ DE NOTES ET RÉSULTATS</h2>
+                        <h2>RELEVE DE NOTES ET RESULTATS</h2>
                         <div className="semester-info-line">
                             <div className="line-decor"></div>
                             <span>SEMESTRE {activeSemester} - SESSION {activeSemester % 2 === 0 ? 'PRINTEMPS' : 'AUTOMNE'} 2024</span>
@@ -508,46 +582,46 @@ const NotesEtudiant = () => {
                         </div>
                     </div>
 
-                    {/* Student Info Grid */}
                     <div className="transcript-student-grid">
                         <div className="info-card">
                             <div className="info-icon-box"><User size={20} /></div>
                             <div className="info-details">
-                                <span className="info-label">NOM ET PRÉNOM</span>
+                                <span className="info-label">NOM ET PRENOM</span>
                                 <span className="info-value">{studentStats.studentName}</span>
                             </div>
                         </div>
                         <div className="info-card">
                             <div className="info-icon-box"><BookOpen size={20} /></div>
                             <div className="info-details">
-                                <span className="info-label">FILIÈRE / NIVEAU</span>
-                                <span className="info-value">{studentStats.specialization} - {activeSemester > 4 ? '3ème Année (L3)' : activeSemester > 2 ? '2ème Année (L2)' : '1ère Année (L1)'}</span>
+                                <span className="info-label">FILIERE / NIVEAU</span>
+                                <span className="info-value">
+                                    {studentStats.specialization} - {activeSemester > 4 ? '3eme Annee (L3)' : activeSemester > 2 ? '2eme Annee (L2)' : '1ere Annee (L1)'}
+                                </span>
                             </div>
                         </div>
                         <div className="info-card">
                             <div className="info-icon-box"><Hash size={20} /></div>
                             <div className="info-details">
-                                <span className="info-label">NUMÉRO D'ÉTUDIANT (CNE/PPR)</span>
+                                <span className="info-label">NUMERO D ETUDIANT (CNE/PPR)</span>
                                 <span className="info-value">{studentStats.studentId}</span>
                             </div>
                         </div>
                         <div className="info-card">
                             <div className="info-icon-box"><Calendar size={20} /></div>
                             <div className="info-details">
-                                <span className="info-label">ANNÉE UNIVERSITAIRE</span>
+                                <span className="info-label">ANNEE UNIVERSITAIRE</span>
                                 <span className="info-value">2023 / 2024</span>
                             </div>
                         </div>
                     </div>
 
-                    {/* Table */}
                     <table className="transcript-grades-table">
                         <thead>
                             <tr>
                                 <th style={{ width: '15%' }}>CODE</th>
-                                <th style={{ width: '55%' }}>INTITULÉ DU MODULE</th>
+                                <th style={{ width: '55%' }}>INTITULE DU MODULE</th>
                                 <th style={{ width: '15%', textAlign: 'center' }}>NOTE / 20</th>
-                                <th style={{ width: '15%', textAlign: 'right' }}>RÉSULTAT</th>
+                                <th style={{ width: '15%', textAlign: 'right' }}>RESULTAT</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -556,14 +630,14 @@ const NotesEtudiant = () => {
                                     <tr className="row-module">
                                         <td className="col-code">{module.letter || 'M'}</td>
                                         <td className="col-name">{module.name}</td>
-                                        <td className="col-grade">{module.average?.toFixed(2)}</td>
-                                        <td className="col-result">{module.average >= 10 ? 'VALIDÉ' : 'AJOURNÉ'}</td>
+                                        <td className="col-grade">{formatNote(module.average)}</td>
+                                        <td className="col-result">{module.average >= 10 ? 'VALIDE' : 'AJOURNE'}</td>
                                     </tr>
-                                    {module.isParent && module.subjects?.map((sub, sIdx) => (
-                                        <tr key={`${idx}-sub-${sIdx}`} className="row-sub">
+                                    {module.isParent && module.subjects?.map((subject, subjectIdx) => (
+                                        <tr key={`${idx}-sub-${subjectIdx}`} className="row-sub">
                                             <td className="col-code"></td>
-                                            <td className="col-name">{sub.name}</td>
-                                            <td className="col-grade">{sub.average?.toFixed(2)}</td>
+                                            <td className="col-name">{subject.name}</td>
+                                            <td className="col-grade">{formatNote(subject.average)}</td>
                                             <td className="col-result"></td>
                                         </tr>
                                     ))}
@@ -576,7 +650,6 @@ const NotesEtudiant = () => {
                         </tbody>
                     </table>
 
-                    {/* Results Footer Box */}
                     <div className="transcript-results-summary">
                         <div className="summary-stats-box">
                             <div className="stat-row">
@@ -593,10 +666,9 @@ const NotesEtudiant = () => {
                         </div>
 
                         <div className="admin-validation">
-                            <span className="admin-auth-text">Le Doyen de la Faculté</span>
-                            
+                            <span className="admin-auth-text">Le Doyen de la Faculte</span>
                             <p style={{ fontSize: '8px', color: '#94a3b8', maxWidth: '180px', margin: 0 }}>
-                               Signature & Cachet
+                                Signature & Cachet
                             </p>
                         </div>
                     </div>
@@ -607,4 +679,3 @@ const NotesEtudiant = () => {
 };
 
 export default NotesEtudiant;
-

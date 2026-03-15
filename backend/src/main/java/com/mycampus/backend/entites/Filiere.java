@@ -29,7 +29,7 @@ public class Filiere {
     
 
     @Column(nullable = false)
-    private String dureeFormation;
+    private Integer dureeFormation;
     
     @Column(nullable = false)
     private String niveauDiplome;

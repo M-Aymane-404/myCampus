@@ -1,13 +1,17 @@
 package com.mycampus.backend.metier.professeur.annonces;
 
+import com.mycampus.backend.dto.Notification.NotificationEntrerPourPlusieursUtilisateurDTO;
 import com.mycampus.backend.dto.annonces.AnnonceEntrerDTO;
 import com.mycampus.backend.dto.annonces.AnnonceSortieDTO;
 import com.mycampus.backend.entites.Annonce;
 import com.mycampus.backend.entites.Classe;
 import com.mycampus.backend.entites.Professeur;
 import com.mycampus.backend.enumerations.AnnonceCibleType;
+import com.mycampus.backend.enumerations.ReferenceType;
+import com.mycampus.backend.enumerations.TypeNotification;
 import com.mycampus.backend.exceptions.UtilisateursException;
 import com.mycampus.backend.mappers.annonce.AnnonceMapper;
+import com.mycampus.backend.metier.Notification.NotificationMetier;
 import com.mycampus.backend.repositorys.AnnonceRepository;
 import com.mycampus.backend.repositorys.ClasseRepository;
 import com.mycampus.backend.repositorys.ProfesseurRepository;
@@ -32,6 +36,7 @@ public class GestionAnnoncesProfesseurMetierImpl implements GestionAnnoncesProfe
    private final UtilisateurRepository utilisateurRepository;
     private final ProfesseurRepository professeurRepository;
      private final AnnonceMapper  annonceMapper;
+    private final NotificationMetier notificationMetier;
 
     @Override
     @Transactional
@@ -63,7 +68,7 @@ public class GestionAnnoncesProfesseurMetierImpl implements GestionAnnoncesProfe
                     .titre(annonceDTO.getTitre())
                     .contenu(annonceDTO.getContenu())
                     .datePublication(LocalDateTime.now())
-                     .publiee(false)
+                     .publiee(true)
                     .typeAnnonce(annonceDTO.getTypeAnnonce())
                     .urgent(annonceDTO.isUrgent())
                     .cibleType(annonceDTO.getCibleType())
@@ -163,6 +168,7 @@ public class GestionAnnoncesProfesseurMetierImpl implements GestionAnnoncesProfe
         
         annonce.setPubliee(true);
         Annonce savedAnnonce = annonceRepository.save(annonce);
+        notifierAnnoncePubliee(savedAnnonce, professeur.getId());
         log.info("Annonce publiée avec succès");
         
         return annonceMapper.changerVersSortieDTO(savedAnnonce);
@@ -189,5 +195,24 @@ public class GestionAnnoncesProfesseurMetierImpl implements GestionAnnoncesProfe
         return annonceMapper.changerVersSortieDTO(savedAnnonce);
     }
 
+    private void notifierAnnoncePubliee(Annonce annonce, Long auteurId) {
+        NotificationEntrerPourPlusieursUtilisateurDTO dto =
+                NotificationEntrerPourPlusieursUtilisateurDTO.builder()
+                        .type(TypeNotification.ANNONCE_PUBLIEE)
+                        .auteurId(auteurId)
+                        .titre(annonce.getTitre())
+                        .message("Nouvelle annonce: " + annonce.getTitre())
+                        .referenceType(ReferenceType.ANNONCE)
+                        .referenceId(annonce.getId())
+                        .build();
+
+        if (annonce.getCibleType() == AnnonceCibleType.ETUDIANTS_CLASSE
+                && annonce.getClasse() != null) {
+            notificationMetier.notifierEtudiantClasse(
+                    annonce.getClasse().getCodeClasse(),
+                    dto
+            );
+        }
+    }
 
 }

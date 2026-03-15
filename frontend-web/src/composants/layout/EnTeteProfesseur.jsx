@@ -15,6 +15,7 @@ import { useState, useEffect, useRef } from 'react';
 import FormulaireModal from '../communs/FormulaireModal';
 import ChampFormulaire from '../communs/ChampFormulaire';
 import { apiAuth } from '../../services/apiAuth';
+import NotificationHeart from './NotificationHeart';
 import './EnTete.css';
 
 
@@ -22,7 +23,6 @@ import './EnTete.css';
 const EnTeteProfesseur = ({ elementActif, surChangementElement }) => {
   const [menuOuvert, setMenuOuvert] = useState(false);
   const [modalInfosOuvert, setModalInfosOuvert] = useState(false);
-  const [photoProfil, setPhotoProfil] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [infosUtilisateur, setInfosUtilisateur] = useState({
     nom: 'Professeur',
@@ -129,8 +129,6 @@ const EnTeteProfesseur = ({ elementActif, surChangementElement }) => {
       return;
     }
 
-    setPhotoProfil(fichier);
-
     const lecteur = new FileReader();
     lecteur.onload = (event) => {
       setPhotoPreview(event.target?.result || null);
@@ -139,7 +137,6 @@ const EnTeteProfesseur = ({ elementActif, surChangementElement }) => {
   };
 
   const supprimerPhoto = () => {
-    setPhotoProfil(null);
     setPhotoPreview(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -211,6 +208,11 @@ const EnTeteProfesseur = ({ elementActif, surChangementElement }) => {
         </nav>
 
         <div className="en-tete-actions">
+          <NotificationHeart
+              currentRole="professor"
+              surChangementElement={surChangementElement}
+          />
+
           <div
               className="profil-admin-container"
               ref={menuRef}
@@ -263,7 +265,6 @@ const EnTeteProfesseur = ({ elementActif, surChangementElement }) => {
             estOuvert={modalInfosOuvert}
             surFermer={() => {
               setModalInfosOuvert(false);
-              setPhotoProfil(null);
             }}
             surSauvegarder={sauvegarderInfosUtilisateur}
         >

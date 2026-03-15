@@ -7,39 +7,7 @@ import './GestionNotes.css';
 
 const GestionNotes = () => {
   const [resultats] = useState([
-    {
-      id: 1,
-      etudiant: 'Hassan Alaoui',
-      apogee: 'APG001',
-      examen: 'Examen Final - Algorithmique',
-      module: 'GI-INFO-101',
-      note: 16.5,
-      mention: 'Bien',
-      datePublication: '2024-01-15',
-      valide: true
-    },
-    {
-      id: 2,
-      etudiant: 'Sara Bennani',
-      apogee: 'APG002',
-      examen: 'Examen Final - POO',
-      module: 'GI-INFO-102',
-      note: 18.0,
-      mention: 'Très Bien',
-      datePublication: '2024-01-20',
-      valide: true
-    },
-    {
-      id: 3,
-      etudiant: 'Omar Chraibi',
-      apogee: 'APG003',
-      examen: 'Examen Final - Gestion Production',
-      module: 'GIL-IND-201',
-      note: 12.0,
-      mention: 'Assez Bien',
-      datePublication: '2024-01-18',
-      valide: true
-    }
+
   ]);
 
   const colonnes = [
