@@ -149,7 +149,7 @@ const GestionPresenceProfesseur = () => {
 import { useState, useEffect } from 'react';
 import { UserCheck, ChevronDown, Loader2, X, Calendar, Clock, MapPin } from 'lucide-react';
 import { apiEnseignementsProfesseur } from '../services/professeur/apiEnseignementsProfesseur';
-import { apiSeancesProfesseur }       from '../services/professeur/apiSeancesProfesseur';
+import  apiSeancesProfesseur  from '../services/professeur/apiSeancesProfesseur';
 import { apiPresencesProfesseur }     from '../services/professeur/apiPresencesProfesseur';
 import './GestionPresenceProfesseur.css';
 
