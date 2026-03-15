@@ -48,5 +48,9 @@ public class EtudiantSortieEtudiantDTO {
 
     private String codeClasse;
 
+    private Integer dureeFormation;
+
+    private Integer nombreSemestres;
+
     private LocalDateTime dateDerniereConnexion;
 }

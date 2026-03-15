@@ -250,6 +250,10 @@
                 throw new StructureAcademiqueException("La filière doit être rattachée à un département");
             }
 
+            if (filiereEntrerDTO.getDureeFormation() == null || filiereEntrerDTO.getDureeFormation() <= 0) {
+                throw new StructureAcademiqueException("La duree de formation doit etre superieure a 0");
+            }
+
             Filiere filiere = structureMapper.FromFiliereEntrerVersFiliere(filiereEntrerDTO);
 
             // Récupérer le département
@@ -334,7 +338,7 @@
                 filiere.setDescription(filiereModificationDTO.getDescription());
             }
 
-            if (filiereModificationDTO.getDureeFormation() != null && !filiereModificationDTO.getDureeFormation().trim().isEmpty()) {
+            if (filiereModificationDTO.getDureeFormation() != null) {
                 filiere.setDureeFormation(filiereModificationDTO.getDureeFormation());
             }
             if (filiereModificationDTO.getNiveauDiplome() != null && !filiereModificationDTO.getNiveauDiplome().trim().isEmpty()) {
