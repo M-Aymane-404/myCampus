@@ -33,7 +33,13 @@ import 'features/etudiant/presentation/page_liste_annonces_etudiant.dart';
 import 'features/etudiant/presentation/page_notifications_etudiant.dart';
 import 'features/etudiant/presentation/page_presence_etudiant.dart';
 import 'features/etudiant/presentation/page_profil_etudiant.dart';
-import 'features/professeur/presentation/accueil_professeur.dart';
+import 'features/professeur/data/api/professeur_api.dart';
+import 'features/professeur/data/controller/controleur_espace_professeur.dart';
+import 'features/professeur/data/controller/controleur_notification_professeur.dart';
+import 'features/professeur/data/api/notification_professeur_api.dart';
+import 'features/professeur/data/repository/notification_professeur_repository.dart';
+import 'features/professeur/data/repository/professeur_repository.dart';
+import 'features/professeur/presentation/professeur_shell.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -63,6 +69,12 @@ class MyApp extends StatelessWidget {
         ),
         Provider<ProfilEtudiantApi>(
           create: (_) => ProfilEtudiantApi(ClientDio.dioInstance),
+        ),
+        Provider<ProfesseurApi>(
+          create: (_) => ProfesseurApi(ClientDio.dioInstance),
+        ),
+        Provider<NotificationProfesseurApi>(
+          create: (_) => NotificationProfesseurApi(ClientDio.dioInstance),
         ),
         ChangeNotifierProvider(
           create:
@@ -99,6 +111,15 @@ class MyApp extends StatelessWidget {
         Provider<ProfilEtudiantRepository>(
           create:
               (ctx) => ProfilEtudiantRepository(ctx.read<ProfilEtudiantApi>()),
+        ),
+        Provider<ProfesseurRepository>(
+          create: (ctx) => ProfesseurRepository(ctx.read<ProfesseurApi>()),
+        ),
+        Provider<NotificationProfesseurRepository>(
+          create:
+              (ctx) => NotificationProfesseurRepository(
+                ctx.read<NotificationProfesseurApi>(),
+              ),
         ),
         Provider<AnnonceEtudiantRepository>(
           create:
@@ -137,6 +158,16 @@ class MyApp extends StatelessWidget {
           update: (ctx, repo, ctrl) => ctrl ?? ControleurProfilEtudiant(repo),
         ),
         ChangeNotifierProxyProvider<
+          ProfesseurRepository,
+          ControleurEspaceProfesseur
+        >(
+          create:
+              (ctx) =>
+                  ControleurEspaceProfesseur(ctx.read<ProfesseurRepository>()),
+          update:
+              (ctx, repo, ctrl) => ctrl ?? ControleurEspaceProfesseur(repo),
+        ),
+        ChangeNotifierProxyProvider<
           AnnonceEtudiantRepository,
           ControleurAnnonceEtudiant
         >(
@@ -156,6 +187,18 @@ class MyApp extends StatelessWidget {
               ),
           update:
               (ctx, repo, ctrl) => ctrl ?? ControleurNotificationEtudiant(repo),
+        ),
+        ChangeNotifierProxyProvider<
+          NotificationProfesseurRepository,
+          ControleurNotificationProfesseur
+        >(
+          create:
+              (ctx) => ControleurNotificationProfesseur(
+                ctx.read<NotificationProfesseurRepository>(),
+              ),
+          update:
+              (ctx, repo, ctrl) =>
+                  ctrl ?? ControleurNotificationProfesseur(repo),
         ),
 
         ChangeNotifierProxyProvider<
@@ -251,6 +294,7 @@ class RouteurAuthentification extends StatefulWidget {
 
 class _RouteurAuthentificationState extends State<RouteurAuthentification> {
   bool _initEtudiantFait = false;
+  bool _initProfesseurFait = false;
   bool _wsEtudiantConnecte = false;
 
   @override
@@ -265,6 +309,7 @@ class _RouteurAuthentificationState extends State<RouteurAuthentification> {
 
         if (!controleur.estAuthentifie) {
           _initEtudiantFait = false;
+          _initProfesseurFait = false;
           if (_wsEtudiantConnecte) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (!mounted) return;
@@ -277,6 +322,7 @@ class _RouteurAuthentificationState extends State<RouteurAuthentification> {
 
         switch (controleur.roleUtilisateur) {
           case 'ETUDIANT':
+            _initProfesseurFait = false;
             if (!_initEtudiantFait) {
               _initEtudiantFait = true;
               WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -298,6 +344,15 @@ class _RouteurAuthentificationState extends State<RouteurAuthentification> {
 
           case 'PROFESSEUR':
             _initEtudiantFait = false;
+            if (!_initProfesseurFait) {
+              _initProfesseurFait = true;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!mounted) return;
+                context
+                    .read<ControleurNotificationProfesseur>()
+                    .rafraichirCompteurNonLues();
+              });
+            }
             if (_wsEtudiantConnecte) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (!mounted) return;
@@ -305,10 +360,11 @@ class _RouteurAuthentificationState extends State<RouteurAuthentification> {
                 _wsEtudiantConnecte = false;
               });
             }
-            return const AccueilProfesseur();
+            return const ProfesseurShell();
 
           default:
             _initEtudiantFait = false;
+            _initProfesseurFait = false;
             if (_wsEtudiantConnecte) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (!mounted) return;

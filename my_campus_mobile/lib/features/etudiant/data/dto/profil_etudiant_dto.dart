@@ -31,15 +31,18 @@ class ProfilEtudiantDTO {
 }
 
 class ModifierProfilEtudiantDTO {
+  final String? tel;
   final String? ancienPassword;
   final String? nouveauPassword;
 
   const ModifierProfilEtudiantDTO({
+    this.tel,
     this.ancienPassword,
     this.nouveauPassword,
   });
 
   Map<String, dynamic> toJson() => {
+    if (tel != null) 'tel': tel,
     if (ancienPassword != null) 'ancienPassword': ancienPassword,
     if (nouveauPassword != null) 'nouveauPassword': nouveauPassword,
   };
