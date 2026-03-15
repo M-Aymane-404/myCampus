@@ -79,9 +79,7 @@ class ControleurAuthentification extends ChangeNotifier {
           path.contains('/auth/connecter') ||
           path.contains('/auth/connecter-mobile');
 
-      // Backend may return 500 with a generic message for bad credentials.
-      // For login endpoint, force a user-friendly auth error.
-      if (isLoginRequest && (status == 400 || status == 401 || status == 500)) {
+      if (isLoginRequest && status == 401) {
         return 'Email ou mot de passe incorrect';
       }
 
@@ -112,7 +110,10 @@ class ControleurAuthentification extends ChangeNotifier {
         }
       }
 
-      if (status == 400 || status == 401) {
+      if (status == 400) {
+        return 'Requete invalide. Verifiez les informations envoyees';
+      }
+      if (status == 401) {
         return 'Email ou mot de passe incorrect';
       }
       if (status == 403) {

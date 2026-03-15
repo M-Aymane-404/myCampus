@@ -1,14 +1,16 @@
 package com.mycampus.backend.dto.administrateur.DonneSortie.TableauBordDTO;
 
+import lombok.*;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class StatistiquesGlobalesDTO {
-    Integer totaleEtudients;
-    Integer totaleProfesseurs;
-    Integer totaleModules;
-    Integer totaleDepartements;
-
-
-
-
-
-
+    private Long totalEtudiants;
+    private Long totalProfesseurs;
+    private Long totalClasses;
+    private Long totalMatieres;
+    private Long totalAffectationsActives;
 }

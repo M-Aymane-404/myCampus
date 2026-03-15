@@ -28,6 +28,8 @@ public interface AffectationEnseignementRepository extends JpaRepository<Affecta
     //List<AffectationEnseignement> findByMatiere_Id(Long matiereId);
     
     List<AffectationEnseignement> findByActiveTrue();
+
+    long countByActiveTrue();
     
   //  List<AffectationEnseignement> findByAnneeUniversitaireAndSemestre(String anneeUniversitaire, String semestre);
 

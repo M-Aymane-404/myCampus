@@ -1,31 +1,30 @@
+import { authenticatedFetch } from '../utils/apiInterceptor';
+
 const BASE_URL = 'http://localhost:8080/api/admin/structure/affectations';
-import { apiAuth } from './apiAuth';
 
 export const apiAffectations = {
     async obtenirToutes() {
         try {
-            const reponse = await fetch(BASE_URL, {
+            const reponse = await authenticatedFetch(BASE_URL, {
                 method: 'GET',
-                headers: apiAuth.getAuthHeaders(),
                 credentials: 'include'
             });
-            
+
             if (!reponse.ok) {
                 throw new Error(`Erreur HTTP: ${reponse.status}`);
             }
 
             return await reponse.json();
         } catch (erreur) {
-            console.error('Erreur lors de la récupération des affectations:', erreur);
+            console.error('Erreur lors de la recuperation des affectations:', erreur);
             throw erreur;
         }
     },
 
     async obtenirParClasse(classeId) {
         try {
-            const reponse = await fetch(`${BASE_URL}/classe/${classeId}`, {
+            const reponse = await authenticatedFetch(`${BASE_URL}/classe/${classeId}`, {
                 method: 'GET',
-                headers: apiAuth.getAuthHeaders(),
                 credentials: 'include'
             });
 
@@ -36,18 +35,17 @@ export const apiAffectations = {
 
             return await reponse.json();
         } catch (erreur) {
-            console.error('Erreur lors de la récupération des affectations par classe:', erreur);
+            console.error('Erreur lors de la recuperation des affectations par classe:', erreur);
             return [];
         }
     },
 
     async assigner(affectation) {
         try {
-            const reponse = await fetch(BASE_URL, {
+            const reponse = await authenticatedFetch(BASE_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    ...apiAuth.getAuthHeaders(),
                 },
                 body: JSON.stringify(affectation),
                 credentials: 'include'
@@ -67,11 +65,10 @@ export const apiAffectations = {
 
     async modifier(id, affectation) {
         try {
-            const reponse = await fetch(`${BASE_URL}/${id}`, {
+            const reponse = await authenticatedFetch(`${BASE_URL}/${id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
-                    ...apiAuth.getAuthHeaders(),
                 },
                 body: JSON.stringify(affectation),
                 credentials: 'include'
@@ -91,9 +88,8 @@ export const apiAffectations = {
 
     async supprimer(id) {
         try {
-            const reponse = await fetch(`${BASE_URL}/${id}`, {
+            const reponse = await authenticatedFetch(`${BASE_URL}/${id}`, {
                 method: 'DELETE',
-                headers: apiAuth.getAuthHeaders(),
                 credentials: 'include'
             });
 
