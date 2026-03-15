@@ -29,6 +29,7 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -68,8 +69,12 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
                 .orElseThrow(() -> new EtudiantException("Étudiant introuvable"));
 
         String codeClasse = null;
+        Integer dureeFormation = null;
         if (etudiant.getClasse() != null) {
             codeClasse = etudiant.getClasse().getCodeClasse();
+            if (etudiant.getClasse().getFiliere() != null) {
+                dureeFormation = etudiant.getClasse().getFiliere().getDureeFormation();
+            }
         }
 
         return EtudiantSortieEtudiantDTO.builder()
@@ -90,6 +95,8 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
                 .dateNaissance(etudiant.getDateNaissance())
                 .etatInscription(etudiant.getEtatInscription())
                 .codeClasse(codeClasse)
+                .dureeFormation(dureeFormation)
+                .nombreSemestres(dureeFormation != null ? dureeFormation * 2 : null)
                 .dateDerniereConnexion(etudiant.getDateDerniereConnexion())
                 .build();
     }
@@ -108,32 +115,9 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
         Etudiant etudiantAModifier = etudiantRepository.findByEmail(email).orElseThrow(() ->
                 new UtilisateursException("Étudiant introuvable avec l'apogée: " + email));
 
-        if (etudiantModificationDTO.getNom() != null && !etudiantModificationDTO.getNom().trim().isEmpty()) {
-            etudiantAModifier.setNom(etudiantModificationDTO.getNom());
-        }
-
-        if (etudiantModificationDTO.getPrenom() != null && !etudiantModificationDTO.getPrenom().trim().isEmpty()) {
-            etudiantAModifier.setPrenom(etudiantModificationDTO.getPrenom());
-        }
-
-        if (etudiantModificationDTO.getEmail() != null && !etudiantModificationDTO.getEmail().trim().isEmpty()) {
-            if (!etudiantAModifier.getEmail().equals(etudiantModificationDTO.getEmail()) &&
-                    utilisateurRepository.existsByEmail(etudiantModificationDTO.getEmail())) {
-                throw new UtilisateursException("Un utilisateur avec cet email existe déjà");
-            }
-            etudiantAModifier.setEmail(etudiantModificationDTO.getEmail());
-        }
 
 
 
-
-
-
-
-
-        if (etudiantModificationDTO.getDateNaissance() != null) {
-            etudiantAModifier.setDateNaissance(etudiantModificationDTO.getDateNaissance());
-        }
 
 
 
@@ -145,13 +129,6 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
             }
             etudiantAModifier.setTel(etudiantModificationDTO.getTel());
         }
-
-
-
-
-
-
-
 
 
 
@@ -379,9 +356,18 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
                     }
                 });
 
+                List<ExamenDeReleveEtudiantDTO> examensPasses = matiereDto.getExamens().stream()
+                        .filter(examen -> examen.getNote() != null)
+                        .sorted(Comparator
+                                .comparing(ExamenDeReleveEtudiantDTO::getTypeExamen, Comparator.nullsLast(Enum::compareTo))
+                                .thenComparing(ExamenDeReleveEtudiantDTO::getNumeroExamen, Comparator.nullsLast(Integer::compareTo)))
+                        .toList();
+
+                matiereDto.setExamens(examensPasses);
+
                 // 2) Calcul moyenne (règle: si rattrapage existe et noté => moyenne = rattrapage,
                 // sinon moyenne = average des NORMAL notés, sinon null)
-                Double noteRattrapage = matiereDto.getExamens().stream()
+                Double noteRattrapage = examensPasses.stream()
                         .filter(e -> e.getTypeExamen() == TypeExamen.RATTRAPAGE)
                         .map(ExamenDeReleveEtudiantDTO::getNote)
                         .filter(Objects::nonNull)
@@ -393,7 +379,7 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
 
                 } else {
 
-                    double moyenneNormal = matiereDto.getExamens().stream()
+                    double moyenneNormal = examensPasses.stream()
                             .filter(e -> e.getTypeExamen() == TypeExamen.NORMAL)
                             .map(ExamenDeReleveEtudiantDTO::getNote)
                             .filter(Objects::nonNull)

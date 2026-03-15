@@ -4,18 +4,25 @@ import com.mycampus.backend.dto.administrateur.imports.ErreurImportDTO;
 import com.mycampus.backend.dto.administrateur.imports.EtudiantImportDTO;
 import com.mycampus.backend.dto.administrateur.imports.RapportImportEtudiantsSortieDTO;
 import com.mycampus.backend.dto.administrateur.imports.ResultatParsingImportEtudiantsDTO;
+import com.mycampus.backend.dto.Notification.NotificationEntrerDTO;
 import com.mycampus.backend.entites.Classe;
 import com.mycampus.backend.entites.Etudiant;
+import com.mycampus.backend.enumerations.ReferenceType;
 import com.mycampus.backend.enumerations.EtatInscription;
 import com.mycampus.backend.enumerations.ModeImport;
 import com.mycampus.backend.enumerations.NiveauAnnee;
 import com.mycampus.backend.enumerations.Semestre;
+import com.mycampus.backend.enumerations.TypeNotification;
 import com.mycampus.backend.exceptions.FilesException;
+import com.mycampus.backend.metier.Notification.NotificationMetier;
+import com.mycampus.backend.metier.security.CustomUserDetails;
  import com.mycampus.backend.repositorys.ClasseRepository;
 import com.mycampus.backend.repositorys.EtudiantRepository;
 import com.mycampus.backend.repositorys.UtilisateurRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,6 +47,7 @@ public class GestionImportEtudiantsMetierImpl implements GestionImportEtudiantsM
     private final UtilisateurRepository utilisateurRepository;
     private final ClasseRepository classeRepository;
     private final PasswordEncoder passwordEncoder;
+    private final NotificationMetier notificationMetier;
 
     private static final int CHUNK_SIZE = 50;
     private static final Set<String> SUPPORTED_EXTENSIONS = Set.of("csv", "xlsx", "xls");
@@ -141,6 +149,7 @@ public class GestionImportEtudiantsMetierImpl implements GestionImportEtudiantsM
         int nombreInseres = 0;
         if (!etudiantsValides.isEmpty()) {
             sauvegarderEnBatch(etudiantsValides);
+            notifierEtudiantsImportes(etudiantsValides);
             nombreInseres = etudiantsValides.size();
         }
 
@@ -621,6 +630,29 @@ public class GestionImportEtudiantsMetierImpl implements GestionImportEtudiantsM
         }
 
         return erreurs;
+    }
+
+    private Long trouverAuteurNotification(Long fallbackUserId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetails principal) {
+            return principal.getId();
+        }
+        return fallbackUserId;
+    }
+
+    private void notifierEtudiantsImportes(List<Etudiant> etudiants) {
+        for (Etudiant etudiant : etudiants) {
+            NotificationEntrerDTO dto = NotificationEntrerDTO.builder()
+                    .titre("Compte cree")
+                    .message("Votre compte etudiant a ete cree par import.")
+                    .type(TypeNotification.COMPTE_CREE)
+                    .referenceType(ReferenceType.UTILISATEUR)
+                    .referenceId(etudiant.getId())
+                    .utilisateurRecoitId(etudiant.getId())
+                    .auteurId(trouverAuteurNotification(etudiant.getId()))
+                    .build();
+            notificationMetier.notifierUtilisateur(dto);
+        }
     }
 
     private Etudiant creerEtudiant(EtudiantImportDTO dto, Classe classe, String motDePasseDefaut) {

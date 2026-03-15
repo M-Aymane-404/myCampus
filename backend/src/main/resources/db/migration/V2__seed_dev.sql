@@ -80,11 +80,11 @@ UPDATE departement SET chef_departement_id = 16 WHERE id = 3; -- ELEC -> Nabil
 -- 3) FILIERES (chef_filiere_id sera mis après)
 -- ==========================================================
 INSERT INTO filiere (chef_filiere_id, departement_id, id, code_filiere, description, duree_formation, niveau_diplome, nom, etat) VALUES
-                                                                                                                                     (NULL, 1, 1, 'ILCS', 'Cyber sécurité',              '3 Ans', 'Licence', 'ILCS - Cyber Sécurité',     'OUVERTE'),
-                                                                                                                                     (NULL, 1, 2, 'GL',   'Génie logiciel',              '3 Ans', 'Licence', 'Génie Logiciel',           'OUVERTE'),
-                                                                                                                                     (NULL, 2, 3, 'GIND', 'Industrie & optimisation',    '3 Ans', 'Licence', 'Génie Industriel',         'OUVERTE'),
-                                                                                                                                     (NULL, 3, 4, 'GEII', 'Électrique & informatique ind','3 Ans','BUT',     'BUT GEII',                 'OUVERTE'),
-                                                                                                                                     (NULL, 1, 5, 'ISI',  'Informatique & ingénierie',   '3 Ans', 'Licence', 'Informatique (ISI)',       'OUVERTE');
+                                                                                                                                     (NULL, 1, 1, 'ILCS', 'Cyber sécurité',              3, 'Licence', 'ILCS - Cyber Sécurité',     'OUVERTE'),
+                                                                                                                                     (NULL, 1, 2, 'GL',   'Génie logiciel',              3, 'Licence', 'Génie Logiciel',           'OUVERTE'),
+                                                                                                                                     (NULL, 2, 3, 'GIND', 'Industrie & optimisation',    3, 'Licence', 'Génie Industriel',         'OUVERTE'),
+                                                                                                                                     (NULL, 3, 4, 'GEII', 'Électrique & informatique ind',3,'BUT',     'BUT GEII',                 'OUVERTE'),
+                                                                                                                                     (NULL, 1, 5, 'ISI',  'Informatique & ingénierie',   3, 'Licence', 'Informatique (ISI)',       'OUVERTE');
 
 -- Set chefs filières (unique)
 UPDATE filiere SET chef_filiere_id = 10 WHERE id = 1; -- ILCS -> Pierre

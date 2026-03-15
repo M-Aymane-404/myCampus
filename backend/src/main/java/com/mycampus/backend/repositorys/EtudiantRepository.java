@@ -110,6 +110,9 @@ public interface EtudiantRepository extends JpaRepository<Etudiant, Long> {
   from Etudiant e
   where e.id = :idEtudiant and e.classe.codeClasse = :codeClasse
 """)
-    boolean existsByIdAndClasseCode(@Param("idEtudiant") Long idEtudiant, @Param("codeClasse") String codeClasse);
+    boolean existsByIdAndClasse_CodeClasse(@Param("idEtudiant") Long idEtudiant, @Param("codeClasse") String codeClasse);
+
+
+    List<Etudiant> findByClasse_CodeClasseOrderByNomAscPrenomAsc(String codeClasse);
 
 }

@@ -1,12 +1,14 @@
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/config/configuration_app.dart';
-import '../../authentification/presentation/controleur_authentification.dart';
 import '../data/controller/controleur_accueil_etudiant.dart';
+import '../data/controller/controleur_annonce_etudiant.dart';
+import '../data/controller/controleur_notification_etudiant.dart';
 import '../data/controller/controleur_profil_etudiant.dart';
 import '../data/dto/tableau_bord_etudiant_dto.dart';
+import 'page_detail_annonce_etudiant.dart';
+import 'page_liste_annonces_etudiant.dart';
+import 'page_notifications_etudiant.dart';
 
 class PageAccueilEtudiant extends StatefulWidget {
   const PageAccueilEtudiant({super.key});
@@ -29,13 +31,16 @@ class _PageAccueilEtudiantState extends State<PageAccueilEtudiant> {
       if (!mounted) return;
       context.read<ControleurAccueilEtudiant>().chargerDashboard();
       context.read<ControleurProfilEtudiant>().chargerMoi();
+      context.read<ControleurAnnonceEtudiant>().chargerAnnonces();
+      context
+          .read<ControleurNotificationEtudiant>()
+          .rafraichirCompteurNonLues();
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final ctrl = context.watch<ControleurAccueilEtudiant>();
-    final profilCtrl = context.watch<ControleurProfilEtudiant>();
 
     if (ctrl.chargement) return const _EtatChargement();
 
@@ -50,16 +55,11 @@ class _PageAccueilEtudiantState extends State<PageAccueilEtudiant> {
     final data = ctrl.dashboard;
     if (data == null) {
       return _EtatErreur(
-        message: "Aucune donnée dashboard.",
+        message: "Aucune donnÃ©e dashboard.",
         onRetry:
             () => context.read<ControleurAccueilEtudiant>().chargerDashboard(),
       );
     }
-
-    final photoUrl = profilCtrl.moi?.photoUrl;
-    final prenom = profilCtrl.moi?.prenom ?? '';
-    final nomFamille = profilCtrl.moi?.nom ?? '';
-    final initialesProfil = _initialesPrenomNom(prenom, nomFamille);
 
     final taux = data.assiduite.tauxPresence.round().clamp(0, 100);
 
@@ -75,10 +75,21 @@ class _PageAccueilEtudiantState extends State<PageAccueilEtudiant> {
             slivers: [
               SliverToBoxAdapter(
                 child: _AppBarCompacte(
-                  nom: data.entete.nom,
-                  role: "ETUDIANT",
-                  initiales: initialesProfil,
-                  photoUrl: photoUrl,
+                  onTapNotifications: () async {
+                    final ctrlNotif =
+                        context.read<ControleurNotificationEtudiant>();
+                    if (ctrlNotif.notifications.isEmpty) {
+                      await ctrlNotif.chargerNotifications();
+                    }
+
+                    if (!context.mounted) return;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const PageNotificationsEtudiant(),
+                      ),
+                    );
+                  },
                 ),
               ),
               SliverPadding(
@@ -86,9 +97,9 @@ class _PageAccueilEtudiantState extends State<PageAccueilEtudiant> {
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
                     _TitrePage(
-                      titre: "Espace Étudiant",
+                      titre: "Espace Etudiant",
                       sousTitre:
-                          "${data.entete.niveau} • ${data.entete.session}",
+                          "${data.entete.niveau} an ${data.entete.session}",
                       actif: true,
                     ),
                     const SizedBox(height: 14),
@@ -97,6 +108,16 @@ class _PageAccueilEtudiantState extends State<PageAccueilEtudiant> {
                       prochaineSeance: data.prochaineSeance,
                       assiduiteTaux: taux,
                       assiduiteLabel: data.assiduite.labelQualite,
+                      onTapProchaineSeance:
+                          () => Navigator.pushNamed(
+                            context,
+                            '/etudiant/calendrier',
+                          ),
+                      onTapAssiduite:
+                          () => Navigator.pushNamed(
+                            context,
+                            '/etudiant/presence',
+                          ),
                     ),
                     const SizedBox(height: 14),
 
@@ -105,8 +126,39 @@ class _PageAccueilEtudiantState extends State<PageAccueilEtudiant> {
                       onChange: (v) => setState(() => _ongletFlux = v),
                       annonces: data.annonces,
                       notes: data.dernieresNotes,
-                      onVoirTout: () {},
-                      onTapAnnonce: (a) {},
+                      onVoirTout: () async {
+                        if (_ongletFlux == 0) {
+                          final ctrlAnnonce =
+                              context.read<ControleurAnnonceEtudiant>();
+                          if (ctrlAnnonce.annonces.isEmpty) {
+                            await ctrlAnnonce.chargerAnnonces();
+                          }
+                          if (!context.mounted) return;
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const PageListeAnnoncesEtudiant(),
+                            ),
+                          );
+                          return;
+                        }
+                        if (!context.mounted) return;
+                        Navigator.pushNamed(context, '/etudiant/notes');
+                      },
+                      onTapAnnonce: (a) async {
+                        await context
+                            .read<ControleurAnnonceEtudiant>()
+                            .chargerAnnonceParId(a.id);
+                        if (!context.mounted) return;
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (_) =>
+                                    PageDetailAnnonceEtudiant(annonceId: a.id),
+                          ),
+                        );
+                      },
                     ),
                   ]),
                 ),
@@ -124,21 +176,14 @@ class _PageAccueilEtudiantState extends State<PageAccueilEtudiant> {
    ========================= */
 
 class _AppBarCompacte extends StatelessWidget {
-  const _AppBarCompacte({
-    required this.nom,
-    required this.role,
-    required this.initiales,
-    required this.photoUrl,
-  });
+  const _AppBarCompacte({required this.onTapNotifications});
 
-  final String nom;
-  final String role;
-  final String initiales;
-  final String? photoUrl;
+  final VoidCallback onTapNotifications;
 
   @override
   Widget build(BuildContext context) {
-    final imageUrl = _construireUrlPhoto(photoUrl);
+    final ctrlNotif = context.watch<ControleurNotificationEtudiant>();
+    final hasUnread = ctrlNotif.aDesNotificationsNonLues;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
@@ -170,94 +215,61 @@ class _AppBarCompacte extends StatelessWidget {
               style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
             ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 160),
-                child: Text(
-                  nom,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w800),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 5,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEEF2FF),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  role.toUpperCase(),
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFF5B5BEA),
-                    letterSpacing: 0.6,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 12),
-
-          CupertinoButton(
-            padding: EdgeInsets.zero,
-            onPressed: () => _ouvrirMenu(context),
-            child: CircleAvatar(
-              radius: 16,
-              backgroundColor: const Color(0xFF5B5BEA),
-              backgroundImage: imageUrl != null ? NetworkImage(imageUrl) : null,
-              child:
-                  imageUrl == null
-                      ? Text(
-                        initiales,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                        ),
-                      )
-                      : null,
-            ),
-          ),
+          _BoutonAnnonce(hasUnread: hasUnread, onTap: onTapNotifications),
+          const SizedBox(width: 10),
         ],
       ),
     );
   }
 }
 
-void _ouvrirMenu(BuildContext context) {
-  showCupertinoModalPopup<void>(
-    context: context,
-    builder: (ctx) {
-      return CupertinoActionSheet(
-        title: const Text("Compte"),
-        actions: [
-          CupertinoActionSheetAction(
-            onPressed: () {
-              Navigator.pop(ctx);
-              Navigator.pushNamed(context, "/etudiant/profil");
-            },
-            child: const Text("Profil"),
-          ),
-        ],
-        cancelButton: CupertinoActionSheetAction(
-          isDestructiveAction: true,
-          onPressed: () async {
-            Navigator.pop(ctx);
-            await context.read<ControleurAuthentification>().seDeconnecter();
-          },
-          child: const Text("Déconnexion"),
+class _BoutonAnnonce extends StatelessWidget {
+  const _BoutonAnnonce({required this.hasUnread, required this.onTap});
+
+  final bool hasUnread;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(999),
+      onTap: onTap,
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF7F9FF),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.black.withOpacity(0.06)),
         ),
-      );
-    },
-  );
+        child: Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.center,
+          children: [
+            const Icon(
+              Icons.favorite_border_rounded,
+              color: Color(0xFF0B1220),
+              size: 22,
+            ),
+            if (hasUnread)
+              Positioned(
+                top: 9,
+                right: 9,
+                child: Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEF4444),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 1.8),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 /* =========================
@@ -340,7 +352,7 @@ class _TitrePage extends StatelessWidget {
 }
 
 /* =========================
-   Résumé: 2 cartes
+   RÃ©sumÃ©: 2 cartes
    ========================= */
 
 class _ResumeRow extends StatelessWidget {
@@ -348,11 +360,15 @@ class _ResumeRow extends StatelessWidget {
     required this.prochaineSeance,
     required this.assiduiteTaux,
     required this.assiduiteLabel,
+    required this.onTapProchaineSeance,
+    required this.onTapAssiduite,
   });
 
   final ProchaineSeanceDTO? prochaineSeance;
   final int assiduiteTaux;
   final String assiduiteLabel;
+  final VoidCallback onTapProchaineSeance;
+  final VoidCallback onTapAssiduite;
 
   @override
   Widget build(BuildContext context) {
@@ -361,7 +377,7 @@ class _ResumeRow extends StatelessWidget {
         final stack = c.maxWidth < 520;
         final seance = prochaineSeance;
 
-        final seanceTitre = seance?.matiereNom ?? "Aucune séance";
+        final seanceTitre = seance?.matiereNom ?? "Aucune seance";
         final seanceHoraire = (seance == null) ? "-" : seance.horaire;
         final seanceSalle = seance?.salle ?? "-";
         final seanceJour = seance?.dayOfWeek ?? "-";
@@ -369,12 +385,20 @@ class _ResumeRow extends StatelessWidget {
         if (stack) {
           return Column(
             children: [
-              _CarteResumeProchaineSeance(
-                titre: seanceTitre,
-                sousTitre: "$seanceJour • $seanceHoraire • $seanceSalle",
+              InkWell(
+                borderRadius: BorderRadius.circular(18),
+                onTap: onTapProchaineSeance,
+                child: _CarteResumeProchaineSeance(
+                  titre: seanceTitre,
+                  sousTitre: "$seanceJour du $seanceHoraire au $seanceSalle",
+                ),
               ),
               const SizedBox(height: 12),
-              _CarteResumeAssiduite(taux: assiduiteTaux, label: assiduiteLabel),
+              _CarteResumeAssiduite(
+                taux: assiduiteTaux,
+                label: assiduiteLabel,
+                onTap: onTapAssiduite,
+              ),
             ],
           );
         }
@@ -382,9 +406,13 @@ class _ResumeRow extends StatelessWidget {
         return Row(
           children: [
             Expanded(
-              child: _CarteResumeProchaineSeance(
-                titre: seanceTitre,
-                sousTitre: "$seanceJour • $seanceHoraire • $seanceSalle",
+              child: InkWell(
+                borderRadius: BorderRadius.circular(18),
+                onTap: onTapProchaineSeance,
+                child: _CarteResumeProchaineSeance(
+                  titre: seanceTitre,
+                  sousTitre: "$seanceJour â€¢ $seanceHoraire â€¢ $seanceSalle",
+                ),
               ),
             ),
             const SizedBox(width: 12),
@@ -392,6 +420,7 @@ class _ResumeRow extends StatelessWidget {
               child: _CarteResumeAssiduite(
                 taux: assiduiteTaux,
                 label: assiduiteLabel,
+                onTap: onTapAssiduite,
               ),
             ),
           ],
@@ -458,7 +487,7 @@ class _CarteResumeProchaineSeance extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  "Prochaine séance",
+                  "Prochaine seance",
                   style: TextStyle(fontWeight: FontWeight.w900),
                 ),
                 const SizedBox(height: 4),
@@ -497,57 +526,70 @@ class _CarteResumeProchaineSeance extends StatelessWidget {
 }
 
 class _CarteResumeAssiduite extends StatelessWidget {
-  const _CarteResumeAssiduite({required this.taux, required this.label});
+  const _CarteResumeAssiduite({
+    required this.taux,
+    required this.label,
+    this.onTap,
+  });
   final int taux;
   final String label;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final safe = taux.clamp(0, 100);
-    return _CarteBase(
-      child: Row(
-        children: [
-          SizedBox(
-            width: 54,
-            height: 54,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                CircularProgressIndicator(
-                  value: safe / 100.0,
-                  strokeWidth: 6,
-                  color: const Color(0xFF5B5BEA),
-                  backgroundColor: const Color(0xFFE5E7EB),
-                ),
-                Text(
-                  "$safe%",
-                  style: const TextStyle(fontWeight: FontWeight.w900),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "Assiduité",
-                  style: TextStyle(fontWeight: FontWeight.w900),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  label.toUpperCase(),
-                  style: const TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF61708A),
+    return InkWell(
+      borderRadius: BorderRadius.circular(18),
+      onTap: onTap,
+      child: _CarteBase(
+        child: Row(
+          children: [
+            SizedBox(
+              width: 54,
+              height: 54,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    value: safe / 100.0,
+                    strokeWidth: 6,
+                    color: const Color(0xFF5B5BEA),
+                    backgroundColor: const Color(0xFFE5E7EB),
                   ),
-                ),
-              ],
+                  Text(
+                    "$safe%",
+                    style: const TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Assiduite",
+                    style: TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    label.toUpperCase(),
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF61708A),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: Colors.black.withOpacity(0.35),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -577,7 +619,7 @@ class _CarteFlux extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final itemsCount = onglet == 0 ? annonces.length : notes.length;
-    final titre = onglet == 0 ? "Flux • Annonces" : "Flux • Notes";
+    final titre = onglet == 0 ? " Annonces" : " Notes";
 
     return _CarteBase(
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
@@ -626,7 +668,7 @@ class _CarteFlux extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 18),
               child: Text(
-                "Aucune donnée pour le moment.",
+                "Aucune donnee pour le moment.",
                 style: TextStyle(
                   color: Colors.black.withOpacity(0.55),
                   fontWeight: FontWeight.w700,
@@ -877,7 +919,7 @@ class _FluxTileBase extends StatelessWidget {
 }
 
 /* =========================
-   États
+   Ã‰tats
    ========================= */
 
 class _EtatChargement extends StatelessWidget {
@@ -921,7 +963,7 @@ class _EtatErreur extends StatelessWidget {
                 height: 46,
                 child: ElevatedButton(
                   onPressed: onRetry,
-                  child: const Text("Réessayer"),
+                  child: const Text("RÃ©essayer"),
                 ),
               ),
             ],
@@ -935,19 +977,3 @@ class _EtatErreur extends StatelessWidget {
 /* =========================
    Helpers
    ========================= */
-
-String _initialesPrenomNom(String prenom, String nom) {
-  final p = prenom.trim();
-  final n = nom.trim();
-
-  String firstLetter(String s) =>
-      s.isEmpty ? '' : s.substring(0, 1).toUpperCase();
-
-  final res = (firstLetter(p) + firstLetter(n)).trim();
-  return res.isEmpty ? "U" : res;
-}
-
-String? _construireUrlPhoto(String? photoUrl) {
-  if (photoUrl == null || photoUrl.trim().isEmpty) return null;
-  return "${ConfigurationApp.apiBaseUrl}$photoUrl";
-}

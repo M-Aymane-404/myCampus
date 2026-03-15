@@ -28,6 +28,7 @@ import ProfilPage from './pages/ProfilPage';
 import ChatBot from './composants/ChatBot/ChatBot';
 import { apiAuth } from './services/apiAuth';
 import { apiAuditLogs } from './services/apiAuditLogs';
+import CalendrierAcademiqueProfesseur from './pages/CalendrierAcademiqueProfesseur';
 import './App.css';
 
 function App() {
@@ -176,10 +177,12 @@ function App() {
         return <TableauDeBordProfesseur surNavigation={gererChangementElement} />;
       case 'cours':
         return <GestionCoursProfesseur />;
+      case 'examens':
+        return <GestionExamensProfesseur />;
       case 'notes':
         return <GestionNotesProfesseur />;
       case 'calendrier':
-        return <GestionEmploiTemps />;
+        return <CalendrierAcademiqueProfesseur />;
       case 'presence':
         return <GestionPresenceProfesseur />;
       case 'annonces':

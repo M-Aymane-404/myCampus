@@ -1,13 +1,12 @@
+import { authenticatedFetch } from '../utils/apiInterceptor';
+
 const BASE_URL = 'http://localhost:8080/api/professor';
-import { apiAuth } from './apiAuth';
 
 export const apiProfesseur = {
-  // Get professor's courses
   async obtenirCours() {
     try {
-      const response = await fetch(`${BASE_URL}/courses`, {
+      const response = await authenticatedFetch(`${BASE_URL}/courses`, {
         method: 'GET',
-        headers: apiAuth.getAuthHeaders(),
         credentials: 'include'
       });
 
@@ -22,12 +21,10 @@ export const apiProfesseur = {
     }
   },
 
-  // Get students for a course
   async obtenirEtudiantsParCours(courseId) {
     try {
-      const response = await fetch(`${BASE_URL}/courses/${courseId}/students`, {
+      const response = await authenticatedFetch(`${BASE_URL}/courses/${courseId}/students`, {
         method: 'GET',
-        headers: apiAuth.getAuthHeaders(),
         credentials: 'include'
       });
 
@@ -42,16 +39,14 @@ export const apiProfesseur = {
     }
   },
 
-  // Get grades for a course/assessment
   async obtenirNotes(courseId, assessmentId = null) {
     try {
       const url = assessmentId
         ? `${BASE_URL}/courses/${courseId}/assessments/${assessmentId}/grades`
         : `${BASE_URL}/courses/${courseId}/grades`;
 
-      const response = await fetch(url, {
+      const response = await authenticatedFetch(url, {
         method: 'GET',
-        headers: apiAuth.getAuthHeaders(),
         credentials: 'include'
       });
 
@@ -66,12 +61,13 @@ export const apiProfesseur = {
     }
   },
 
-  // Update grades
   async mettreAJourNotes(courseId, assessmentId, notes) {
     try {
-      const response = await fetch(`${BASE_URL}/courses/${courseId}/assessments/${assessmentId}/grades`, {
+      const response = await authenticatedFetch(`${BASE_URL}/courses/${courseId}/assessments/${assessmentId}/grades`, {
         method: 'PUT',
-        headers: apiAuth.getAuthHeaders(),
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ grades: notes }),
         credentials: 'include'
       });
@@ -87,16 +83,14 @@ export const apiProfesseur = {
     }
   },
 
-  // Get attendance for a course/session
   async obtenirPresence(courseId, sessionId = null) {
     try {
       const url = sessionId
         ? `${BASE_URL}/courses/${courseId}/sessions/${sessionId}/attendance`
         : `${BASE_URL}/courses/${courseId}/attendance`;
 
-      const response = await fetch(url, {
+      const response = await authenticatedFetch(url, {
         method: 'GET',
-        headers: apiAuth.getAuthHeaders(),
         credentials: 'include'
       });
 
@@ -111,12 +105,13 @@ export const apiProfesseur = {
     }
   },
 
-  // Update attendance
   async mettreAJourPresence(courseId, sessionId, presence) {
     try {
-      const response = await fetch(`${BASE_URL}/courses/${courseId}/sessions/${sessionId}/attendance`, {
+      const response = await authenticatedFetch(`${BASE_URL}/courses/${courseId}/sessions/${sessionId}/attendance`, {
         method: 'PUT',
-        headers: apiAuth.getAuthHeaders(),
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ attendance: presence }),
         credentials: 'include'
       });
@@ -132,12 +127,10 @@ export const apiProfesseur = {
     }
   },
 
-  // Get academic calendar
   async obtenirCalendrier() {
     try {
-      const response = await fetch(`${BASE_URL}/calendar`, {
+      const response = await authenticatedFetch(`${BASE_URL}/calendar`, {
         method: 'GET',
-        headers: apiAuth.getAuthHeaders(),
         credentials: 'include'
       });
 

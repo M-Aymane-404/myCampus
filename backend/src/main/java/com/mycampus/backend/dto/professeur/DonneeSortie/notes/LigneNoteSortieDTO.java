@@ -18,5 +18,6 @@ public class LigneNoteSortieDTO {
         private String prenom;
 
         private Double note;       // null = non saisi
-        private boolean publiee;   // true si datePublication != null
+        private boolean publiee;// true si datePublication != null
+        private boolean copieDisponible;
 }

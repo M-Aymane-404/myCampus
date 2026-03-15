@@ -137,6 +137,46 @@ export const apiAnnonces = {
     }
   },
 
+  async publier(id) {
+    try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
+      const response = await fetch(`${BASE_URL}/admin/annonces/${id}/publier`, {
+        method: 'PUT',
+        headers,
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (err) {
+      console.error('Error publishing announcement:', err);
+      throw err;
+    }
+  },
+
+  async depublier(id) {
+    try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
+      const response = await fetch(`${BASE_URL}/admin/annonces/${id}/depublier`, {
+        method: 'PUT',
+        headers,
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (err) {
+      console.error('Error unpublishing announcement:', err);
+      throw err;
+    }
+  },
+
   // Mark announcement as read (Professor)
   async marquerCommeLu(id) {
     try {

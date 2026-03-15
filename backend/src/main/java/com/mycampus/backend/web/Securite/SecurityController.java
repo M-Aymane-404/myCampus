@@ -1,6 +1,7 @@
 package com.mycampus.backend.web.Securite;
 
 import com.mycampus.backend.dto.securite.entree.ConnectionDTO;
+import com.mycampus.backend.dto.securite.entree.ConnectionMobileDTO;
 import com.mycampus.backend.dto.securite.entree.RafraichirTokenDTO;
 import com.mycampus.backend.dto.securite.sortie.JetonsSortieDTO;
 import com.mycampus.backend.dto.securite.sortie.RotationResult;
@@ -95,7 +96,7 @@ public class SecurityController {
             log.error("reCAPTCHA validation failed for token: {}", connectionDTO.getRecaptchaToken());
             throw new SecuriteException("Validation reCAPTCHA échouée. Veuillez réessayer.");
         }
-        
+
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(connectionDTO.getEmail(),connectionDTO.getMotDePasse())
         );
@@ -145,9 +146,62 @@ public class SecurityController {
 
     }
 
+
+
+    @PostMapping("/connecter-mobile")
+    public JetonsSortieDTO connecterMobile(@Valid @RequestBody ConnectionMobileDTO connectionDTO,
+                                     HttpServletRequest request,
+                                     HttpServletResponse response) {
+
+
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(connectionDTO.getEmail(),connectionDTO.getMotDePasse())
+        );
+        Utilisateur u = utilisateurRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new SecuriteException("Utilisateur introuvable"));
+
+        Instant instant = Instant.now();
+        String scope  = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority).collect(Collectors.joining(" "));
+        JwtClaimsSet jwtClaimsSet = JwtClaimsSet.builder()
+                .issuedAt(instant)
+                .expiresAt(instant.plus(20, ChronoUnit.MINUTES))
+
+                .subject(authentication.getName())
+                .claim("scope", scope)
+                .claim("userId", u.getId())
+                .claim("cin", u.getCin())
+                .claim("active", u.getActive())
+
+                .build();
+        JwtEncoderParameters jwtEncoderParameters = JwtEncoderParameters.from(
+                JwsHeader.with(MacAlgorithm.HS512).build(),jwtClaimsSet);
+        String jwt = jwtEncoder.encode(jwtEncoderParameters).getTokenValue();
+        String userAgent = request.getHeader("User-Agent");
+        String ip = extraireIp(request);
+
+
+        RefreshToken refresh = refreshTokenMetier.creerRefreshTokenPourlaPremierFois(authentication.getName(), userAgent, ip);
+
+        ResponseCookie cookie = ResponseCookie.from("refresh_token", refresh.getToken())
+                .httpOnly(true)
+                .secure(cookieSecure)              // en prod (https). en local: false
+                .sameSite("Lax")           // ou "None" si front/back domaines différents
+                .path("/auth")             // limite l’envoi du cookie aux endpoints auth
+                .maxAge(7 * 24 * 60 * 60)  // 7 jours
+                .build();
+
+        response.addHeader("Set-Cookie", cookie.toString());
+        log.info("cokokie in  connect " + cookie);
+
+        return JetonsSortieDTO.builder()
+                .access_token(jwt)
+                .build();
+
+
+    }
     @PostMapping("/rafraichir-jeton")
-    public JetonsSortieDTO rafraichir(
-                                      HttpServletRequest request,HttpServletResponse response) {
+    public JetonsSortieDTO rafraichir(HttpServletRequest request,HttpServletResponse response) {
 
         Cookie cookie = WebUtils.getCookie(request, "refresh_token");
         if (cookie == null || cookie.getValue().isBlank()) {

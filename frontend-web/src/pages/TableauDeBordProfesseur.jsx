@@ -1,185 +1,436 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
-  BookOpen, Users, CheckCircle, XCircle,
-  Bell, ChevronDown, ChevronRight
+  BookOpen, ClipboardList, GraduationCap, Megaphone,
+  UserCheck, Clock, MapPin, ChevronRight, AlertCircle,
+  CheckCircle2, Calendar, Loader2, TrendingUp, Bell
 } from 'lucide-react';
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
-} from 'recharts';
+import { apiTableauDeBordProfesseur } from '../services/professeur/apiTableauDeBordProfesseur';
+import { apiAnnoncesProfesseur }       from '../services/professeur/apiAnnoncesProfesseur';
 import './TableauDeBordProfesseur.css';
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const TYPE_COLOR = { COURS: 'blue', TD: 'green', TP: 'purple' };
+
+const ETAT_CONFIG = {
+  PLANIFIEE: { label: 'Planifiée', color: '#3b82f6', bg: '#eff6ff' },
+  TERMINEE:  { label: 'Terminée',  color: '#10b981', bg: '#f0fdf4' },
+  ANNULEE:   { label: 'Annulée',   color: '#ef4444', bg: '#fee2e2' },
+};
+
+const ETAT_EXAM_CONFIG = {
+  PROGRAMME: { label: 'Programmé', color: '#3b82f6', bg: '#eff6ff', icon: Clock },
+  PASSE:     { label: 'Passé',     color: '#f59e0b', bg: '#fffbeb', icon: AlertCircle },
+  CORRIGE:   { label: 'Corrigé',   color: '#10b981', bg: '#f0fdf4', icon: CheckCircle2 },
+};
+
+const formatDate = (d) => {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: 'short' });
+};
+
+const formatHeure = (d) => {
+  if (!d) return '';
+  return new Date(d).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+};
+
+const tempsDepuis = (dateStr) => {
+  if (!dateStr) return '';
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const h = Math.floor(diff / 3_600_000);
+  const d = Math.floor(h / 24);
+  if (d >= 1) return `IL Y A ${d}J`;
+  if (h >= 1) return `IL Y A ${h}H`;
+  return 'RÉCENT';
+};
+
+// ─── Composant principal ──────────────────────────────────────────────────────
+
 const TableauDeBordProfesseur = ({ surNavigation }) => {
-  // Mock Stats Data
-  const stats = [
-    { label: 'COURS ACTIFS', value: 4, icon: BookOpen, color: 'blue' },
-    { label: 'ÉTUDIANTS TOTAL', value: 156, icon: Users, color: 'purple' },
-    { label: 'TAUX DE PRÉSENCE', value: '92%', icon: CheckCircle, color: 'green' },
-    { label: 'ALERTES NOTES', value: 12, icon: XCircle, color: 'orange' },
+  const [data, setData]               = useState(null);
+  const [prochaineSeance, setProchaineSeance] = useState(null);
+  const [annonces, setAnnonces]       = useState([]);
+  const [loading, setLoading]         = useState(true);
+  const [error, setError]             = useState(null);
+
+  useEffect(() => {
+    const fetchAll = async () => {
+      try {
+        setLoading(true);
+
+        // Dashboard principal
+        const dashboard = await apiTableauDeBordProfesseur.obtenirTableauDeBord();
+        setData(dashboard);
+
+        // Prochaine séance (emploi du temps)
+        try {
+          const ps = await apiTableauDeBordProfesseur.obtenirProchaineSeance();
+          setProchaineSeance(ps?.prochaineSeance || null);
+        } catch {
+          setProchaineSeance(null);
+        }
+
+        // Annonces reçues (mes classes + dept)
+        try {
+          const ann = await apiAnnoncesProfesseur.listerAnnoncesMesClasses();
+          setAnnonces(Array.isArray(ann) ? ann.slice(0, 3) : []);
+        } catch {
+          setAnnonces([]);
+        }
+
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAll();
+  }, []);
+
+  // ── État de chargement ────────────────────────────────────────────────────
+  if (loading) return (
+      <div className="tdb-prof-container">
+        <div className="tdb-loading">
+          <Loader2 size={32} className="tdb-spin" />
+          <p>Chargement du tableau de bord...</p>
+        </div>
+      </div>
+  );
+
+  if (error) return (
+      <div className="tdb-prof-container">
+        <div className="tdb-error">
+          <AlertCircle size={28} />
+          <p>Erreur : {error}</p>
+        </div>
+      </div>
+  );
+
+  const { entete, stats, seancesRecentes, examensAVenir } = data || {};
+
+  const statCards = [
+    {
+      label: 'ENSEIGNEMENTS',
+      value: stats?.nbEnseignements ?? '—',
+      icon: BookOpen,
+      colorClass: 'bg-blue',
+      iconClass:  'icon-blue',
+      action: () => surNavigation?.('cours'),
+    },
+    {
+      label: 'SÉANCES TOTALES',
+      value: stats?.nbSeancesTotales ?? '—',
+      sub: `${stats?.nbSeancesTerminees ?? 0} terminées`,
+      icon: UserCheck,
+      colorClass: 'bg-green',
+      iconClass:  'icon-green',
+      action: () => surNavigation?.('cours'),
+    },
+    {
+      label: 'EXAMENS PROGRAMMÉS',
+      value: stats?.nbExamensProgrammes ?? '—',
+      sub: `${stats?.nbExamensTotal ?? 0} au total`,
+      icon: ClipboardList,
+      colorClass: 'bg-purple',
+      iconClass:  'icon-purple',
+      action: () => surNavigation?.('examens'),
+    },
+    {
+      label: 'ANNONCES PUBLIÉES',
+      value: stats?.nbAnnoncesPubiiees ?? '—',
+      icon: Megaphone,
+      colorClass: 'bg-orange',
+      iconClass:  'icon-orange',
+      action: () => surNavigation?.('annonces'),
+    },
   ];
-
-  // Mock Chart Data
-  const dataMoyennes = [
-    { name: 'INF101', moyenne: 14.5 },
-    { name: 'MTH202', moyenne: 12.8 },
-    { name: 'GEN303', moyenne: 15.2 },
-    { name: 'PHY104', moyenne: 13.0 },
-  ];
-
-  // Mock Single Announcement
-  const derniereAnnonce = {
-    id: 1,
-    sujet: 'Maintenance de la plateforme',
-    date: 'Il y a 2 heures',
-    message: 'La plateforme sera en maintenance ce soir de 23h à minuit. Veuillez sauvegarder votre travail.'
-  };
-
-  // Form State
-  const [annonce, setAnnonce] = useState({
-    sujet: '',
-    classe: 'L3 Informatique',
-    message: ''
-  });
 
   return (
-    <div className="dashboard-professeur">
-      {/* Header */}
-      <header className="dashboard-header">
-        <h1 className="dashboard-title">Tableau de bord Professeur</h1>
-        <p className="dashboard-subtitle">Gérez vos classes et communiquez avec vos étudiants.</p>
-      </header>
+      <div className="tdb-prof-container">
 
-      {/* Stats Row */}
-      <section className="stats-grid">
-        {stats.map((stat, index) => (
-          <div key={index} className="stat-card">
-            <div className="stat-info">
-              <span className="stat-label">{stat.label}</span>
-              <span className="stat-value">{stat.value}</span>
+        {/* ── Header ──────────────────────────────────────────────────────── */}
+        <div className="tdb-header">
+          <div className="tdb-header-content">
+            <div className="tdb-header-info">
+              <h1>Espace Professeur</h1>
+              <p>
+                {entete?.grade && <span className="tdb-header-grade">{entete.grade}</span>}
+                {entete?.specialite && <> · {entete.specialite}</>}
+                {entete?.departement && <> · {entete.departement}</>}
+              </p>
             </div>
-            <div className={`stat-icon-wrapper color-${stat.color}`}>
-              <stat.icon size={24} />
+            <div className="tdb-session-badge">
+              <div className="tdb-status-dot" />
+              <span>{entete?.statut || 'ACTIF'}</span>
             </div>
-          </div>
-        ))}
-      </section>
-
-      {/* Main Content Split */}
-      <section className="content-split">
-
-        {/* Left Column: Announcement Form */}
-        <div className="announcement-card">
-          <div className="announcement-header">
-            <Bell size={20} />
-            <h2>Publier une Annonce</h2>
-          </div>
-
-          <div className="announcement-form">
-            {/* Subject Input */}
-            <div className="form-group">
-              <label>SUJET DE L'ANNONCE</label>
-              <input
-                type="text"
-                placeholder="Ex: Report du TP..."
-                value={annonce.sujet}
-                onChange={(e) => setAnnonce({ ...annonce, sujet: e.target.value })}
-              />
-            </div>
-
-            {/* Class Select */}
-            <div className="form-group">
-              <label>CLASSE CIBLE</label>
-              <div className="select-wrapper">
-                <select
-                  value={annonce.classe}
-                  onChange={(e) => setAnnonce({ ...annonce, classe: e.target.value })}
-                >
-                  <option>L3 Informatique</option>
-                  <option>M1 Génie Logiciel</option>
-                  <option>L2 Mathématiques</option>
-                </select>
-                <ChevronDown size={16} className="select-icon" />
-              </div>
-            </div>
-
-            {/* Message Textarea */}
-            <div className="form-group">
-              <label>MESSAGE</label>
-              <textarea
-                placeholder="Écrivez votre message ici..."
-                rows={5}
-                value={annonce.message}
-                onChange={(e) => setAnnonce({ ...annonce, message: e.target.value })}
-              ></textarea>
-            </div>
-
-            <button className="btn-publish">
-              DIFFUSER MAINTENANT
-            </button>
           </div>
         </div>
 
-        {/* Right Column: Charts & Lists */}
-        <div className="analytics-column">
-
-          {/* Chart Card */}
-          <div className="chart-card">
-            <h3>Moyennes par Cours</h3>
-            <div className="chart-wrapper">
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={dataMoyennes} barSize={40}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                  <XAxis
-                    dataKey="name"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: '#64748B', fontSize: 12 }}
-                    dy={10}
-                  />
-                  <YAxis
-                    hide={false}
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: '#64748B', fontSize: 12 }}
-                    domain={[0, 20]}
-                  />
-                  <Tooltip
-                    cursor={{ fill: 'transparent' }}
-                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                  />
-                  <Bar
-                    dataKey="moyenne"
-                    fill="#4F46E5"
-                    radius={[6, 6, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* Recent Activity */}
-          <div className="recent-activity-card">
-            <h3>Vos Annonces Récentes</h3>
-            <div
-              className="announcement-item-card"
-              onClick={() => surNavigation && surNavigation('annonces')}
-            >
-              <div className="announcement-icon-circle">
-                <Bell size={20} />
-              </div>
-              <div className="announcement-content-text">
-                <h4 className="announcement-subject">{derniereAnnonce.sujet}</h4>
-                <span className="announcement-meta">
-                  {annonce.classe.toUpperCase()} • {new Date().toLocaleDateString()}
-                </span>
-              </div>
-              <ChevronRight size={20} className="chevron-icon" />
-            </div>
-          </div>
-
+        {/* ── Stat Cards ──────────────────────────────────────────────────── */}
+        <div className="tdb-stats-row">
+          {statCards.map((card, i) => {
+            const Icon = card.icon;
+            return (
+                <div key={i} className="tdb-stat-card" onClick={card.action} style={{ cursor: 'pointer' }}>
+                  <div className="tdb-stat-info">
+                    <span className="tdb-stat-label">{card.label}</span>
+                    <span className="tdb-stat-number">{card.value}</span>
+                    {card.sub && <span className="tdb-stat-sub">{card.sub}</span>}
+                  </div>
+                  <div className={`tdb-stat-icon-box ${card.colorClass}`}>
+                    <Icon size={24} className={card.iconClass} />
+                  </div>
+                </div>
+            );
+          })}
         </div>
 
-      </section>
-    </div>
+        {/* ── Grille principale ───────────────────────────────────────────── */}
+        <div className="tdb-main-grid">
+
+          {/* ── Colonne gauche ──────────────────────────────────────────── */}
+          <div className="tdb-left-col">
+
+            {/* Prochaine séance (emploi du temps) */}
+            <div className="tdb-next-seance-card">
+              <div className="tdb-card-header">
+                <div className="tdb-section-label">
+                  <Clock className="tdb-label-icon" size={18} />
+                  <h3>Prochaine Séance</h3>
+                </div>
+              </div>
+
+              {prochaineSeance ? (
+                  <div className="tdb-next-seance-content">
+                    <div className="tdb-next-seance-type">
+                  <span className={`tdb-type-pill pill-${TYPE_COLOR[prochaineSeance.type] || 'grey'}`}>
+                    {prochaineSeance.type || 'COURS'}
+                  </span>
+                      <span className="tdb-next-seance-name">
+                    {prochaineSeance.nomMatiere || prochaineSeance.matiere || 'Matière non précisée'}
+                  </span>
+                    </div>
+                    <div className="tdb-next-seance-details">
+                      <div className="tdb-detail-row">
+                        <Calendar size={14} />
+                        <span>{prochaineSeance.dayOfWeek || formatDate(prochaineSeance.date)}</span>
+                      </div>
+                      <div className="tdb-detail-row">
+                        <Clock size={14} />
+                        <span>
+                      {prochaineSeance.start || formatHeure(prochaineSeance.heureDebut)}
+                          {(prochaineSeance.end || prochaineSeance.heureFin) &&
+                              ` → ${prochaineSeance.end || formatHeure(prochaineSeance.heureFin)}`}
+                    </span>
+                      </div>
+                      {(prochaineSeance.salle || prochaineSeance.room) && (
+                          <div className="tdb-detail-row">
+                            <MapPin size={14} />
+                            <span>Salle {prochaineSeance.salle || prochaineSeance.room}</span>
+                          </div>
+                      )}
+                      {prochaineSeance.classe && (
+                          <div className="tdb-detail-row">
+                            <BookOpen size={14} />
+                            <span>{prochaineSeance.classe}</span>
+                          </div>
+                      )}
+                    </div>
+                  </div>
+              ) : (
+                  <div className="tdb-empty-small">
+                    <Clock size={28} opacity={0.2} />
+                    <p>Aucune séance programmée dans l'emploi du temps.</p>
+                  </div>
+              )}
+            </div>
+
+            {/* Annonces reçues */}
+            <div className="tdb-annonces-card">
+              <div className="tdb-card-header">
+                <div className="tdb-section-label">
+                  <Bell className="tdb-label-icon" size={18} />
+                  <h3>Annonces Reçues</h3>
+                </div>
+                <span className="tdb-badge">
+                {annonces.length > 0 ? `${annonces.length} NOUVELLES` : '0'}
+              </span>
+              </div>
+
+              {annonces.length > 0 ? (
+                  <div className="tdb-annonces-list">
+                    {annonces.map(ann => (
+                        <div
+                            key={ann.id}
+                            className="tdb-annonce-row"
+                            onClick={() => surNavigation?.('annonces')}
+                        >
+                          <div className="tdb-annonce-indicator" />
+                          <div className="tdb-annonce-body">
+                            <p className="tdb-annonce-titre">{ann.titre}</p>
+                            <div className="tdb-annonce-meta">
+                              <span className="tdb-annonce-cat">{ann.typeAnnonce || 'GÉNÉRAL'}</span>
+                              <span className="tdb-annonce-time">
+                          {tempsDepuis(ann.datePublication)}
+                        </span>
+                            </div>
+                          </div>
+                          <ChevronRight size={16} className="tdb-annonce-arrow" />
+                        </div>
+                    ))}
+                    <button className="tdb-voir-tout" onClick={() => surNavigation?.('annonces')}>
+                      Voir toutes les annonces <ChevronRight size={14} />
+                    </button>
+                  </div>
+              ) : (
+                  <div className="tdb-empty-small">
+                    <Bell size={28} opacity={0.2} />
+                    <p>Aucune annonce disponible.</p>
+                  </div>
+              )}
+            </div>
+          </div>
+
+          {/* ── Colonne droite ───────────────────────────────────────────── */}
+          <div className="tdb-right-col">
+
+            {/* Séances récentes */}
+            <div className="tdb-seances-card">
+              <div className="tdb-card-header">
+                <div className="tdb-section-label">
+                  <UserCheck className="tdb-label-icon" size={18} />
+                  <h3>Séances Récentes</h3>
+                </div>
+                <button className="tdb-link-btn" onClick={() => surNavigation?.('cours')}>
+                  Voir tout <ChevronRight size={14} />
+                </button>
+              </div>
+
+              {seancesRecentes?.length > 0 ? (
+                  <div className="tdb-seances-list">
+                    {seancesRecentes.map(s => {
+                      const couleur   = TYPE_COLOR[s.type] || 'grey';
+                      const etatCfg   = ETAT_CONFIG[s.etat] || {};
+                      return (
+                          <div key={s.id} className="tdb-seance-row">
+                            <div className={`tdb-seance-strip strip-${couleur}`} />
+                            <div className="tdb-seance-body">
+                              <div className="tdb-seance-top">
+                                <span className={`tdb-type-pill-sm pill-${couleur}`}>{s.type}</span>
+                                <span className="tdb-seance-matiere">{s.nomMatiere}</span>
+                                <span className="tdb-seance-classe">{s.codeClasse}</span>
+                              </div>
+                              <div className="tdb-seance-bot">
+                          <span className="tdb-seance-date">
+                            <Calendar size={12} /> {formatDate(s.date)}
+                          </span>
+                                {s.heureDebut && (
+                                    <span className="tdb-seance-heure">
+                              <Clock size={12} /> {formatHeure(s.heureDebut)}
+                                      {s.heureFin && ` → ${formatHeure(s.heureFin)}`}
+                            </span>
+                                )}
+                                {s.salle && (
+                                    <span className="tdb-seance-salle">
+                              <MapPin size={12} /> {s.salle}
+                            </span>
+                                )}
+                              </div>
+                            </div>
+                            {s.etat && (
+                                <span
+                                    className="tdb-etat-pill"
+                                    style={{ color: etatCfg.color, background: etatCfg.bg }}
+                                >
+                          {etatCfg.label || s.etat}
+                        </span>
+                            )}
+                          </div>
+                      );
+                    })}
+                  </div>
+              ) : (
+                  <div className="tdb-empty-small">
+                    <UserCheck size={28} opacity={0.2} />
+                    <p>Aucune séance enregistrée.</p>
+                  </div>
+              )}
+            </div>
+
+            {/* Examens à venir */}
+            <div className="tdb-examens-card">
+              <div className="tdb-card-header">
+                <div className="tdb-section-label">
+                  <ClipboardList className="tdb-label-icon" size={18} />
+                  <h3>Examens à Venir</h3>
+                </div>
+                <button className="tdb-link-btn" onClick={() => surNavigation?.('examens')}>
+                  Gérer <ChevronRight size={14} />
+                </button>
+              </div>
+
+              {examensAVenir?.length > 0 ? (
+                  <div className="tdb-examens-list">
+                    {examensAVenir.map(ex => {
+                      const cfg     = ETAT_EXAM_CONFIG[ex.etat] || ETAT_EXAM_CONFIG.PROGRAMME;
+                      const ExIcon  = cfg.icon;
+                      return (
+                          <div key={ex.id} className="tdb-examen-row">
+                            <div className="tdb-examen-icon-box" style={{ background: cfg.bg, color: cfg.color }}>
+                              <ExIcon size={18} />
+                            </div>
+                            <div className="tdb-examen-body">
+                              <p className="tdb-examen-matiere">
+                                {ex.nomMatiere}
+                                {ex.typeExamen === 'RATTRAPAGE' && (
+                                    <span className="tdb-rattrapage-badge">Rattrapage</span>
+                                )}
+                              </p>
+                              <div className="tdb-examen-meta">
+                                <span>{ex.nomClasse}</span>
+                                <span>·</span>
+                                <span>n°{ex.numeroExamen}</span>
+                                {ex.dateExamen && (
+                                    <>
+                                      <span>·</span>
+                                      <span>{formatDate(ex.dateExamen)}</span>
+                                    </>
+                                )}
+                                {ex.duree > 0 && (
+                                    <>
+                                      <span>·</span>
+                                      <span>{ex.duree} min</span>
+                                    </>
+                                )}
+                              </div>
+                            </div>
+                            <span
+                                className="tdb-etat-pill"
+                                style={{ color: cfg.color, background: cfg.bg }}
+                            >
+                        {cfg.label}
+                      </span>
+                          </div>
+                      );
+                    })}
+                    <button className="tdb-voir-tout" onClick={() => surNavigation?.('examens')}>
+                      Gérer les examens <ChevronRight size={14} />
+                    </button>
+                  </div>
+              ) : (
+                  <div className="tdb-empty-small">
+                    <GraduationCap size={28} opacity={0.2} />
+                    <p>Aucun examen programmé.</p>
+                    <button className="tdb-action-btn" onClick={() => surNavigation?.('examens')}>
+                      Créer un examen
+                    </button>
+                  </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
   );
 };
 

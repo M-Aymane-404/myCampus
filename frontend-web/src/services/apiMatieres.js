@@ -1,12 +1,12 @@
+import { authenticatedFetch } from '../utils/apiInterceptor';
+
 const BASE_URL = 'http://localhost:8080/api/admin/structure/matieres';
-import { apiAuth } from './apiAuth';
 
 export const apiMatieres = {
     async obtenirTous() {
         try {
-            const reponse = await fetch(BASE_URL, {
+            const reponse = await authenticatedFetch(BASE_URL, {
                 method: 'GET',
-                headers: apiAuth.getAuthHeaders(),
                 credentials: 'include'
             });
 
@@ -16,16 +16,15 @@ export const apiMatieres = {
 
             return await reponse.json();
         } catch (erreur) {
-            console.error('Erreur lors de la récupération des matières:', erreur);
+            console.error('Erreur lors de la recuperation des matieres:', erreur);
             throw erreur;
         }
     },
 
     async obtenirParModule(codeModule) {
         try {
-            const reponse = await fetch(`${BASE_URL}/module/${codeModule}`, {
+            const reponse = await authenticatedFetch(`${BASE_URL}/module/${codeModule}`, {
                 method: 'GET',
-                headers: apiAuth.getAuthHeaders(),
                 credentials: 'include'
             });
 
@@ -35,18 +34,17 @@ export const apiMatieres = {
 
             return await reponse.json();
         } catch (erreur) {
-            console.error('Erreur lors de la récupération des matières par module:', erreur);
+            console.error('Erreur lors de la recuperation des matieres par module:', erreur);
             throw erreur;
         }
     },
 
     async creer(matiere) {
         try {
-            const reponse = await fetch(BASE_URL, {
+            const reponse = await authenticatedFetch(BASE_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    ...apiAuth.getAuthHeaders(),
                 },
                 body: JSON.stringify(matiere),
                 credentials: 'include'
@@ -59,18 +57,17 @@ export const apiMatieres = {
 
             return await reponse.json();
         } catch (erreur) {
-            console.error('Erreur lors de la création de la matière:', erreur);
+            console.error('Erreur lors de la creation de la matiere:', erreur);
             throw erreur;
         }
     },
 
     async modifier(codeMatiere, matiere) {
         try {
-            const reponse = await fetch(`${BASE_URL}/${codeMatiere}`, {
+            const reponse = await authenticatedFetch(`${BASE_URL}/${codeMatiere}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
-                    ...apiAuth.getAuthHeaders(),
                 },
                 body: JSON.stringify(matiere),
                 credentials: 'include'
@@ -83,33 +80,29 @@ export const apiMatieres = {
 
             return await reponse.json();
         } catch (erreur) {
-            console.error('Erreur lors de la modification de la matière:', erreur);
+            console.error('Erreur lors de la modification de la matiere:', erreur);
             throw erreur;
         }
     },
 
     async obtenirParModuleEtClasse(codeModule, codeClasse) {
         try {
-            const reponse = await fetch(`${BASE_URL}/module/${codeModule}/classe/${codeClasse}`, {
+            const reponse = await authenticatedFetch(`${BASE_URL}/module/${codeModule}/classe/${codeClasse}`, {
                 method: 'GET',
-                headers: apiAuth.getAuthHeaders(),
                 credentials: 'include'
             });
 
             if (!reponse.ok) {
-                console.warn(`Failed to get matières with class filter, status: ${reponse.status}`);
-                // Fallback to module-only endpoint
-                console.log('Trying fallback to module-only endpoint...');
-                const fallbackReponse = await fetch(`${BASE_URL}/module/${codeModule}`, {
+                console.warn(`Failed to get matieres with class filter, status: ${reponse.status}`);
+                const fallbackReponse = await authenticatedFetch(`${BASE_URL}/module/${codeModule}`, {
                     method: 'GET',
-                    headers: apiAuth.getAuthHeaders(),
                     credentials: 'include'
                 });
-                
+
                 if (!fallbackReponse.ok) {
                     throw new Error(`Erreur HTTP: ${fallbackReponse.status}`);
                 }
-                
+
                 const fallbackData = await fallbackReponse.json();
                 console.log('Fallback successful, got data without class filter');
                 return fallbackData;
@@ -117,16 +110,15 @@ export const apiMatieres = {
 
             return await reponse.json();
         } catch (erreur) {
-            console.error('Erreur lors de la récupération des matières par module et classe:', erreur);
+            console.error('Erreur lors de la recuperation des matieres par module et classe:', erreur);
             throw erreur;
         }
     },
 
     async supprimer(codeMatiere) {
         try {
-            const reponse = await fetch(`${BASE_URL}/${codeMatiere}`, {
+            const reponse = await authenticatedFetch(`${BASE_URL}/${codeMatiere}`, {
                 method: 'DELETE',
-                headers: apiAuth.getAuthHeaders(),
                 credentials: 'include'
             });
 
@@ -137,7 +129,7 @@ export const apiMatieres = {
 
             return true;
         } catch (erreur) {
-            console.error('Erreur lors de la suppression de la matière:', erreur);
+            console.error('Erreur lors de la suppression de la matiere:', erreur);
             throw erreur;
         }
     },

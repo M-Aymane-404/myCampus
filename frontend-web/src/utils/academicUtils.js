@@ -21,38 +21,29 @@ export const getSpectializationFromClass = (codeClasse) => {
 export const parseExams = (exams) => {
     if (!exams || exams.length === 0) return { ds: null, exam: null };
 
-    // Filter by type
-    const normals = exams.filter(e => e.typeExamen === 'NORMAL');
-    const rattrapages = exams.filter(e => e.typeExamen === 'RATTRAPAGE');
+    const takenExams = exams.filter(e => e?.note !== null && e?.note !== undefined);
+    const normals = takenExams.filter(e => e.typeExamen === 'NORMAL');
+    const rattrapages = takenExams.filter(e => e.typeExamen === 'RATTRAPAGE');
 
     let dsRes = null;
     let examRes = null;
+    let retakeRes = null;
 
-    if (normals.length === 2) {
-        // Assume sorted by number or date? Backend doesn't guarantee order but we have numeroExamen
-        // Sort by numeroExamen
-        normals.sort((a, b) => (a.numeroExamen || 0) - (b.numeroExamen || 0));
+    normals.sort((a, b) => (a.numeroExamen || 0) - (b.numeroExamen || 0));
+    rattrapages.sort((a, b) => (a.numeroExamen || 0) - (b.numeroExamen || 0));
+
+    if (normals.length >= 2) {
         dsRes = normals[0];
         examRes = normals[1];
     } else if (normals.length === 1) {
-        // Only one normal exam. Is it Exam or DS?
-        // Usually if only one, it's the Final Exam.
         examRes = normals[0];
     }
 
-    // If there is a rattrapage, it usually replaces the Exam note if better (or strictly replaces).
-    // For display, we might want to show the rattrapage note as the exam note or separate?
-    // The design has "DS" and "Exam".
-    // If rattrapage exists, we'll use it as the 'Exam' value but maybe indicate it?
-    // For now, let's just use it if present and better? Or just use it.
-    // Backend `MatiereDeReleveEtudiantDTO` calculation logic seemed to handle average.
-    // Front end just wants to show the values.
-
     if (rattrapages.length > 0) {
-        // Replacing exam with Rattrapage for display if rattrapage exists? 
-        // Or show rattrapage?
-        // Let's use rattrapage as the Exam value if it exists.
-        examRes = rattrapages[0];
+        retakeRes = rattrapages[0];
+        if (!examRes) {
+            examRes = retakeRes;
+        }
     }
 
     return {
@@ -65,6 +56,10 @@ export const parseExams = (exams) => {
         // Correction
         dsCorrection: dsRes ? dsRes.corrigePath : null,
         examCorrection: examRes ? examRes.corrigePath : null,
-        isRattrapage: rattrapages.length > 0
+        retake: retakeRes ? retakeRes.note : null,
+        retakeCopyPath: retakeRes ? retakeRes.copieEtudiantPath : null,
+        retakeCorrection: retakeRes ? retakeRes.corrigePath : null,
+        isRattrapage: rattrapages.length > 0,
+        exams: takenExams
     };
 };

@@ -53,4 +53,16 @@ where s.id=:seanceId
         from Professeur p
     """)
     List<ProjectionDestinataireNotification> trouverTousDestinatairesNotification();
+
+    @Query("""
+        select count(p)
+        from Professeur p
+        where not exists (
+            select 1
+            from AffectationEnseignement ae
+            where ae.professeur = p
+              and ae.active = true
+        )
+    """)
+    long countProfesseursSansAffectationActive();
 }

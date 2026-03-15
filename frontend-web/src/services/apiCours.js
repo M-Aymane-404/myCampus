@@ -1,20 +1,18 @@
-import { apiAuth } from './apiAuth';
+import { authenticatedFetch } from '../utils/apiInterceptor';
 
 const BASE_URL = 'http://localhost:8080/api/etudiant';
 
 export const apiCours = {
-    // Hardcoded semesters based on backend Enum
     getSemesters() {
         return ['S1', 'S2', 'S3', 'S4', 'S5', 'S6'];
     },
 
     async getStudentProfile() {
         try {
-            const response = await fetch(`${BASE_URL}/moi`, {
-                headers: apiAuth.getAuthHeaders(),
+            const response = await authenticatedFetch(`${BASE_URL}/moi`, {
                 credentials: 'include'
             });
-            if (!response.ok) throw new Error('Erreur lors de la récupération du profil');
+            if (!response.ok) throw new Error('Erreur lors de la recuperation du profil');
             return await response.json();
         } catch (error) {
             console.error(error);
@@ -28,11 +26,10 @@ export const apiCours = {
             if (semester && semester !== 'TOUS') {
                 url += `?semestre=${semester}`;
             }
-            const response = await fetch(url, {
-                headers: apiAuth.getAuthHeaders(),
+            const response = await authenticatedFetch(url, {
                 credentials: 'include'
             });
-            if (!response.ok) throw new Error('Erreur lors de la récupération des modules');
+            if (!response.ok) throw new Error('Erreur lors de la recuperation des modules');
             return await response.json();
         } catch (error) {
             console.error(error);
@@ -42,11 +39,10 @@ export const apiCours = {
 
     async getMatieres(codeModule) {
         try {
-            const response = await fetch(`${BASE_URL}/moi/modules/${codeModule}/matieres`, {
-                headers: apiAuth.getAuthHeaders(),
+            const response = await authenticatedFetch(`${BASE_URL}/moi/modules/${codeModule}/matieres`, {
                 credentials: 'include'
             });
-            if (!response.ok) throw new Error('Erreur lors de la récupération des matières');
+            if (!response.ok) throw new Error('Erreur lors de la recuperation des matieres');
             return await response.json();
         } catch (error) {
             console.error(error);
@@ -56,11 +52,10 @@ export const apiCours = {
 
     async getSeances(codeMatiere) {
         try {
-            const response = await fetch(`${BASE_URL}/moi/matieres/${codeMatiere}/seances`, {
-                headers: apiAuth.getAuthHeaders(),
+            const response = await authenticatedFetch(`${BASE_URL}/moi/matieres/${codeMatiere}/seances`, {
                 credentials: 'include'
             });
-            if (!response.ok) throw new Error('Erreur lors de la récupération des séances');
+            if (!response.ok) throw new Error('Erreur lors de la recuperation des seances');
             return await response.json();
         } catch (error) {
             console.error(error);
@@ -70,11 +65,10 @@ export const apiCours = {
 
     async getRessources(seanceId) {
         try {
-            const response = await fetch(`${BASE_URL}/seances/${seanceId}/ressources`, {
-                headers: apiAuth.getAuthHeaders(),
+            const response = await authenticatedFetch(`${BASE_URL}/seances/${seanceId}/ressources`, {
                 credentials: 'include'
             });
-            if (!response.ok) throw new Error('Erreur lors de la récupération des ressources');
+            if (!response.ok) throw new Error('Erreur lors de la recuperation des ressources');
             return await response.json();
         } catch (error) {
             console.error(error);
@@ -82,30 +76,23 @@ export const apiCours = {
         }
     },
 
-    /**
-     * Aggregates resources for a specific module by traversing:
-     * Module -> Matieres -> Seances -> Ressources
-     */
     async getAggregatedResources(codeModule) {
         try {
-            // 1. Get all matieres for the module
             const matieres = await this.getMatieres(codeModule);
 
-            // 2. For each matiere, get all seances (concurrently)
             const matieresWithSeancesPromises = matieres.map(async (matiere) => {
                 const seances = await this.getSeances(matiere.codeMatiere);
                 return { ...matiere, seances };
             });
             const matieresWithSeances = await Promise.all(matieresWithSeancesPromises);
 
-            // 3. For each seance, get all resources (concurrently)
             const allResources = [];
             const resourcePromises = [];
 
-            matieresWithSeances.forEach(matiere => {
-                matiere.seances.forEach(seance => {
-                    const promise = this.getRessources(seance.id).then(ressources => {
-                        ressources.forEach(res => {
+            matieresWithSeances.forEach((matiere) => {
+                matiere.seances.forEach((seance) => {
+                    const promise = this.getRessources(seance.id).then((ressources) => {
+                        ressources.forEach((res) => {
                             allResources.push({
                                 ...res,
                                 matiereNom: matiere.nom,
@@ -121,7 +108,6 @@ export const apiCours = {
 
             await Promise.all(resourcePromises);
 
-            // Sort by upload date or name
             return allResources.sort((a, b) => new Date(b.dateUpload) - new Date(a.dateUpload));
         } catch (error) {
             console.error('Aggregation error:', error);

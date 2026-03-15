@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
 class NotchBarItem {
-  final IconData icon;
+  final IconData? icon;
+  final Widget? customIcon;
   final String label;
 
-  const NotchBarItem({required this.icon, required this.label});
+  const NotchBarItem({this.icon, this.customIcon, required this.label})
+    : assert(icon != null || customIcon != null);
 }
 
 class AnimatedNotchBottomBar extends StatelessWidget {
@@ -92,11 +94,13 @@ class AnimatedNotchBottomBar extends StatelessWidget {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       const SizedBox(height: 12),
-                                      Icon(
-                                        items[i].icon,
-                                        size: 22,
-                                        color: isActive ? Colors.transparent : inactiveColor,
-                                      ),
+                                      if (!isActive)
+                                        _InactiveIcon(
+                                          item: items[i],
+                                          inactiveColor: inactiveColor,
+                                        )
+                                      else
+                                        const SizedBox(height: 22),
                                       const SizedBox(height: 4),
                                       Text(
                                         items[i].label,
@@ -128,7 +132,7 @@ class AnimatedNotchBottomBar extends StatelessWidget {
                   child: _NotchButton(
                     size: notchSize,
                     color: activeColor,
-                    icon: items[currentIndex].icon,
+                    item: items[currentIndex],
                     onTap: () => onTap(currentIndex),
                   ),
                 ),
@@ -141,17 +145,34 @@ class AnimatedNotchBottomBar extends StatelessWidget {
   }
 }
 
+class _InactiveIcon extends StatelessWidget {
+  const _InactiveIcon({required this.item, required this.inactiveColor});
+  final NotchBarItem item;
+  final Color inactiveColor;
+
+  @override
+  Widget build(BuildContext context) {
+    if (item.customIcon != null) {
+      return Opacity(
+        opacity: 0.85,
+        child: SizedBox(width: 22, height: 22, child: item.customIcon),
+      );
+    }
+    return Icon(item.icon, size: 22, color: inactiveColor);
+  }
+}
+
 class _NotchButton extends StatelessWidget {
   const _NotchButton({
     required this.size,
     required this.color,
-    required this.icon,
+    required this.item,
     required this.onTap,
   });
 
   final double size;
   final Color color;
-  final IconData icon;
+  final NotchBarItem item;
   final VoidCallback onTap;
 
   @override
@@ -180,7 +201,18 @@ class _NotchButton extends StatelessWidget {
                 ),
               ],
             ),
-            child: Icon(icon, color: Colors.white, size: 26),
+            child: Center(
+              child:
+                  item.customIcon != null
+                      ? ClipOval(
+                        child: SizedBox(
+                          width: size,
+                          height: size,
+                          child: item.customIcon,
+                        ),
+                      )
+                      : Icon(item.icon, color: Colors.white, size: 26),
+            ),
           ),
         ),
       ),

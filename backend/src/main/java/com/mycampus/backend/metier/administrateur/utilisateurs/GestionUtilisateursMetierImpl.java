@@ -1,6 +1,7 @@
 package com.mycampus.backend.metier.administrateur.utilisateurs;
 
 import com.mycampus.backend.dto.FichierStocker.FichierStockerDTO;
+import com.mycampus.backend.dto.Notification.NotificationEntrerDTO;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.AdministrateurEntrerDTO;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.EtudiantEntrerDTO;
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.ProfesseurEntrerDTO;
@@ -12,14 +13,20 @@ import com.mycampus.backend.dto.administrateur.DonneSortie.AdministrateurSortieD
 import com.mycampus.backend.dto.administrateur.DonneSortie.ProfesseurSortieDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.EtudiantSortieDTO;
 import com.mycampus.backend.entites.*;
+import com.mycampus.backend.enumerations.ReferenceType;
 import com.mycampus.backend.enumerations.RolesCode;
+import com.mycampus.backend.enumerations.TypeNotification;
 import com.mycampus.backend.exceptions.SecuriteException;
+import com.mycampus.backend.metier.Notification.NotificationMetier;
 import com.mycampus.backend.metier.administrateur.PhotoStorage.PhotoStorageMetier;
+import com.mycampus.backend.metier.security.CustomUserDetails;
 import com.mycampus.backend.repositorys.*;
 import com.mycampus.backend.mappers.administrateur.UtilisateursMapper;
 import com.mycampus.backend.exceptions.UtilisateursException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -44,6 +51,7 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
     private final PasswordEncoder passwordEncoder;
     private final UtilisateurRoleRepository utilisateurRoleRepository;
     private final PhotoStorageMetier photoStorageMetier;
+    private final NotificationMetier notificationMetier;
 
     @Override
     public AdministrateurSortieDTO creerAdministrateur(AdministrateurEntrerDTO administrateurEntrerDTO) throws UtilisateursException {
@@ -112,7 +120,12 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
 
          utilisateurRoleRepository.save(utilisateurRole);
 
-
+        notifierCompte(
+                administrateurSauvegarde,
+                TypeNotification.COMPTE_CREE,
+                "Compte cree",
+                "Votre compte administrateur a ete cree."
+        );
 
         return utilisateursMapper.FromAdministrateurVersAdministrateurSortieDTO(administrateurSauvegarde);
     }
@@ -233,33 +246,9 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
 
 
 
-        if (administrateurModificationDTO.getNom() != null && !administrateurModificationDTO.getNom().trim().isEmpty()) {
-            adminAModifier.setNom(administrateurModificationDTO.getNom());
-        }
-
-        if (administrateurModificationDTO.getPrenom() != null && !administrateurModificationDTO.getPrenom().trim().isEmpty()) {
-            adminAModifier.setPrenom(administrateurModificationDTO.getPrenom());
-        }
-
-        if (administrateurModificationDTO.getEmail() != null && !administrateurModificationDTO.getEmail().trim().isEmpty()) {
-            if (!adminAModifier.getEmail().equals(administrateurModificationDTO.getEmail()) &&
-                    utilisateurRepository.existsByEmail(administrateurModificationDTO.getEmail())) {
-                throw new UtilisateursException("Un utilisateur avec cet email existe déjà");
-            }
-            adminAModifier.setEmail(administrateurModificationDTO.getEmail());
-        }
 
 
 
-
-        if (administrateurModificationDTO.getCin() != null && !administrateurModificationDTO.getCin().trim().isEmpty()) {
-            if(!adminAModifier.getCin().equals(administrateurModificationDTO.getCin()) && utilisateurRepository.existsByCin(administrateurModificationDTO.getCin())){
-                throw new UtilisateursException("Un utilisateur avec cet Cin existe déjà");
-
-            }
-            adminAModifier.setCin(administrateurModificationDTO.getCin());
-
-        }
 
 
         if(administrateurModificationDTO.getTel() != null && !administrateurModificationDTO.getTel().trim().isEmpty()) {
@@ -315,7 +304,13 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
                 new UtilisateursException("Administrateur introuvable avec le PPR: " + ppr));
 
         administrateur.setActive(true);
-        administrateurRepository.save(administrateur);
+        Administrateur saved = administrateurRepository.save(administrateur);
+        notifierCompte(
+                saved,
+                TypeNotification.COMPTE_ACTIVE,
+                "Compte active",
+                "Votre compte administrateur a ete active."
+        );
     }
 
     @Override
@@ -328,7 +323,13 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
                 new UtilisateursException("Administrateur introuvable avec le PPR: " + ppr));
 
         administrateur.setActive(false);
-        administrateurRepository.save(administrateur);
+        Administrateur saved = administrateurRepository.save(administrateur);
+        notifierCompte(
+                saved,
+                TypeNotification.COMPTE_DESACTIVE,
+                "Compte desactive",
+                "Votre compte administrateur a ete desactive."
+        );
     }
 
 
@@ -410,7 +411,12 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
 
         utilisateurRoleRepository.save(utilisateurRole);
 
-
+        notifierCompte(
+                professeurSauvegarde,
+                TypeNotification.COMPTE_CREE,
+                "Compte cree",
+                "Votre compte professeur a ete cree."
+        );
 
         return utilisateursMapper.FromProfesseurVersProfesseurSortirDTO(professeurSauvegarde);
     }
@@ -555,7 +561,13 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
                 new UtilisateursException("Professeur introuvable avec le PPR: " + ppr));
 
         professeur.setActive(true);
-        professeurRepository.save(professeur);
+        Professeur saved = professeurRepository.save(professeur);
+        notifierCompte(
+                saved,
+                TypeNotification.COMPTE_ACTIVE,
+                "Compte active",
+                "Votre compte professeur a ete active."
+        );
     }
 
     @Override
@@ -568,7 +580,13 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
                 new UtilisateursException("Professeur introuvable avec le PPR: " + ppr));
 
         professeur.setActive(false);
-        professeurRepository.save(professeur);
+        Professeur saved = professeurRepository.save(professeur);
+        notifierCompte(
+                saved,
+                TypeNotification.COMPTE_DESACTIVE,
+                "Compte desactive",
+                "Votre compte professeur a ete desactive."
+        );
     }
 
     // ==================== ETUDIANT ====================
@@ -645,7 +663,12 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
 
         utilisateurRoleRepository.save(utilisateurRole);
 
-
+        notifierCompte(
+                etudiantSauvegarde,
+                TypeNotification.COMPTE_CREE,
+                "Compte cree",
+                "Votre compte etudiant a ete cree."
+        );
 
         return utilisateursMapper.FromEtudientVersEtudiantSortieDTO(etudiantSauvegarde);
     }
@@ -786,7 +809,13 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
                 new UtilisateursException("Étudiant introuvable avec l'apogée: " + apogee));
 
         etudiant.setActive(true);
-        etudiantRepository.save(etudiant);
+        Etudiant saved = etudiantRepository.save(etudiant);
+        notifierCompte(
+                saved,
+                TypeNotification.COMPTE_ACTIVE,
+                "Compte active",
+                "Votre compte etudiant a ete active."
+        );
     }
 
     @Override
@@ -799,9 +828,36 @@ public class GestionUtilisateursMetierImpl implements GestionUtilisateursMetier 
                 new UtilisateursException("Étudiant introuvable avec l'apogée: " + apogee));
 
         etudiant.setActive(false);
-        etudiantRepository.save(etudiant);
+        Etudiant saved = etudiantRepository.save(etudiant);
+        notifierCompte(
+                saved,
+                TypeNotification.COMPTE_DESACTIVE,
+                "Compte desactive",
+                "Votre compte etudiant a ete desactive."
+        );
     }
 
+
+    private Long trouverAuteurNotification(Long fallbackUserId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetails principal) {
+            return principal.getId();
+        }
+        return fallbackUserId;
+    }
+
+    private void notifierCompte(Utilisateur cible, TypeNotification type, String titre, String message) {
+        NotificationEntrerDTO dto = NotificationEntrerDTO.builder()
+                .titre(titre)
+                .message(message)
+                .type(type)
+                .referenceType(ReferenceType.UTILISATEUR)
+                .referenceId(cible.getId())
+                .utilisateurRecoitId(cible.getId())
+                .auteurId(trouverAuteurNotification(cible.getId()))
+                .build();
+        notificationMetier.notifierUtilisateur(dto);
+    }
 
     @Transactional
     @Override

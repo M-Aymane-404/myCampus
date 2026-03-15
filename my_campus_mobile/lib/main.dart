@@ -6,19 +6,33 @@ import 'core/network/client_dio.dart';
 import 'core/storage/app_file_storage.dart';
 import 'features/authentification/presentation/controleur_authentification.dart';
 import 'features/authentification/presentation/page_connexion.dart';
+import 'features/etudiant/data/api/annonce_etudiant_api.dart';
 import 'features/etudiant/data/api/etudiant_api.dart';
+import 'features/etudiant/data/api/notification_etudiant_api.dart';
+import 'features/etudiant/data/api/profil_etudiant_api.dart';
 import 'features/etudiant/data/controller/ControleurFichier.dart';
 import 'features/etudiant/data/controller/controleur_accueil_etudiant.dart';
+import 'features/etudiant/data/controller/controleur_annonce_etudiant.dart';
 import 'features/etudiant/data/controller/controleur_cours_etudiant.dart';
 import 'features/etudiant/data/controller/controleur_emploi_etudiant.dart';
+import 'features/etudiant/data/controller/controleur_notification_etudiant.dart';
 import 'features/etudiant/data/controller/controleur_profil_etudiant.dart';
 import 'features/etudiant/data/controller/controleur_releve_notes_etudiant.dart';
+import 'features/etudiant/data/realtime/notification_realtime_service.dart';
+import 'features/etudiant/data/repository/annonce_etudiant_repository.dart';
 import 'features/etudiant/data/repository/etudiant_repository.dart';
 import 'features/etudiant/data/repository/fichier_repository.dart';
+import 'features/etudiant/data/repository/notification_etudiant_repository.dart';
+import 'features/etudiant/data/repository/profil_etudiant_repository.dart';
 import 'features/etudiant/data/repository/releve_notes_repo.dart';
 import 'features/etudiant/presentation/accueil_etudiant.dart';
 import 'features/etudiant/presentation/etudiant_shell.dart';
 import 'features/etudiant/presentation/page_cours_etudiant.dart';
+import 'features/etudiant/presentation/page_emploi_etudiant.dart';
+import 'features/etudiant/presentation/page_liste_annonces_etudiant.dart';
+import 'features/etudiant/presentation/page_notifications_etudiant.dart';
+import 'features/etudiant/presentation/page_presence_etudiant.dart';
+import 'features/etudiant/presentation/page_profil_etudiant.dart';
 import 'features/professeur/presentation/accueil_professeur.dart';
 
 void main() async {
@@ -40,6 +54,15 @@ class MyApp extends StatelessWidget {
         // API étudiant
         Provider<EtudiantApi>(
           create: (_) => EtudiantApi(ClientDio.dioInstance),
+        ),
+        Provider<AnnonceEtudiantApi>(
+          create: (_) => AnnonceEtudiantApi(ClientDio.dioInstance),
+        ),
+        Provider<NotificationEtudiantApi>(
+          create: (_) => NotificationEtudiantApi(ClientDio.dioInstance),
+        ),
+        Provider<ProfilEtudiantApi>(
+          create: (_) => ProfilEtudiantApi(ClientDio.dioInstance),
         ),
         ChangeNotifierProvider(
           create:
@@ -73,6 +96,25 @@ class MyApp extends StatelessWidget {
             return EtudiantRepository(api, dio);
           },
         ),
+        Provider<ProfilEtudiantRepository>(
+          create:
+              (ctx) => ProfilEtudiantRepository(ctx.read<ProfilEtudiantApi>()),
+        ),
+        Provider<AnnonceEtudiantRepository>(
+          create:
+              (ctx) =>
+                  AnnonceEtudiantRepository(ctx.read<AnnonceEtudiantApi>()),
+        ),
+        Provider<NotificationEtudiantRepository>(
+          create:
+              (ctx) => NotificationEtudiantRepository(
+                ctx.read<NotificationEtudiantApi>(),
+              ),
+        ),
+        Provider<NotificationRealtimeService>(
+          create: (_) => NotificationRealtimeService(),
+          dispose: (_, service) => service.disconnect(),
+        ),
 
         ChangeNotifierProxyProvider<
           EtudiantRepository,
@@ -85,12 +127,35 @@ class MyApp extends StatelessWidget {
         ),
 
         ChangeNotifierProxyProvider<
-          EtudiantRepository,
+          ProfilEtudiantRepository,
           ControleurProfilEtudiant
         >(
           create:
-              (ctx) => ControleurProfilEtudiant(ctx.read<EtudiantRepository>()),
+              (ctx) => ControleurProfilEtudiant(
+                ctx.read<ProfilEtudiantRepository>(),
+              ),
           update: (ctx, repo, ctrl) => ctrl ?? ControleurProfilEtudiant(repo),
+        ),
+        ChangeNotifierProxyProvider<
+          AnnonceEtudiantRepository,
+          ControleurAnnonceEtudiant
+        >(
+          create:
+              (ctx) => ControleurAnnonceEtudiant(
+                ctx.read<AnnonceEtudiantRepository>(),
+              ),
+          update: (ctx, repo, ctrl) => ctrl ?? ControleurAnnonceEtudiant(repo),
+        ),
+        ChangeNotifierProxyProvider<
+          NotificationEtudiantRepository,
+          ControleurNotificationEtudiant
+        >(
+          create:
+              (ctx) => ControleurNotificationEtudiant(
+                ctx.read<NotificationEtudiantRepository>(),
+              ),
+          update:
+              (ctx, repo, ctrl) => ctrl ?? ControleurNotificationEtudiant(repo),
         ),
 
         ChangeNotifierProxyProvider<
@@ -133,40 +198,32 @@ class MyApp extends StatelessWidget {
                 settings: settings,
                 builder: (ctx) => const PageNotesEtudiant(),
               );
-
             case '/etudiant/presence':
               return MaterialPageRoute(
                 settings: settings,
-                builder:
-                    (_) => const Scaffold(
-                      body: Center(child: Text('Page Présence')),
-                    ),
+                builder: (_) => const PagePresenceEtudiant(),
               );
 
             case '/etudiant/calendrier':
               return MaterialPageRoute(
                 settings: settings,
-                builder:
-                    (_) => const Scaffold(
-                      body: Center(child: Text('Page Calendrier')),
-                    ),
+                builder: (_) => const PageEmploiTimelineEtudiant(),
               );
 
             case '/etudiant/annonces':
               return MaterialPageRoute(
                 settings: settings,
-                builder:
-                    (_) => const Scaffold(
-                      body: Center(child: Text('Page Annonces')),
-                    ),
+                builder: (_) => const PageListeAnnoncesEtudiant(),
+              );
+            case '/etudiant/notifications':
+              return MaterialPageRoute(
+                settings: settings,
+                builder: (_) => const PageNotificationsEtudiant(),
               );
             case '/etudiant/profil':
               return MaterialPageRoute(
                 settings: settings,
-                builder:
-                    (_) => const Scaffold(
-                      body: Center(child: Text('Page Profil')),
-                    ),
+                builder: (_) => const PageProfilEtudiant(),
               );
 
             case '/connexion':
@@ -194,6 +251,7 @@ class RouteurAuthentification extends StatefulWidget {
 
 class _RouteurAuthentificationState extends State<RouteurAuthentification> {
   bool _initEtudiantFait = false;
+  bool _wsEtudiantConnecte = false;
 
   @override
   Widget build(BuildContext context) {
@@ -207,6 +265,13 @@ class _RouteurAuthentificationState extends State<RouteurAuthentification> {
 
         if (!controleur.estAuthentifie) {
           _initEtudiantFait = false;
+          if (_wsEtudiantConnecte) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) return;
+              context.read<NotificationRealtimeService>().disconnect();
+              _wsEtudiantConnecte = false;
+            });
+          }
           return const PageConnexion();
         }
 
@@ -218,16 +283,39 @@ class _RouteurAuthentificationState extends State<RouteurAuthentification> {
                 if (!mounted) return;
                 context.read<ControleurProfilEtudiant>().chargerMoi();
                 context.read<ControleurAccueilEtudiant>().chargerDashboard();
+                context.read<ControleurAnnonceEtudiant>().chargerAnnonces();
+                final ctrlNotification =
+                    context.read<ControleurNotificationEtudiant>();
+                ctrlNotification.rafraichirCompteurNonLues();
+
+                context.read<NotificationRealtimeService>().connect(
+                  onNotification: ctrlNotification.ajouterNotificationRealtime,
+                );
+                _wsEtudiantConnecte = true;
               });
             }
             return const EtudiantShell();
 
           case 'PROFESSEUR':
             _initEtudiantFait = false;
+            if (_wsEtudiantConnecte) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!mounted) return;
+                context.read<NotificationRealtimeService>().disconnect();
+                _wsEtudiantConnecte = false;
+              });
+            }
             return const AccueilProfesseur();
 
           default:
             _initEtudiantFait = false;
+            if (_wsEtudiantConnecte) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!mounted) return;
+                context.read<NotificationRealtimeService>().disconnect();
+                _wsEtudiantConnecte = false;
+              });
+            }
             return const PageConnexion();
         }
       },
