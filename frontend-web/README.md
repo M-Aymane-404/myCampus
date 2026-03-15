@@ -1,5 +1,30 @@
 # React + Vite
 
+## MyCampus Chatbot (n8n RAG)
+
+Le frontend inclut un composant `ChatBot` connecté au webhook n8n.
+
+Configuration recommandée:
+
+1. Créer un fichier `.env` dans `frontend-web/`
+2. Ajouter:
+
+```bash
+VITE_N8N_CHAT_WEBHOOK_URL=http://localhost:5679/webhook/chat
+```
+
+Payload envoyé au webhook:
+
+```json
+{
+  "message": "Question de l'utilisateur",
+  "userId": 123,
+  "role": "ETUDIANT"
+}
+```
+
+Le chatbot est injecté dans l'application après connexion et s'ouvre via le bouton flottant en bas à droite.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

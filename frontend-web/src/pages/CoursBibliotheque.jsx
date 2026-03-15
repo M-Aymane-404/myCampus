@@ -28,6 +28,10 @@ const CoursBibliotheque = () => {
     const [resourcesLoading, setResourcesLoading] = useState(false);
     const [error, setError] = useState(null);
     const [studentProfile, setStudentProfile] = useState(null);
+    const [selectedSeance, setSelectedSeance] = useState('TOUS');
+    const [selectedDate, setSelectedDate] = useState('');
+    const [selectedMatiere, setSelectedMatiere] = useState('TOUS');
+    const [availableMatieres, setAvailableMatieres] = useState([]);
 
     // Fetch Profile once on mount
     useEffect(() => {
@@ -73,14 +77,20 @@ const CoursBibliotheque = () => {
         const fetchAggregatedResources = async () => {
             if (!activeModule) {
                 setResources([]);
+                setAvailableMatieres([]);
                 return;
             }
             try {
                 setResourcesLoading(true);
                 const data = await apiCours.getAggregatedResources(activeModule);
                 setResources(data);
+                
+                // Extract unique matieres for filter dropdown
+                const uniqueMatieres = [...new Set(data.map(r => r.matiereNom).filter(Boolean))];
+                setAvailableMatieres(uniqueMatieres);
             } catch (error) {
                 console.error('Erreur lors de l\'agrégation des ressources:', error);
+                setAvailableMatieres([]);
             } finally {
                 setResourcesLoading(false);
             }
@@ -90,11 +100,21 @@ const CoursBibliotheque = () => {
 
     const filteredResources = resources.filter(r => {
         const typeMime = r.typeMime || '';
-        const matchesTab = activeTab === 'TOUS' ||
-            typeMime.includes(activeTab) ||
-            (activeTab === 'COURS' && r.nomOriginal.toLowerCase().includes('cours'));
+        const typeSeance = r.typeSeance || '';
+        const matiereNom = r.matiereNom || '';
+        const dateUpload = r.dateUpload || '';
+        
+        // Filter by date
+        const matchesDate = !selectedDate || 
+            new Date(dateUpload).toDateString() === new Date(selectedDate).toDateString();
+        
+        // Filter by matiere
+        const matchesMatiere = selectedMatiere === 'TOUS' || matiereNom === selectedMatiere;
+        
+        // Filter by search
         const matchesSearch = r.nomOriginal.toLowerCase().includes(resourceSearch.toLowerCase());
-        return matchesTab && matchesSearch;
+        
+        return matchesDate && matchesMatiere && matchesSearch;
     });
 
     const getActiveModuleName = () => {
@@ -241,6 +261,44 @@ const CoursBibliotheque = () => {
                 </header>
 
                 <section className="cb-content-controls">
+                    <div className="cb-filters-row">
+                        <div className="cb-filter-group">
+                            <label className="cb-filter-label">Date de séance:</label>
+                            <input
+                                type="date"
+                                value={selectedDate}
+                                onChange={(e) => setSelectedDate(e.target.value)}
+                                className="cb-filter-select"
+                            />
+                        </div>
+                        
+                        <div className="cb-filter-group">
+                            <label className="cb-filter-label">Matière:</label>
+                            <select
+                                value={selectedMatiere}
+                                onChange={(e) => setSelectedMatiere(e.target.value)}
+                                className="cb-filter-select"
+                                disabled={availableMatieres.length === 0}
+                            >
+                                <option value="TOUS">Toutes</option>
+                                {availableMatieres.map(matiere => (
+                                    <option key={matiere} value={matiere}>{matiere}</option>
+                                ))}
+                            </select>
+                        </div>
+                        
+                        <button 
+                            className="cb-clear-filters-btn"
+                            onClick={() => {
+                                setSelectedDate('');
+                                setSelectedMatiere('TOUS');
+                                setResourceSearch('');
+                            }}
+                        >
+                            Effacer les filtres
+                        </button>
+                    </div>
+                    
                     <div className="cb-search-box cb-resource-search">
                         <Search size={18} />
                         <input

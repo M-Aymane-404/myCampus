@@ -115,6 +115,8 @@ public class SecurityController {
                 .claim("userId", u.getId())
                 .claim("cin", u.getCin())
                 .claim("active", u.getActive())
+                .claim("nom", u.getNom())
+                .claim("prenom", u.getPrenom())
 
                 .build();
         JwtEncoderParameters jwtEncoderParameters = JwtEncoderParameters.from(
@@ -230,6 +232,8 @@ public class SecurityController {
                 .claim("userId", u.getId())
                 .claim("cin", u.getCin())
                 .claim("active", u.getActive())
+                .claim("nom", u.getNom())
+                .claim("prenom", u.getPrenom())
 
                 .build();
         JwtEncoderParameters jwtEncoderParameters = JwtEncoderParameters.from(

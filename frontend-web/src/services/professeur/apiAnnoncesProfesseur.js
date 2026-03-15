@@ -41,7 +41,7 @@ const trierParNomClasse = (a, b) =>
         { sensitivity: 'base' }
     );
 
-const apiAnnoncesProfesseur = {
+export const apiAnnoncesProfesseur = {
     async listerMesAnnonces() {
         const response = await fetch(`${BASE_URL}/annonces/mes-annonces`, {
             method: 'GET',
@@ -78,6 +78,10 @@ const apiAnnoncesProfesseur = {
         }
 
         return response.json();
+    },
+
+    async listerAnnoncesMesClasses() {
+        return apiAnnoncesProfesseur.listerAnnoncesDeMesClasses();
     },
 
     async listerMesProfAnnonces() {

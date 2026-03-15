@@ -20,6 +20,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - mycampus-network
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
@@ -32,6 +34,8 @@ services:
       PMA_PORT: 3306
     ports:
       - "8081:80"
+    networks:
+      - mycampus-network
 
   backend:
     build: ./backend
@@ -47,6 +51,8 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+    networks:
+      - mycampus-network
 
   frontend:
     build: ./frontend-web
@@ -55,8 +61,37 @@ services:
       - "5173:5173"
     depends_on:
       - backend
+    networks:
+      - mycampus-network
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: mycampus-n8n
+    restart: unless-stopped
+    ports:
+      - "5679:5678"
+    environment:
+      N8N_HOST: 0.0.0.0
+      N8N_PORT: 5678
+      GENERIC_TIMEZONE: Africa/Casablanca
+      WEBHOOK_URL: http://localhost:5678
+      N8N_RESTRICT_FILE_ACCESS_TO: /data/uploads;/home/node/.n8n-files
+      N8N_WORKFLOWS_IMPORT_PATH: /home/node/workflows
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - uploads_data:/data/uploads
+      - ./n8n/workflows:/home/node/workflows:ro
+    depends_on:
+      - backend
+      - mysql
+    networks:
+      - mycampus-network 
 
 volumes:
   mysql_data:
   uploads_data:
+  n8n_data: 
+networks:
+  mycampus-network:
+    driver: bridge
 

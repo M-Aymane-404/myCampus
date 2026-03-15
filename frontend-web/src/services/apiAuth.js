@@ -100,8 +100,8 @@ export const apiAuth = {
           const user = {
             email: email,
             role: role,
-            nom: '', // Will be populated from backend user profile
-            prenom: '', // Will be populated from backend user profile
+            nom: decodedPayload.nom || '', // Extract from JWT claim
+            prenom: decodedPayload.prenom || '',
             nomUtilisateur: decodedPayload.sub || email // Store username/email separately
           };
 
