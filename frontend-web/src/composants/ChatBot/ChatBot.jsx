@@ -1,130 +1,329 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { MessageCircle, X, Send, Maximize2, Minimize2, Bot } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Bot,
+  Maximize2,
+  MessageCircle,
+  Minimize2,
+  Paperclip,
+  SendHorizontal,
+  X,
+} from 'lucide-react';
+import { apiAuth } from '../../services/apiAuth';
 import './ChatBot.css';
 
-const ChatBot = () => {
-    const [isOpen, setIsOpen] = useState(false);
-    const [message, setMessage] = useState('');
-    const [messages, setMessages] = useState([
-        {
-            id: 1,
-            text: "Bonjour Alae Majjati ! Je suis votre assistant MyCampus. Comment puis-je vous aider aujourd'hui ?",
-            sender: 'bot',
-            time: '15:13'
-        }
+const CHAT_WEBHOOK_URL =
+  import.meta.env.VITE_N8N_CHAT_WEBHOOK_URL || 'http://localhost:5679/webhook/chat';
+
+const DEFAULT_MESSAGE =
+  "Je suis votre assistant MyCampus. Posez-moi une question sur votre contexte académique ou vos documents.";
+
+function decodeJwtPayload(token) {
+  if (!token || typeof token !== 'string') return {};
+  try {
+    const payloadBase64 = token.split('.')[1];
+    if (!payloadBase64) return {};
+    const base64 = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
+    const json = atob(base64);
+    return JSON.parse(json);
+  } catch {
+    return {};
+  }
+}
+
+function normalizeRole(userRole, scope) {
+  const raw = (userRole || '').toLowerCase();
+  if (raw === 'admin' || raw === 'administrateur') return 'ADMIN';
+  if (raw === 'professor' || raw === 'professeur' || raw === 'prof') return 'PROFESSEUR';
+  if (raw === 'student' || raw === 'etudiant' || raw === 'etud') return 'ETUDIANT';
+
+  if (typeof scope === 'string') {
+    if (scope.includes('ROLE_ADMIN')) return 'ADMIN';
+    if (scope.includes('ROLE_PROFESSEUR')) return 'PROFESSEUR';
+    if (scope.includes('ROLE_ETUDIANT')) return 'ETUDIANT';
+  }
+
+  return 'ETUDIANT';
+}
+
+function extractReply(data) {
+  if (!data) return '';
+  if (typeof data === 'string') {
+    try {
+      const parsed = JSON.parse(data);
+      return parsed.reply || '';
+    } catch {
+      return data;
+    }
+  }
+  if (typeof data.reply === 'string') return data.reply;
+  if (typeof data.response === 'string') return data.response;
+  if (typeof data.message === 'string') return data.message;
+  return '';
+}
+
+function cleanupMarkdownAndOrganize(text) {
+  if (!text || typeof text !== 'string') return '';
+
+  const cleaned = text
+    .replace(/\r\n/g, '\n')
+    .replace(/```[\s\S]*?```/g, (block) =>
+      block
+        .replace(/```[a-zA-Z]*/g, '')
+        .replace(/```/g, '')
+        .trim()
+    )
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1 ($2)')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/__([^_]+)__/g, '$1')
+    .replace(/\*([^*\n]+)\*/g, '$1')
+    .replace(/_([^_\n]+)_/g, '$1')
+    .replace(/^\s{0,3}#{1,6}\s*/gm, '')
+    .replace(/^\s*([-*_]\s*){3,}$/gm, '')
+    .replace(/^\s*>\s?/gm, '')
+    .replace(/^\s*[-*]\s+/gm, '• ')
+    .replace(/^\s*\d+\.\s+/gm, (value) => value.trimStart())
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+  const lines = cleaned.split('\n');
+  const organized = [];
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index].trim();
+    if (!line) {
+      if (organized.length > 0 && organized[organized.length - 1] !== '') {
+        organized.push('');
+      }
+      continue;
+    }
+
+    if (line.endsWith(':') && organized.length > 0 && organized[organized.length - 1] !== '') {
+      organized.push('');
+    }
+
+    organized.push(line);
+  }
+
+  return organized.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+
+function formatTime(date) {
+  return new Intl.DateTimeFormat('fr-FR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+}
+
+export default function ChatBot() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [inputValue, setInputValue] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const scrollRef = useRef(null);
+
+  const userContext = useMemo(() => {
+    const user = apiAuth.getUser() || {};
+    const token = apiAuth.getToken();
+    const payload = decodeJwtPayload(token);
+    const fullName = [user.prenom, user.nom].filter(Boolean).join(' ').trim();
+    const displayName = fullName || user.email || 'utilisateur';
+    const userIdFromToken = Number(payload.userId);
+    const userIdFromUser = Number(user.id);
+
+    return {
+      displayName,
+      userId: Number.isFinite(userIdFromToken) && userIdFromToken > 0
+        ? userIdFromToken
+        : Number.isFinite(userIdFromUser) && userIdFromUser > 0
+          ? userIdFromUser
+          : null,
+      role: normalizeRole(user.role, payload.scope),
+    };
+  }, []);
+
+  useEffect(() => {
+    if (messages.length > 0) {
+      scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
+
+  useEffect(() => {
+    if (!isOpen || messages.length > 0) return;
+    setMessages([
+      {
+        id: crypto.randomUUID(),
+        sender: 'bot',
+        text: `Bonjour ${userContext.displayName} ! ${DEFAULT_MESSAGE}`,
+        time: formatTime(new Date()),
+      },
     ]);
-    const [isExpanded, setIsExpanded] = useState(false);
-    const messagesEndRef = useRef(null);
+  }, [isOpen, messages.length, userContext.displayName]);
 
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  const sendMessage = async () => {
+    const trimmedMessage = inputValue.trim();
+    if (!trimmedMessage || isSending) return;
+
+    if (!userContext.userId) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          sender: 'bot',
+          text: "Je ne peux pas vous identifier pour le moment. Reconnectez-vous puis réessayez.",
+          time: formatTime(new Date()),
+        },
+      ]);
+      return;
+    }
+
+    const userMessage = {
+      id: crypto.randomUUID(),
+      sender: 'user',
+      text: trimmedMessage,
+      time: formatTime(new Date()),
     };
 
-    useEffect(() => {
-        if (isOpen) {
-            scrollToBottom();
-        }
-    }, [messages, isOpen]);
+    setMessages((prev) => [...prev, userMessage]);
+    setInputValue('');
+    setIsSending(true);
 
-    const handleSendMessage = (e) => {
-        e.preventDefault();
-        if (!message.trim()) return;
+    try {
+      const messageWithFormatHint = `${trimmedMessage}\n\nConsigne de format: réponds en texte brut sans markdown, avec des sections courtes et claires.`;
 
-        const newMessage = {
-            id: messages.length + 1,
-            text: message,
-            sender: 'user',
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        };
+      const response = await fetch(CHAT_WEBHOOK_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: messageWithFormatHint,
+          userId: userContext.userId,
+          role: userContext.role,
+        }),
+      });
 
-        setMessages([...messages, newMessage]);
-        setMessage('');
+      const raw = await response.text();
+      let parsed;
+      try {
+        parsed = raw ? JSON.parse(raw) : {};
+      } catch {
+        parsed = raw;
+      }
 
-        // Simulate bot response
-        setTimeout(() => {
-            const botResponse = {
-                id: messages.length + 2,
-                text: "Merci pour votre message. Je suis là pour vous aider avec MyCampus.",
-                sender: 'bot',
-                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            };
-            setMessages(prev => [...prev, botResponse]);
-        }, 1000);
-    };
+      const reply = extractReply(parsed);
+      if (!response.ok || !reply) {
+        throw new Error("Le chatbot n'a pas pu répondre.");
+      }
 
-    const toggleChat = () => setIsOpen(!isOpen);
-    const toggleExpand = () => setIsExpanded(!isExpanded);
+      const normalizedReply = cleanupMarkdownAndOrganize(reply);
 
-    return (
-        <div className={`chatbot-container ${isOpen ? 'open' : ''} ${isExpanded ? 'expanded' : ''}`}>
-            {/* Floating Action Button */}
-            <button
-                className={`chatbot-fab ${isOpen ? 'hidden' : ''}`}
-                onClick={toggleChat}
-                aria-label="Ouvrir le chat"
-            >
-                <div className="fab-icon-container">
-                    <MessageCircle size={28} />
-                    <span className="notification-badge"></span>
-                </div>
-            </button>
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          sender: 'bot',
+          text: normalizedReply || reply,
+          time: formatTime(new Date()),
+        },
+      ]);
+    } catch (error) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          sender: 'bot',
+          text: "Le service de chat est indisponible pour le moment. Vérifiez que n8n est bien démarré.",
+          time: formatTime(new Date()),
+        },
+      ]);
+      console.error('ChatBot error:', error);
+    } finally {
+      setIsSending(false);
+    }
+  };
 
-            {/* Chat Window */}
-            <div className="chat-window">
-                {/* Header */}
-                <div className="chat-header">
-                    <div className="header-info">
-                        <div className="bot-avatar">
-                            <Bot size={20} color="white" />
-                        </div>
-                        <div className="header-text">
-                            <h3>Assistant MyCampus</h3>
-                            <span className="online-status">
-                                <span className="status-dot"></span>
-                                EN LIGNE
-                            </span>
-                        </div>
-                    </div>
-                    <div className="header-actions">
-                        <button onClick={toggleExpand} className="action-btn">
-                            {isExpanded ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
-                        </button>
-                        <button onClick={toggleChat} className="action-btn close-btn">
-                            <X size={20} />
-                        </button>
-                    </div>
-                </div>
+  const onInputKeyDown = (event) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      sendMessage();
+    }
+  };
 
-                {/* Message List */}
-                <div className="chat-messages">
-                    {messages.map((msg) => (
-                        <div key={msg.id} className={`message-wrapper ${msg.sender}`}>
-                            <div className="message-content">
-                                <p>{msg.text}</p>
-                                <span className="message-time">{msg.time}</span>
-                            </div>
-                        </div>
-                    ))}
-                    <div ref={messagesEndRef} />
-                </div>
-
-                {/* Footer / Input */}
-                <div className="chat-footer">
-                    <form className="chat-input-container" onSubmit={handleSendMessage}>
-                        <input
-                            type="text"
-                            placeholder="Posez votre question..."
-                            value={message}
-                            onChange={(e) => setMessage(e.target.value)}
-                        />
-                        <button type="submit" className="send-btn" disabled={!message.trim()}>
-                            <Send size={20} />
-                        </button>
-                    </form>
-                </div>
+  return (
+    <div className="mc-chatbot">
+      {isOpen && (
+        <section className={`mc-chatbot-panel ${isExpanded ? 'expanded' : ''}`}>
+          <header className="mc-chatbot-header">
+            <div className="mc-chatbot-title">
+              <div className="mc-chatbot-bot-icon">
+                <Bot size={16} />
+              </div>
+              <div>
+                <strong>Assistant MyCampus</strong>
+                <span>EN LIGNE</span>
+              </div>
             </div>
-        </div>
-    );
-};
+            <div className="mc-chatbot-actions">
+              <button
+                type="button"
+                onClick={() => setIsExpanded((prev) => !prev)}
+                aria-label={isExpanded ? 'Réduire la fenêtre' : 'Agrandir la fenêtre'}
+              >
+                {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+              </button>
+              <button type="button" onClick={() => setIsOpen(false)} aria-label="Fermer le chat">
+                <X size={16} />
+              </button>
+            </div>
+          </header>
 
-export default ChatBot;
+          <div className="mc-chatbot-messages">
+            {messages.map((message) => (
+              <article key={message.id} className={`mc-chatbot-message ${message.sender}`}>
+                <p>{message.text}</p>
+                <time>{message.time}</time>
+              </article>
+            ))}
+            {isSending && (
+              <article className="mc-chatbot-message bot">
+                <p>Assistant MyCampus réfléchit...</p>
+                <time>{formatTime(new Date())}</time>
+              </article>
+            )}
+            <div ref={scrollRef} />
+          </div>
+
+          <footer className="mc-chatbot-input-zone">
+            <textarea
+              value={inputValue}
+              onChange={(event) => setInputValue(event.target.value)}
+              onKeyDown={onInputKeyDown}
+              placeholder="Posez votre question..."
+              rows={1}
+            />
+            <button
+              type="button"
+              className="mc-chatbot-send"
+              onClick={sendMessage}
+              disabled={isSending || !inputValue.trim()}
+              aria-label="Envoyer"
+            >
+              <SendHorizontal size={18} />
+            </button>
+          </footer>
+        </section>
+      )}
+
+      <button
+        type="button"
+        className="mc-chatbot-trigger"
+        onClick={() => setIsOpen((prev) => !prev)}
+        aria-label={isOpen ? 'Fermer le chat' : 'Ouvrir le chat'}
+      >
+        <MessageCircle size={26} />
+      </button>
+    </div>
+  );
+}
