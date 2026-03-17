@@ -77,7 +77,10 @@ export const apiProfesseurs = {
       const headers = await apiAuth.getAuthHeadersWithRefresh();
       const reponse = await fetch(BASE_URL, {
         method: 'POST',
-        headers: headers,
+        headers: {
+          'Content-Type': 'application/json',
+          ...headers,
+        },
         body: JSON.stringify(professeur),
         credentials: 'include'
       });

@@ -32,6 +32,8 @@ const GestionClasses = ({ filiereId, filiereNom, onRetour, surVoirModules }) => 
         id: c.id,
         codeClasse: c.codeClasse || c.code,
         nom: c.nom || c.libelle,
+        codeFiliere: c.codeFiliere || codeFiliere || filiereId,
+        filiereNom: c.filiereNom || filiereNom || '',
         nombreEtudiants: c.nombreEtudiants || 0,
         nombreModules: c.nombreModules || 0,
         statut: c.statut || c.etat || 'Actif'

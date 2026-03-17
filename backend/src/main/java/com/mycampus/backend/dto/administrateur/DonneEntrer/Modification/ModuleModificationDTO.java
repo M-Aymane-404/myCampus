@@ -1,5 +1,6 @@
 package com.mycampus.backend.dto.administrateur.DonneEntrer.Modification;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.mycampus.backend.enumerations.Semestre;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
@@ -23,5 +24,27 @@ public class ModuleModificationDTO {
     private Semestre semestre;
     
 
+    @JsonAlias({"filiereCode", "code_filiere"})
     private String codeFiliere;
+
+    @JsonAlias({"idFiliere"})
+    private String filiereId;
+
+    public void setCodeFiliere(String codeFiliere) {
+        if (codeFiliere == null) {
+            this.codeFiliere = null;
+            return;
+        }
+        String normalized = codeFiliere.trim();
+        this.codeFiliere = normalized.isEmpty() ? null : normalized.toUpperCase();
+    }
+
+    public void setFiliereId(String filiereId) {
+        if (filiereId == null) {
+            this.filiereId = null;
+            return;
+        }
+        String normalized = filiereId.trim();
+        this.filiereId = normalized.isEmpty() ? null : normalized;
+    }
 }

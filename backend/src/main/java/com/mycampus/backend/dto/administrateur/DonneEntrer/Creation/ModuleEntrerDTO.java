@@ -1,5 +1,6 @@
 package com.mycampus.backend.dto.administrateur.DonneEntrer.Creation;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.mycampus.backend.enumerations.Semestre;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -18,7 +19,7 @@ public class ModuleEntrerDTO {
     
     @NotBlank(message = "Code module obligatoire")
     @Pattern(
-            regexp = "^[A-Z0-9]{2,20}$",
+            regexp = "^[A-Za-z0-9]{2,20}$",
             message = "Code module doit contenir 2-20 caractères alphanumériques en majuscules"
     )
     private String codeModule;
@@ -34,9 +35,43 @@ public class ModuleEntrerDTO {
     private Semestre semestre;
     
 
+    @JsonAlias({"filiereCode", "code_filiere"})
     @Pattern(
-            regexp = "^[A-Z0-9]{2,10}$",
+            regexp = "^[A-Za-z0-9]{2,10}$",
             message = "Code filière doit contenir 2-10 caractères alphanumériques en majuscules"
     )
     private String codeFiliere;
+
+    @JsonAlias({"idFiliere"})
+    private String filiereId;
+
+    public void setCodeModule(String codeModule) {
+        this.codeModule = normalizeUppercase(codeModule);
+    }
+
+    public void setCodeFiliere(String codeFiliere) {
+        this.codeFiliere = normalizeUppercase(codeFiliere);
+    }
+
+    public void setFiliereId(String filiereId) {
+        this.filiereId = normalizeReference(filiereId);
+    }
+
+    private String normalizeUppercase(String value) {
+        if (value == null) {
+            return null;
+        }
+        String normalized = value.trim();
+        return normalized.isEmpty() ? null : normalized.toUpperCase();
+    }
+
+    private String normalizeReference(String value) {
+        if (value == null) {
+            return null;
+        }
+        String normalized = value.trim();
+        return normalized.isEmpty() ? null : normalized;
+    }
 }
+
+

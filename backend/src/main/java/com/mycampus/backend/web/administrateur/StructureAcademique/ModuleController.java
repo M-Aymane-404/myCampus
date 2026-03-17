@@ -3,6 +3,7 @@ import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.ModuleEntrer
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.ModuleModificationDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.ModuleSortieDTO;
 import com.mycampus.backend.metier.administrateur.structureAcademique.GestionStructureAcademiqueMetier;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +21,7 @@ public class ModuleController {
     private final GestionStructureAcademiqueMetier metier;
 
     @PostMapping
-    public ResponseEntity<ModuleSortieDTO> creerModule(@RequestBody ModuleEntrerDTO moduleDTO) {
+    public ResponseEntity<ModuleSortieDTO> creerModule(@Valid @RequestBody ModuleEntrerDTO moduleDTO) {
         ModuleSortieDTO result = metier.creerModule(moduleDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
@@ -46,7 +47,7 @@ public class ModuleController {
     @PutMapping("/{codeModule}")
     public ResponseEntity<ModuleSortieDTO> modifierModule(
             @PathVariable String codeModule, 
-            @RequestBody ModuleModificationDTO moduleDTO) {
+            @Valid @RequestBody ModuleModificationDTO moduleDTO) {
         ModuleSortieDTO result = metier.modifierModule(codeModule, moduleDTO);
         return ResponseEntity.ok(result);
     }

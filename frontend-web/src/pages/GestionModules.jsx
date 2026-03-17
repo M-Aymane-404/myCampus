@@ -8,7 +8,7 @@ import BoutonAction from '../composants/communs/BoutonAction';
 import { apiStructure } from '../services/apiStructure';
 import './GestionModules.css';
 
-const GestionModules = ({ classeId, classeNom, onRetour }) => {
+const GestionModules = ({ classeId, classeNom, filiereCode, filiereNom, onRetour }) => {
   const [modules, setModules] = useState([]);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState(null);
@@ -19,7 +19,9 @@ const GestionModules = ({ classeId, classeNom, onRetour }) => {
     try {
       setChargement(true);
       setErreur(null);
-      const donnees = await apiStructure.obtenirTousModules();
+      const donnees = filiereCode
+        ? await apiStructure.obtenirModulesParFiliere(filiereCode)
+        : await apiStructure.obtenirTousModules();
       console.log('Modules reçus:', donnees);
 
       // Mapper les données backend vers le format frontend
@@ -36,12 +38,7 @@ const GestionModules = ({ classeId, classeNom, onRetour }) => {
         nombreHeures: 0 // TODO: calculer depuis les matières
       }));
 
-      // Filter by classeId if provided
-      const modulesFiltres = classeId
-        ? modulesMapped.filter(m => m.classeId === classeId || m.codeClasse === classeId)
-        : modulesMapped;
-
-      setModules(modulesFiltres);
+      setModules(modulesMapped);
     } catch (err) {
       console.error('Erreur lors du chargement des modules:', err);
       setErreur('Erreur lors du chargement des modules');
@@ -69,7 +66,7 @@ const GestionModules = ({ classeId, classeNom, onRetour }) => {
     chargerModules();
     // Always load filieres for the dropdown, regardless of classeId
     chargerFilieres();
-  }, [classeId]);
+  }, [classeId, filiereCode]);
 
   const [modalOuvert, setModalOuvert] = useState(false);
   const [moduleCourant, setModuleCourant] = useState(null);
@@ -78,7 +75,7 @@ const GestionModules = ({ classeId, classeNom, onRetour }) => {
     nom: '',
     description: '',
     semestre: '',
-    filiere: '',
+    filiere: filiereCode || '',
     nombreHeures: ''
   });
 
@@ -98,7 +95,7 @@ const GestionModules = ({ classeId, classeNom, onRetour }) => {
       nom: '',
       description: '',
       semestre: '',
-      filiere: '',
+      filiere: filiereCode || '',
       nombreHeures: ''
     });
     setModalOuvert(true);
@@ -124,7 +121,7 @@ const GestionModules = ({ classeId, classeNom, onRetour }) => {
 
   const sauvegarder = async () => {
     // Validation basique
-    if (!formulaire.codeModule || !formulaire.nom || !formulaire.filiere || !formulaire.semestre) {
+    if (!formulaire.codeModule || !formulaire.nom || !(formulaire.filiere || filiereCode) || !formulaire.semestre) {
       alert('Veuillez remplir tous les champs obligatoires');
       console.log('Formulaire validation failed:', formulaire);
       return;
@@ -138,7 +135,7 @@ const GestionModules = ({ classeId, classeNom, onRetour }) => {
         nom: formulaire.nom,
         description: formulaire.description,
         semestre: formulaire.semestre,
-        codeFiliere: formulaire.filiere, // Map 'filiere' to 'codeFiliere'
+        codeFiliere: formulaire.filiere || filiereCode,
       };
 
       console.log('Sending module data:', moduleData);
@@ -186,13 +183,7 @@ const GestionModules = ({ classeId, classeNom, onRetour }) => {
     { key: 'nombreMatieres', label: 'Matières' }
   ];
 
-  // Filter modules by classeId if provided (computed from state)
-  const modulesFiltres = classeId
-    ? modules.filter(m => {
-      const mClasseId = m.classeId || m.codeClasse;
-      return mClasseId === classeId || mClasseId?.toString() === classeId?.toString();
-    })
-    : modules;
+  const modulesFiltres = modules;
 
   const totalModules = modulesFiltres.length;
   const totalHeures = modulesFiltres.reduce((sum, m) => sum + m.nombreHeures, 0);
@@ -214,7 +205,11 @@ const GestionModules = ({ classeId, classeNom, onRetour }) => {
           <div>
             <h1 className="gestion-modules-titre">Gestion des Modules</h1>
             <p className="gestion-modules-sous-titre">
-              {classeNom ? `${classeNom} - Modules` : 'Gestion des cours et modules académiques'}
+              {classeNom
+                ? `${classeNom} - Modules`
+                : filiereNom
+                  ? `${filiereNom} - Modules`
+                  : 'Gestion des cours et modules académiques'}
             </p>
           </div>
         </div>
