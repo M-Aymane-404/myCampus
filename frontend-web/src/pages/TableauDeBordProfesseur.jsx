@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   AlertCircle,
   BarChart3,
+  Bell,
   BookOpen,
   Calendar,
   CheckCircle2,
@@ -79,6 +80,26 @@ const formatHour = (value) => {
 const formatFloat = (value, digits = 2) => (Number.isFinite(value) ? Number(value).toFixed(digits) : '--');
 const formatPercent = (value) => (Number.isFinite(value) ? `${Math.round(value)}%` : '--');
 const formatCompactNumber = (value) => new Intl.NumberFormat('fr-FR').format(value ?? 0);
+
+const pickFirstValue = (...values) => values.find((value) => value !== undefined && value !== null && value !== '');
+
+const getNestedValue = (source, paths) => {
+  for (const path of paths) {
+    const segments = path.split('.');
+    let current = source;
+
+    for (const segment of segments) {
+      current = current?.[segment];
+      if (current === undefined || current === null || current === '') break;
+    }
+
+    if (current !== undefined && current !== null && current !== '') {
+      return current;
+    }
+  }
+
+  return null;
+};
 
 const timeAgo = (value) => {
   if (!value) return 'RECENT';
@@ -235,6 +256,94 @@ const DashboardTooltip = ({ active, payload }) => {
   );
 };
 
+const normalizeSession = (payload) => {
+  const session = payload?.prochaineSeance || payload?.nextSession || payload || null;
+  if (!session || typeof session !== 'object') return null;
+
+  const subject = pickFirstValue(
+    session.matiereNom,
+    session.nomMatiere,
+    session.matiere,
+    session.matiereName,
+    session.moduleName,
+    session.nomModule,
+    session.enseignement?.matiereNom,
+    session.enseignement?.nomMatiere,
+    session.enseignement?.matiere?.nomMatiere,
+    session.enseignement?.matiere?.nom,
+    session.module?.nom,
+    session.nom,
+  );
+
+  const className = pickFirstValue(
+    session.nomClasse,
+    session.classeNom,
+    session.classe,
+    session.codeClasse,
+    session.groupeNom,
+    session.enseignement?.classe?.nomClasse,
+    session.enseignement?.classe?.nom,
+    session.enseignement?.classe?.codeClasse,
+  );
+
+  const room = pickFirstValue(
+    session.salle,
+    session.room,
+    session.nomSalle,
+    session.local,
+    session.enseignement?.salle,
+  );
+
+  const type = pickFirstValue(session.typeSeance, session.type, session.categorie, 'COURS');
+  const start = pickFirstValue(session.start, formatHour(session.heureDebut), session.heureDebut);
+  const end = pickFirstValue(session.end, formatHour(session.heureFin), session.heureFin);
+  const day = pickFirstValue(session.dayOfWeek, session.jour, formatDate(session.date));
+
+  return {
+    ...session,
+    displaySubject: subject || 'Seance a confirmer',
+    displayClass: className || 'Classe',
+    displayRoom: room || 'Salle a definir',
+    displayType: type,
+    displayStart: start || '',
+    displayEnd: end || '',
+    displayDay: day || '--',
+  };
+};
+
+const buildAbsenceInsights = (dashboardData) => {
+  const stats = dashboardData?.stats || {};
+  const alerts = dashboardData?.alertes || dashboardData?.absences || {};
+
+  const todayCount = pickFirstValue(
+    getNestedValue(dashboardData, ['stats.nbAbsencesAujourdhui', 'stats.absencesAujourdhui', 'stats.nbAbsentsJour', 'absences.nbAujourdhui']),
+    0,
+  );
+
+  const pendingCount = pickFirstValue(
+    getNestedValue(dashboardData, ['stats.nbJustificationsEnAttente', 'stats.justificationsEnAttente', 'absences.justificationsEnAttente', 'alertes.justificationsEnAttente']),
+    0,
+  );
+
+  const highRiskCount = pickFirstValue(
+    getNestedValue(dashboardData, ['stats.nbEtudiantsARisqueAbsence', 'stats.etudiantsARisqueAbsence', 'absences.etudiantsARisque', 'alertes.absencesCritiques']),
+    0,
+  );
+
+  const attendanceRate = pickFirstValue(
+    getNestedValue(dashboardData, ['stats.tauxPresence', 'stats.tauxAssiduite', 'absences.tauxPresence']),
+    null,
+  );
+
+  return {
+    todayCount: Number(todayCount) || 0,
+    pendingCount: Number(pendingCount) || 0,
+    highRiskCount: Number(highRiskCount) || 0,
+    attendanceRate: Number.isFinite(Number(attendanceRate)) ? Number(attendanceRate) : null,
+    hasDetails: Object.keys(stats).length > 0 || Object.keys(alerts).length > 0,
+  };
+};
+
 const TableauDeBordProfesseur = ({ surNavigation }) => {
   const [dashboard, setDashboard] = useState(null);
   const [prochaineSeance, setProchaineSeance] = useState(null);
@@ -301,6 +410,8 @@ const TableauDeBordProfesseur = ({ surNavigation }) => {
   const entete = dashboardData.entete || {};
   const stats = dashboardData.stats || {};
   const examensAVenir = Array.isArray(dashboardData.examensAVenir) ? dashboardData.examensAVenir.slice(0, 3) : [];
+  const sessionCard = normalizeSession(prochaineSeance);
+  const absenceInsights = buildAbsenceInsights(dashboardData);
   const noteMeta = notesState.data.meta || EMPTY_NOTE_STATS.meta;
   const activeNoteItems = useMemo(
     () => (activeNoteTab === 'classe' ? notesState.data.parClasse : notesState.data.parMatiere),
@@ -421,18 +532,28 @@ const TableauDeBordProfesseur = ({ surNavigation }) => {
               </div>
             </div>
 
-            {prochaineSeance ? (
-              <div className="prof-session-body">
-                <div className="prof-session-top">
-                  <span className={`prof-type-pill tone-${TYPE_COLOR[prochaineSeance.type] || 'grey'}`}>{prochaineSeance.type || 'COURS'}</span>
-                  <span className="prof-class-pill">{prochaineSeance.nomClasse || prochaineSeance.classe || 'Classe'}</span>
+            {sessionCard ? (
+              <div className="prof-session-body prof-session-body-student">
+                <div className="prof-session-info-main">
+                  <div className="prof-session-time">
+                    {sessionCard.displayStart || '--:--'}
+                    {sessionCard.displayEnd ? ` - ${sessionCard.displayEnd}` : ''}
+                  </div>
+                  <div className="prof-session-details-text">
+                    <div className="prof-session-top">
+                      <span className={`prof-type-pill tone-${TYPE_COLOR[sessionCard.displayType] || 'grey'}`}>{sessionCard.displayType}</span>
+                      <span className="prof-class-pill">{sessionCard.displayClass}</span>
+                    </div>
+                    <h3>{sessionCard.displaySubject}</h3>
+                    <div className="prof-session-grid">
+                      <div className="prof-meta-chip"><MapPin size={14} /><span>{sessionCard.displayRoom}</span></div>
+                      <div className="prof-meta-chip"><Clock size={14} /><span>{sessionCard.displayDay}</span></div>
+                    </div>
+                  </div>
                 </div>
-                <h3>{prochaineSeance.nomMatiere || prochaineSeance.matiere || 'Matiere non precisee'}</h3>
-                <div className="prof-session-grid">
-                  <div className="prof-meta-chip"><Calendar size={14} /><span>{prochaineSeance.dayOfWeek || formatDate(prochaineSeance.date)}</span></div>
-                  <div className="prof-meta-chip"><Clock size={14} /><span>{prochaineSeance.start || formatHour(prochaineSeance.heureDebut)}{(prochaineSeance.end || prochaineSeance.heureFin) ? ` | ${prochaineSeance.end || formatHour(prochaineSeance.heureFin)}` : ''}</span></div>
-                  <div className="prof-meta-chip"><MapPin size={14} /><span>{prochaineSeance.salle || prochaineSeance.room || 'Salle a definir'}</span></div>
-                  <div className="prof-meta-chip"><BookOpen size={14} /><span>{prochaineSeance.nomMatiere || prochaineSeance.matiere || 'Matiere'}</span></div>
+                <div className="prof-session-footer">
+                  <div className="prof-meta-chip"><Calendar size={14} /><span>{sessionCard.displayDay}</span></div>
+                  <div className="prof-meta-chip"><BookOpen size={14} /><span>{sessionCard.displaySubject}</span></div>
                 </div>
               </div>
             ) : (
@@ -441,6 +562,51 @@ const TableauDeBordProfesseur = ({ surNavigation }) => {
                 <p>Aucune seance a venir pour le moment.</p>
               </div>
             )}
+          </article>
+
+          <article className="prof-card prof-alert-card">
+            <div className="prof-card-head">
+              <div>
+                <p className="prof-card-eyebrow">Suivi</p>
+                <h2>Alertes absences</h2>
+              </div>
+              <Bell size={18} className="prof-alert-icon" />
+            </div>
+
+            <div className="prof-alert-list">
+              <div className="prof-alert-item tone-danger">
+                <div className="prof-alert-item-head">
+                  <span className="prof-alert-dot"></span>
+                  <strong>Absences du jour</strong>
+                </div>
+                <span className="prof-alert-value">{formatCompactNumber(absenceInsights.todayCount)}</span>
+                <p>Vue rapide pour verifier les seances a controler aujourd'hui.</p>
+              </div>
+
+              <div className="prof-alert-item tone-warning">
+                <div className="prof-alert-item-head">
+                  <span className="prof-alert-dot"></span>
+                  <strong>Justifications en attente</strong>
+                </div>
+                <span className="prof-alert-value">{formatCompactNumber(absenceInsights.pendingCount)}</span>
+                <p>Priorite de traitement avant validation finale des presences.</p>
+              </div>
+
+              <div className="prof-alert-item tone-neutral">
+                <div className="prof-alert-item-head">
+                  <span className="prof-alert-dot"></span>
+                  <strong>Etudiants a surveiller</strong>
+                </div>
+                <span className="prof-alert-value">{formatCompactNumber(absenceInsights.highRiskCount)}</span>
+                <p>
+                  {absenceInsights.attendanceRate != null
+                    ? `Taux de presence global: ${Math.round(absenceInsights.attendanceRate)}%.`
+                    : absenceInsights.hasDetails
+                      ? 'Le detail complet depend des donnees remontees par le backend.'
+                      : 'Le tableau est pret pour afficher les alertes des que les stats absences sont disponibles.'}
+                </p>
+              </div>
+            </div>
           </article>
 
           <article className="prof-card prof-compact-card">
