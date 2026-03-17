@@ -61,7 +61,7 @@
 
            return http
                    .headers(header -> header.frameOptions(frame -> frame.disable()))
-                  /* .exceptionHandling(ex -> ex
+                   /* .exceptionHandling(ex -> ex
                            .authenticationEntryPoint(new JsonAuthenticationEntryPoint())
                            .accessDeniedHandler(new JsonAccessDeniedHandler())
                    )*/

@@ -12,4 +12,6 @@ public interface DepartementRepository extends JpaRepository<Departement, Long> 
     boolean existsByCodeDepartement(String codeDepartement);
     
     Optional<Departement> findByCodeDepartement(String codeDepartement);
+
+    Optional<Departement> findByChefDepartement_Ppr(String ppr);
 }

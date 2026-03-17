@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { LogOut, GraduationCap } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { AlertCircle, CheckCircle2, Info, X } from 'lucide-react';
 import Login from './pages/Login';
 import ConteneurPrincipal from './composants/layout/ConteneurPrincipal';
 import ConteneurProfesseur from './composants/layout/ConteneurProfesseur';
@@ -31,6 +31,72 @@ import { apiAuditLogs } from './services/apiAuditLogs';
 import CalendrierAcademiqueProfesseur from './pages/CalendrierAcademiqueProfesseur';
 import './App.css';
 
+const DUREE_AFFICHAGE_MESSAGE_MS = 6000;
+
+const detecterTypeMessage = (message) => {
+  const texte = String(message || '').toLowerCase();
+
+  if (
+    texte.includes('erreur')
+    || texte.includes('impossible')
+    || texte.includes('introuvable')
+    || texte.includes('echec')
+    || texte.includes('échou')
+  ) {
+    return 'error';
+  }
+
+  if (
+    texte.includes('succes')
+    || texte.includes('succès')
+    || texte.includes('reussi')
+    || texte.includes('réussi')
+    || texte.includes('mise à jour')
+    || texte.includes('mis à jour')
+    || texte.includes('supprimé')
+    || texte.includes('créé')
+    || texte.includes('termine')
+    || texte.includes('terminé')
+  ) {
+    return 'success';
+  }
+
+  if (
+    texte.includes('veuillez')
+    || texte.includes('attention')
+    || texte.includes('obligatoire')
+  ) {
+    return 'warning';
+  }
+
+  return 'info';
+};
+
+const obtenirTitreMessage = (type) => {
+  switch (type) {
+    case 'success':
+      return 'Succes';
+    case 'warning':
+      return 'Attention';
+    case 'error':
+      return 'Erreur';
+    default:
+      return 'Information';
+  }
+};
+
+const obtenirIconeMessage = (type) => {
+  switch (type) {
+    case 'success':
+      return <CheckCircle2 size={18} />;
+    case 'warning':
+    case 'error':
+      return <AlertCircle size={18} />;
+    default:
+      return <Info size={18} />;
+  }
+};
+
 function App() {
   const [utilisateurConnecte, setUtilisateurConnecte] = useState(null);
   const [elementActif, setElementActif] = useState('tableau-de-bord');
@@ -38,6 +104,48 @@ function App() {
     filiereSelectionnee: null,
     classeSelectionnee: null
   });
+  const [messagesGlobaux, setMessagesGlobaux] = useState([]);
+  const temporisateursMessagesRef = useRef(new Map());
+
+  const fermerMessageGlobal = (idMessage) => {
+    const timeoutId = temporisateursMessagesRef.current.get(idMessage);
+    if (timeoutId) {
+      window.clearTimeout(timeoutId);
+      temporisateursMessagesRef.current.delete(idMessage);
+    }
+
+    setMessagesGlobaux((precedents) =>
+      precedents.filter((message) => message.id !== idMessage)
+    );
+  };
+
+  const afficherMessageGlobal = (message, options = {}) => {
+    const texte = String(message ?? '').trim();
+    if (!texte) {
+      return;
+    }
+
+    const idMessage = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const type = options.type || detecterTypeMessage(texte);
+
+    setMessagesGlobaux((precedents) => [
+      ...precedents,
+      {
+        id: idMessage,
+        texte,
+        type,
+      },
+    ]);
+
+    const timeoutId = window.setTimeout(() => {
+      temporisateursMessagesRef.current.delete(idMessage);
+      setMessagesGlobaux((precedents) =>
+        precedents.filter((messageGlobal) => messageGlobal.id !== idMessage)
+      );
+    }, options.duree ?? DUREE_AFFICHAGE_MESSAGE_MS);
+
+    temporisateursMessagesRef.current.set(idMessage, timeoutId);
+  };
 
   const gererLogin = (donneesLogin) => {
     const role = donneesLogin.role;
@@ -93,6 +201,31 @@ function App() {
         }
       }
     }
+  }, []);
+
+  useEffect(() => {
+    const alerteOriginale = window.alert;
+    const notifyOriginal = window.__MYCAMPUS_NOTIFY__;
+
+    window.__MYCAMPUS_NOTIFY__ = afficherMessageGlobal;
+    window.alert = (message) => {
+      afficherMessageGlobal(message);
+    };
+
+    return () => {
+      window.alert = alerteOriginale;
+
+      if (notifyOriginal) {
+        window.__MYCAMPUS_NOTIFY__ = notifyOriginal;
+      } else {
+        delete window.__MYCAMPUS_NOTIFY__;
+      }
+
+      temporisateursMessagesRef.current.forEach((timeoutId) => {
+        window.clearTimeout(timeoutId);
+      });
+      temporisateursMessagesRef.current.clear();
+    };
   }, []);
 
   const gererChangementElement = (idElement) => {
@@ -153,6 +286,8 @@ function App() {
           <GestionModules
             classeId={navigationState.classeSelectionnee?.codeClasse || navigationState.classeSelectionnee?.id}
             classeNom={navigationState.classeSelectionnee?.nom}
+            filiereCode={navigationState.classeSelectionnee?.codeFiliere || navigationState.filiereSelectionnee?.codeFiliere || navigationState.filiereSelectionnee?.id}
+            filiereNom={navigationState.classeSelectionnee?.filiereNom || navigationState.filiereSelectionnee?.nom}
             onRetour={retourClasses}
           />
         );
@@ -218,14 +353,12 @@ function App() {
     }
   };
 
-  // Show login page if not logged in
-  if (!utilisateurConnecte) {
-    return <Login onLogin={gererLogin} />;
-  }
+  let interfaceCourante;
 
-  // Render appropriate interface based on role
-  if (utilisateurConnecte.role === 'professor') {
-    return (
+  if (!utilisateurConnecte) {
+    interfaceCourante = <Login onLogin={gererLogin} />;
+  } else if (utilisateurConnecte.role === 'professor') {
+    interfaceCourante = (
       <ConteneurProfesseur
         elementActif={elementActif}
         surChangementElement={gererChangementElement}
@@ -235,7 +368,7 @@ function App() {
       </ConteneurProfesseur>
     );
   } else if (utilisateurConnecte.role === 'admin') {
-    return (
+    interfaceCourante = (
       <ConteneurPrincipal
         elementActif={elementActif}
         surChangementElement={gererChangementElement}
@@ -247,7 +380,7 @@ function App() {
   } else if (utilisateurConnecte.role === 'student') {
     console.log('DEBUG: Student role detected, rendering student container');
     console.log('DEBUG: Current elementActif:', elementActif);
-    return (
+    interfaceCourante = (
       <ConteneurEtudiant
         elementActif={elementActif}
         surChangementElement={gererChangementElement}
@@ -257,8 +390,7 @@ function App() {
       </ConteneurEtudiant>
     );
   } else {
-    // Fallback for unknown roles - show admin dashboard
-    return (
+    interfaceCourante = (
       <ConteneurPrincipal
         elementActif={elementActif}
         surChangementElement={gererChangementElement}
@@ -268,6 +400,38 @@ function App() {
       </ConteneurPrincipal>
     );
   }
+
+  return (
+    <>
+      <div className="app-inline-alerts" aria-live="polite" aria-atomic="true">
+        {messagesGlobaux.map((message) => (
+          <div
+            key={message.id}
+            className={`app-inline-alert app-inline-alert-${message.type}`}
+            role={message.type === 'error' ? 'alert' : 'status'}
+          >
+            <div className="app-inline-alert-icon">
+              {obtenirIconeMessage(message.type)}
+            </div>
+            <div className="app-inline-alert-content">
+              <strong>{obtenirTitreMessage(message.type)}</strong>
+              <p>{message.texte}</p>
+            </div>
+            <button
+              type="button"
+              className="app-inline-alert-close"
+              onClick={() => fermerMessageGlobal(message.id)}
+              aria-label="Fermer le message"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {interfaceCourante}
+    </>
+  );
 }
 
 export default App;

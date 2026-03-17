@@ -64,6 +64,48 @@
                     .orElseThrow(() -> new StructureAcademiqueException("Filière non trouvée avec le code: " + codeFiliere));
         }
 
+        private Filiere requireFiliere(Long filiereId) {
+            if (filiereId == null) {
+                throw new StructureAcademiqueException("L'identifiant de la filiere est obligatoire");
+            }
+            return filiereRepository.findById(filiereId)
+                    .orElseThrow(() -> new StructureAcademiqueException("Filiere non trouvee avec l'identifiant: " + filiereId));
+        }
+        private boolean hasText(String value) {
+            return value != null && !value.trim().isEmpty();
+        }
+        private String normalizeCode(String value) {
+            return hasText(value) ? value.trim().toUpperCase() : null;
+        }
+        private Filiere resolveFiliere(String codeFiliere, String filiereId) {
+            Filiere filiereParCode = hasText(codeFiliere) ? requireFiliere(normalizeCode(codeFiliere)) : null;
+            Filiere filiereParId = hasText(filiereId) ? resolveFiliereReference(filiereId) : null;
+            if (filiereParCode != null && filiereParId != null && !filiereParCode.getId().equals(filiereParId.getId())) {
+                throw new StructureAcademiqueException("Le code de la filiere et l'identifiant de la filiere ne correspondent pas");
+            }
+            if (filiereParCode != null) {
+                return filiereParCode;
+            }
+            if (filiereParId != null) {
+                return filiereParId;
+            }
+            throw new StructureAcademiqueException("Le code ou l'identifiant de la filiere est obligatoire");
+        }
+        private Filiere resolveFiliereReference(String filiereReference) {
+            if (!hasText(filiereReference)) {
+                throw new StructureAcademiqueException("Le code de la filiere est obligatoire");
+            }
+            String reference = filiereReference.trim();
+            return filiereRepository.findByCodeFiliere(reference)
+                    .or(() -> {
+                        try {
+                            return filiereRepository.findById(Long.parseLong(reference));
+                        } catch (NumberFormatException ex) {
+                            return java.util.Optional.empty();
+                        }
+                    })
+                    .orElseThrow(() -> new StructureAcademiqueException("Filiere non trouvee avec le code ou l'identifiant: " + reference));
+        }
         private Classe requireClasse(String codeClasse) {
             if (codeClasse == null || codeClasse.trim().isEmpty()) {
                 throw new StructureAcademiqueException("Le code de la classe est obligatoire");
@@ -96,6 +138,30 @@
                     .orElseThrow(() -> new StructureAcademiqueException("Professeur non trouvé avec le PPR: " + ppr));
         }
 
+        private void verifierDisponibiliteChefDepartement(Professeur professeur, Long departementIdCourant) {
+            departementRepository.findByChefDepartement_Ppr(professeur.getPpr())
+                    .filter(departement -> !departement.getId().equals(departementIdCourant))
+                    .ifPresent(departement -> {
+                        throw new StructureAcademiqueException(
+                                "Le professeur " + professeur.getPrenom() + " " + professeur.getNom()
+                                        + " (PPR: " + professeur.getPpr() + ") est déjà chef du département "
+                                        + departement.getCodeDepartement()
+                        );
+                    });
+        }
+
+        private void verifierDisponibiliteChefFiliere(Professeur professeur, Long filiereIdCourante) {
+            filiereRepository.findByChefFiliere_Ppr(professeur.getPpr())
+                    .filter(filiere -> !filiere.getId().equals(filiereIdCourante))
+                    .ifPresent(filiere -> {
+                        throw new StructureAcademiqueException(
+                                "Le professeur " + professeur.getPrenom() + " " + professeur.getNom()
+                                        + " (PPR: " + professeur.getPpr() + ") est déjà chef de la filière "
+                                        + filiere.getCodeFiliere()
+                        );
+                    });
+        }
+
         // Département management
         @Override
         public DepartementSortieDTO creerDepartement(DepartementEntrerDTO departementEntrerDTO) throws StructureAcademiqueException {
@@ -119,6 +185,7 @@
             // Gérer le chef de département si fourni
             if (departementEntrerDTO.getChefDepartementPpr() != null && !departementEntrerDTO.getChefDepartementPpr().trim().isEmpty()) {
                 Professeur chefDepartement = requireProfesseur(departementEntrerDTO.getChefDepartementPpr());
+                verifierDisponibiliteChefDepartement(chefDepartement, null);
                 departement.setChefDepartement(chefDepartement);
             }
 
@@ -162,6 +229,7 @@
             // Gérer le chef de département si fourni
             if (departementModificationDTO.getChefDepartementPpr() != null && !departementModificationDTO.getChefDepartementPpr().trim().isEmpty()) {
                 Professeur chefDepartement = requireProfesseur(departementModificationDTO.getChefDepartementPpr());
+                verifierDisponibiliteChefDepartement(chefDepartement, departement.getId());
                 departement.setChefDepartement(chefDepartement);
             }
 
@@ -262,6 +330,13 @@
             filiere.setDepartement(departement);
             filiere.setEtat(EtatStructure.OUVERTE);
 
+            // Gérer le chef de filière si fourni
+            if (filiereEntrerDTO.getChefFilierePpr() != null && !filiereEntrerDTO.getChefFilierePpr().trim().isEmpty()) {
+                Professeur chefFiliere = requireProfesseur(filiereEntrerDTO.getChefFilierePpr());
+                verifierDisponibiliteChefFiliere(chefFiliere, null);
+                filiere.setChefFiliere(chefFiliere);
+            }
+
             Filiere filiereSauvegardee = filiereRepository.save(filiere);
             return structureMapper.FromFiliereVersFiliereSortieDTO(filiereSauvegardee);
         }
@@ -318,6 +393,7 @@
             // Gérer le chef de filière si fourni
             if (filiereModificationDTO.getChefFilierePpr() != null && !filiereModificationDTO.getChefFilierePpr().trim().isEmpty()) {
                 Professeur chefFiliere = requireProfesseur(filiereModificationDTO.getChefFilierePpr());
+                verifierDisponibiliteChefFiliere(chefFiliere, filiere.getId());
                 filiere.setChefFiliere(chefFiliere);
             }
 
@@ -525,36 +601,25 @@
         @Override
         public ModuleSortieDTO creerModule(ModuleEntrerDTO moduleEntrerDTO) throws StructureAcademiqueException {
             if (moduleEntrerDTO == null) {
-                throw new StructureAcademiqueException("Le module ne peut pas être nul");
+                throw new StructureAcademiqueException("Le module ne peut pas etre nul");
             }
-
             if (moduleEntrerDTO.getCodeModule() == null || moduleEntrerDTO.getCodeModule().trim().isEmpty()) {
                 throw new StructureAcademiqueException("Le code du module est obligatoire");
             }
-
             if (moduleEntrerDTO.getNom() == null || moduleEntrerDTO.getNom().trim().isEmpty()) {
                 throw new StructureAcademiqueException("Le nom du module est obligatoire");
             }
-
-            if (moduleEntrerDTO.getCodeFiliere() == null || moduleEntrerDTO.getCodeFiliere().trim().isEmpty()) {
-                throw new StructureAcademiqueException("Le code de la filière est obligatoire");
+            String codeModule = normalizeCode(moduleEntrerDTO.getCodeModule());
+            if (moduleRepository.existsByCodeModule(codeModule)) {
+                throw new StructureAcademiqueException("Un module avec ce code existe deja");
             }
-
-            // Vérifier l'unicité du code
-            if (moduleRepository.existsByCodeModule(moduleEntrerDTO.getCodeModule())) {
-                throw new StructureAcademiqueException("Un module avec ce code existe déjà");
-            }
-
-            // Vérifier l'existence de la filière
-            Filiere filiere = requireFiliere(moduleEntrerDTO.getCodeFiliere());
-
+            Filiere filiere = resolveFiliere(moduleEntrerDTO.getCodeFiliere(), moduleEntrerDTO.getFiliereId());
             Module module = structureMapper.FromModuleEntrerVersModule(moduleEntrerDTO);
+            module.setCodeModule(codeModule);
             module.setFiliere(filiere);
-
             Module moduleSauvegarde = moduleRepository.save(module);
             return structureMapper.FromModuleVersModuleSortieDTO(moduleSauvegarde);
         }
-
         @Override
         public ModuleSortieDTO trouverModuleParCode(String codeModule) throws StructureAcademiqueException {
             if (codeModule == null || codeModule.trim().isEmpty()) {
@@ -580,38 +645,31 @@
         @Transactional(readOnly = true)
         public List<ModuleSortieDTO> trouverModulesParFiliere(String codeFiliere) throws StructureAcademiqueException {
             if (codeFiliere == null || codeFiliere.trim().isEmpty()) {
-                throw new StructureAcademiqueException("Le code de la filière est obligatoire");
+                throw new StructureAcademiqueException("Le code de la filiere est obligatoire");
             }
-
             try {
-                List<Module> modules = moduleRepository.findByFiliere_CodeFiliere(codeFiliere);
+                Filiere filiere = resolveFiliereReference(codeFiliere);
+                List<Module> modules = moduleRepository.findByFiliere_CodeFiliere(filiere.getCodeFiliere());
                 return structureMapper.FromListeModuleVersListeModuleSortieDTO(modules);
             } catch (Exception e) {
-                throw new StructureAcademiqueException("Erreur lors de la recherche des modules par filière: " + e.getMessage(), e);
+                throw new StructureAcademiqueException("Erreur lors de la recherche des modules par filiere: " + e.getMessage(), e);
             }
         }
-
         @Override
         public ModuleSortieDTO modifierModule(String codeModule, ModuleModificationDTO moduleModificationDTO) throws StructureAcademiqueException {
             if (codeModule == null || codeModule.trim().isEmpty()) {
                 throw new StructureAcademiqueException("Le code du module est obligatoire");
             }
-
             if (moduleModificationDTO == null) {
-                throw new StructureAcademiqueException("Le module ne peut pas être nul");
+                throw new StructureAcademiqueException("Le module ne peut pas etre nul");
             }
-
             Module module = requireModule(codeModule);
-
-
-
-            // Valider la filière si modifiée
-            if (moduleModificationDTO.getCodeFiliere() != null && !moduleModificationDTO.getCodeFiliere().equals(module.getFiliere().getCodeFiliere())) {
-                Filiere filiere = requireFiliere(moduleModificationDTO.getCodeFiliere());
-                module.setFiliere(filiere);
+            if (hasText(moduleModificationDTO.getCodeFiliere()) || moduleModificationDTO.getFiliereId() != null) {
+                Filiere filiere = resolveFiliere(moduleModificationDTO.getCodeFiliere(), moduleModificationDTO.getFiliereId());
+                if (!filiere.getId().equals(module.getFiliere().getId())) {
+                    module.setFiliere(filiere);
+                }
             }
-
-
             if (moduleModificationDTO.getNom() != null && !moduleModificationDTO.getNom().trim().isEmpty()) {
                 module.setNom(moduleModificationDTO.getNom());
             }
@@ -621,12 +679,9 @@
             if (moduleModificationDTO.getSemestre() != null) {
                 module.setSemestre(moduleModificationDTO.getSemestre());
             }
-
-
             Module moduleModifie = moduleRepository.save(module);
             return structureMapper.FromModuleVersModuleSortieDTO(moduleModifie);
         }
-
         @Override
         public void supprimerModule(String codeModule) throws StructureAcademiqueException {
             if (codeModule == null || codeModule.trim().isEmpty()) {
@@ -1053,3 +1108,4 @@
             );
         }
     }
+

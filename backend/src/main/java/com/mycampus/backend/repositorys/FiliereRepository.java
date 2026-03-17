@@ -13,6 +13,8 @@ public interface FiliereRepository extends JpaRepository<Filiere, Long> {
     boolean existsByCodeFiliere(String codeFiliere);
     
     Optional<Filiere> findByCodeFiliere(String codeFiliere);
+
+    Optional<Filiere> findByChefFiliere_Ppr(String ppr);
     
     List<Filiere> findByDepartementId(Long departementId);
     
