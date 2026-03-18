@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:8080/api/admin/utilisateurs/etudiants';
+﻿const BASE_URL = 'http://localhost:8080/api/admin/utilisateurs/etudiants';
 import { apiAuth } from './apiAuth';
 
 export const apiEtudiants = {
@@ -20,7 +20,7 @@ export const apiEtudiants = {
 
       return await reponse.json();
     } catch (erreur) {
-      console.error('Erreur lors de la récupération des étudiants:', erreur);
+      console.error('Erreur lors de la rÃ©cupÃ©ration des Ã©tudiants:', erreur);
       throw erreur;
     }
   },
@@ -43,7 +43,7 @@ export const apiEtudiants = {
 
       return await reponse.json();
     } catch (erreur) {
-      console.error('Erreur lors de la récupération de l\'étudiant:', erreur);
+      console.error('Erreur lors de la rÃ©cupÃ©ration de l\'Ã©tudiant:', erreur);
       throw erreur;
     }
   },
@@ -65,7 +65,7 @@ export const apiEtudiants = {
         let messageErreur = `Erreur HTTP: ${reponse.status}`;
         try {
           const erreurData = await reponse.json();
-          console.error('Réponse d\'erreur du serveur:', erreurData);
+          console.error('RÃ©ponse d\'erreur du serveur:', erreurData);
           if (erreurData.message) {
             messageErreur = erreurData.message;
           } else if (erreurData.error) {
@@ -73,7 +73,7 @@ export const apiEtudiants = {
           }
         } catch (e) {
           const texteErreur = await reponse.text();
-          console.error('Réponse d\'erreur (texte):', texteErreur);
+          console.error('RÃ©ponse d\'erreur (texte):', texteErreur);
           if (texteErreur) {
             messageErreur += ': ' + texteErreur;
           }
@@ -83,7 +83,7 @@ export const apiEtudiants = {
 
       return await reponse.json();
     } catch (erreur) {
-      console.error('Erreur lors de la création de l\'étudiant:', erreur);
+      console.error('Erreur lors de la crÃ©ation de l\'Ã©tudiant:', erreur);
       throw erreur;
     }
   },
@@ -105,7 +105,7 @@ export const apiEtudiants = {
         let messageErreur = `Erreur HTTP: ${reponse.status}`;
         try {
           const erreurData = await reponse.json();
-          console.error('Réponse d\'erreur du serveur:', erreurData);
+          console.error('RÃ©ponse d\'erreur du serveur:', erreurData);
           
           // Check for detailed validation errors
           if (erreurData.details && typeof erreurData.details === 'object') {
@@ -120,7 +120,7 @@ export const apiEtudiants = {
           }
         } catch (e) {
           const texteErreur = await reponse.text();
-          console.error('Réponse d\'erreur (texte):', texteErreur);
+          console.error('RÃ©ponse d\'erreur (texte):', texteErreur);
           if (texteErreur) {
             messageErreur += ': ' + texteErreur;
           }
@@ -130,7 +130,7 @@ export const apiEtudiants = {
 
       return await reponse.json();
     } catch (erreur) {
-      console.error('Erreur lors de la modification de l\'étudiant:', erreur);
+      console.error('Erreur lors de la modification de l\'Ã©tudiant:', erreur);
       throw erreur;
     }
   },
@@ -150,7 +150,7 @@ export const apiEtudiants = {
 
       return true;
     } catch (erreur) {
-      console.error('Erreur lors de la suppression de l\'étudiant:', erreur);
+      console.error('Erreur lors de la suppression de l\'Ã©tudiant:', erreur);
       throw erreur;
     }
   },
@@ -173,7 +173,7 @@ export const apiEtudiants = {
 
       return true;
     } catch (erreur) {
-      console.error('Erreur lors de l\'activation de l\'étudiant:', erreur);
+      console.error('Erreur lors de l\'activation de l\'Ã©tudiant:', erreur);
       throw erreur;
     }
   },
@@ -196,7 +196,7 @@ export const apiEtudiants = {
 
       return true;
     } catch (erreur) {
-      console.error('Erreur lors de la désactivation de l\'étudiant:', erreur);
+      console.error('Erreur lors de la dÃ©sactivation de l\'Ã©tudiant:', erreur);
       throw erreur;
     }
   },
@@ -241,8 +241,53 @@ export const apiEtudiants = {
 
       return await reponse.json();
     } catch (erreur) {
-      console.error('Erreur lors de l\'import des étudiants:', erreur);
+      console.error('Erreur lors de l\'import des Ã©tudiants:', erreur);
+      throw erreur;
+    }
+  },
+
+  async telechargerModeleImport(type) {
+    try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
+      const reponse = await fetch(`http://localhost:8080/api/import/template/${type}`, {
+        method: 'GET',
+        headers: {
+          ...headers,
+        },
+        credentials: 'include'
+      });
+
+      if (!reponse.ok) {
+        let messageErreur = `Erreur HTTP: ${reponse.status}`;
+        try {
+          const erreurData = await reponse.json();
+          if (erreurData.message) {
+            messageErreur = erreurData.message;
+          } else if (erreurData.error) {
+            messageErreur = erreurData.error;
+          }
+        } catch (e) {
+          const texteErreur = await reponse.text();
+          if (texteErreur) {
+            messageErreur += ': ' + texteErreur;
+          }
+        }
+        throw new Error(messageErreur);
+      }
+
+      const blob = await reponse.blob();
+      const disposition = reponse.headers.get('content-disposition') || '';
+      const nomFichierDepuisHeader = disposition.match(/filename=\"?([^\";]+)\"?/i)?.[1];
+      const nomFichierParDefaut = type === 'csv' ? 'import_etudiants.csv' : 'etudiants_import.xlsx';
+
+      return {
+        blob,
+        fileName: nomFichierDepuisHeader || nomFichierParDefaut
+      };
+    } catch (erreur) {
+      console.error('Erreur lors du téléchargement du modèle d\'import:', erreur);
       throw erreur;
     }
   },
 };
+

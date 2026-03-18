@@ -25,8 +25,8 @@ export const apiEtudiant = {
     },
 
     /**
-     * Update student profile information
-     * @param {Object} profileData - { nom, prenom, dateNaissance, tel, email }
+     * Update current student own profile
+     * @param {Object} profileData - { tel } or { ancienPassword, nouveauPassword }
      */
     async updateProfile(profileData) {
         try {

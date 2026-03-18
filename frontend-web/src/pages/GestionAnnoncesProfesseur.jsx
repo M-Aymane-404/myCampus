@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
   CheckCircle2,
   Eye,
+  GraduationCap,
   Info,
   Layers,
   Megaphone,
@@ -10,6 +11,8 @@ import {
   Plus,
   Send,
   Trash2,
+  Upload,
+  X,
 } from 'lucide-react';
 import apiAnnoncesProfesseur from '../services/professeur/apiAnnoncesProfesseur';
 import './GestionAnnoncesAdmin.css';
@@ -29,7 +32,6 @@ const FORM_INITIAL = {
   contenu: '',
   modeCiblage: 'ONE',
   codeClasse: '',
-  urgent: false,
 };
 
 const formaterDate = (dateStr) => {
@@ -62,8 +64,10 @@ const GestionAnnoncesProfesseur = () => {
   const [mesAnnonces, setMesAnnonces] = useState([]);
   const [mesClasses, setMesClasses] = useState([]);
   const [formulaire, setFormulaire] = useState(FORM_INITIAL);
+  const [fichiersSelectionnes, setFichiersSelectionnes] = useState([]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     chargerDonnees();
@@ -104,6 +108,11 @@ const GestionAnnoncesProfesseur = () => {
     return formulaire.codeClasse ? [formulaire.codeClasse] : [];
   })();
 
+  const classeSelectionnee = useMemo(
+    () => mesClasses.find((classe) => classe.codeClasse === formulaire.codeClasse) || null,
+    [mesClasses, formulaire.codeClasse],
+  );
+
   const isFormValid = Boolean(
     formulaire.titre.trim() &&
     formulaire.contenu.trim() &&
@@ -131,8 +140,38 @@ const GestionAnnoncesProfesseur = () => {
     }));
   };
 
+  const gererSelectionFichiers = (event) => {
+    setFichiersSelectionnes(Array.from(event.target.files || []));
+  };
+
+  const viderFichiers = () => {
+    setFichiersSelectionnes([]);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const retirerFichier = (indexFichier) => {
+    setFichiersSelectionnes((prev) => prev.filter((_, index) => index !== indexFichier));
+  };
+
   const reinitialiserFormulaire = () => {
     setFormulaire(FORM_INITIAL);
+    viderFichiers();
+  };
+
+  const televerserRessources = async (annonceId) => {
+    if (!fichiersSelectionnes.length) {
+      return 0;
+    }
+
+    await Promise.all(
+      fichiersSelectionnes.map((fichier) =>
+        apiAnnoncesProfesseur.ajouterRessourceAnnonce(annonceId, fichier),
+      ),
+    );
+
+    return fichiersSelectionnes.length;
   };
 
   const creerAnnonce = async () => {
@@ -157,23 +196,51 @@ const GestionAnnoncesProfesseur = () => {
     try {
       setSubmitting(true);
 
+      const annoncesCreees = [];
+      const nbClasses = classesCibles.length;
+      const nbFichiers = fichiersSelectionnes.length;
+
       for (const codeClasse of classesCibles) {
-        await apiAnnoncesProfesseur.creerAnnonce({
+        const annonceCreee = await apiAnnoncesProfesseur.creerAnnonce({
           titre: formulaire.titre.trim(),
           contenu: formulaire.contenu.trim(),
-          urgent: formulaire.urgent,
           typeAnnonce: formulaire.categorie,
           cibleType: 'ETUDIANTS_CLASSE',
           codeClasse,
           codeDepartement: null,
         });
+
+        annoncesCreees.push(annonceCreee);
       }
 
-      setSuccess(
-        classesCibles.length > 1
-          ? `Annonce creee pour ${classesCibles.length} classes.`
-          : 'Annonce creee avec succes en brouillon.',
-      );
+      try {
+        await Promise.all(annoncesCreees.map((annonce) => televerserRessources(annonce.id)));
+      } catch (uploadError) {
+        await chargerDonnees(false);
+        reinitialiserFormulaire();
+        setSuccess(
+          annoncesCreees.length > 1
+            ? `Annonces creees pour ${annoncesCreees.length} classes, mais l'envoi des ressources a echoue.`
+            : "Annonce creee, mais l'envoi des ressources a echoue.",
+        );
+        setError(uploadError.message || "Erreur lors de l'envoi des ressources.");
+        return;
+      }
+
+      if (nbClasses > 1) {
+        setSuccess(
+          nbFichiers > 0
+            ? `Annonces creees pour ${nbClasses} classes avec ${nbFichiers} ressource(s) par annonce.`
+            : `Annonces creees pour ${nbClasses} classes.`,
+        );
+      } else {
+        setSuccess(
+          nbFichiers > 0
+            ? `Annonce creee avec succes avec ${nbFichiers} ressource(s).`
+            : 'Annonce creee avec succes.',
+        );
+      }
+
       reinitialiserFormulaire();
       await chargerDonnees(false);
     } catch (err) {
@@ -228,6 +295,19 @@ const GestionAnnoncesProfesseur = () => {
           <div className="header-text">
             <h1>Centre de Communication</h1>
             <p>DIFFUSEZ VOS ANNONCES A VOS CLASSES</p>
+          </div>
+        </div>
+
+        <div className="target-buttons">
+          <button className="target-btn active" type="button">
+            <GraduationCap size={20} />
+            CIBLER ETUDIANTS
+          </button>
+
+          <div className="prof-target-chip">
+            <Layers size={18} />
+            {mesClasses.length} CLASSE{mesClasses.length > 1 ? 'S' : ''} ASSIGNEE
+            {mesClasses.length > 1 ? 'S' : ''}
           </div>
         </div>
       </div>
@@ -306,34 +386,84 @@ const GestionAnnoncesProfesseur = () => {
                 maxLength={2000}
               />
             </div>
+
+            <div className="prof-selected-class-box">
+              <div className="prof-selected-class-label">CIBLAGE</div>
+              <strong>
+                {formulaire.modeCiblage === 'ALL'
+                  ? `Toutes mes classes (${classesCibles.length})`
+                  : classeSelectionnee
+                    ? `${classeSelectionnee.nomClasse} (${classeSelectionnee.codeClasse})`
+                    : 'Aucune classe selectionnee'}
+              </strong>
+              <span>
+                {formulaire.modeCiblage === 'ALL'
+                  ? 'Le frontend cree une annonce distincte pour chaque classe selectionnee.'
+                  : 'Le backend professeur accepte uniquement le ciblage par classe.'}
+              </span>
+            </div>
           </div>
 
           <div className="compose-footer">
-            <div className="priority-toggle-container">
-              <label className="switch">
-                <input
-                  type="checkbox"
-                  checked={formulaire.urgent}
-                  onChange={(e) =>
-                    setFormulaire((prev) => ({
-                      ...prev,
-                      urgent: e.target.checked,
-                    }))
-                  }
-                />
-                <span className="slider"></span>
-              </label>
-
-              <div className="priority-info">
-                <h4>PRIORITE HAUTE</h4>
-                <p>Affiche une alerte plus visible cote etudiant</p>
+            <div className="attachment-upload-box">
+              <div className="attachment-upload-header">
+                <div className="attachment-upload-title">
+                  <Paperclip size={16} />
+                  <span>RESSOURCES ATTACHEES</span>
+                </div>
+                <span className="attachment-upload-count">
+                  {fichiersSelectionnes.length} fichier(s)
+                </span>
               </div>
-            </div>
 
-            <button className="attachment-btn is-disabled" type="button" disabled>
-              <Paperclip size={18} />
-              PIECES JOINTES INDISPONIBLES
-            </button>
+              <div className="attachment-upload-actions">
+                <input
+                  ref={fileInputRef}
+                  className="attachment-input-hidden"
+                  type="file"
+                  multiple
+                  onChange={gererSelectionFichiers}
+                />
+
+                <button
+                  className="attachment-btn"
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload size={18} />
+                  AJOUTER DES FICHIERS
+                </button>
+
+                {fichiersSelectionnes.length ? (
+                  <button
+                    className="attachment-btn attachment-btn-muted"
+                    type="button"
+                    onClick={viderFichiers}
+                  >
+                    <X size={18} />
+                    VIDER LA LISTE
+                  </button>
+                ) : null}
+              </div>
+
+              {fichiersSelectionnes.length ? (
+                <div className="attachment-file-list">
+                  {fichiersSelectionnes.map((fichier, index) => (
+                    <div className="attachment-file-chip" key={`${fichier.name}-${index}`}>
+                      <Paperclip size={14} />
+                      <span>{fichier.name}</span>
+                      <button type="button" onClick={() => retirerFichier(index)}>
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="attachment-empty-hint">
+                  Les ressources selectionnees seront televersees apres la creation de l'annonce.
+                </p>
+              )}
+            </div>
           </div>
         </div>
 
@@ -349,7 +479,22 @@ const GestionAnnoncesProfesseur = () => {
                 type="button"
                 onClick={gererSelectionToutesClasses}
               >
-                {formulaire.modeCiblage === 'ALL' ? 'Toutes les classes' : 'Cibler toutes les classes'}
+                {formulaire.modeCiblage === 'ALL'
+                  ? 'TOUTES LES CLASSES SELECTIONNEES'
+                  : 'CHOISIR TOUTES LES CLASSES'}
+              </button>
+              <button
+                className="select-all-toggle"
+                type="button"
+                onClick={() =>
+                  setFormulaire((prev) => ({
+                    ...prev,
+                    modeCiblage: 'ONE',
+                    codeClasse: '',
+                  }))
+                }
+              >
+                REINITIALISER
               </button>
             </div>
           </div>
@@ -366,7 +511,9 @@ const GestionAnnoncesProfesseur = () => {
           {chargement ? (
             <div className="prof-empty-state">Chargement des classes...</div>
           ) : mesClasses.length === 0 ? (
-            <div className="prof-empty-state">Aucune classe assignee trouvee pour ce professeur.</div>
+            <div className="prof-empty-state">
+              Aucune classe assignee trouvee pour ce professeur.
+            </div>
           ) : (
             <div className="audience-list">
               {mesClasses.map((classe) => {
@@ -393,6 +540,11 @@ const GestionAnnoncesProfesseur = () => {
               })}
             </div>
           )}
+
+          <div className="prof-target-note">
+            Le mode "toutes les classes" duplique la meme annonce sur chaque classe de vos
+            enseignements.
+          </div>
         </div>
       </div>
 
@@ -421,12 +573,16 @@ const GestionAnnoncesProfesseur = () => {
         {chargement ? (
           <div className="prof-empty-state">Chargement des annonces...</div>
         ) : mesAnnonces.length === 0 ? (
-          <div className="prof-empty-state">Vous n'avez encore cree aucune annonce.</div>
+          <div className="prof-empty-state">
+            Vous n'avez encore cree aucune annonce.
+          </div>
         ) : (
           <div className="prof-annonces-grid">
             {mesAnnonces.map((annonce) => {
-              const codeClasse = annonce?.classe?.codeClasse || annonce?.codeClasse || 'Classe inconnue';
-              const nomClasse = annonce?.classe?.nomClasse || annonce?.classe?.nom || codeClasse;
+              const codeClasse =
+                annonce?.classe?.codeClasse || annonce?.codeClasse || 'Classe inconnue';
+              const nomClasse =
+                annonce?.classe?.nomClasse || annonce?.classe?.nom || codeClasse;
 
               return (
                 <div key={annonce.id} className="prof-annonce-card">
@@ -434,8 +590,6 @@ const GestionAnnoncesProfesseur = () => {
                     <div>
                       <div className="prof-annonce-title-row">
                         <h3>{annonce.titre || 'Sans titre'}</h3>
-
-                        {annonce.urgent && <span className="prof-badge urgent">URGENT</span>}
                         {annonce.publiee ? (
                           <span className="prof-badge published">PUBLIEE</span>
                         ) : (

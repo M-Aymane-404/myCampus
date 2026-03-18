@@ -12,6 +12,7 @@ import com.mycampus.backend.enumerations.TypeNotification;
 import com.mycampus.backend.exceptions.UtilisateursException;
 import com.mycampus.backend.mappers.annonce.AnnonceMapper;
 import com.mycampus.backend.metier.Notification.NotificationMetier;
+import com.mycampus.backend.metier.annonces.ressources.GestionRessourcesAnnonceMetier;
 import com.mycampus.backend.repositorys.AnnonceRepository;
 import com.mycampus.backend.repositorys.ClasseRepository;
 import com.mycampus.backend.repositorys.ProfesseurRepository;
@@ -37,6 +38,7 @@ public class GestionAnnoncesProfesseurMetierImpl implements GestionAnnoncesProfe
     private final ProfesseurRepository professeurRepository;
      private final AnnonceMapper  annonceMapper;
     private final NotificationMetier notificationMetier;
+    private final GestionRessourcesAnnonceMetier gestionRessourcesAnnonceMetier;
 
     @Override
     @Transactional
@@ -70,7 +72,6 @@ public class GestionAnnoncesProfesseurMetierImpl implements GestionAnnoncesProfe
                     .datePublication(LocalDateTime.now())
                      .publiee(true)
                     .typeAnnonce(annonceDTO.getTypeAnnonce())
-                    .urgent(annonceDTO.isUrgent())
                     .cibleType(annonceDTO.getCibleType())
                     .auteur(auteur)
                     .classe(classe)
@@ -148,7 +149,8 @@ public class GestionAnnoncesProfesseurMetierImpl implements GestionAnnoncesProfe
             throw new UtilisateursException("Vous ne pouvez supprimer que vos propres annonces");
         }
         
-        annonceRepository.deleteById(annonceId);
+        gestionRessourcesAnnonceMetier.supprimerRessourcesSilencieusement(annonce);
+        annonceRepository.delete(annonce);
         log.info("Annonce supprimée avec succès");
     }
 

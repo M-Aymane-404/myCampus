@@ -1,6 +1,5 @@
 package com.mycampus.backend.dto.annonces;
 
-import com.mycampus.backend.entites.Departement;
 import com.mycampus.backend.enumerations.AnnonceCibleType;
 import com.mycampus.backend.enumerations.TypeAnnonce;
 import lombok.*;
@@ -18,7 +17,6 @@ public class AnnonceSortieDTO {
     private String titre;
     private String contenu;
     private LocalDateTime datePublication;
-    private boolean urgent;
     private TypeAnnonce typeAnnonce;
      private boolean publiee;
     private AnnonceCibleType cibleType;

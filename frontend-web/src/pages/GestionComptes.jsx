@@ -1,6 +1,6 @@
-
+﻿
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, CheckCircle, XCircle, Eye, Search, Loader, Upload } from 'lucide-react';
+import { Plus, Edit2, Trash2, CheckCircle, XCircle, Eye, Search, Loader, Upload, Download } from 'lucide-react';
 import FormulaireModal from '../composants/communs/FormulaireModal';
 import ModalDetailsUtilisateur from '../composants/communs/ModalDetailsUtilisateur';
 import ChampFormulaire from '../composants/communs/ChampFormulaire';
@@ -10,6 +10,23 @@ import { apiProfesseurs } from '../services/apiProfesseurs';
 import { apiAdministrateurs } from '../services/apiAdministrateurs';
 import { apiClasses } from '../services/apiClasses';
 import './GestionComptes.css';
+
+const defaultEtudiantCreationOptions = {
+  niveaux: [
+    { code: 'A1', label: '1A' },
+    { code: 'A2', label: '2A' },
+    { code: 'A3', label: '3A' },
+    { code: 'A5', label: '5A' },
+    { code: 'A6', label: '6A' },
+    { code: 'A7', label: '7A' }
+  ],
+  semestresActuels: [
+    { code: 'S1', label: 'S1' },
+    { code: 'S2', label: 'S2' },
+    { code: 'S3', label: 'S3' },
+    { code: 'S4', label: 'S4' }
+  ]
+};
 
 const GestionComptes = () => {
   const [activeFilter, setActiveFilter] = useState('ALL');
@@ -83,7 +100,6 @@ const GestionComptes = () => {
         name: `${user.prenom} ${user.nom} `,
         initials: `${user.prenom?.charAt(0) || ''}${user.nom?.charAt(0) || ''} `.toUpperCase(),
         role: normalizeRole(user.role),
-        lastActivity: 'Récemment', // Placeholder as backend might not track this yet
         enabled: user.active !== undefined ? user.active : true // Handle backend 'active' vs frontend 'enabled'
       }));
       setUsersList(formattedUsers);
@@ -273,7 +289,6 @@ const GestionComptes = () => {
       delete userPayload.id;
       delete userPayload.name;
       delete userPayload.initials;
-      delete userPayload.lastActivity;
       
       // Remove immutable identifiers during editing - but keep them if they are being modified
       // Note: PPR and Apogee should not be removed as they might be needed for validation
@@ -585,12 +600,19 @@ const GestionComptes = () => {
       // Refresh users list to show imported students
       await fetchUsers();
       
-      // Show success message
-      alert(`Import terminé avec succès!\n` +
-            `Total lignes: ${result.totalLignes}\n` +
-            `Insérés: ${result.nombreInseres}\n` +
-            `Ignorés: ${result.nombreIgnores}\n` +
-            `Erreurs: ${result.nombreErreurs}`);
+      // Show success message with explicit success type so it stays green
+      const messageSuccesImport =
+        `Import terminé avec succès!\n` +
+        `Total lignes: ${result.totalLignes}\n` +
+        `Insérés: ${result.nombreInseres}\n` +
+        `Ignorés: ${result.nombreIgnores}\n` +
+        `Erreurs: ${result.nombreErreurs}`;
+
+      if (window.__MYCAMPUS_NOTIFY__) {
+        window.__MYCAMPUS_NOTIFY__(messageSuccesImport, { type: 'success' });
+      } else {
+        alert(messageSuccesImport);
+      }
       
       // Close modal after successful import
       setImportModalOpen(false);
@@ -599,6 +621,23 @@ const GestionComptes = () => {
       alert('Erreur lors de l\'import: ' + (err.message || 'Erreur inconnue'));
     } finally {
       setImportLoading(false);
+    }
+  };
+
+  const handleDownloadImportTemplate = async (type) => {
+    try {
+      const { blob, fileName } = await apiEtudiants.telechargerModeleImport(type);
+      const url = window.URL.createObjectURL(blob);
+      const lien = document.createElement('a');
+      lien.href = url;
+      lien.download = fileName;
+      document.body.appendChild(lien);
+      lien.click();
+      document.body.removeChild(lien);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Template download failed:', err);
+      alert('Erreur lors du téléchargement du modèle: ' + (err.message || 'Erreur inconnue'));
     }
   };
 
@@ -644,9 +683,31 @@ const GestionComptes = () => {
         return (
           <>
             {!isEditing && <ChampFormulaire label="Apogée" nom="apogee" valeur={formData.apogee} onChange={handleInputChange} requis />}
-            <ChampFormulaire label="Niveau" nom="niveau" valeur={formData.niveau} onChange={handleInputChange} />
+            <ChampFormulaire
+              label="Niveau"
+              nom="niveau"
+              type="select"
+              valeur={formData.niveau}
+              onChange={handleInputChange}
+              options={defaultEtudiantCreationOptions.niveaux.map(option => ({
+                value: option.code,
+                label: option.label
+              }))}
+              requis
+            />
             <ChampFormulaire label="Année Inscription" nom="anneeInscription" type="number" valeur={formData.anneeInscription} onChange={handleInputChange} />
-            <ChampFormulaire label="Semestre Actuel" nom="semestreActuel" valeur={formData.semestreActuel} onChange={handleInputChange} />
+            <ChampFormulaire
+              label="Semestre Actuel"
+              nom="semestreActuel"
+              type="select"
+              valeur={formData.semestreActuel}
+              onChange={handleInputChange}
+              options={defaultEtudiantCreationOptions.semestresActuels.map(option => ({
+                value: option.code,
+                label: option.label
+              }))}
+              requis
+            />
             <ChampFormulaire label="Année Fin Étude" nom="anneeFinEtude" valeur={formData.anneeFinEtude} onChange={handleInputChange} />
             <ChampFormulaire label="Date de Naissance" nom="dateNaissance" type="date" valeur={formData.dateNaissance} onChange={handleInputChange} />
             <ChampFormulaire
@@ -743,14 +804,13 @@ const GestionComptes = () => {
                 <th>E-MAIL</th>
                 <th>RÔLE</th>
                 <th>STATUT</th>
-                <th>DERNIÈRE ACTIVITÉ</th>
                 <th>ACTIONS</th>
               </tr>
             </thead>
             <tbody>
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan="6" style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
+                  <td colSpan="5" style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
                     Aucun utilisateur trouvé.
                   </td>
                 </tr>
@@ -777,7 +837,6 @@ const GestionComptes = () => {
                         </span>
                       )}
                     </td>
-                    <td className="user-activity">{user.lastActivity}</td>
                     <td className="actions-cell">
                       <button className="btn-icon-action btn-view" onClick={() => handleViewDetails(user.id)}>
                         <Eye size={18} />
@@ -863,6 +922,25 @@ const GestionComptes = () => {
         chargement={importLoading}
       >
         <div className="import-form">
+          <div className="import-template-actions">
+            <button
+              type="button"
+              className="btn-import-template"
+              onClick={() => handleDownloadImportTemplate('xlsx')}
+            >
+              <Download size={16} />
+              <span>Télécharger modèle Excel</span>
+            </button>
+            <button
+              type="button"
+              className="btn-import-template"
+              onClick={() => handleDownloadImportTemplate('csv')}
+            >
+              <Download size={16} />
+              <span>Télécharger modèle CSV</span>
+            </button>
+          </div>
+
           <div className="form-group">
             <label>Fichier (CSV, XLSX ou XLS)*</label>
             <input
@@ -941,3 +1019,8 @@ const GestionComptes = () => {
 };
 
 export default GestionComptes;
+
+
+
+
+

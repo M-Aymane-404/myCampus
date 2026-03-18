@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { GraduationCap, LayoutDashboard, Users, UserCheck, BookOpen, Building2, FileText, Calendar, Megaphone } from 'lucide-react';
+import { GraduationCap, LayoutDashboard, Users, UserCheck, BookOpen, Building2, Calendar, Megaphone } from 'lucide-react';
 import IndicateurSession from '../communs/IndicateurSession';
 import './BarreLaterale.css';
 
@@ -28,7 +28,6 @@ const BarreLaterale = ({ elementActif, surChangementElement, estOuverte = false 
     { id: 'emploi-temps', icone: Calendar, libelle: 'Emploi du temps' },
     { id: 'comptes', icone: Users, libelle: 'Comptes' },
     { id: 'annonces-admin', icone: Megaphone, libelle: 'Annonces' },
-    { id: 'journal-audit', icone: FileText, libelle: 'Journal d\'audit' },
   ];
 
   const formaterTemps = (secondes) => {
@@ -45,7 +44,6 @@ const BarreLaterale = ({ elementActif, surChangementElement, estOuverte = false 
     'emploi-temps': 'Schedule',
     'comptes': 'Accounts',
     'annonces-admin': 'Announcements',
-    'journal-audit': 'Audit Logs',
   };
 
   return (

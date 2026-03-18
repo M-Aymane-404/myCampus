@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Megaphone,
   Info,
@@ -12,6 +12,8 @@ import {
   Trash2,
   CheckCircle2,
   AlertTriangle,
+  Upload,
+  X,
 } from 'lucide-react';
 import apiAnnonces from '../services/apiAnnonces';
 import { apiStructure } from '../services/apiStructure';
@@ -38,13 +40,14 @@ const GestionAnnoncesAdmin = () => {
   const [chargement, setChargement] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [cible, setCible] = useState('etudiants');
-  const [prioriteHaute, setPrioriteHaute] = useState(false);
   const [classes, setClasses] = useState([]);
   const [professeurs, setProfesseurs] = useState([]);
   const [annonces, setAnnonces] = useState([]);
   const [formulaire, setFormulaire] = useState(FORM_INITIAL);
+  const [fichiersSelectionnes, setFichiersSelectionnes] = useState([]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const fileInputRef = useRef(null);
   const emailAdminConnecte = (apiAuth.getUser()?.email || '').toLowerCase();
 
   useEffect(() => {
@@ -107,6 +110,23 @@ const GestionAnnoncesAdmin = () => {
     setFormulaire((prev) => ({ ...prev, [name]: value }));
   };
 
+  const gererSelectionFichiers = (event) => {
+    setFichiersSelectionnes(Array.from(event.target.files || []));
+  };
+
+  const viderFichiers = () => {
+    setFichiersSelectionnes([]);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const retirerFichier = (indexFichier) => {
+    setFichiersSelectionnes((prev) =>
+      prev.filter((_, index) => index !== indexFichier)
+    );
+  };
+
   const toggleTarget = (id) => {
     if (cible === 'etudiants') {
       setClasses((prev) =>
@@ -161,11 +181,25 @@ const GestionAnnoncesAdmin = () => {
 
   const resetForm = () => {
     setFormulaire(FORM_INITIAL);
-    setPrioriteHaute(false);
     setClasses((prev) => prev.map((classe) => ({ ...classe, selected: false })));
     setProfesseurs((prev) =>
       prev.map((professeur) => ({ ...professeur, selected: false }))
     );
+    viderFichiers();
+  };
+
+  const televerserRessources = async (annonceId) => {
+    if (!fichiersSelectionnes.length) {
+      return 0;
+    }
+
+    await Promise.all(
+      fichiersSelectionnes.map((fichier) =>
+        apiAnnonces.ajouterRessource(annonceId, fichier)
+      )
+    );
+
+    return fichiersSelectionnes.length;
   };
 
   const diffuserAnnonce = async () => {
@@ -189,7 +223,6 @@ const GestionAnnoncesAdmin = () => {
       const annonceData = {
         titre: formulaire.titre.trim(),
         contenu: formulaire.contenu.trim(),
-        urgent: prioriteHaute,
         typeAnnonce: formulaire.categorie,
       };
 
@@ -211,8 +244,24 @@ const GestionAnnoncesAdmin = () => {
         }
       }
 
-      await apiAnnonces.creer(annonceData);
-      setSuccess('Annonce diffusee avec succes.');
+      const annonceCreee = await apiAnnonces.creer(annonceData);
+      let nbRessources = 0;
+
+      try {
+        nbRessources = await televerserRessources(annonceCreee.id);
+      } catch (uploadError) {
+        await chargerDonnees(false);
+        resetForm();
+        setSuccess("Annonce creee, mais l'envoi des ressources a echoue.");
+        setError(uploadError.message || "Erreur lors de l'envoi des ressources.");
+        return;
+      }
+
+      setSuccess(
+        nbRessources > 0
+          ? `Annonce diffusee avec succes avec ${nbRessources} ressource(s).`
+          : 'Annonce diffusee avec succes.'
+      );
       resetForm();
       await chargerDonnees(false);
     } catch (err) {
@@ -413,25 +462,65 @@ const GestionAnnoncesAdmin = () => {
           </div>
 
           <div className="compose-footer">
-            <div className="priority-toggle-container">
-              <label className="switch">
-                <input
-                  type="checkbox"
-                  checked={prioriteHaute}
-                  onChange={(e) => setPrioriteHaute(e.target.checked)}
-                />
-                <span className="slider"></span>
-              </label>
-              <div className="priority-info">
-                <h4>PRIORITE HAUTE</h4>
-                <p>AFFICHE UNE ALERTE SUR LE DASHBOARD</p>
+            <div className="attachment-upload-box">
+              <div className="attachment-upload-header">
+                <div className="attachment-upload-title">
+                  <Paperclip size={16} />
+                  <span>RESSOURCES ATTACHEES</span>
+                </div>
+                <span className="attachment-upload-count">
+                  {fichiersSelectionnes.length} fichier(s)
+                </span>
               </div>
-            </div>
 
-            <button className="attachment-btn is-disabled" type="button" disabled>
-              <Paperclip size={18} />
-              PIECES JOINTES INDISPONIBLES
-            </button>
+              <div className="attachment-upload-actions">
+                <input
+                  ref={fileInputRef}
+                  className="attachment-input-hidden"
+                  type="file"
+                  multiple
+                  onChange={gererSelectionFichiers}
+                />
+
+                <button
+                  className="attachment-btn"
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload size={18} />
+                  AJOUTER DES FICHIERS
+                </button>
+
+                {fichiersSelectionnes.length ? (
+                  <button
+                    className="attachment-btn attachment-btn-muted"
+                    type="button"
+                    onClick={viderFichiers}
+                  >
+                    <X size={18} />
+                    VIDER LA LISTE
+                  </button>
+                ) : null}
+              </div>
+
+              {fichiersSelectionnes.length ? (
+                <div className="attachment-file-list">
+                  {fichiersSelectionnes.map((fichier, index) => (
+                    <div className="attachment-file-chip" key={`${fichier.name}-${index}`}>
+                      <Paperclip size={14} />
+                      <span>{fichier.name}</span>
+                      <button type="button" onClick={() => retirerFichier(index)}>
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="attachment-empty-hint">
+                  Les ressources selectionnees seront televersees apres la creation de l'annonce.
+                </p>
+              )}
+            </div>
           </div>
         </div>
 
@@ -528,11 +617,6 @@ const GestionAnnoncesAdmin = () => {
                   <div>
                     <div className="prof-annonce-title-row">
                       <h3>{annonce.titre || 'Sans titre'}</h3>
-
-                      {annonce.urgent ? (
-                        <span className="prof-badge urgent">URGENT</span>
-                      ) : null}
-
                       {annonce.publiee ? (
                         <span className="prof-badge published">PUBLIEE</span>
                       ) : (

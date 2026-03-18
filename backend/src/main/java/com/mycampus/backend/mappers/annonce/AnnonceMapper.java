@@ -44,6 +44,7 @@ public class AnnonceMapper {
                 .titre(annonce.getTitre())
                 .contenu(annonce.getContenu())
                 .datePublication(annonce.getDatePublication())
+                .typeAnnonce(annonce.getTypeAnnonce())
                 .publiee(annonce.isPubliee())
                 .cibleType(annonce.getCibleType())
                 .auteur(auteurDTO)

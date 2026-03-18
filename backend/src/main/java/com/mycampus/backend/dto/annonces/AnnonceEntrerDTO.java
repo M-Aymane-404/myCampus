@@ -7,8 +7,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
-import java.time.LocalDateTime;
-
 @Getter
 @Setter
 @AllArgsConstructor
@@ -24,7 +22,6 @@ public class AnnonceEntrerDTO {
     @Size(max = 2000, message = "Le contenu ne doit pas dépasser 2000 caractères")
     private String contenu;
     
-    private boolean urgent;
     private TypeAnnonce typeAnnonce;
 
     @NotNull(message = "Le type de cible est obligatoire")

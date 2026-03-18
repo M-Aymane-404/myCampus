@@ -5,10 +5,8 @@ import {
   School,
   BookOpen,
   Link2,
-  ArrowRight,
   UserPlus,
   Megaphone,
-  PlusSquare,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -18,47 +16,10 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Cell,
+  LabelList,
 } from 'recharts';
 import { apiTableauDeBord } from '../services/apiTableauDeBord';
 import './TableauDeBordAdmin.css';
-
-const actionsRapides = [
-  {
-    id: 'comptes',
-    titre: 'Ajouter etudiant',
-    description: 'Creer un compte et lier directement la classe.',
-    icone: UserPlus,
-  },
-  {
-    id: 'comptes',
-    titre: 'Ajouter professeur',
-    description: 'Ouvrir un compte enseignant avec ses acces.',
-    icone: Users,
-  },
-  {
-    id: 'filieres',
-    titre: 'Creer classe',
-    description: 'Ajouter une nouvelle classe a la structure academique.',
-    icone: PlusSquare,
-  },
-  {
-    id: 'annonces-admin',
-    titre: 'Publier annonce',
-    description: 'Envoyer une information ciblee aux classes concernees.',
-    icone: Megaphone,
-  },
-];
-
-const couleursGraphes = [
-  '#1e3a5f',
-  '#3d7ea6',
-  '#5c54ed',
-  '#60a5fa',
-  '#93c5fd',
-  '#f4a261',
-  '#64748b',
-];
 
 const formaterNombre = (valeur) =>
   new Intl.NumberFormat('fr-FR').format(valeur ?? 0);
@@ -97,11 +58,12 @@ const construireKpis = (statistiquesGlobales) => [
 ];
 
 const construireGraphique = (etudiantsParFiliere) =>
-  (etudiantsParFiliere ?? []).map((entree, index) => ({
-    filiere: entree.filiere,
-    total: entree.totalEtudiants ?? 0,
-    couleur: couleursGraphes[index % couleursGraphes.length],
-  }));
+  [...(etudiantsParFiliere ?? [])]
+    .map((entree) => ({
+      filiere: entree.codeFiliere || entree.filiere,
+      total: entree.totalEtudiants ?? 0,
+    }))
+    .sort((a, b) => b.total - a.total);
 
 const TableauDeBordAdmin = ({ surNavigation }) => {
   const [dashboard, setDashboard] = useState(null);
@@ -128,6 +90,7 @@ const TableauDeBordAdmin = ({ surNavigation }) => {
 
   const kpis = construireKpis(dashboard?.statistiquesGlobales);
   const etudiantsParFiliere = construireGraphique(dashboard?.etudiantsParFiliere);
+  const hauteurGraphique = Math.max(320, etudiantsParFiliere.length * 58);
 
   return (
     <div className="admin-dashboard">
@@ -215,7 +178,7 @@ const TableauDeBordAdmin = ({ surNavigation }) => {
             les plus chargees.
           </p>
 
-          <div className="chart-wrapper">
+          <div className="chart-wrapper" style={{ height: `${hauteurGraphique}px` }}>
             {chargement ? (
               <div className="chart-empty-state">Chargement du graphique...</div>
             ) : etudiantsParFiliere.length === 0 ? (
@@ -224,76 +187,57 @@ const TableauDeBordAdmin = ({ surNavigation }) => {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={etudiantsParFiliere}
-                  margin={{ top: 8, right: 6, left: -22, bottom: 0 }}
+                  layout="vertical"
+                  margin={{ top: 8, right: 24, left: 24, bottom: 0 }}
                 >
                   <CartesianGrid
                     strokeDasharray="3 3"
-                    vertical={false}
+                    horizontal={false}
                     stroke="rgba(120, 137, 153, 0.22)"
                   />
                   <XAxis
-                    dataKey="filiere"
+                    type="number"
                     axisLine={false}
                     tickLine={false}
                     tick={{ fill: '#5f6f7c', fontSize: 12 }}
                   />
                   <YAxis
+                    dataKey="filiere"
+                    type="category"
                     axisLine={false}
                     tickLine={false}
                     tick={{ fill: '#5f6f7c', fontSize: 12 }}
+                    width={96}
                   />
                   <Tooltip
-                    cursor={{ fill: 'rgba(61, 126, 166, 0.08)' }}
+                    cursor={{ fill: 'rgba(92, 84, 237, 0.08)' }}
                     contentStyle={{
                       borderRadius: 14,
-                      border: '1px solid rgba(61, 126, 166, 0.12)',
+                      border: '1px solid rgba(92, 84, 237, 0.14)',
+                      background: 'rgba(255, 255, 255, 0.98)',
                       boxShadow: '0 16px 38px rgba(15, 23, 42, 0.10)',
                     }}
                   />
-                  <Bar dataKey="total" radius={[12, 12, 0, 0]}>
-                    {etudiantsParFiliere.map((entree) => (
-                      <Cell key={entree.filiere} fill={entree.couleur} />
-                    ))}
+                  <Bar
+                    dataKey="total"
+                    fill="#5c54ed"
+                    radius={[0, 10, 10, 0]}
+                    barSize={22}
+                  >
+                    <LabelList
+                      dataKey="total"
+                      position="right"
+                      offset={10}
+                      fill="#334155"
+                      fontSize={12}
+                      fontWeight={700}
+                    />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
             )}
           </div>
         </article>
-
-        <div className="dashboard-side-column">
-          <article className="dashboard-card actions-card">
-            <div className="dashboard-card-header">
-              <div>
-                <p className="section-kicker">Raccourcis</p>
-                <h2>Actions rapides</h2>
-              </div>
-            </div>
-
-            <div className="actions-grid">
-              {actionsRapides.map((action) => {
-                const Icone = action.icone;
-                return (
-                  <button
-                    key={`${action.id}-${action.titre}`}
-                    type="button"
-                    className="action-card"
-                    onClick={() => surNavigation && surNavigation(action.id)}
-                  >
-                    <div className="action-card-top">
-                      <div className="action-icon">
-                        <Icone size={18} />
-                      </div>
-                      <ArrowRight size={16} className="action-arrow" />
-                    </div>
-                    <strong>{action.titre}</strong>
-                    <p>{action.description}</p>
-                  </button>
-                );
-              })}
-            </div>
-          </article>
-        </div>
       </section>
     </div>
   );

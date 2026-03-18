@@ -373,11 +373,6 @@
   letter-spacing: 0.03em;
 }
 
-.prof-badge.urgent {
-  background: #fee2e2;
-  color: #b91c1c;
-}
-
 .prof-badge.draft {
   background: #fef3c7;
   color: #92400e;

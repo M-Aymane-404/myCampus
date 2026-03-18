@@ -134,7 +134,6 @@ const EnTete = ({ elementActif, surChangementElement }) => {
       { id: 'emploi-temps', libelle: 'Emploi-temps' },
       { id: 'comptes', libelle: 'Comptes' },
       { id: 'annonces-admin', libelle: 'Annonces' },
-      { id: 'journal-audit', libelle: 'Journal audit' },
     ],
     professor: [
       { id: 'tableau-de-bord-professeur', libelle: 'Tableau de bord' },

@@ -17,7 +17,6 @@ public class AnnonceSortieEtudiantDTO {
     private String titre;
     private String contenu;
     private LocalDateTime datePublication;
-    private boolean urgent;
     private TypeAnnonce typeAnnonce;
      private boolean publiee;
     private AnnonceCibleType cibleType;

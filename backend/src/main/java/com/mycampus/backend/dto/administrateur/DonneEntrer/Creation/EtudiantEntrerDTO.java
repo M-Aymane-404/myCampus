@@ -21,29 +21,29 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @SuperBuilder
 public class EtudiantEntrerDTO extends UtilisateurEntrerDto {
-    
-    @NotBlank(message = "Code Apogée obligatoire")
+
+    @NotBlank(message = "Code Apogee obligatoire")
     @Pattern(
             regexp = "^[0-9]{9}$",
-            message = "Code Apogée doit contenir 9 chiffres"
+            message = "Code Apogee doit contenir 9 chiffres"
     )
     private String apogee;
-    
-    @Size(max = 50, message = "Niveau ne doit pas dépasser 50 caractères")
+
+    @NotNull(message = "Niveau obligatoire")
     private NiveauAnnee niveau;
-    
-    private Integer anneeInscription;
-    
+
+     private Integer anneeInscription;
+
     private Semestre semestreActuel;
-    
-    @Size(max = 20, message = "Année fin étude ne doit pas dépasser 20 caractères")
+
+    @Size(max = 20, message = "Annee fin etude ne doit pas depasser 20 caracteres")
     private String anneeFinEtude;
-    
+
     @NotNull(message = "Date de naissance obligatoire")
     private LocalDate dateNaissance;
-    
+
     private EtatInscription etatInscription;
-    
-    @Size(max = 20, message = "Code classe ne doit pas dépasser 20 caractères")
+
+    @Size(max = 20, message = "Code classe ne doit pas depasser 20 caracteres")
     private String codeClasse;
 }

@@ -37,8 +37,8 @@ export const apiAdmin = {
     },
 
     /**
-     * Update current administrator's profile information
-     * @param {Object} profileData - { nom, prenom, tel, email, grade, ancienPassword, nouveauPassword }
+     * Update current administrator's own profile
+     * @param {Object} profileData - { tel } or { ancienPassword, nouveauPassword }
      */
     async updateProfile(profileData) {
         try {

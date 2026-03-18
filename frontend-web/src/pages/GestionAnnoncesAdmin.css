@@ -207,11 +207,58 @@
 .compose-footer {
   margin-top: 24px;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  justify-content: flex-start;
+  align-items: stretch;
   background: #f8fafc;
   padding: 18px 24px;
   border-radius: 16px;
+}
+
+.attachment-upload-box {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+}
+
+.attachment-upload-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.attachment-upload-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #1e293b;
+  letter-spacing: 0.04em;
+}
+
+.attachment-upload-count {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.attachment-upload-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.attachment-input-hidden {
+  display: none;
 }
 
 .priority-toggle-container {
@@ -298,6 +345,59 @@ input:checked+.slider:before {
 .attachment-btn:hover {
   background: #f1f5f9;
   border-color: #cbd5e1;
+}
+
+.attachment-btn-muted {
+  background: #e2e8f0;
+}
+
+.attachment-btn-muted:hover {
+  background: #cbd5e1;
+}
+
+.attachment-file-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.attachment-file-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 1px solid #dbeafe;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 700;
+  max-width: 100%;
+}
+
+.attachment-file-chip span {
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attachment-file-chip button {
+  border: none;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.attachment-empty-hint {
+  margin: 0;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 /* Audience Section */

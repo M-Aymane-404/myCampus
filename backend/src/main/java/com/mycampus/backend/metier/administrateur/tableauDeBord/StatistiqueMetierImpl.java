@@ -59,6 +59,7 @@ public class StatistiqueMetierImpl implements StatistiqueMetier {
     private StatistiquesParFiliereDTO versStatistiquesParFiliere(Filiere filiere) {
         Integer totalEtudiants = etudiantRepository.countEtudiantsByCodeFiliere(filiere.getCodeFiliere());
         return StatistiquesParFiliereDTO.builder()
+                .codeFiliere(filiere.getCodeFiliere())
                 .filiere(filiere.getNom())
                 .totalEtudiants(totalEtudiants != null ? totalEtudiants.longValue() : 0L)
                 .build();
