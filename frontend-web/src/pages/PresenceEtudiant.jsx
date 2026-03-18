@@ -12,6 +12,20 @@ import {
 import './PresenceEtudiant.css';
 import { apiAttendance } from '../services/apiAttendance';
 
+const getJustificationStatus = (session) => {
+    const normalized = String(session?.statutJustificatif || '').trim().toUpperCase();
+
+    if (normalized === 'VALIDE') return 'VALIDEE';
+    if (normalized === 'REFUSE') return 'REFUSEE';
+    if (normalized === 'EN_ATTENTE') return 'EN_ATTENTE';
+    if (session?.justificationValidee || session?.justifiee) return 'VALIDEE';
+    if (session?.justificationSoumise || session?.motif || session?.motifUrl || session?.motifNom || session?.typeMotif) {
+        return 'EN_ATTENTE';
+    }
+
+    return 'AUCUN';
+};
+
 const PresenceEtudiant = () => {
     // Current Calendar View State
     const [currentDate, setCurrentDate] = useState(new Date()); // Tracks the month being viewed
@@ -244,7 +258,10 @@ const PresenceEtudiant = () => {
                     
                     return {
                         ...record,
-                        justifiee: true,
+                        statutJustificatif: 'EN_ATTENTE',
+                        justificationSoumise: true,
+                        justificationValidee: false,
+                        justifiee: false,
                         motif: motifText
                     };
                 }
@@ -430,9 +447,34 @@ const PresenceEtudiant = () => {
                                     <div className="action-box">
                                         {session.status?.toUpperCase() === 'ABSENT' && (
                                             <>
-                                                {session.justifiee ? (
+                                                {getJustificationStatus(session) === 'VALIDEE' ? (
                                                     <div className="justifiee-badge">
-                                                        <span style={{ textAlign: 'center' }}>✓</span>
+                                                        <span>Validee</span>
+                                                    </div>
+                                                ) : getJustificationStatus(session) === 'EN_ATTENTE' ? (
+                                                    <div className="justification-status-badge pending">
+                                                        <span>En attente</span>
+                                                    </div>
+                                                ) : getJustificationStatus(session) === 'REFUSEE' ? (
+                                                    <div className="action-box-stack">
+                                                        <div className="justification-status-badge rejected">
+                                                            <span>Refusee</span>
+                                                        </div>
+                                                        {session.justificationAllowed !== false ? (
+                                                            <button
+                                                                className="justifier-btn retry"
+                                                                onClick={() => {
+                                                                    setSelectedSession(session);
+                                                                    setIsModalOpen(true);
+                                                                }}
+                                                            >
+                                                                Renvoyer
+                                                            </button>
+                                                        ) : (
+                                                            <div className="justification-expired-badge">
+                                                                <span>DÃ©lai dÃ©passÃ©</span>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 ) : session.justificationAllowed !== false ? (
                                                     <button

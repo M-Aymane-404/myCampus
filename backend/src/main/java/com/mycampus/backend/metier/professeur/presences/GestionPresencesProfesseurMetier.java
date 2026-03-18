@@ -33,6 +33,12 @@ public interface GestionPresencesProfesseurMetier {
     LignePresenceSortieDTO saisirPresences(String professeurPpr, Long seanceId, PresenceEntrerDTO dto)
             throws SeancesProfesseurException;
 
+    LignePresenceSortieDTO validerJustificatif(String professeurPpr, Long seanceId, Long presenceId)
+            throws SeancesProfesseurException;
+
+    LignePresenceSortieDTO refuserJustificatif(String professeurPpr, Long seanceId, Long presenceId)
+            throws SeancesProfesseurException;
+
    // String TrouverProfesseurPprParemail(String email) throws UtilisateursException;
 
     // String TrouverProfesseurPprParemail(String email)throws UtilisateursException;

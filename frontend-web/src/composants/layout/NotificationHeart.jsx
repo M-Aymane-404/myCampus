@@ -1,4 +1,4 @@
-import { Heart, ChevronRight } from 'lucide-react';
+import { Bell, ChevronRight } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { apiNotifications } from '../../services/apiNotifications';
 import './NotificationHeart.css';
@@ -164,7 +164,7 @@ const NotificationHeart = ({ currentRole, surChangementElement }) => {
         onClick={gererToggle}
         aria-label="Ouvrir les notifications"
       >
-        <Heart size={20} />
+        <Bell size={20} />
         {aDesNotificationsNonLues ? (
           <span className="notification-heart-dot" aria-hidden="true"></span>
         ) : null}

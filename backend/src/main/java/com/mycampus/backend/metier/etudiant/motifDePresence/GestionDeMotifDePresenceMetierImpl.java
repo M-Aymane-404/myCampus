@@ -3,6 +3,7 @@ package com.mycampus.backend.metier.etudiant.motifDePresence;
 import com.mycampus.backend.dto.FichierStocker.FichierStockerDTO;
 import com.mycampus.backend.dto.etudiant.DonneeEntrer.EtudiantJustificationPresenceDTO;
 import com.mycampus.backend.entites.Presence;
+import com.mycampus.backend.enumerations.StatutJustificatif;
 import com.mycampus.backend.enumerations.StatusAbsence;
 import com.mycampus.backend.enumerations.TypeMotif;
 import com.mycampus.backend.exceptions.PresenceException;
@@ -130,7 +131,7 @@ public class GestionDeMotifDePresenceMetierImpl implements GestionDeMotifDePrese
              throw new PresenceException("vous être present ");
          }
 
-         if(p.isValidationMotif()){
+         if(p.getStatutJustificatif() == StatutJustificatif.VALIDE){
              throw new PresenceException("motif deja valider");
          }
          if (dto.getTypeMotif() == TypeMotif.CERTIFICAT_MEDICAL && (motif == null || motif.isEmpty())){
@@ -167,6 +168,7 @@ public class GestionDeMotifDePresenceMetierImpl implements GestionDeMotifDePrese
 
         p.setDescriptionDeJustification(dto.getDescriptionDeJustification());
         p.setTypeMotif(dto.getTypeMotif());
+        p.setStatutJustificatif(StatutJustificatif.EN_ATTENTE);
 
 
 

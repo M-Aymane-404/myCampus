@@ -1,5 +1,6 @@
 package com.mycampus.backend.entites;
 
+import com.mycampus.backend.enumerations.StatutJustificatif;
 import com.mycampus.backend.enumerations.StatusAbsence;
 import com.mycampus.backend.enumerations.TypeMotif;
 import jakarta.persistence.*;
@@ -29,8 +30,10 @@ public class Presence {
 
     private String descriptionDeJustification;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     @Builder.Default
-    private boolean validationMotif = false;
+    private StatutJustificatif statutJustificatif = StatutJustificatif.AUCUN;
 
     @Enumerated(EnumType.STRING)
     private TypeMotif typeMotif;
