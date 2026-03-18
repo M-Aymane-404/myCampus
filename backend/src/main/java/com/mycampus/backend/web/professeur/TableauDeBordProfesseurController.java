@@ -23,6 +23,7 @@ public class TableauDeBordProfesseurController {
 
     private final TableauDeBordProfesseurMetier tableauDeBordMetier;
 
+
     @Operation(summary = "Tableau de bord du professeur connecté")
     @GetMapping("/tableau-de-bord")
     public ResponseEntity<TableauDeBordProfesseurSortieDTO> obtenirTableauDeBord(

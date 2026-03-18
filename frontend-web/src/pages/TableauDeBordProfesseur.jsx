@@ -29,6 +29,9 @@ import {
 import { apiTableauDeBordProfesseur } from '../services/professeur/apiTableauDeBordProfesseur';
 import apiExamensProfesseur from '../services/professeur/apiExamensProfesseur';
 import apiNotesProfesseur from '../services/professeur/apiNotesProfesseur';
+import { apiEnseignementsProfesseur } from '../services/professeur/apiEnseignementsProfesseur';
+import apiSeancesProfesseur from '../services/professeur/apiSeancesProfesseur';
+import { apiPresencesProfesseur } from '../services/professeur/apiPresencesProfesseur';
 import './TableauDeBordProfesseur.css';
 
 const TYPE_COLOR = { COURS: 'blue', TD: 'green', TP: 'purple' };
@@ -344,9 +347,136 @@ const buildAbsenceInsights = (dashboardData) => {
   };
 };
 
+const isSameDay = (left, right) => {
+  const a = new Date(left);
+  const b = new Date(right);
+  if (Number.isNaN(a.getTime()) || Number.isNaN(b.getTime())) return false;
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+};
+
+const normalizePresenceStatus = (status) => {
+  const normalized = String(status || '').trim().toUpperCase();
+  if (['PRESENT', 'PRESENTE', 'P', 'PR'].includes(normalized)) return 'PRESENT';
+  if (['ABSENT', 'ABSENTE', 'A', 'ABS'].includes(normalized)) return 'ABSENT';
+  return normalized;
+};
+
+const buildPresenceInsightsFromApp = async () => {
+  const enseignements = await apiEnseignementsProfesseur.listerEnseignements();
+  const items = Array.isArray(enseignements) ? enseignements : [];
+  if (items.length === 0) {
+    return {
+      prochaineSeance: null,
+      absencesJour: 0,
+      feuillesACompleter: 0,
+      etudiantsARisque: 0,
+      tauxPresence: null,
+    };
+  }
+
+  const seancesParEnseignement = await Promise.all(
+    items.map(async (enseignement) => {
+      try {
+        const seances = await apiSeancesProfesseur.rechercherSeances({
+          codeClasse: enseignement.codeClasse,
+          codeMatiere: enseignement.codeMatiere,
+        });
+
+        return Array.isArray(seances)
+          ? seances.map((seance) => ({
+              ...seance,
+              nomMatiere: enseignement.nomMatiere || enseignement.matiereNom,
+              nomClasse: enseignement.nomClasse || enseignement.classeNom || enseignement.codeClasse,
+            }))
+          : [];
+      } catch {
+        return [];
+      }
+    }),
+  );
+
+  const allSeances = seancesParEnseignement.flat();
+  const now = new Date();
+  const prochaineSeance = [...allSeances]
+    .filter((seance) => {
+      const start = new Date(seance.heureDebut || seance.date || 0);
+      return !Number.isNaN(start.getTime()) && start.getTime() >= now.getTime();
+    })
+    .sort((a, b) => new Date(a.heureDebut || a.date || 0) - new Date(b.heureDebut || b.date || 0))[0] || null;
+
+  const recentSeances = [...allSeances]
+    .filter((seance) => {
+      const start = new Date(seance.heureDebut || seance.date || 0);
+      return !Number.isNaN(start.getTime()) && start.getTime() <= now.getTime();
+    })
+    .sort((a, b) => new Date(b.heureDebut || b.date || 0) - new Date(a.heureDebut || a.date || 0))
+    .slice(0, 8);
+
+  let absencesJour = 0;
+  let feuillesACompleter = 0;
+  let presents = 0;
+  let totalStatuses = 0;
+  const absencesParEtudiant = new Map();
+
+  await Promise.all(
+    recentSeances.map(async (seance) => {
+      try {
+        const feuille = await apiPresencesProfesseur.chargerFeuille(seance.id);
+        const lignes = Array.isArray(feuille?.lignes) ? feuille.lignes : [];
+        let seanceComplete = lignes.length > 0;
+
+        lignes.forEach((ligne) => {
+          const status = normalizePresenceStatus(ligne.status);
+          if (status === 'PRESENT' || status === 'ABSENT') {
+            totalStatuses += 1;
+            if (status === 'PRESENT') presents += 1;
+            if (status === 'ABSENT') {
+              const studentKey = ligne.apogee || ligne.idEtudiant;
+              if (studentKey) {
+                absencesParEtudiant.set(studentKey, (absencesParEtudiant.get(studentKey) || 0) + 1);
+              }
+
+              if (isSameDay(seance.heureDebut || seance.date, now)) {
+                absencesJour += 1;
+              }
+            }
+          } else {
+            seanceComplete = false;
+          }
+        });
+
+        if (!seanceComplete) {
+          feuillesACompleter += 1;
+        }
+      } catch {
+        feuillesACompleter += 1;
+      }
+    }),
+  );
+
+  return {
+    prochaineSeance,
+    absencesJour,
+    feuillesACompleter,
+    etudiantsARisque: Array.from(absencesParEtudiant.values()).filter((count) => count >= 2).length,
+    tauxPresence: totalStatuses > 0 ? (presents / totalStatuses) * 100 : null,
+  };
+};
+
 const TableauDeBordProfesseur = ({ surNavigation }) => {
   const [dashboard, setDashboard] = useState(null);
   const [prochaineSeance, setProchaineSeance] = useState(null);
+  const [presenceInsights, setPresenceInsights] = useState({
+    prochaineSeance: null,
+    absencesJour: 0,
+    feuillesACompleter: 0,
+    etudiantsARisque: 0,
+    tauxPresence: null,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeNoteTab, setActiveNoteTab] = useState('classe');
@@ -375,11 +505,26 @@ const TableauDeBordProfesseur = ({ surNavigation }) => {
         const dashboardResponse = await apiTableauDeBordProfesseur.obtenirTableauDeBord();
         setDashboard(dashboardResponse);
 
-        const [nextSessionResult] = await Promise.allSettled([
+        const [nextSessionResult, presenceResult] = await Promise.allSettled([
           apiTableauDeBordProfesseur.obtenirProchaineSeance(),
+          buildPresenceInsightsFromApp(),
         ]);
 
-        setProchaineSeance(nextSessionResult.status === 'fulfilled' ? nextSessionResult.value?.prochaineSeance || null : null);
+        const nextSessionApi =
+          nextSessionResult.status === 'fulfilled' ? nextSessionResult.value?.prochaineSeance || null : null;
+        const presenceData =
+          presenceResult.status === 'fulfilled'
+            ? presenceResult.value
+            : {
+                prochaineSeance: null,
+                absencesJour: 0,
+                feuillesACompleter: 0,
+                etudiantsARisque: 0,
+                tauxPresence: null,
+              };
+
+        setPresenceInsights(presenceData);
+        setProchaineSeance(presenceData.prochaineSeance || nextSessionApi);
       } catch (err) {
         console.error('Chargement dashboard professeur impossible:', err);
         setError(err.message || 'Impossible de charger le tableau de bord professeur.');
@@ -411,7 +556,17 @@ const TableauDeBordProfesseur = ({ surNavigation }) => {
   const stats = dashboardData.stats || {};
   const examensAVenir = Array.isArray(dashboardData.examensAVenir) ? dashboardData.examensAVenir.slice(0, 3) : [];
   const sessionCard = normalizeSession(prochaineSeance);
-  const absenceInsights = buildAbsenceInsights(dashboardData);
+  const absenceInsights = {
+    ...buildAbsenceInsights(dashboardData),
+    todayCount: presenceInsights.absencesJour,
+    pendingCount: presenceInsights.feuillesACompleter,
+    highRiskCount: presenceInsights.etudiantsARisque,
+    attendanceRate:
+      presenceInsights.tauxPresence != null
+        ? presenceInsights.tauxPresence
+        : buildAbsenceInsights(dashboardData).attendanceRate,
+    hasDetails: true,
+  };
   const noteMeta = notesState.data.meta || EMPTY_NOTE_STATS.meta;
   const activeNoteItems = useMemo(
     () => (activeNoteTab === 'classe' ? notesState.data.parClasse : notesState.data.parMatiere),
@@ -580,16 +735,16 @@ const TableauDeBordProfesseur = ({ surNavigation }) => {
                   <strong>Absences du jour</strong>
                 </div>
                 <span className="prof-alert-value">{formatCompactNumber(absenceInsights.todayCount)}</span>
-                <p>Vue rapide pour verifier les seances a controler aujourd'hui.</p>
+                <p>Nombre reel d'absences enregistrees sur les seances du jour.</p>
               </div>
 
               <div className="prof-alert-item tone-warning">
                 <div className="prof-alert-item-head">
                   <span className="prof-alert-dot"></span>
-                  <strong>Justifications en attente</strong>
+                  <strong>Feuilles a completer</strong>
                 </div>
                 <span className="prof-alert-value">{formatCompactNumber(absenceInsights.pendingCount)}</span>
-                <p>Priorite de traitement avant validation finale des presences.</p>
+                <p>Seances avec presences encore incomplètes ou non chargees.</p>
               </div>
 
               <div className="prof-alert-item tone-neutral">
@@ -601,9 +756,7 @@ const TableauDeBordProfesseur = ({ surNavigation }) => {
                 <p>
                   {absenceInsights.attendanceRate != null
                     ? `Taux de presence global: ${Math.round(absenceInsights.attendanceRate)}%.`
-                    : absenceInsights.hasDetails
-                      ? 'Le detail complet depend des donnees remontees par le backend.'
-                      : 'Le tableau est pret pour afficher les alertes des que les stats absences sont disponibles.'}
+                    : 'Le taux de presence sera visible des que des feuilles seront renseignees.'}
                 </p>
               </div>
             </div>

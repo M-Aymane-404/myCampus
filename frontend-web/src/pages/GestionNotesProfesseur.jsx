@@ -19,6 +19,7 @@ import {
   Download,
   LoaderCircle,
 } from 'lucide-react';
+import { apiAuth } from '../services/apiAuth';
 import apiExamensProfesseur from '../services/professeur/apiExamensProfesseur';
 import apiNotesProfesseur from '../services/professeur/apiNotesProfesseur';
 import './GestionNotesProfesseur.css';
@@ -101,7 +102,7 @@ const getCopyFileLabel = (ligne) =>
     ligne?.nomFichierCopie ||
     ligne?.copieNom ||
     ligne?.copieFilename ||
-    'Fichier depose';
+    '';
 
 const getCorrigeFileLabel = (examen) =>
     examen?.nomCorrige ||
@@ -156,20 +157,48 @@ const openBlobInNewTab = (blob) => {
   window.setTimeout(() => window.URL.revokeObjectURL(objectUrl), 60000);
 };
 
-const openStoredPdf = (path) => {
+const openStoredPdf = async (path) => {
   const url = buildBackendFileUrl(path);
-  if (url) {
-    window.open(url, '_blank', 'noopener,noreferrer');
+  if (!url) {
+    throw new Error('Aucun fichier PDF n est depose.');
   }
+
+  const headers = await apiAuth.getAuthHeadersWithRefresh();
+  const response = await fetch(url, {
+    headers,
+    credentials: 'include'
+  });
+  if (!response.ok) {
+    throw new Error('Aucun fichier PDF n est depose.');
+  }
+
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.toLowerCase().includes('pdf')) {
+    throw new Error('Le fichier PDF est introuvable ou invalide.');
+  }
+
+  const blob = await response.blob();
+  openBlobInNewTab(blob);
 };
 
 const downloadStoredPdf = async (path, fallbackName) => {
   const url = buildBackendFileUrl(path);
-  if (!url) return;
+  if (!url) {
+    throw new Error('Aucun fichier PDF n est depose.');
+  }
 
-  const response = await fetch(url, { credentials: 'include' });
+  const headers = await apiAuth.getAuthHeadersWithRefresh();
+  const response = await fetch(url, {
+    headers,
+    credentials: 'include'
+  });
   if (!response.ok) {
-    throw new Error(`Erreur HTTP: ${response.status}`);
+    throw new Error('Aucun fichier PDF n est depose.');
+  }
+
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.toLowerCase().includes('pdf')) {
+    throw new Error('Le fichier PDF est introuvable ou invalide.');
   }
 
   const blob = await response.blob();
@@ -609,6 +638,56 @@ const GestionNotesProfesseur = () => {
     }
   };
 
+  const handleDeleteCorrige = async () => {
+    if (!selectedExamenId || !selectedExamHasCorrige) return;
+
+    const confirmed = window.confirm('Voulez-vous vraiment supprimer ce corrige ?');
+    if (!confirmed) return;
+
+    setError('');
+    setSuccess('');
+
+    try {
+      await apiExamensProfesseur.supprimerCorrige(selectedExamenId);
+      setExamens((prev) =>
+        prev.map((exam) =>
+          String(exam.idExamen) === String(selectedExamenId)
+            ? {
+                ...exam,
+                corrigeDisponible: false,
+                corrigePath: '',
+                nomCorrige: '',
+                nomFichierCorrige: '',
+                corrigeNom: '',
+                corrigeFilename: '',
+              }
+            : exam
+        )
+      );
+      setFeuille((prev) =>
+        prev
+          ? {
+              ...prev,
+              corrigeDisponible: false,
+              corrigePath: '',
+              nomCorrige: '',
+              nomFichierCorrige: '',
+            }
+          : prev
+      );
+      setCorrigeFileNames((prev) => {
+        const next = { ...prev };
+        delete next[selectedExamenId];
+        return next;
+      });
+      await refreshExamens(selectedExamenId);
+      await refreshFeuille();
+      setSuccess('Corrige supprime avec succes.');
+    } catch (err) {
+      setError(err.message || 'Erreur lors de la suppression du corrige.');
+    }
+  };
+
   const examForm = drawerMode === 'create' ? creationForm : modificationForm;
   const setExamForm = drawerMode === 'create' ? setCreationForm : setModificationForm;
 
@@ -649,6 +728,16 @@ const GestionNotesProfesseur = () => {
             >
               <Pencil size={16} />
               Modifier
+            </button>
+
+            <button
+                className="exam-action-outline danger"
+                onClick={handleDeleteExam}
+                type="button"
+                disabled={!selectedExamen}
+            >
+              <X size={16} />
+              Supprimer
             </button>
           </div>
         </div>
@@ -752,8 +841,8 @@ const GestionNotesProfesseur = () => {
                       </div>
 
                       <span className="student-badge">
-                    {stats.totalEtudiants || lignes.length} ETUDIANT{(stats.totalEtudiants || lignes.length) > 1 ? 'S' : ''}
-                  </span>
+                        {stats.totalEtudiants || lignes.length} ETUDIANT{(stats.totalEtudiants || lignes.length) > 1 ? 'S' : ''}
+                      </span>
                     </div>
 
                     {isLoadingFeuille ? (
@@ -778,10 +867,12 @@ const GestionNotesProfesseur = () => {
                             {lignes.map((ligne) => (
                                 (() => {
                                   const ligneCopyPath = getStoredPdfPath(ligne, ['copieEtudiantPath', 'copiePath']);
-                                  const ligneCopyLabel =
+                                  const hasStoredCopy = Boolean(ligne.copieDisponible || ligneCopyPath);
+                                  const ligneCopyRawLabel =
                                       copyFileNames[ligne.idEtudiant] ||
                                       getFileNameFromPath(ligneCopyPath) ||
                                       getCopyFileLabel(ligne);
+                                  const ligneCopyLabel = ligneCopyRawLabel || 'Consulter le fichier';
                                   return (
                                 <tr key={ligne.idEtudiant}>
                                   <td className="student-cell">
@@ -829,33 +920,46 @@ const GestionNotesProfesseur = () => {
 
                                   <td>
                                     <div className="copy-actions-cell">
-                                      {ligne.copieDisponible ? (
-                                          <button
-                                              type="button"
-                                              className="copy-file-indicator"
-                                              title={ligneCopyLabel}
-                                              onClick={() =>
-                                                  ligneCopyPath
-                                                      ? Promise.resolve(openStoredPdf(ligneCopyPath))
-                                                      : apiNotesProfesseur
-                                                          .obtenirCopieEtudiantBlob(
-                                                              selectedClasseCode,
-                                                              selectedExamenId,
-                                                              ligne.idEtudiant
-                                                          )
-                                                          .then(({ blob, filename }) => {
-                                                            setCopyFileNames((prev) => ({ ...prev, [ligne.idEtudiant]: filename }));
-                                                            openBlobInNewTab(blob);
-                                                          })
-                                                          .catch((err) =>
-                                                              setError(err.message || 'Erreur lors de la consultation du fichier.')
-                                                          )
-                                              }
-                                          >
-                                            <FileText size={14} />
-                                            <span>{ligneCopyLabel}</span>
-                                          </button>
-                                      ) : null}
+                                      {hasStoredCopy ? (
+                                        <button
+                                          type="button"
+                                          className="copy-file-indicator"
+                                          title={ligneCopyLabel}
+                                          onClick={() =>
+                                            ligneCopyPath
+                                              ? openStoredPdf(ligneCopyPath).catch((err) =>
+                                                  setError(err.message || 'Aucun fichier PDF n est depose.')
+                                                )
+                                              : apiNotesProfesseur
+                                                  .obtenirCopieEtudiantBlob(
+                                                    selectedClasseCode,
+                                                    selectedExamenId,
+                                                    ligne.idEtudiant
+                                                  )
+                                                  .then(({ blob, filename }) => {
+                                                    setCopyFileNames((prev) => ({ ...prev, [ligne.idEtudiant]: filename }));
+                                                    openBlobInNewTab(blob);
+                                                  })
+                                                  .catch((err) =>
+                                                    setError(err.message || 'Erreur lors de la consultation du fichier.')
+                                                  )
+                                          }
+                                        >
+                                          <FileText size={14} />
+                                          <div className="copy-file-indicator-text">
+                                            <span className="copy-file-indicator-status">Depose</span>
+                                            <strong>{ligneCopyLabel}</strong>
+                                          </div>
+                                        </button>
+                                      ) : (
+                                        <div className="copy-empty-indicator">
+                                          <FileText size={14} />
+                                          <div className="copy-file-indicator-text">
+                                            <span className="copy-file-indicator-status">Aucun fichier depose</span>
+                                            <strong>Deposer</strong>
+                                          </div>
+                                        </div>
+                                      )}
 
                                       <label className="copy-upload-btn">
                                         <FileUp size={14} />
@@ -888,7 +992,7 @@ const GestionNotesProfesseur = () => {
                                       <button
                                           className="copy-download-btn"
                                           type="button"
-                                          disabled={!ligne.copieDisponible}
+                                          disabled={!hasStoredCopy}
                                           onClick={() =>
                                               ligneCopyPath
                                                   ? downloadStoredPdf(ligneCopyPath, ligneCopyLabel).catch((err) =>
@@ -954,21 +1058,6 @@ const GestionNotesProfesseur = () => {
                           </>
                       )}
                     </button>
-
-                    <div className="auto-save-status">
-                      <CheckCircle2 size={14} />
-                      Auto-save actif a chaque sortie du champ
-                    </div>
-
-                    <button
-                        className="exam-action-outline danger notes-inline-delete"
-                        type="button"
-                        disabled={!selectedExamen}
-                        onClick={handleDeleteExam}
-                    >
-                      <X size={16} />
-                      Supprimer examen
-                    </button>
                   </div>
 
                   <div className="corrige-section-card">
@@ -979,10 +1068,12 @@ const GestionNotesProfesseur = () => {
                         </div>
                         <div>
                           <h3>Depot du corrige</h3>
-                          <p>Deposez le corrige officiel ou telechargez la version deja associee a cet examen.</p>
+                          <p>
+                            {feuille?.nomMatiere || selectedExamen?.nomMatiere} - Examen n°
+                            {feuille?.numeroExamen || selectedExamen?.numeroExamen}
+                          </p>
                         </div>
                       </div>
-
                     </div>
 
                     <div className={`corrige-file-banner ${selectedExamHasCorrige ? 'is-available' : ''}`}>
@@ -992,7 +1083,9 @@ const GestionNotesProfesseur = () => {
                               className="corrige-file-link"
                               onClick={() =>
                                   selectedCorrigePath
-                                      ? Promise.resolve(openStoredPdf(selectedCorrigePath))
+                                      ? openStoredPdf(selectedCorrigePath).catch((err) =>
+                                          setError(err.message || 'Aucun fichier PDF n est depose.')
+                                        )
                                       : apiExamensProfesseur
                                           .obtenirCorrigeBlob(selectedExamenId)
                                           .then(({ blob, filename }) => {
@@ -1062,7 +1155,18 @@ const GestionNotesProfesseur = () => {
                         <Download size={18} />
                         Telecharger corrige
                       </button>
+
+                      <button
+                          className="btn-danger corrige-btn"
+                          type="button"
+                          disabled={!selectedExamHasCorrige}
+                          onClick={handleDeleteCorrige}
+                      >
+                        <X size={18} />
+                        Supprimer corrige
+                      </button>
                     </div>
+
                   </div>
                 </>
             )}

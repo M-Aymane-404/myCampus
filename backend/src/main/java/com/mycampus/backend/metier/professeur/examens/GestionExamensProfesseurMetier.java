@@ -25,8 +25,7 @@ public interface GestionExamensProfesseurMetier {
 
 
     ExamenSortieDTO deposerCorrigeExamen(String ppr, Long examenId, MultipartFile pdf);
-
-
+    void supprimerCorrigeExamen(String ppr, Long examenId);
     Resource telechargerCorrigeExamenProf(String ppr, Long examenId);
 
 

@@ -130,6 +130,20 @@ const apiExamensProfesseur = {
         return response.json();
     },
 
+    async supprimerCorrige(examenId) {
+        const response = await fetch(`${BASE_URL}/${examenId}/corrige`, {
+            method: 'DELETE',
+            headers: await getHeaders(),
+            credentials: 'include',
+        });
+
+        if (!response.ok) {
+            throw new Error(await lireErreur(response, 'Impossible de supprimer le corrige.'));
+        }
+
+        return true;
+    },
+
     async obtenirCorrigeBlob(examenId) {
         const response = await fetch(`${BASE_URL}/${examenId}/corrige`, {
             method: 'GET',

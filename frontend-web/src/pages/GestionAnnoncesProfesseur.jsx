@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   AlertTriangle,
   CheckCircle2,
   Eye,
-  GraduationCap,
   Info,
   Layers,
   Megaphone,
@@ -97,18 +96,13 @@ const GestionAnnoncesProfesseur = () => {
     }
   };
 
-  const classeSelectionnee = useMemo(
-    () => mesClasses.find((classe) => classe.codeClasse === formulaire.codeClasse) || null,
-    [mesClasses, formulaire.codeClasse],
-  );
-
-  const classesCibles = useMemo(() => {
+  const classesCibles = (() => {
     if (formulaire.modeCiblage === 'ALL') {
       return mesClasses.map((classe) => classe.codeClasse).filter(Boolean);
     }
 
     return formulaire.codeClasse ? [formulaire.codeClasse] : [];
-  }, [formulaire.modeCiblage, formulaire.codeClasse, mesClasses]);
+  })();
 
   const isFormValid = Boolean(
     formulaire.titre.trim() &&
@@ -156,7 +150,7 @@ const GestionAnnoncesProfesseur = () => {
     }
 
     if (classesCibles.length === 0) {
-      setError('Vous devez selectionner une classe ou choisir toutes les classes.');
+      setError('Vous devez selectionner une classe.');
       return;
     }
 
@@ -233,56 +227,9 @@ const GestionAnnoncesProfesseur = () => {
           </div>
           <div className="header-text">
             <h1>Centre de Communication</h1>
-            <p>Diffusez vos annonces a vos classes</p>
+            <p>DIFFUSEZ VOS ANNONCES A VOS CLASSES</p>
           </div>
         </div>
-
-        <section className="prof-summary-banner" aria-label="Resume de diffusion">
-          <div className="prof-summary-head">
-            <div className="prof-summary-heading-row">
-              <span className="prof-summary-kicker">Resume de diffusion</span>
-              <span className="prof-summary-chip">Etat en temps reel</span>
-            </div>
-            <h2 className="prof-summary-main-title">Votre annonce sera diffusee selon la cible active.</h2>
-            <p className="prof-summary-intro">
-              Cette zone vous donne un resume rapide de l'audience choisie et du nombre de classes disponibles dans vos enseignements.
-            </p>
-          </div>
-
-          <div className="prof-summary-grid">
-            <div className="prof-summary-item" role="status" aria-live="polite">
-              <div className="prof-summary-icon">
-                <GraduationCap size={18} />
-              </div>
-              <div className="prof-summary-copy">
-                <span className="prof-summary-label">Audience selectionnee</span>
-                <strong className="prof-summary-title">
-                  {formulaire.modeCiblage === 'ALL' ? 'Toutes les classes' : 'Une classe'}
-                </strong>
-                <span className="prof-summary-text">
-                  {formulaire.modeCiblage === 'ALL'
-                    ? "L'annonce sera dupliquee pour chaque classe de vos enseignements."
-                    : "L'annonce sera envoyee uniquement a la classe choisie."}
-                </span>
-              </div>
-            </div>
-
-            <div className="prof-summary-item" role="status" aria-live="polite">
-              <div className="prof-summary-icon">
-                <Layers size={18} />
-              </div>
-              <div className="prof-summary-copy">
-                <span className="prof-summary-label">Classes disponibles</span>
-                <strong className="prof-summary-title">
-                  {mesClasses.length} classe{mesClasses.length > 1 ? 's' : ''}
-                </strong>
-                <span className="prof-summary-text">
-                  Vous pouvez diffuser vers 1 classe dans cet espace.
-                </span>
-              </div>
-            </div>
-          </div>
-        </section>
       </div>
 
       {error && (
@@ -359,22 +306,6 @@ const GestionAnnoncesProfesseur = () => {
                 maxLength={2000}
               />
             </div>
-
-            <div className="prof-selected-class-box">
-              <div className="prof-selected-class-label">CIBLAGE</div>
-              <strong>
-                {formulaire.modeCiblage === 'ALL'
-                  ? `Toutes mes classes (${classesCibles.length})`
-                  : classeSelectionnee
-                  ? `${classeSelectionnee.nomClasse} (${classeSelectionnee.codeClasse})`
-                  : 'Aucune classe selectionnee'}
-              </strong>
-              <span>
-                {formulaire.modeCiblage === 'ALL'
-                  ? 'Le frontend cree une annonce par classe de vos enseignements.'
-                  : 'Le backend professeur accepte le ciblage par classe.'}
-              </span>
-            </div>
           </div>
 
           <div className="compose-footer">
@@ -418,16 +349,18 @@ const GestionAnnoncesProfesseur = () => {
                 type="button"
                 onClick={gererSelectionToutesClasses}
               >
-                {formulaire.modeCiblage === 'ALL' ? 'TOUTES LES CLASSES SELECTIONNEES' : 'CHOISIR TOUTES LES CLASSES'}
-              </button>
-              <button
-                className="select-all-toggle"
-                type="button"
-                onClick={() => setFormulaire((prev) => ({ ...prev, modeCiblage: 'ONE', codeClasse: '' }))}
-              >
-                REINITIALISER
+                {formulaire.modeCiblage === 'ALL' ? 'Toutes les classes' : 'Cibler toutes les classes'}
               </button>
             </div>
+          </div>
+
+          <div className="audience-status-bar">
+            <Info size={16} />
+            {formulaire.modeCiblage === 'ALL'
+              ? `${classesCibles.length} CLASSES RECEVRONT L'ANNONCE.`
+              : formulaire.codeClasse
+                ? `1 CLASSE RECEVRA L'ANNONCE : ${formulaire.codeClasse}`
+                : 'SELECTIONNEZ UNE CLASSE POUR DIFFUSER VOTRE ANNONCE.'}
           </div>
 
           {chargement ? (
@@ -460,19 +393,6 @@ const GestionAnnoncesProfesseur = () => {
               })}
             </div>
           )}
-
-          <div className="audience-status-bar">
-            <Info size={16} />
-            {formulaire.modeCiblage === 'ALL'
-              ? `${classesCibles.length} CLASSES RECEVRONT L'ANNONCE.`
-              : formulaire.codeClasse
-                ? `1 CLASSE RECEVRA L'ANNONCE : ${formulaire.codeClasse}`
-                : "AUCUNE CLASSE N'EST ENCORE SELECTIONNEE."}
-          </div>
-
-          <div className="prof-target-note">
-            Le mode "toutes les classes" cree la meme annonce pour chaque classe de vos enseignements.
-          </div>
         </div>
       </div>
 

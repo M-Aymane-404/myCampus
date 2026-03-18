@@ -1,6 +1,7 @@
+import { apiAuth } from './apiAuth';
+
 const BASE_URL = 'http://localhost:8080/api/admin/utilisateurs/professeurs';
 const PROFESSEUR_PROFILE_URL = 'http://localhost:8080/api/professeur';
-import { apiAuth } from './apiAuth';
 
 export const apiProfesseurs = {
   /**
@@ -22,6 +23,78 @@ export const apiProfesseurs = {
       return await response.json();
     } catch (error) {
       console.error('API Error (getProfile):', error);
+      throw error;
+    }
+  },
+
+  async updateProfile(profileData) {
+    try {
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
+      const response = await fetch(`${PROFESSEUR_PROFILE_URL}/moi/modifier`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...headers,
+        },
+        body: JSON.stringify(profileData),
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch {
+          errorData = { message: `Erreur ${response.status}: ${response.statusText}` };
+        }
+
+        throw new Error(errorData.message || 'Erreur lors de la mise a jour du profil professeur');
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (response.status === 204 || !contentType || !contentType.includes('application/json')) {
+        return { success: true };
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('API Error (updateProfile professeur):', error);
+      throw error;
+    }
+  },
+
+  async uploadPhoto(file) {
+    try {
+      const formData = new FormData();
+      formData.append('photo', file);
+
+      const headers = await apiAuth.getAuthHeadersWithRefresh();
+      const response = await fetch(`${PROFESSEUR_PROFILE_URL}/photo`, {
+        method: 'PUT',
+        headers,
+        body: formData,
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch {
+          errorData = { message: `Erreur ${response.status}: ${response.statusText}` };
+        }
+
+        throw new Error(errorData.message || "Erreur lors de l'envoi de la photo");
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        return { success: true };
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('API Error (uploadPhoto professeur):', error);
       throw error;
     }
   },

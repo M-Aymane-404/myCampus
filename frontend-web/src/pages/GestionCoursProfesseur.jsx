@@ -227,6 +227,35 @@ const buildDateTime = (date, time) => {
   return `${date}T${time}:00`;
 };
 
+const getStoredCourseFilePath = (fichier) =>
+    fichier?.chemin || fichier?.path || fichier?.fichierPath || '';
+
+const openCourseFile = async (fichier) => {
+  const path = getStoredCourseFilePath(fichier);
+  if (!path) {
+    throw new Error('Aucun fichier n est depose.');
+  }
+
+  const url = path.startsWith('http')
+      ? path
+      : `http://localhost:8080/api/public/fichiers/voir?chemin=${encodeURIComponent(path)}`;
+
+  const response = await fetch(url, { credentials: 'include' });
+  if (!response.ok) {
+    throw new Error('Aucun fichier n est depose.');
+  }
+
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.toLowerCase().includes('pdf')) {
+    throw new Error('Le fichier depose est introuvable ou invalide.');
+  }
+
+  const blob = await response.blob();
+  const objectUrl = window.URL.createObjectURL(blob);
+  window.open(objectUrl, '_blank', 'noopener,noreferrer');
+  window.setTimeout(() => window.URL.revokeObjectURL(objectUrl), 60000);
+};
+
 const GestionCoursProfesseur = () => {
   const [enseignements, setEnseignements] = useState([]);
   const [selectedEnseignementKey, setSelectedEnseignementKey] = useState(null);
@@ -515,6 +544,18 @@ const GestionCoursProfesseur = () => {
           text: msg,
         });
       }
+    }
+  };
+
+  const handleOpenFile = async (fichier) => {
+    try {
+      await openCourseFile(fichier);
+    } catch (err) {
+      const msg = err.message || 'Aucun fichier n est depose.';
+      setMessage({
+        type: 'warning',
+        text: msg,
+      });
     }
   };
 
@@ -976,7 +1017,13 @@ const GestionCoursProfesseur = () => {
                                                       </div>
 
                                                       <div className="gc-file-info">
-                                                        <strong>{fichier.nomOriginal}</strong>
+                                                        <button
+                                                            type="button"
+                                                            className="gc-file-name-link"
+                                                            onClick={() => handleOpenFile(fichier)}
+                                                        >
+                                                          {fichier.nomOriginal}
+                                                        </button>
                                                         <span>
                                             {formatBytes(fichier.taille)} •{' '}
                                                           {formatDate(fichier.dateUpload)}

@@ -90,6 +90,15 @@ public class ExamensProfesseurController {
         return examensMetier.deposerCorrigeExamen(ppr(user), examenId, fichier);
     }
 
+    @DeleteMapping("/{examenId}/corrige")
+    @PreAuthorize("hasAuthority('PROFESSEUR_EXAMENS_GERER')")
+    public void supprimerCorrigeExamen(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long examenId
+    ) {
+        examensMetier.supprimerCorrigeExamen(ppr(user), examenId);
+    }
+
     @GetMapping("/{examenId}/corrige")
     @PreAuthorize("hasAuthority('PROFESSEUR_EXAMENS_GERER')")
     public ResponseEntity<Resource> telechargerCorrigeExamenProf(
