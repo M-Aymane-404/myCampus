@@ -1,17 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { UserCheck, ChevronDown, Loader2, X, Calendar } from 'lucide-react';
+import { UserCheck, ChevronDown, Loader2, X, Calendar, Book, Clock3, MapPin } from 'lucide-react';
 import { apiEnseignementsProfesseur } from '../services/professeur/apiEnseignementsProfesseur';
 import apiSeancesProfesseur from '../services/professeur/apiSeancesProfesseur';
 import { apiPresencesProfesseur } from '../services/professeur/apiPresencesProfesseur';
 import './GestionPresenceProfesseur.css';
 import { fetchAuthenticatedBlob, normalizeStoredFileUrl, openBlobInNewTab } from '../utils/fileAccess';
 
-const AVATAR_COLORS = ['blue', 'pink', 'purple', 'brown', 'green', 'grey', 'green-light', 'purple-light'];
 const TYPE_COLOR = { COURS: 'blue', TD: 'green', TP: 'purple' };
-
-const colorFor = (index) => AVATAR_COLORS[index % AVATAR_COLORS.length];
-
-const initiales = (nom, prenom) => `${(prenom || '')[0] || ''}${(nom || '')[0] || ''}`.toUpperCase();
 
 const formatDate = (value) => {
   if (!value) return '--';
@@ -310,114 +305,156 @@ const GestionPresenceProfesseur = () => {
   return (
       <div className="gestion-presence-container">
         <div className="presence-hero-card">
-          <div className="presence-header-row">
-            <div className="presence-title-block">
-              <h1>Appel des Etudiants</h1>
-              {selectedSeance ? (
+          <div className="presence-hero-shell">
+            <div className="presence-hero-main">
+              <div className="presence-hero-badge">
+                Gestion des presences
+              </div>
+
+              <div className="presence-brand-row">
+                <div className="presence-icon-main">
+                  <UserCheck size={22} color="white" />
+                </div>
+
+                <div className="presence-title-block">
+                  <h1>Presence professeur</h1>
                   <p>
-                    <span className={`type-badge-header type-${couleur}`}>{selectedSeance.type}</span>
-                    {' '}
-                    {formatDate(selectedSeance.heureDebut || selectedSeance.date)}
-                    {selectedSeance.heureDebut ? ` | ${formatHeure(selectedSeance.heureDebut)}` : ''}
-                    {selectedSeance.heureFin ? ` -> ${formatHeure(selectedSeance.heureFin)}` : ''}
-                    {selectedSeance.salle ? ` | Salle ${selectedSeance.salle}` : ''}
+                    {selectedEnseignement
+                      ? `${selectedEnseignement.nomMatiere || selectedEnseignement.codeMatiere} - ${selectedEnseignement.codeClasse || 'Classe'}`
+                      : 'Selectionnez un cours et une seance pour commencer.'}
                   </p>
-              ) : (
-                  <p>Selectionnez un cours et une seance</p>
-              )}
+                </div>
+              </div>
+
+              <div className="presence-session-chips">
+                <div className={`presence-session-chip tone-${couleur}`}>
+                  <Book size={14} />
+                  <span>{selectedSeance?.type || 'Seance'}</span>
+                </div>
+
+                {selectedSeance ? (
+                  <div className="presence-session-chip">
+                    <Calendar size={14} />
+                    <span>{formatDate(selectedSeance.heureDebut || selectedSeance.date)}</span>
+                  </div>
+                ) : null}
+
+                {selectedSeance?.heureDebut ? (
+                  <div className="presence-session-chip">
+                    <Clock3 size={14} />
+                    <span>
+                      {formatHeure(selectedSeance.heureDebut)}
+                      {selectedSeance.heureFin ? ` - ${formatHeure(selectedSeance.heureFin)}` : ''}
+                    </span>
+                  </div>
+                ) : null}
+
+                {selectedSeance?.salle ? (
+                  <div className="presence-session-chip">
+                    <MapPin size={14} />
+                    <span>Salle {selectedSeance.salle}</span>
+                  </div>
+                ) : null}
+              </div>
             </div>
 
-          </div>
+            <div className="presence-stats-grid">
+              <article className="presence-stat-card tone-present">
+                <span className="presence-stat-label">Presents</span>
+                <strong className="presence-stat-value">{summary.presents}</strong>
+              </article>
 
-          <div className="stats-box">
-            <div className="stat-item stat-item-present">
-              <span className="stat-label">PRESENTS</span>
-              <span className="stat-value">{summary.presents}</span>
-            </div>
-            <div className="stat-divider" />
-            <div className="stat-item stat-item-absent">
-              <span className="stat-label">ABSENTS</span>
-              <span className="stat-value">{summary.absents}</span>
-            </div>
-            <div className="stat-divider" />
-            <div className="stat-item stat-item-total">
-              <span className="stat-label">TOTAL</span>
-              <span className="stat-value">{summary.total}</span>
+              <article className="presence-stat-card tone-absent">
+                <span className="presence-stat-label">Absents</span>
+                <strong className="presence-stat-value">{summary.absents}</strong>
+              </article>
+
+              <article className="presence-stat-card tone-total">
+                <span className="presence-stat-label">Total</span>
+                <strong className="presence-stat-value">{summary.total}</strong>
+              </article>
             </div>
           </div>
         </div>
 
         <div className="presence-selectors-bar">
-          <div className="selector-group">
-            <label className="selector-label">
-              <UserCheck size={14} /> Cours
-            </label>
-            {loadingEns ? (
-                <div className="selector-loading">
-                  <Loader2 size={14} style={{ animation: 'spin 0.8s linear infinite' }} />
-                  Chargement...
-                </div>
-            ) : (
-                <div className="select-wrapper-rounded">
-                  <select
-                      value={
-                        selectedEnseignement
-                            ? `${selectedEnseignement.codeClasse}|${selectedEnseignement.codeMatiere}`
-                            : ''
-                      }
-                      onChange={(e) => {
-                        const [codeClasse, codeMatiere] = e.target.value.split('|');
-                        const enseignement = enseignements.find(
-                            (item) => item.codeClasse === codeClasse && item.codeMatiere === codeMatiere
-                        );
-                        setSelectedEnseignement(enseignement || null);
-                      }}
-                  >
-                    {enseignements.map((enseignement) => (
-                        <option
-                            key={`${enseignement.codeClasse}|${enseignement.codeMatiere}`}
-                            value={`${enseignement.codeClasse}|${enseignement.codeMatiere}`}
-                        >
-                          {enseignement.codeClasse} - {enseignement.nomMatiere || enseignement.codeMatiere}
-                        </option>
-                    ))}
-                  </select>
-                  <ChevronDown size={16} />
-                </div>
-            )}
+          <div className="presence-selectors-head">
+            <span className="selection-title">Selection rapide</span>
+            <p>Choisissez un cours puis une seance a traiter.</p>
           </div>
 
-          <div className="selector-group">
-            <label className="selector-label">
-              <Calendar size={14} /> Seance
-            </label>
-            {loadingSeances ? (
-                <div className="selector-loading">
-                  <Loader2 size={14} style={{ animation: 'spin 0.8s linear infinite' }} />
-                  Chargement...
-                </div>
-            ) : seances.length === 0 ? (
-                <div className="selector-empty">Aucune seance disponible</div>
-            ) : (
-                <div className="select-wrapper-rounded">
-                  <select
-                      value={selectedSeance?.id || ''}
-                      onChange={(e) => {
-                        const seance = seances.find((item) => String(item.id) === e.target.value);
-                        setSelectedSeance(seance || null);
-                      }}
-                  >
-                    {seances.map((seance) => (
-                        <option key={seance.id} value={seance.id}>
-                          {seance.type} | {formatDate(seance.heureDebut || seance.date)}
-                          {seance.heureDebut ? ` | ${formatHeure(seance.heureDebut)}` : ''}
-                          {seance.salle ? ` | Salle ${seance.salle}` : ''}
-                        </option>
-                    ))}
-                  </select>
-                  <ChevronDown size={16} />
-                </div>
-            )}
+          <div className="presence-selectors-grid">
+            <div className="selector-group">
+              <label className="selector-label">
+                <UserCheck size={14} /> Cours
+              </label>
+              {loadingEns ? (
+                  <div className="selector-loading">
+                    <Loader2 size={14} style={{ animation: 'spin 0.8s linear infinite' }} />
+                    Chargement...
+                  </div>
+              ) : (
+                  <div className="select-wrapper-rounded">
+                    <select
+                        value={
+                          selectedEnseignement
+                              ? `${selectedEnseignement.codeClasse}|${selectedEnseignement.codeMatiere}`
+                              : ''
+                        }
+                        onChange={(e) => {
+                          const [codeClasse, codeMatiere] = e.target.value.split('|');
+                          const enseignement = enseignements.find(
+                              (item) => item.codeClasse === codeClasse && item.codeMatiere === codeMatiere
+                          );
+                          setSelectedEnseignement(enseignement || null);
+                        }}
+                    >
+                      {enseignements.map((enseignement) => (
+                          <option
+                              key={`${enseignement.codeClasse}|${enseignement.codeMatiere}`}
+                              value={`${enseignement.codeClasse}|${enseignement.codeMatiere}`}
+                          >
+                            {enseignement.codeClasse} - {enseignement.nomMatiere || enseignement.codeMatiere}
+                          </option>
+                      ))}
+                    </select>
+                    <ChevronDown size={16} />
+                  </div>
+              )}
+            </div>
+
+            <div className="selector-group">
+              <label className="selector-label">
+                <Calendar size={14} /> Seance
+              </label>
+              {loadingSeances ? (
+                  <div className="selector-loading">
+                    <Loader2 size={14} style={{ animation: 'spin 0.8s linear infinite' }} />
+                    Chargement...
+                  </div>
+              ) : seances.length === 0 ? (
+                  <div className="selector-empty">Aucune seance disponible</div>
+              ) : (
+                  <div className="select-wrapper-rounded">
+                    <select
+                        value={selectedSeance?.id || ''}
+                        onChange={(e) => {
+                          const seance = seances.find((item) => String(item.id) === e.target.value);
+                          setSelectedSeance(seance || null);
+                        }}
+                    >
+                      {seances.map((seance) => (
+                          <option key={seance.id} value={seance.id}>
+                            {seance.type} | {formatDate(seance.heureDebut || seance.date)}
+                            {seance.heureDebut ? ` | ${formatHeure(seance.heureDebut)}` : ''}
+                            {seance.salle ? ` | Salle ${seance.salle}` : ''}
+                          </option>
+                      ))}
+                    </select>
+                    <ChevronDown size={16} />
+                  </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -441,7 +478,22 @@ const GestionPresenceProfesseur = () => {
         )}
 
         {!loadingFeuille && lignes.length > 0 && (
-            <div className="presence-lines-card">
+            <>
+              <div className="presence-history-head">
+                <div className="presence-history-copy">
+                  <span className="selection-title">Feuille d'appel</span>
+                  <h2>Liste des etudiants</h2>
+                </div>
+
+                {selectedSeance ? (
+                  <div className="selected-date-badge">
+                    {formatDate(selectedSeance.heureDebut || selectedSeance.date)}
+                    <span>{lignes.length} etudiant{lignes.length > 1 ? 's' : ''}</span>
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="presence-lines-card">
               <div className="presence-lines-head">
                 <span>Etudiant</span>
                 <span>Statut</span>
@@ -450,7 +502,7 @@ const GestionPresenceProfesseur = () => {
               </div>
 
               <div className="presence-lines-body">
-                {lignes.map((ligne, index) => {
+                {lignes.map((ligne) => {
                   const statusMeta = getStatusMeta(ligne.status);
                   const justificationStatus = getJustificationStatus(ligne);
                   const canReviewJustification = hasJustification(ligne) && justificationStatus.key === 'pending';
@@ -461,9 +513,6 @@ const GestionPresenceProfesseur = () => {
                         className={`presence-line-row status-${statusMeta.className}`}
                     >
                       <div className="presence-line-student">
-                        <div className={`student-avatar avatar-${colorFor(index)}`}>
-                          {initiales(ligne.nomEtudiant, ligne.prenomEtudiant)}
-                        </div>
                         <div className="presence-line-student-copy">
                           <strong>{ligne.prenomEtudiant} {ligne.nomEtudiant}</strong>
                           <span>Apogee : {ligne.apogee}</span>
@@ -551,7 +600,8 @@ const GestionPresenceProfesseur = () => {
                   );
                 })}
               </div>
-            </div>
+              </div>
+            </>
         )}
 
         {!loadingFeuille && selectedSeance && lignes.length === 0 && !error && (

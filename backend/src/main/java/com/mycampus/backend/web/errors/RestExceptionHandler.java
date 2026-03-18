@@ -124,6 +124,20 @@ public class RestExceptionHandler {
         return ResponseEntity.badRequest().body(body);
     }
 
+    @ExceptionHandler(FilesException.class)
+    public ResponseEntity<Object> handleFilesException(FilesException ex, HttpServletRequest request) {
+        log.error("Files exception: {}", ex.getMessage());
+
+        Map<String, Object> body = construireBody(
+                HttpStatus.BAD_REQUEST,
+                "Requete invalide",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.badRequest().body(body);
+    }
+
     @ExceptionHandler(NotesProfesseurException.class)
     public ResponseEntity<Object> handleNotesProfesseurException(NotesProfesseurException ex, HttpServletRequest request) {
         log.error("Notes professeur exception: {}", ex.getMessage());
