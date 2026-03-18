@@ -232,46 +232,42 @@ const GestionPresenceProfesseur = () => {
 
   const summary = useMemo(() => buildPresenceSummary(feuille, lignes), [feuille, lignes]);
   const couleur = selectedSeance ? TYPE_COLOR[selectedSeance.type] || 'grey' : 'grey';
-  const attendanceRate = summary.total > 0 ? Math.round((summary.presents / summary.total) * 100) : 0;
-
   return (
       <div className="gestion-presence-container">
-        <div className="presence-header-row">
-          <div className="presence-title-block">
-            <h1>Appel des Etudiants</h1>
-            {selectedSeance ? (
-                <p>
-                  <span className={`type-badge-header type-${couleur}`}>{selectedSeance.type}</span>
-                  {' '}
-                  {formatDate(selectedSeance.heureDebut || selectedSeance.date)}
-                  {selectedSeance.heureDebut ? ` | ${formatHeure(selectedSeance.heureDebut)}` : ''}
-                  {selectedSeance.heureFin ? ` -> ${formatHeure(selectedSeance.heureFin)}` : ''}
-                  {selectedSeance.salle ? ` | Salle ${selectedSeance.salle}` : ''}
-                </p>
-            ) : (
-                <p>Selectionnez un cours et une seance</p>
-            )}
-
-            <div className="presence-title-meta">
-              <span>{summary.total} etudiant{summary.total > 1 ? 's' : ''}</span>
-              <span>{attendanceRate}% de presence</span>
+        <div className="presence-hero-card">
+          <div className="presence-header-row">
+            <div className="presence-title-block">
+              <h1>Appel des Etudiants</h1>
+              {selectedSeance ? (
+                  <p>
+                    <span className={`type-badge-header type-${couleur}`}>{selectedSeance.type}</span>
+                    {' '}
+                    {formatDate(selectedSeance.heureDebut || selectedSeance.date)}
+                    {selectedSeance.heureDebut ? ` | ${formatHeure(selectedSeance.heureDebut)}` : ''}
+                    {selectedSeance.heureFin ? ` -> ${formatHeure(selectedSeance.heureFin)}` : ''}
+                    {selectedSeance.salle ? ` | Salle ${selectedSeance.salle}` : ''}
+                  </p>
+              ) : (
+                  <p>Selectionnez un cours et une seance</p>
+              )}
             </div>
+
           </div>
 
           <div className="stats-box">
-            <div className="stat-item">
+            <div className="stat-item stat-item-present">
               <span className="stat-label">PRESENTS</span>
-              <span className="stat-value text-green">{summary.presents}</span>
+              <span className="stat-value">{summary.presents}</span>
             </div>
             <div className="stat-divider" />
-            <div className="stat-item">
+            <div className="stat-item stat-item-absent">
               <span className="stat-label">ABSENTS</span>
-              <span className="stat-value text-red">{summary.absents}</span>
+              <span className="stat-value">{summary.absents}</span>
             </div>
             <div className="stat-divider" />
-            <div className="stat-item">
+            <div className="stat-item stat-item-total">
               <span className="stat-label">TOTAL</span>
-              <span className="stat-value text-dark">{summary.total}</span>
+              <span className="stat-value">{summary.total}</span>
             </div>
           </div>
         </div>
@@ -351,22 +347,11 @@ const GestionPresenceProfesseur = () => {
         </div>
 
         {error && (
-            <div
-                style={{
-                  background: '#fee2e2',
-                  color: '#b91c1c',
-                  padding: '10px 16px',
-                  borderRadius: 8,
-                  marginBottom: 16,
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
-            >
+            <div className="presence-alert presence-alert-error">
               <span>{error}</span>
               <button
                   onClick={() => setError(null)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#b91c1c' }}
+                  className="presence-alert-close"
               >
                 <X size={14} />
               </button>
@@ -374,7 +359,7 @@ const GestionPresenceProfesseur = () => {
         )}
 
         {loadingFeuille && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '2rem', color: '#94a3b8' }}>
+            <div className="presence-feedback-box">
               <Loader2 size={22} style={{ animation: 'spin 0.8s linear infinite' }} />
               Chargement de la feuille d'appel...
             </div>
@@ -424,15 +409,15 @@ const GestionPresenceProfesseur = () => {
         )}
 
         {!loadingFeuille && selectedSeance && lignes.length === 0 && !error && (
-            <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
-              <UserCheck size={48} style={{ opacity: 0.2, margin: '0 auto 12px', display: 'block' }} />
+            <div className="presence-empty-state">
+              <UserCheck size={48} className="presence-empty-icon" />
               <p>Aucun etudiant inscrit pour cette seance.</p>
             </div>
         )}
 
         {!loadingFeuille && !selectedSeance && !loadingSeances && seances.length === 0 && !loadingEns && (
-            <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
-              <Calendar size={48} style={{ opacity: 0.2, margin: '0 auto 12px', display: 'block' }} />
+            <div className="presence-empty-state">
+              <Calendar size={48} className="presence-empty-icon" />
               <p>Aucune seance disponible pour ce cours.</p>
             </div>
         )}

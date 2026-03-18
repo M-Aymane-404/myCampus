@@ -617,6 +617,22 @@
   word-break: break-word;
 }
 
+.gc-file-name-link {
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: #0f172a;
+  font-size: 0.95rem;
+  font-weight: 800;
+  word-break: break-word;
+  text-align: left;
+  cursor: pointer;
+}
+
+.gc-file-name-link:hover {
+  color: #4338ca;
+}
+
 .gc-file-info span {
   display: block;
   margin-top: 4px;

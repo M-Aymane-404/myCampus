@@ -24,6 +24,7 @@ import PresenceEtudiant from './pages/PresenceEtudiant';
 import CalendrierEtudiant from './pages/CalendrierEtudiant';
 import AnnoncesEtudiant from './pages/AnnoncesEtudiant';
 import ProfilPage from './pages/ProfilPage';
+import ProfilProfesseur from './pages/ProfilProfesseur';
 import ChatBot from './composants/ChatBot/ChatBot';
 import { apiAuth } from './services/apiAuth';
 import { apiAuditLogs } from './services/apiAuditLogs';
@@ -320,7 +321,7 @@ function App() {
       case 'annonces':
         return <GestionAnnoncesProfesseur />;
       case 'profil':
-        return <ProfilPage />;
+        return <ProfilProfesseur />;
       default:
         return <TableauDeBordProfesseur surNavigation={gererChangementElement} />;
     }

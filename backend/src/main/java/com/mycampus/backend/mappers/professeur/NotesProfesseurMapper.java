@@ -24,6 +24,7 @@ public class NotesProfesseurMapper {
                                 && resultat.getCopieEtudiantPath() != null
                                 && !resultat.getCopieEtudiantPath().isBlank()
                 )
+                .copieEtudiantPath(resultat != null ? resultat.getCopieEtudiantPath() : null)
                 .build();
     }
 

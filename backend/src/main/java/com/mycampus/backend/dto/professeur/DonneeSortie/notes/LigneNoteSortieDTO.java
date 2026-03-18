@@ -20,4 +20,5 @@ public class LigneNoteSortieDTO {
         private Double note;       // null = non saisi
         private boolean publiee;// true si datePublication != null
         private boolean copieDisponible;
+        private String copieEtudiantPath;
 }

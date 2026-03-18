@@ -240,6 +240,31 @@ public class GestionExamensProfesseurMetierImpl  implements GestionExamensProfes
         return toSortieDTO(saved);
     }
 
+    @Transactional
+    @Override
+    public void supprimerCorrigeExamen(String ppr, Long examenId) {
+
+        Examen examen = examenRepo.findByIdWithMatiere(examenId)
+                .orElseThrow(() -> new NotesProfesseurException("Examen introuvable."));
+
+        boolean affecte = affectationRepo.findActivesParProfesseurAvecDetails(ppr).stream()
+                .anyMatch(ae -> ae.getMatiere() != null
+                        && examen.getMatiere().getCodeMatiere().equals(ae.getMatiere().getCodeMatiere()));
+
+        if (!affecte) {
+            throw new NotesProfesseurException("Accès refusé: vous n'êtes pas affecté à cette matière.");
+        }
+
+        String ancien = examen.getCorrigePath();
+        if (ancien == null || ancien.isBlank()) {
+            return;
+        }
+
+        examen.setCorrigePath(null);
+        examenRepo.save(examen);
+        stockage.supprimerSilencieusement(ancien);
+    }
+
 
     @Transactional(readOnly = true)
     @Override

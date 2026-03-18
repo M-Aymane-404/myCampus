@@ -6,20 +6,29 @@
   width: 100%;
   font-family: 'Inter', sans-serif;
   padding-bottom: 4rem;
+  color: #0f172a;
 }
 
 /* Header & Stats */
+.presence-hero-card {
+  background: linear-gradient(180deg, #f8fbff 0%, #f2f7ff 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 24px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+}
+
 .presence-header-row {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 1.5rem;
+  align-items: center;
   flex-wrap: wrap;
   gap: 16px;
 }
 
 .presence-title-block h1 {
-  font-size: 1.6rem;
+  font-size: 2rem;
   font-weight: 800;
   color: #0F172A;
   margin: 0 0 0.4rem 0;
@@ -33,23 +42,6 @@
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
-}
-
-.presence-title-meta {
-  margin-top: 12px;
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.presence-title-meta span {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  color: #475569;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 6px 10px;
-  border-radius: 999px;
 }
 
 /* Type badge dans le header */
@@ -67,45 +59,90 @@
 .type-badge-header.type-purple { background: #faf5ff; color: #9333ea; }
 .type-badge-header.type-grey   { background: #f1f5f9; color: #64748b; }
 
-.stats-box {
-  background: white;
-  border: 1px solid #F1F5F9;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-  border-radius: 16px;
-  padding: 12px 24px;
+.presence-alert {
   display: flex;
   align-items: center;
-  gap: 24px;
-  min-width: 264px;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  margin-bottom: 18px;
+  border: 1px solid transparent;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.03);
+}
+
+.presence-alert-error {
+  background: #fff1f2;
+  color: #be123c;
+  border-color: #fecdd3;
+}
+
+.presence-alert-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.stats-box {
+  background: #ffffff;
+  border: 1px solid #dbe4f0;
+  border-radius: 16px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0;
+  min-width: 290px;
+  max-width: 360px;
+  margin-left: auto;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
 }
 
 .stat-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
 }
 
 .stat-label {
-  font-size: 0.65rem;
-  font-weight: 700;
-  color: #94A3B8;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #64748b;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.08em;
 }
 
 .stat-value {
-  font-size: 1.2rem;
-  font-weight: 800;
+  font-size: 1.7rem;
+  line-height: 1;
+  font-weight: 900;
+  color: #0f172a;
 }
 
-.text-green { color: #10B981; }
-.text-red   { color: #EF4444; }
-.text-dark  { color: #1E293B; }
+.stat-item-present .stat-value {
+  color: #059669 !important;
+}
+
+.stat-item-absent .stat-value {
+  color: #dc2626 !important;
+}
+
+.stat-item-total .stat-value {
+  color: #1e293b !important;
+}
 
 .stat-divider {
   width: 1px;
-  height: 32px;
+  height: 38px;
   background: #E2E8F0;
 }
 
@@ -117,8 +154,9 @@
   flex-wrap: wrap;
   background: white;
   border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  padding: 16px 20px;
+  border-radius: 22px;
+  padding: 18px 20px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.03);
 }
 
 .selector-group {
@@ -157,13 +195,13 @@
 .select-wrapper-rounded select {
   width: 100%;
   appearance: none;
-  background: #f8fafc;
+  background: #ffffff;
   border: 1px solid #CBD5E1;
-  border-radius: 10px;
-  padding: 10px 36px 10px 14px;
+  border-radius: 14px;
+  padding: 12px 40px 12px 14px;
   font-size: 0.95rem;
   color: #0F172A;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
@@ -195,10 +233,10 @@
 /* Student Card */
 .student-card {
   background: white;
-  border-radius: 16px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
-  border: 1px solid #F1F5F9;
-  padding: 28px 20px;
+  border-radius: 24px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+  border: 1px solid #eaf0f6;
+  padding: 28px 22px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -207,8 +245,8 @@
 }
 
 .student-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+  transform: translateY(-3px);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
 }
 
 .student-card.status-present {
@@ -221,13 +259,13 @@
 
 .student-status-badge {
   position: absolute;
-  top: 14px;
-  right: 14px;
+  top: 16px;
+  right: 16px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  padding: 6px 10px;
+  padding: 7px 12px;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.03em;
@@ -260,15 +298,15 @@
 
 /* Avatars */
 .student-avatar {
-  width: 60px;
-  height: 60px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.05rem;
   font-weight: 700;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .avatar-blue         { background: #E0F2FE; color: #0369A1; }
@@ -289,9 +327,9 @@
 }
 
 .student-modal-id {
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   color: #94A3B8;
-  margin-bottom: 20px;
+  margin-bottom: 22px;
   text-align: center;
 }
 
@@ -306,13 +344,39 @@
   flex: 1;
   border: 1px solid #E2E8F0;
   background: white;
-  padding: 11px 9px;
-  border-radius: 8px;
+  padding: 11px 10px;
+  border-radius: 12px;
   font-size: 0.8rem;
   font-weight: 700;
   color: #64748B;
   cursor: pointer;
   transition: all 0.15s;
+}
+
+.presence-feedback-box,
+.presence-empty-state {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 22px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.03);
+  padding: 28px;
+  color: #94a3b8;
+}
+
+.presence-feedback-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.presence-empty-state {
+  text-align: center;
+}
+
+.presence-empty-icon {
+  opacity: 0.2;
+  margin: 0 auto 12px;
+  display: block;
 }
 
 .btn-state:disabled { opacity: 0.6; cursor: not-allowed; }
@@ -353,19 +417,23 @@
 @media (max-width: 768px) {
   .presence-header-row {
     flex-direction: column;
-    gap: 16px;
+    align-items: flex-start;
+    gap: 14px;
   }
 
   .stats-box {
     width: 100%;
-    justify-content: space-around;
+    min-width: 0;
+    max-width: none;
+    margin-left: 0;
+  }
+
+  .presence-hero-card {
+    padding: 18px;
   }
 
   .presence-selectors-bar {
     flex-direction: column;
   }
 
-  .presence-title-meta {
-    width: 100%;
-  }
 }

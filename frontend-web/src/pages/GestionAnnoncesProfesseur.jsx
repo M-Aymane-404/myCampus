@@ -100,18 +100,18 @@ const GestionAnnoncesProfesseur = () => {
     }
   };
 
-  const classeSelectionnee = useMemo(
-    () => mesClasses.find((classe) => classe.codeClasse === formulaire.codeClasse) || null,
-    [mesClasses, formulaire.codeClasse],
-  );
-
-  const classesCibles = useMemo(() => {
+  const classesCibles = (() => {
     if (formulaire.modeCiblage === 'ALL') {
       return mesClasses.map((classe) => classe.codeClasse).filter(Boolean);
     }
 
     return formulaire.codeClasse ? [formulaire.codeClasse] : [];
-  }, [formulaire.modeCiblage, formulaire.codeClasse, mesClasses]);
+  })();
+
+  const classeSelectionnee = useMemo(
+    () => mesClasses.find((classe) => classe.codeClasse === formulaire.codeClasse) || null,
+    [mesClasses, formulaire.codeClasse],
+  );
 
   const isFormValid = Boolean(
     formulaire.titre.trim() &&
@@ -189,7 +189,7 @@ const GestionAnnoncesProfesseur = () => {
     }
 
     if (classesCibles.length === 0) {
-      setError('Vous devez selectionner une classe ou choisir toutes les classes.');
+      setError('Vous devez selectionner une classe.');
       return;
     }
 
@@ -499,6 +499,15 @@ const GestionAnnoncesProfesseur = () => {
             </div>
           </div>
 
+          <div className="audience-status-bar">
+            <Info size={16} />
+            {formulaire.modeCiblage === 'ALL'
+              ? `${classesCibles.length} CLASSES RECEVRONT L'ANNONCE.`
+              : formulaire.codeClasse
+                ? `1 CLASSE RECEVRA L'ANNONCE : ${formulaire.codeClasse}`
+                : 'SELECTIONNEZ UNE CLASSE POUR DIFFUSER VOTRE ANNONCE.'}
+          </div>
+
           {chargement ? (
             <div className="prof-empty-state">Chargement des classes...</div>
           ) : mesClasses.length === 0 ? (
@@ -531,15 +540,6 @@ const GestionAnnoncesProfesseur = () => {
               })}
             </div>
           )}
-
-          <div className="audience-status-bar">
-            <Info size={16} />
-            {formulaire.modeCiblage === 'ALL'
-              ? `${classesCibles.length} CLASSES RECEVRONT L'ANNONCE.`
-              : formulaire.codeClasse
-                ? `1 CLASSE RECEVRA L'ANNONCE : ${formulaire.codeClasse}`
-                : "AUCUNE CLASSE N'EST ENCORE SELECTIONNEE."}
-          </div>
 
           <div className="prof-target-note">
             Le mode "toutes les classes" duplique la meme annonce sur chaque classe de vos
