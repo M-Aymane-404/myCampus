@@ -81,6 +81,18 @@ export const apiCours = {
         }
     },
 
+    async downloadRessource(fichierId) {
+        const response = await authenticatedFetch(`${BASE_URL}/fichiers-seance/${fichierId}/telecharger`, {
+            credentials: 'include'
+        });
+
+        if (!response.ok) {
+            throw new Error('Erreur lors du telechargement de la ressource');
+        }
+
+        return response;
+    },
+
     async getAggregatedResources(codeModule) {
         try {
             const matieres = await this.getMatieres(codeModule);

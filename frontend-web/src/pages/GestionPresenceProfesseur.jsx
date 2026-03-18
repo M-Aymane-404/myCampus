@@ -146,6 +146,30 @@ const GestionPresenceProfesseur = () => {
   const [processingJustification, setProcessingJustification] = useState({});
   const [error, setError] = useState(null);
 
+  const chargerFeuille = async (seanceId, showLoader = true) => {
+    if (!seanceId) return;
+
+    if (showLoader) {
+      setLoadingFeuille(true);
+      setFeuille(null);
+      setLignes([]);
+    }
+
+    setError(null);
+
+    try {
+      const data = await apiPresencesProfesseur.chargerFeuille(seanceId);
+      setFeuille(data || null);
+      setLignes(Array.isArray(data?.lignes) ? data.lignes : []);
+    } catch (err) {
+      setError(`Erreur lors du chargement : ${err.message}`);
+    } finally {
+      if (showLoader) {
+        setLoadingFeuille(false);
+      }
+    }
+  };
+
   useEffect(() => {
     const load = async () => {
       try {
@@ -212,22 +236,10 @@ const GestionPresenceProfesseur = () => {
     let cancelled = false;
 
     const load = async () => {
-      setLoadingFeuille(true);
-      setFeuille(null);
-      setLignes([]);
-      setError(null);
-
       try {
-        const data = await apiPresencesProfesseur.chargerFeuille(selectedSeance.id);
-
-        if (!cancelled) {
-          setFeuille(data || null);
-          setLignes(Array.isArray(data?.lignes) ? data.lignes : []);
-        }
+        await chargerFeuille(selectedSeance.id, true);
       } catch (err) {
         if (!cancelled) setError(`Erreur lors du chargement : ${err.message}`);
-      } finally {
-        if (!cancelled) setLoadingFeuille(false);
       }
     };
 
@@ -237,6 +249,20 @@ const GestionPresenceProfesseur = () => {
       cancelled = true;
     };
   }, [selectedSeance]);
+
+  useEffect(() => {
+    if (!selectedSeance?.id) return undefined;
+
+    const interval = window.setInterval(() => {
+      if (Object.values(saving).some(Boolean) || Object.values(processingJustification).some(Boolean)) {
+        return;
+      }
+
+      chargerFeuille(selectedSeance.id, false).catch(() => {});
+    }, 10000);
+
+    return () => window.clearInterval(interval);
+  }, [selectedSeance?.id, saving, processingJustification]);
 
   const handleStatusChange = async (apogee, newStatus) => {
     if (!selectedSeance?.id) return;

@@ -13,6 +13,11 @@ import {
 } from 'lucide-react';
 import './CoursBibliotheque.css';
 import { apiCours } from '../services/apiCours';
+import {
+    downloadBlob,
+    openBlobInNewTab,
+    readFilenameFromResponse
+} from '../utils/fileAccess';
 
 const CoursBibliotheque = () => {
     const [modules, setModules] = useState([]);
@@ -156,20 +161,26 @@ const CoursBibliotheque = () => {
     const getActiveModuleName = () =>
         modules.find((module) => module.codeModule === activeModule)?.nom || 'Module';
 
-    const handleDownload = (resource) => {
-        const link = document.createElement('a');
-        link.href = `http://localhost:8080/api/public/fichiers/voir?chemin=${encodeURIComponent(resource.chemin)}`;
-        link.download = resource.nomOriginal;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+    const handleDownload = async (resource) => {
+        try {
+            const response = await apiCours.downloadRessource(resource.id);
+            const blob = await response.blob();
+            downloadBlob(blob, readFilenameFromResponse(response, resource.nomOriginal || 'ressource'));
+        } catch (err) {
+            console.error('Erreur de telechargement de ressource:', err);
+            setError(err.message || 'Impossible de telecharger la ressource.');
+        }
     };
 
-    const handleView = (resource) => {
-        window.open(
-            `http://localhost:8080/api/public/fichiers/voir?chemin=${encodeURIComponent(resource.chemin)}`,
-            '_blank'
-        );
+    const handleView = async (resource) => {
+        try {
+            const response = await apiCours.downloadRessource(resource.id);
+            const blob = await response.blob();
+            openBlobInNewTab(blob);
+        } catch (err) {
+            console.error('Erreur d ouverture de ressource:', err);
+            setError(err.message || 'Impossible d ouvrir la ressource.');
+        }
     };
 
     const formatSize = (bytes) => {

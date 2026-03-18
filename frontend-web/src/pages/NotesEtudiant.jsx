@@ -20,6 +20,11 @@ import {
 import './NotesEtudiant.css';
 import { apiGrades } from '../services/apiGrades';
 import { parseExams } from '../utils/academicUtils';
+import {
+    fetchAuthenticatedBlob,
+    normalizeStoredFileUrl,
+    openBlobInNewTab
+} from '../utils/fileAccess';
 
 const buildMatiereKey = (moduleId, matiereId) => `${moduleId || 'module'}-${matiereId || 'matiere'}`;
 
@@ -223,10 +228,18 @@ const NotesEtudiant = () => {
         return 'AJOURNE';
     };
 
-    const openPdf = (path) => {
+    const openPdf = async (path) => {
         if (!path) return;
-        const fullUrl = path.startsWith('http') ? path : `http://localhost:8080/${path}`;
-        window.open(fullUrl, '_blank');
+
+        try {
+            const fullUrl = normalizeStoredFileUrl(path);
+            const response = await fetchAuthenticatedBlob(fullUrl);
+            const blob = await response.blob();
+            openBlobInNewTab(blob);
+        } catch (err) {
+            console.error('Erreur ouverture PDF:', err);
+            setError(err.message || 'Impossible d ouvrir le document.');
+        }
     };
 
     const handlePrint = () => {
