@@ -399,8 +399,10 @@ const GestionCoursProfesseur = () => {
     }
   };
 
-  const chargerFichiers = async (seanceId) => {
-    setLoadingFichiersParSeance((prev) => ({ ...prev, [seanceId]: true }));
+  const chargerFichiers = async (seanceId, { silent = false } = {}) => {
+    if (!silent) {
+      setLoadingFichiersParSeance((prev) => ({ ...prev, [seanceId]: true }));
+    }
 
     try {
       const data = await apiSeancesProfesseur.listerFichiersDeSeance(seanceId);
@@ -414,7 +416,9 @@ const GestionCoursProfesseur = () => {
         text: err.message || 'Impossible de charger les fichiers de la séance.',
       });
     } finally {
-      setLoadingFichiersParSeance((prev) => ({ ...prev, [seanceId]: false }));
+      if (!silent) {
+        setLoadingFichiersParSeance((prev) => ({ ...prev, [seanceId]: false }));
+      }
     }
   };
 
@@ -449,6 +453,12 @@ const GestionCoursProfesseur = () => {
 
         await Promise.all(stillOpenedIds.map((id) => chargerFichiers(id)));
       }
+
+      seancesData.forEach((seance) => {
+        if (!fichiersParSeance[seance.id]) {
+          chargerFichiers(seance.id, { silent: true }).catch(() => {});
+        }
+      });
     } catch (err) {
       setMessage({
         type: 'error',
