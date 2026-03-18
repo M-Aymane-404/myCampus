@@ -628,7 +628,7 @@ const NotesEtudiant = () => {
                                         <td className="col-code">{module.letter || 'M'}</td>
                                         <td className="col-name">{module.name}</td>
                                         <td className="col-grade">{formatNote(module.average)}</td>
-                                        <td className="col-result">{module.average >= 10 ? 'VALIDE' : 'AJOURNE'}</td>
+                                        <td className="col-result">{module.average >= 10 ? 'VALIDE' : 'NON VALIDE'}</td>
                                     </tr>
                                     {module.isParent && module.subjects?.map((subject, subjectIdx) => (
                                         <tr key={`${idx}-sub-${subjectIdx}`} className="row-sub">
@@ -652,6 +652,10 @@ const NotesEtudiant = () => {
                             <div className="stat-row">
                                 <span className="stat-label">Moyenne du Semestre</span>
                                 <div className="stat-val">{currentData.average?.toFixed(2)}<span>/20</span></div>
+                            </div>
+                            <div className="stat-row">
+                                <span className="stat-label">Resultat Global</span>
+                                <div className="stat-val">{currentData.average >= 10 ? 'VALIDE' : 'AJOURNE'}</div>
                             </div>
                             <div className="stat-row mention-row">
                                 <span className="stat-label">Mention</span>
