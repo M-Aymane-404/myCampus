@@ -53,7 +53,8 @@ const normalizeExamLabel = (exam) => {
 const NotesEtudiant = () => {
     const [activeSemester, setActiveSemester] = useState(1);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const [loadError, setLoadError] = useState(null);
+    const [documentError, setDocumentError] = useState('');
     const [selectedMatiereKey, setSelectedMatiereKey] = useState(null);
     const [collapsedExamLists, setCollapsedExamLists] = useState({});
 
@@ -107,7 +108,8 @@ const NotesEtudiant = () => {
     useEffect(() => {
         const fetchGrades = async () => {
             setLoading(true);
-            setError(null);
+            setLoadError(null);
+            setDocumentError('');
 
             try {
                 const data = await apiGrades.fetchStudentGrades(activeSemester);
@@ -210,7 +212,7 @@ const NotesEtudiant = () => {
                 setCollapsedExamLists({});
             } catch (err) {
                 console.error(err);
-                setError(err);
+                setLoadError(err);
             } finally {
                 setLoading(false);
             }
@@ -231,14 +233,35 @@ const NotesEtudiant = () => {
     const openPdf = async (path) => {
         if (!path) return;
 
+        const previewTab = window.open('', '_blank', 'noopener,noreferrer');
+
         try {
+            setDocumentError('');
             const fullUrl = normalizeStoredFileUrl(path);
+            if (!fullUrl) {
+                throw new Error('Aucun document PDF n est disponible.');
+            }
+
             const response = await fetchAuthenticatedBlob(fullUrl);
+            const contentType = response.headers.get('content-type') || '';
+            if (!contentType.toLowerCase().includes('pdf')) {
+                throw new Error('Le fichier PDF est introuvable ou invalide.');
+            }
+
             const blob = await response.blob();
-            openBlobInNewTab(blob);
+            if (previewTab && !previewTab.closed) {
+                const objectUrl = window.URL.createObjectURL(blob);
+                previewTab.location.href = objectUrl;
+                window.setTimeout(() => window.URL.revokeObjectURL(objectUrl), 60000);
+            } else {
+                openBlobInNewTab(blob);
+            }
         } catch (err) {
+            if (previewTab && !previewTab.closed) {
+                previewTab.close();
+            }
             console.error('Erreur ouverture PDF:', err);
-            setError(err.message || 'Impossible d ouvrir le document.');
+            setDocumentError(err.message || 'Impossible d ouvrir le document.');
         }
     };
 
@@ -409,6 +432,20 @@ const NotesEtudiant = () => {
                         </div>
                     </div>
 
+                    {documentError ? (
+                        <div style={{
+                            margin: '0 24px 16px',
+                            padding: '12px 16px',
+                            borderRadius: '14px',
+                            background: '#fef2f2',
+                            color: '#dc2626',
+                            fontSize: '0.9rem',
+                            fontWeight: 600
+                        }}>
+                            {documentError}
+                        </div>
+                    ) : null}
+
                     <div className="notes-table-container">
                         <table className="notes-table">
                             <thead>
@@ -421,7 +458,7 @@ const NotesEtudiant = () => {
                             <tbody>
                                 {loading ? (
                                     <tr><td colSpan="3" style={{ textAlign: 'center', padding: '48px' }}>Chargement en cours...</td></tr>
-                                ) : error ? (
+                                ) : loadError ? (
                                     <tr><td colSpan="3" style={{ textAlign: 'center', padding: '48px', color: '#ef4444' }}>Erreur de chargement.</td></tr>
                                 ) : currentData.modules.length === 0 ? (
                                     <tr><td colSpan="3" style={{ textAlign: 'center', padding: '48px' }}>Aucun resultat pour ce semestre.</td></tr>

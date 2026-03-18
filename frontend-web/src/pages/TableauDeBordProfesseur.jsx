@@ -5,11 +5,9 @@ import {
   Bell,
   BookOpen,
   Calendar,
-  CheckCircle2,
   FileWarning,
   ClipboardList,
   Clock,
-  GraduationCap,
   Layers3,
   Loader2,
   MapPin,
@@ -34,7 +32,7 @@ import apiSeancesProfesseur from '../services/professeur/apiSeancesProfesseur';
 import { apiPresencesProfesseur } from '../services/professeur/apiPresencesProfesseur';
 import './TableauDeBordProfesseur.css';
 
-const TYPE_COLOR = { COURS: 'blue', TD: 'green', TP: 'purple' };
+const TYPE_COLOR = { COURS: 'blue', TD: 'grey', TP: 'purple' };
 
 const NOTE_TABS = [
   { id: 'classe', label: 'Par classe', icon: Layers3 },
@@ -46,6 +44,7 @@ const CHART_COLORS = ['#5c54ed', '#3d7ea6', '#60a5fa', '#8b5cf6', '#f4a261', '#6
 const EMPTY_NOTE_STATS = {
   parClasse: [],
   parMatiere: [],
+  prochainExamen: null,
   resumeGlobal: {
     moyenneGenerale: null,
     noteMaximale: null,
@@ -64,6 +63,52 @@ const EMPTY_NOTE_STATS = {
     copiesACorriger: 0,
     groupesEnDifficulte: 0,
   },
+};
+
+const parseDateValue = (value) => {
+  if (!value) return null;
+
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value;
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const combineDateAndTime = (dateValue, timeValue) => {
+  const datePart =
+    typeof dateValue === 'string' && dateValue.length >= 10
+      ? dateValue.slice(0, 10)
+      : parseDateValue(dateValue)?.toISOString().slice(0, 10);
+
+  if (!datePart || !timeValue) return null;
+
+  const rawTime =
+    typeof timeValue === 'string'
+      ? timeValue.includes('T')
+        ? timeValue.slice(11, 19)
+        : timeValue
+      : parseDateValue(timeValue)?.toISOString().slice(11, 19);
+
+  if (!rawTime) return null;
+
+  const normalizedTime =
+    rawTime.length === 5 ? `${rawTime}:00` : rawTime.length >= 8 ? rawTime.slice(0, 8) : null;
+
+  if (!normalizedTime) return null;
+  return parseDateValue(`${datePart}T${normalizedTime}`);
+};
+
+const extractTimeLabel = (value) => {
+  if (!value) return '';
+  if (typeof value === 'string') {
+    if (/^\d{2}:\d{2}/.test(value)) return value.slice(0, 5);
+    const parsed = parseDateValue(value);
+    if (parsed) return formatHour(parsed);
+  }
+
+  return formatHour(value);
 };
 
 const formatDate = (value) => {
@@ -104,17 +149,6 @@ const getNestedValue = (source, paths) => {
   return null;
 };
 
-const timeAgo = (value) => {
-  if (!value) return 'RECENT';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return 'RECENT';
-  const diffMs = Date.now() - date.getTime();
-  const diffHours = Math.floor(diffMs / 3600000);
-  if (diffHours < 1) return 'RECENT';
-  if (diffHours < 24) return `IL Y A ${diffHours}H`;
-  return `IL Y A ${Math.floor(diffHours / 24)}J`;
-};
-
 const createAggregate = (label) => ({
   label,
   somme: 0,
@@ -140,6 +174,39 @@ const updateAggregate = (aggregate, notes, totalAttendu) => {
   return aggregate;
 };
 
+const getSessionStartDate = (session) =>
+  combineDateAndTime(session?.date, session?.heureDebut) ||
+  parseDateValue(session?.start) ||
+  parseDateValue(session?.heureDebut) ||
+  parseDateValue(session?.date);
+
+const getSessionEndDate = (session) =>
+  combineDateAndTime(session?.date, session?.heureFin) ||
+  parseDateValue(session?.end) ||
+  parseDateValue(session?.heureFin);
+
+const getExamDate = (exam) =>
+  parseDateValue(exam?.dateExamen) ||
+  parseDateValue(exam?.date) ||
+  parseDateValue(exam?.heureDebut);
+
+const isExamCompleted = (exam) => ['PASSE', 'CORRIGE', 'ANNULE', 'ANNULEE'].includes(String(exam?.etat || '').trim().toUpperCase());
+
+const isCancelledSession = (session) => ['ANNULEE', 'ANNULE'].includes(String(session?.etat || '').trim().toUpperCase());
+
+const pickNearestUpcomingSession = (...sessions) => {
+  const now = Date.now();
+  const validUpcoming = sessions
+    .filter(Boolean)
+    .map((session) => ({ session, startDate: getSessionStartDate(session) }))
+    .filter(({ startDate }) => startDate && startDate.getTime() >= now)
+    .sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
+
+  if (validUpcoming.length > 0) return validUpcoming[0].session;
+
+  return sessions.find(Boolean) || null;
+};
+
 const finalizeAggregate = (aggregate, suffix = '') => ({
   id: `${aggregate.label}-${suffix || 'stats'}`,
   label: aggregate.label,
@@ -160,6 +227,8 @@ const buildNoteStatistics = async () => {
   const subjectMap = new Map();
   const globalAggregate = createAggregate('global');
   const studentIds = new Set();
+  const upcomingExams = [];
+  const now = Date.now();
   let notesPubliees = 0;
   let notesEnAttente = 0;
   let examensSansPublication = 0;
@@ -181,6 +250,19 @@ const buildNoteStatistics = async () => {
           const examens = await apiExamensProfesseur.listerExamens(codeClasse, codeMatiere);
           const examensList = Array.isArray(examens) ? examens : [];
           if (examensList.length === 0) return;
+
+          examensList.forEach((examen) => {
+            const examDate = getExamDate(examen);
+            if (!examDate || examDate.getTime() < now || isExamCompleted(examen)) return;
+
+            upcomingExams.push({
+              ...examen,
+              nomClasse: examen.nomClasse || classeLabel,
+              codeClasse: examen.codeClasse || codeClasse,
+              nomMatiere: examen.nomMatiere || matiereLabel,
+              codeMatiere: examen.codeMatiere || codeMatiere,
+            });
+          });
 
           await Promise.all(
             examensList.map(async (examen) => {
@@ -227,9 +309,16 @@ const buildNoteStatistics = async () => {
     .map((aggregate) => finalizeAggregate(aggregate, 'matiere'))
     .sort((a, b) => (b.moyenneGenerale || 0) - (a.moyenneGenerale || 0));
 
+  const sortedUpcomingExams = [...upcomingExams].sort((a, b) => {
+    const left = getExamDate(a)?.getTime() || Number.MAX_SAFE_INTEGER;
+    const right = getExamDate(b)?.getTime() || Number.MAX_SAFE_INTEGER;
+    return left - right;
+  });
+
   return {
     parClasse,
     parMatiere,
+    prochainExamen: sortedUpcomingExams[0] || null,
     resumeGlobal: finalizeAggregate(globalAggregate, 'global'),
     meta: {
       uniqueStudentCount: studentIds.size,
@@ -262,6 +351,8 @@ const DashboardTooltip = ({ active, payload }) => {
 const normalizeSession = (payload) => {
   const session = payload?.prochaineSeance || payload?.nextSession || payload || null;
   if (!session || typeof session !== 'object') return null;
+  const startDate = getSessionStartDate(session);
+  const endDate = getSessionEndDate(session);
 
   const subject = pickFirstValue(
     session.matiereNom,
@@ -298,9 +389,9 @@ const normalizeSession = (payload) => {
   );
 
   const type = pickFirstValue(session.typeSeance, session.type, session.categorie, 'COURS');
-  const start = pickFirstValue(session.start, formatHour(session.heureDebut), session.heureDebut);
-  const end = pickFirstValue(session.end, formatHour(session.heureFin), session.heureFin);
-  const day = pickFirstValue(session.dayOfWeek, session.jour, formatDate(session.date));
+  const start = extractTimeLabel(session.start) || formatHour(startDate) || extractTimeLabel(session.heureDebut);
+  const end = extractTimeLabel(session.end) || formatHour(endDate) || extractTimeLabel(session.heureFin);
+  const day = pickFirstValue(session.dayOfWeek, session.jour, formatDate(startDate || session.date));
 
   return {
     ...session,
@@ -399,21 +490,18 @@ const buildPresenceInsightsFromApp = async () => {
     }),
   );
 
-  const allSeances = seancesParEnseignement.flat();
+  const allSeances = seancesParEnseignement.flat().filter((seance) => !isCancelledSession(seance));
   const now = new Date();
   const prochaineSeance = [...allSeances]
-    .filter((seance) => {
-      const start = new Date(seance.heureDebut || seance.date || 0);
-      return !Number.isNaN(start.getTime()) && start.getTime() >= now.getTime();
-    })
-    .sort((a, b) => new Date(a.heureDebut || a.date || 0) - new Date(b.heureDebut || b.date || 0))[0] || null;
+    .map((seance) => ({ seance, startDate: getSessionStartDate(seance) }))
+    .filter(({ startDate }) => startDate && startDate.getTime() >= now.getTime())
+    .sort((a, b) => a.startDate.getTime() - b.startDate.getTime())[0]?.seance || null;
 
   const recentSeances = [...allSeances]
-    .filter((seance) => {
-      const start = new Date(seance.heureDebut || seance.date || 0);
-      return !Number.isNaN(start.getTime()) && start.getTime() <= now.getTime();
-    })
-    .sort((a, b) => new Date(b.heureDebut || b.date || 0) - new Date(a.heureDebut || a.date || 0))
+    .map((seance) => ({ seance, startDate: getSessionStartDate(seance) }))
+    .filter(({ startDate }) => startDate && startDate.getTime() <= now.getTime())
+    .sort((a, b) => b.startDate.getTime() - a.startDate.getTime())
+    .map(({ seance }) => seance)
     .slice(0, 8);
 
   let absencesJour = 0;
@@ -440,7 +528,7 @@ const buildPresenceInsightsFromApp = async () => {
                 absencesParEtudiant.set(studentKey, (absencesParEtudiant.get(studentKey) || 0) + 1);
               }
 
-              if (isSameDay(seance.heureDebut || seance.date, now)) {
+              if (isSameDay(getSessionStartDate(seance) || seance.date, now)) {
                 absencesJour += 1;
               }
             }
@@ -467,7 +555,7 @@ const buildPresenceInsightsFromApp = async () => {
   };
 };
 
-const TableauDeBordProfesseur = ({ surNavigation }) => {
+const TableauDeBordProfesseur = () => {
   const [dashboard, setDashboard] = useState(null);
   const [prochaineSeance, setProchaineSeance] = useState(null);
   const [presenceInsights, setPresenceInsights] = useState({
@@ -524,7 +612,7 @@ const TableauDeBordProfesseur = ({ surNavigation }) => {
               };
 
         setPresenceInsights(presenceData);
-        setProchaineSeance(presenceData.prochaineSeance || nextSessionApi);
+        setProchaineSeance(pickNearestUpcomingSession(presenceData.prochaineSeance, nextSessionApi));
       } catch (err) {
         console.error('Chargement dashboard professeur impossible:', err);
         setError(err.message || 'Impossible de charger le tableau de bord professeur.');
@@ -554,8 +642,19 @@ const TableauDeBordProfesseur = ({ surNavigation }) => {
   const dashboardData = dashboard || {};
   const entete = dashboardData.entete || {};
   const stats = dashboardData.stats || {};
-  const examensAVenir = Array.isArray(dashboardData.examensAVenir) ? dashboardData.examensAVenir.slice(0, 3) : [];
   const sessionCard = normalizeSession(prochaineSeance);
+  const prochainExamen = useMemo(() => {
+    const dashboardUpcoming = Array.isArray(dashboardData.examensAVenir)
+      ? dashboardData.examensAVenir
+          .filter((examen) => {
+            const examDate = getExamDate(examen);
+            return examDate && examDate.getTime() >= Date.now() && !isExamCompleted(examen);
+          })
+          .sort((a, b) => (getExamDate(a)?.getTime() || Number.MAX_SAFE_INTEGER) - (getExamDate(b)?.getTime() || Number.MAX_SAFE_INTEGER))
+      : [];
+
+    return notesState.data.prochainExamen || dashboardUpcoming[0] || null;
+  }, [dashboardData.examensAVenir, notesState.data.prochainExamen]);
   const absenceInsights = {
     ...buildAbsenceInsights(dashboardData),
     todayCount: presenceInsights.absencesJour,
@@ -614,6 +713,39 @@ const TableauDeBordProfesseur = ({ surNavigation }) => {
     { label: 'Examens programmes', value: stats?.nbExamensProgrammes ?? 0, accent: 'amber', icon: ClipboardList },
     { label: 'Copies a corriger', value: noteMeta.copiesACorriger, accent: 'rose', icon: FileWarning },
     { label: 'Taux de reussite global', value: formatPercent(notesState.data.resumeGlobal?.tauxReussite), accent: 'emerald', icon: Trophy },
+  ];
+
+  const alertEntries = [
+    {
+      key: 'today',
+      title: 'Absences du jour',
+      value: formatCompactNumber(absenceInsights.todayCount),
+      detail:
+        absenceInsights.todayCount > 0
+          ? `${formatCompactNumber(absenceInsights.todayCount)} absence${absenceInsights.todayCount > 1 ? 's' : ''} enregistree${absenceInsights.todayCount > 1 ? 's' : ''} aujourd hui.`
+          : 'Aucune absence detectee aujourd hui.',
+      tone: absenceInsights.todayCount > 0 ? 'danger' : 'soft',
+    },
+    {
+      key: 'pending',
+      title: 'Feuilles a completer',
+      value: formatCompactNumber(absenceInsights.pendingCount),
+      detail:
+        absenceInsights.pendingCount > 0
+          ? `${formatCompactNumber(absenceInsights.pendingCount)} feuille${absenceInsights.pendingCount > 1 ? 's' : ''} restent a verifier.`
+          : 'Aucune feuille en attente.',
+      tone: absenceInsights.pendingCount > 0 ? 'warning' : 'soft',
+    },
+    {
+      key: 'attendance',
+      title: 'Taux de presence global',
+      value: absenceInsights.attendanceRate != null ? `${Math.round(absenceInsights.attendanceRate)}%` : '--',
+      detail:
+        absenceInsights.attendanceRate != null
+          ? `Moyenne calculee sur les feuilles de presence deja renseignees.`
+          : 'Le taux de presence sera visible apres les prochaines feuilles.',
+      tone: absenceInsights.attendanceRate != null ? 'info' : 'soft',
+    },
   ];
 
   if (loading) {
@@ -723,9 +855,26 @@ const TableauDeBordProfesseur = ({ surNavigation }) => {
             <div className="prof-card-head">
               <div>
                 <p className="prof-card-eyebrow">Suivi</p>
-                <h2>Alertes absences</h2>
+                <h2>Priorites du jour</h2>
               </div>
               <Bell size={18} className="prof-alert-icon" />
+            </div>
+
+            <div className="prof-priority-list">
+              {alertEntries.map((entry) => (
+                <div key={entry.key} className={`prof-priority-item tone-${entry.tone}`}>
+                  <div className="prof-priority-main">
+                    <div className="prof-priority-copy">
+                      <div className="prof-priority-title-row">
+                        <span className="prof-priority-dot"></span>
+                        <strong>{entry.title}</strong>
+                      </div>
+                      <p>{entry.detail}</p>
+                    </div>
+                    <div className="prof-priority-value">{entry.value}</div>
+                  </div>
+                </div>
+              ))}
             </div>
 
             <div className="prof-alert-list">
@@ -750,12 +899,12 @@ const TableauDeBordProfesseur = ({ surNavigation }) => {
               <div className="prof-alert-item tone-neutral">
                 <div className="prof-alert-item-head">
                   <span className="prof-alert-dot"></span>
-                  <strong>Etudiants a surveiller</strong>
+                  <strong>Taux de presence global</strong>
                 </div>
-                <span className="prof-alert-value">{formatCompactNumber(absenceInsights.highRiskCount)}</span>
+                <span className="prof-alert-value">{absenceInsights.attendanceRate != null ? `${Math.round(absenceInsights.attendanceRate)}%` : '--'}</span>
                 <p>
                   {absenceInsights.attendanceRate != null
-                    ? `Taux de presence global: ${Math.round(absenceInsights.attendanceRate)}%.`
+                    ? 'Moyenne calculee sur les feuilles de presence deja renseignees.'
                     : 'Le taux de presence sera visible des que des feuilles seront renseignees.'}
                 </p>
               </div>
@@ -765,27 +914,27 @@ const TableauDeBordProfesseur = ({ surNavigation }) => {
           <article className="prof-card prof-compact-card">
             <div className="prof-card-head">
               <div>
-                <p className="prof-card-eyebrow">A surveiller</p>
-                <h2>Examens a venir</h2>
+                <p className="prof-card-eyebrow">A venir</p>
+                <h2>Prochain examen</h2>
               </div>
             </div>
 
-            {examensAVenir.length > 0 ? (
+            {prochainExamen ? (
               <div className="prof-compact-list">
-                {examensAVenir.map((examen) => (
-                  <div key={examen.id || `${examen.nomMatiere}-${examen.numeroExamen}`} className="prof-compact-row">
-                    <div className="prof-compact-icon warning"><ClipboardList size={16} /></div>
-                    <div className="prof-compact-content">
-                      <strong>{examen.nomMatiere || 'Examen'}</strong>
-                      <span>{examen.nomClasse || examen.codeClasse || 'Classe'} | #{examen.numeroExamen || '--'} | {examen.dateExamen ? formatDate(examen.dateExamen) : 'Date a definir'}</span>
-                    </div>
+                <div key={prochainExamen.id || `${prochainExamen.nomMatiere}-${prochainExamen.numeroExamen}`} className="prof-compact-row">
+                  <div className="prof-compact-icon warning"><ClipboardList size={16} /></div>
+                  <div className="prof-compact-content">
+                    <strong>{prochainExamen.nomMatiere || 'Examen'}</strong>
+                    <span>
+                      {prochainExamen.nomClasse || prochainExamen.codeClasse || 'Classe'} | #{prochainExamen.numeroExamen || '--'} | {prochainExamen.dateExamen ? `${formatDate(prochainExamen.dateExamen)}${formatHour(prochainExamen.dateExamen) ? ` a ${formatHour(prochainExamen.dateExamen)}` : ''}` : 'Date a definir'}
+                    </span>
                   </div>
-                ))}
+                </div>
               </div>
             ) : (
               <div className="prof-empty-state compact">
                 <ClipboardList size={24} />
-                <p>Aucun examen programme.</p>
+                <p>Aucun examen a venir.</p>
               </div>
             )}
           </article>

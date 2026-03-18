@@ -3,8 +3,8 @@ import { UserCheck, ChevronDown, Loader2, X, Calendar } from 'lucide-react';
 import { apiEnseignementsProfesseur } from '../services/professeur/apiEnseignementsProfesseur';
 import apiSeancesProfesseur from '../services/professeur/apiSeancesProfesseur';
 import { apiPresencesProfesseur } from '../services/professeur/apiPresencesProfesseur';
-import { apiAuth } from '../services/apiAuth';
 import './GestionPresenceProfesseur.css';
+import { fetchAuthenticatedBlob, normalizeStoredFileUrl, openBlobInNewTab } from '../utils/fileAccess';
 
 const AVATAR_COLORS = ['blue', 'pink', 'purple', 'brown', 'green', 'grey', 'green-light', 'purple-light'];
 const TYPE_COLOR = { COURS: 'blue', TD: 'green', TP: 'purple' };
@@ -112,21 +112,10 @@ const openJustificationFile = async (motifUrl) => {
     throw new Error('Aucun justificatif depose pour cette absence.');
   }
 
-  const fullUrl = motifUrl.startsWith('http') ? motifUrl : `http://localhost:8080${motifUrl}`;
-  const headers = await apiAuth.getAuthHeadersWithRefresh();
-  const response = await fetch(fullUrl, {
-    headers,
-    credentials: 'include'
-  });
-
-  if (!response.ok) {
-    throw new Error('Impossible de consulter le justificatif.');
-  }
-
+  const fullUrl = normalizeStoredFileUrl(motifUrl);
+  const response = await fetchAuthenticatedBlob(fullUrl);
   const blob = await response.blob();
-  const objectUrl = window.URL.createObjectURL(blob);
-  window.open(objectUrl, '_blank', 'noopener,noreferrer');
-  window.setTimeout(() => window.URL.revokeObjectURL(objectUrl), 60000);
+  openBlobInNewTab(blob);
 };
 
 const GestionPresenceProfesseur = () => {

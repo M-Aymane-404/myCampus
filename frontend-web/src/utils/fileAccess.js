@@ -29,26 +29,28 @@ export const normalizeStoredFileUrl = (path) => {
   if (!path) return null;
   if (/^https?:\/\//i.test(path)) return path;
 
-  const normalizedPath = String(path).trim().replace(/\\/g, '/');
+  const rawPath = String(path).trim();
+  const normalizedPath = rawPath.replace(/\\/g, '/');
+
+  if (normalizedPath.startsWith('/api/') || normalizedPath.startsWith('api/')) {
+    const cleanPath = normalizedPath.startsWith('/') ? normalizedPath : `/${normalizedPath}`;
+    return `${API_HOST}${cleanPath}`;
+  }
 
   if (normalizedPath.startsWith('/files/')) {
     return `${API_HOST}${normalizedPath}`;
   }
 
-  if (normalizedPath.startsWith('/uploads/')) {
-    return `${API_HOST}${normalizedPath.replace(/^\/uploads/, '/files')}`;
-  }
-
   if (
+    normalizedPath.startsWith('/uploads/') ||
+    normalizedPath.startsWith('uploads/') ||
+    normalizedPath.includes(':/') ||
+    normalizedPath.startsWith('/') ||
     normalizedPath.startsWith('/copies/') ||
     normalizedPath.startsWith('/corriges/') ||
     normalizedPath.startsWith('/examens/')
   ) {
-    return `${API_HOST}/files${normalizedPath}`;
-  }
-
-  if (normalizedPath.startsWith('uploads/')) {
-    return `${API_HOST}/files/${normalizedPath.slice('uploads/'.length)}`;
+    return `${API_HOST}/api/public/fichiers/voir?chemin=${encodeURIComponent(rawPath)}`;
   }
 
   return `${API_HOST}/files/${normalizedPath.replace(/^\/+/, '')}`;
