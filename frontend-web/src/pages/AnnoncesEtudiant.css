@@ -166,11 +166,24 @@
 
 .ann-filters {
     display: flex;
+    flex-wrap: nowrap;
     gap: 0.5rem;
     margin-bottom: 2.5rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding-bottom: 0.25rem;
+    -webkit-overflow-scrolling: touch;
+}
+
+.ann-filters::-webkit-scrollbar {
+    display: none;
 }
 
 .ann-filter-pill {
+    flex: 0 0 auto;
     padding: 0.5rem 1.25rem;
     border-radius: 8px;
     border: 1px solid #e2e8f0;

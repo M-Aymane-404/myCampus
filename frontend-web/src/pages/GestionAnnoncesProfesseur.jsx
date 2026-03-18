@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+﻿import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
   CheckCircle2,
   Eye,
+  FileText,
   GraduationCap,
   Info,
   Layers,
@@ -11,6 +12,7 @@ import {
   Plus,
   Send,
   Trash2,
+  Download,
   Upload,
   X,
 } from 'lucide-react';
@@ -62,6 +64,7 @@ const GestionAnnoncesProfesseur = () => {
   const [chargement, setChargement] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [mesAnnonces, setMesAnnonces] = useState([]);
+  const [ressourcesParAnnonce, setRessourcesParAnnonce] = useState({});
   const [mesClasses, setMesClasses] = useState([]);
   const [formulaire, setFormulaire] = useState(FORM_INITIAL);
   const [fichiersSelectionnes, setFichiersSelectionnes] = useState([]);
@@ -89,34 +92,50 @@ const GestionAnnoncesProfesseur = () => {
         apiAnnoncesProfesseur.listerMesClasses(),
       ]);
 
-      setMesAnnonces(Array.isArray(annonces) ? annonces : []);
+      const annoncesChargees = Array.isArray(annonces) ? annonces : [];
+      setMesAnnonces(annoncesChargees);
       setMesClasses(Array.isArray(classes) ? classes : []);
+
+      const ressourcesEntries = await Promise.all(
+        annoncesChargees.map(async (annonce) => {
+          try {
+            const ressources = await apiAnnoncesProfesseur.listerRessourcesAnnonce(annonce.id);
+            return [annonce.id, Array.isArray(ressources) ? ressources : []];
+          } catch {
+            return [annonce.id, []];
+          }
+        })
+      );
+
+      setRessourcesParAnnonce(Object.fromEntries(ressourcesEntries));
     } catch (err) {
       setError(err.message || 'Impossible de charger les annonces professeur.');
       setMesAnnonces([]);
       setMesClasses([]);
+      setRessourcesParAnnonce({});
     } finally {
       if (showLoader) setChargement(false);
     }
   };
 
-  const classesCibles = (() => {
+  const classeSelectionnee = useMemo(
+    () =>
+      mesClasses.find((classe) => classe.codeClasse === formulaire.codeClasse) || null,
+    [mesClasses, formulaire.codeClasse]
+  );
+
+  const classesCibles = useMemo(() => {
     if (formulaire.modeCiblage === 'ALL') {
       return mesClasses.map((classe) => classe.codeClasse).filter(Boolean);
     }
 
     return formulaire.codeClasse ? [formulaire.codeClasse] : [];
-  })();
-
-  const classeSelectionnee = useMemo(
-    () => mesClasses.find((classe) => classe.codeClasse === formulaire.codeClasse) || null,
-    [mesClasses, formulaire.codeClasse],
-  );
+  }, [formulaire.modeCiblage, formulaire.codeClasse, mesClasses]);
 
   const isFormValid = Boolean(
     formulaire.titre.trim() &&
-    formulaire.contenu.trim() &&
-    classesCibles.length > 0,
+      formulaire.contenu.trim() &&
+      classesCibles.length > 0
   );
 
   const gererChangement = (e) => {
@@ -141,7 +160,30 @@ const GestionAnnoncesProfesseur = () => {
   };
 
   const gererSelectionFichiers = (event) => {
-    setFichiersSelectionnes(Array.from(event.target.files || []));
+    const nouveauxFichiers = Array.from(event.target.files || []);
+    if (!nouveauxFichiers.length) {
+      return;
+    }
+
+    setFichiersSelectionnes((prev) => {
+      const existants = new Map(
+        prev.map((fichier) => [
+          `${fichier.name}-${fichier.size}-${fichier.lastModified}`,
+          fichier,
+        ])
+      );
+
+      nouveauxFichiers.forEach((fichier) => {
+        existants.set(
+          `${fichier.name}-${fichier.size}-${fichier.lastModified}`,
+          fichier
+        );
+      });
+
+      return Array.from(existants.values());
+    });
+
+    event.target.value = '';
   };
 
   const viderFichiers = () => {
@@ -165,13 +207,12 @@ const GestionAnnoncesProfesseur = () => {
       return 0;
     }
 
-    await Promise.all(
-      fichiersSelectionnes.map((fichier) =>
-        apiAnnoncesProfesseur.ajouterRessourceAnnonce(annonceId, fichier),
-      ),
+    const ressourcesCreees = await apiAnnoncesProfesseur.ajouterRessourcesAnnonce(
+      annonceId,
+      fichiersSelectionnes
     );
 
-    return fichiersSelectionnes.length;
+    return Array.isArray(ressourcesCreees) ? ressourcesCreees.length : 0;
   };
 
   const creerAnnonce = async () => {
@@ -221,7 +262,7 @@ const GestionAnnoncesProfesseur = () => {
         setSuccess(
           annoncesCreees.length > 1
             ? `Annonces creees pour ${annoncesCreees.length} classes, mais l'envoi des ressources a echoue.`
-            : "Annonce creee, mais l'envoi des ressources a echoue.",
+            : "Annonce creee, mais l'envoi des ressources a echoue."
         );
         setError(uploadError.message || "Erreur lors de l'envoi des ressources.");
         return;
@@ -231,13 +272,13 @@ const GestionAnnoncesProfesseur = () => {
         setSuccess(
           nbFichiers > 0
             ? `Annonces creees pour ${nbClasses} classes avec ${nbFichiers} ressource(s) par annonce.`
-            : `Annonces creees pour ${nbClasses} classes.`,
+            : `Annonces creees pour ${nbClasses} classes.`
         );
       } else {
         setSuccess(
           nbFichiers > 0
             ? `Annonce creee avec succes avec ${nbFichiers} ressource(s).`
-            : 'Annonce creee avec succes.',
+            : 'Annonce creee avec succes.'
         );
       }
 
@@ -283,6 +324,20 @@ const GestionAnnoncesProfesseur = () => {
     } catch (err) {
       setError(err.message || 'Erreur lors du changement de publication.');
     }
+  };
+
+  const formaterTaille = (taille) => {
+    if (!taille) return '0 o';
+    const unites = ['o', 'Ko', 'Mo', 'Go'];
+    let valeur = Number(taille);
+    let index = 0;
+
+    while (valeur >= 1024 && index < unites.length - 1) {
+      valeur /= 1024;
+      index += 1;
+    }
+
+    return `${valeur.toFixed(index === 0 ? 0 : 1)} ${unites[index]}`;
   };
 
   return (
@@ -607,6 +662,30 @@ const GestionAnnoncesProfesseur = () => {
                     {annonce.contenu || 'Aucun contenu.'}
                   </div>
 
+                  {ressourcesParAnnonce[annonce.id]?.length ? (
+                    <div className="prof-annonce-resources">
+                      <div className="prof-annonce-resources-title">
+                        <Paperclip size={14} />
+                        <span>Ressources attachees</span>
+                      </div>
+                      <div className="prof-resource-list">
+                        {ressourcesParAnnonce[annonce.id].map((ressource) => (
+                          <button
+                            key={ressource.id}
+                            type="button"
+                            className="prof-resource-chip"
+                            onClick={() => apiAnnoncesProfesseur.telechargerRessourceAnnonce(ressource.id)}
+                          >
+                            <FileText size={14} />
+                            <span>{ressource.nomOriginal}</span>
+                            <small>{formaterTaille(ressource.taille)}</small>
+                            <Download size={14} />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+
                   <div className="prof-card-actions">
                     <button
                       className={`prof-action-btn ${annonce.publiee ? 'warning' : 'success'}`}
@@ -637,3 +716,4 @@ const GestionAnnoncesProfesseur = () => {
 };
 
 export default GestionAnnoncesProfesseur;
+

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Bell, GraduationCap, Clock, MapPin, TrendingUp, AlertCircle, BookOpen, ChevronRight, Circle } from 'lucide-react';
 import { apiEtudiant } from '../services/apiEtudiant';
 import './TableauDeBordEtudiant.css';
@@ -90,11 +90,11 @@ const TableauDeBordEtudiant = ({ surNavigation }) => {
       <div className="etudiant-header">
         <div className="header-content">
           <div className="header-info">
-            <h1>Espace Étudiant</h1>
+            <h1>Espace Etudiant</h1>
             <p>
               {dashboardData?.entete ? 
-                `${dashboardData.entete.niveau || ''} ${dashboardData.entete.filiere || ''} • ${dashboardData.entete.session || 'Session d\'Automne 2023'}` : 
-                'L3 Informatique • Session d\'Automne 2023'
+                `${dashboardData.entete.niveau || ''} ${dashboardData.entete.filiere || ''} | ${dashboardData.entete.session || 'Session d\'Automne 2023'}` : 
+                'L3 Informatique | Session d\'Automne 2023'
               }
             </p>
           </div>
@@ -166,7 +166,7 @@ const TableauDeBordEtudiant = ({ surNavigation }) => {
             <div className="card-modern attendance-card">
               <div className="section-label">
                 <TrendingUp className="label-icon" size={20} />
-                <h3>Assiduité Globale</h3>
+                <h3>Taux de presence</h3>
               </div>
 
               <div className="attendance-content">
@@ -210,7 +210,7 @@ const TableauDeBordEtudiant = ({ surNavigation }) => {
                   </div>
                 </div>
                 <div className="attendance-details">
-                  <p>Présence validée</p>
+                  <p>Presence validee</p>
                   <span className="excellent-tag">
                     {dashboardData?.assiduite?.labelQualite || 'EXCELLENT'}
                   </span>
@@ -220,7 +220,7 @@ const TableauDeBordEtudiant = ({ surNavigation }) => {
 
             {/* Next Session Card */}
             <div className="card-modern next-session-card">
-              <h3>Prochaine Séance</h3>
+              <h3>Prochaine Seance</h3>
               <div className="session-info-main">
                 {nextSession?.prochaineSeance ? (
                   <>
@@ -228,7 +228,7 @@ const TableauDeBordEtudiant = ({ surNavigation }) => {
                       {nextSession.prochaineSeance.start} - {nextSession.prochaineSeance.end}
                     </div>
                     <div className="session-details-text">
-                      <h4>{nextSession.prochaineSeance.matiereNom || 'Matière inconnue'}</h4>
+                      <h4>{nextSession.prochaineSeance.matiereNom || 'Matiere inconnue'}</h4>
                       <div className="session-meta">
                         <MapPin size={14} />
                         <span>{nextSession.prochaineSeance.salle || 'Salle inconnue'}</span>
@@ -246,7 +246,7 @@ const TableauDeBordEtudiant = ({ surNavigation }) => {
                       <h4>Non disponible</h4>
                       <div className="session-meta">
                         <MapPin size={14} />
-                        <span>Aucune séance à venir</span>
+                        <span>Aucune seance a venir</span>
                       </div>
                     </div>
                   </>
@@ -260,7 +260,7 @@ const TableauDeBordEtudiant = ({ surNavigation }) => {
         <div className="grades-sidebar card-modern">
           <div className="grades-header">
             <GraduationCap className="label-icon" size={22} />
-            <h3>Dernières Notes</h3>
+            <h3>Dernieres Notes</h3>
           </div>
 
           <div className="grades-list">
@@ -296,3 +296,4 @@ const TableauDeBordEtudiant = ({ surNavigation }) => {
 };
 
 export default TableauDeBordEtudiant;
+

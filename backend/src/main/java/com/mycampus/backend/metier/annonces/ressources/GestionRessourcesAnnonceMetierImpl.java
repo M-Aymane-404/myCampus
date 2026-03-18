@@ -40,9 +40,9 @@ public class GestionRessourcesAnnonceMetierImpl implements GestionRessourcesAnno
     private final EtudiantRepository etudiantRepository;
 
     @Override
-    public RessourceAnnonceSortieDTO ajouterRessourceAdmin(Long annonceId, MultipartFile fichier) {
+    public List<RessourceAnnonceSortieDTO> ajouterRessourcesAdmin(Long annonceId, List<MultipartFile> fichiers) {
         Annonce annonce = requireAnnonce(annonceId);
-        return sauvegarderRessource(annonce, fichier);
+        return sauvegarderRessources(annonce, fichiers);
     }
 
     @Override
@@ -59,9 +59,9 @@ public class GestionRessourcesAnnonceMetierImpl implements GestionRessourcesAnno
     }
 
     @Override
-    public RessourceAnnonceSortieDTO ajouterRessourceProfesseur(Long annonceId, String emailProfesseur, MultipartFile fichier) {
+    public List<RessourceAnnonceSortieDTO> ajouterRessourcesProfesseur(Long annonceId, String emailProfesseur, List<MultipartFile> fichiers) {
         Annonce annonce = requireAnnonceProfesseur(annonceId, emailProfesseur);
-        return sauvegarderRessource(annonce, fichier);
+        return sauvegarderRessources(annonce, fichiers);
     }
 
     @Override
@@ -173,6 +173,17 @@ public class GestionRessourcesAnnonceMetierImpl implements GestionRessourcesAnno
         if (!StringUtils.hasText(emailProfesseur)) {
             throw new UtilisateursException("Email professeur obligatoire");
         }
+    }
+
+    private List<RessourceAnnonceSortieDTO> sauvegarderRessources(Annonce annonce, List<MultipartFile> fichiers) {
+        if (fichiers == null || fichiers.isEmpty()) {
+            throw new UtilisateursException("Au moins un fichier est obligatoire");
+        }
+
+        return fichiers.stream()
+                .filter(fichier -> fichier != null && !fichier.isEmpty())
+                .map(fichier -> sauvegarderRessource(annonce, fichier))
+                .toList();
     }
 
     private RessourceAnnonceSortieDTO sauvegarderRessource(Annonce annonce, MultipartFile fichier) {

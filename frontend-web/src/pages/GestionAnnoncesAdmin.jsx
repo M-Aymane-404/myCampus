@@ -1,15 +1,17 @@
-import { useEffect, useRef, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import {
   Megaphone,
   Info,
   Plus,
   Paperclip,
+  FileText,
   Send,
   Users,
   GraduationCap,
   Layers,
   Eye,
   Trash2,
+  Download,
   CheckCircle2,
   AlertTriangle,
   Upload,
@@ -43,6 +45,7 @@ const GestionAnnoncesAdmin = () => {
   const [classes, setClasses] = useState([]);
   const [professeurs, setProfesseurs] = useState([]);
   const [annonces, setAnnonces] = useState([]);
+  const [ressourcesParAnnonce, setRessourcesParAnnonce] = useState({});
   const [formulaire, setFormulaire] = useState(FORM_INITIAL);
   const [fichiersSelectionnes, setFichiersSelectionnes] = useState([]);
   const [error, setError] = useState('');
@@ -93,13 +96,33 @@ const GestionAnnoncesAdmin = () => {
         }))
       );
 
-      setAnnonces(Array.isArray(donneesAnnonces) ? donneesAnnonces : []);
+      const annoncesChargees = Array.isArray(donneesAnnonces) ? donneesAnnonces : [];
+      setAnnonces(annoncesChargees);
+
+      const annoncesAdmin = annoncesChargees.filter((annonce) => {
+        const emailAuteur = (annonce?.auteur?.email || '').toLowerCase();
+        return emailAuteur && emailAuteur === emailAdminConnecte;
+      });
+
+      const ressourcesEntries = await Promise.all(
+        annoncesAdmin.map(async (annonce) => {
+          try {
+            const ressources = await apiAnnonces.listerRessources(annonce.id);
+            return [annonce.id, Array.isArray(ressources) ? ressources : []];
+          } catch {
+            return [annonce.id, []];
+          }
+        })
+      );
+
+      setRessourcesParAnnonce(Object.fromEntries(ressourcesEntries));
     } catch (err) {
       console.error(err);
       setError(err.message || 'Impossible de charger les annonces administrateur.');
       setClasses([]);
       setProfesseurs([]);
       setAnnonces([]);
+      setRessourcesParAnnonce({});
     } finally {
       if (showLoader) setChargement(false);
     }
@@ -111,7 +134,30 @@ const GestionAnnoncesAdmin = () => {
   };
 
   const gererSelectionFichiers = (event) => {
-    setFichiersSelectionnes(Array.from(event.target.files || []));
+    const nouveauxFichiers = Array.from(event.target.files || []);
+    if (!nouveauxFichiers.length) {
+      return;
+    }
+
+    setFichiersSelectionnes((prev) => {
+      const existants = new Map(
+        prev.map((fichier) => [
+          `${fichier.name}-${fichier.size}-${fichier.lastModified}`,
+          fichier,
+        ])
+      );
+
+      nouveauxFichiers.forEach((fichier) => {
+        existants.set(
+          `${fichier.name}-${fichier.size}-${fichier.lastModified}`,
+          fichier
+        );
+      });
+
+      return Array.from(existants.values());
+    });
+
+    event.target.value = '';
   };
 
   const viderFichiers = () => {
@@ -193,13 +239,9 @@ const GestionAnnoncesAdmin = () => {
       return 0;
     }
 
-    await Promise.all(
-      fichiersSelectionnes.map((fichier) =>
-        apiAnnonces.ajouterRessource(annonceId, fichier)
-      )
-    );
+    const ressourcesCreees = await apiAnnonces.ajouterRessources(annonceId, fichiersSelectionnes);
 
-    return fichiersSelectionnes.length;
+    return Array.isArray(ressourcesCreees) ? ressourcesCreees.length : 0;
   };
 
   const diffuserAnnonce = async () => {
@@ -336,6 +378,20 @@ const GestionAnnoncesAdmin = () => {
       month: 'long',
       year: 'numeric',
     });
+  };
+
+  const formaterTaille = (taille) => {
+    if (!taille) return '0 o';
+    const unites = ['o', 'Ko', 'Mo', 'Go'];
+    let valeur = Number(taille);
+    let index = 0;
+
+    while (valeur >= 1024 && index < unites.length - 1) {
+      valeur /= 1024;
+      index += 1;
+    }
+
+    return `${valeur.toFixed(index === 0 ? 0 : 1)} ${unites[index]}`;
   };
 
   const getAnnonceDestination = (annonce) => {
@@ -625,7 +681,7 @@ const GestionAnnoncesAdmin = () => {
                     </div>
 
                     <p className="prof-annonce-meta">
-                      {formaterDate(annonce.datePublication)} • {getAnnonceDestination(annonce)}
+                      {formaterDate(annonce.datePublication)} | {getAnnonceDestination(annonce)}
                     </p>
                   </div>
                 </div>
@@ -633,6 +689,30 @@ const GestionAnnoncesAdmin = () => {
                 <div className="prof-annonce-content">
                   {annonce.contenu || 'Aucun contenu.'}
                 </div>
+
+                {ressourcesParAnnonce[annonce.id]?.length ? (
+                    <div className="prof-annonce-resources">
+                      <div className="prof-annonce-resources-title">
+                        <Paperclip size={14} />
+                        <span>Ressources attachees</span>
+                      </div>
+                    <div className="prof-resource-list">
+                      {ressourcesParAnnonce[annonce.id].map((ressource) => (
+                        <button
+                          key={ressource.id}
+                          type="button"
+                          className="prof-resource-chip"
+                          onClick={() => apiAnnonces.telechargerRessource(ressource.id)}
+                        >
+                          <FileText size={14} />
+                          <span>{ressource.nomOriginal}</span>
+                          <small>{formaterTaille(ressource.taille)}</small>
+                          <Download size={14} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
 
                 <div className="prof-card-actions">
                   <button
@@ -663,3 +743,6 @@ const GestionAnnoncesAdmin = () => {
 };
 
 export default GestionAnnoncesAdmin;
+
+
+

@@ -569,7 +569,7 @@ class _CarteResumeAssiduite extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    "Assiduite",
+                    "Taux de presence",
                     style: TextStyle(fontWeight: FontWeight.w900),
                   ),
                   const SizedBox(height: 6),
@@ -977,3 +977,4 @@ class _EtatErreur extends StatelessWidget {
 /* =========================
    Helpers
    ========================= */
+
