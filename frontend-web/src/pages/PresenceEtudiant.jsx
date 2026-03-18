@@ -12,6 +12,20 @@ import {
 import './PresenceEtudiant.css';
 import { apiAttendance } from '../services/apiAttendance';
 
+const getJustificationStatus = (session) => {
+    const normalized = String(session?.statutJustificatif || '').trim().toUpperCase();
+
+    if (normalized === 'VALIDE') return 'VALIDEE';
+    if (normalized === 'REFUSE') return 'REFUSEE';
+    if (normalized === 'EN_ATTENTE') return 'EN_ATTENTE';
+    if (session?.justificationValidee || session?.justifiee) return 'VALIDEE';
+    if (session?.justificationSoumise || session?.motif || session?.motifUrl || session?.motifNom || session?.typeMotif) {
+        return 'EN_ATTENTE';
+    }
+
+    return 'AUCUN';
+};
+
 const PresenceEtudiant = () => {
     // Current Calendar View State
     const [currentDate, setCurrentDate] = useState(new Date()); // Tracks the month being viewed
@@ -280,13 +294,22 @@ const PresenceEtudiant = () => {
             // Update the local attendance data to show as justified
             const updatedAttendanceData = attendanceData.map(record => {
                 if (record.id === selectedSession.id) {
+                    const fileName = selectedFile?.name || record.motifNom || '';
+                    const motifText = typeMotif === 'Autre'
+                        ? `Autre: ${descriptionToSend || record.descriptionDeJustification || ''}${fileName ? ` (${fileName})` : ''}`
+                        : fileName ? `${typeMotif} (${fileName})` : typeMotif;
+
                     return {
                         ...record,
-                        justifiee: true,
+                        statutJustificatif: 'EN_ATTENTE',
+                        justificationSoumise: true,
+                        justificationValidee: false,
+                        justifiee: false,
                         typeMotif,
                         descriptionDeJustification: descriptionToSend || record.descriptionDeJustification || '',
-                        motifNom: selectedFile?.name || record.motifNom || '',
-                        motifUrl: selectedFile ? 'uploaded' : (record.motifUrl || '')
+                        motifNom: fileName,
+                        motifUrl: selectedFile ? 'uploaded' : (record.motifUrl || ''),
+                        motif: motifText
                     };
                 }
                 return record;
@@ -472,7 +495,47 @@ const PresenceEtudiant = () => {
                                     <div className="action-box">
                                         {session.status?.toUpperCase() === 'ABSENT' && (
                                             <>
-                                                {canChangeJustification(session) ? (
+                                                {getJustificationStatus(session) === 'VALIDEE' ? (
+                                                    <div className="justifiee-badge">
+                                                        <span>Validee</span>
+                                                    </div>
+                                                ) : getJustificationStatus(session) === 'EN_ATTENTE' ? (
+                                                    <div className="action-box-stack">
+                                                        <div className="justification-status-badge pending">
+                                                            <span>En attente</span>
+                                                        </div>
+                                                        {canChangeJustification(session) ? (
+                                                            <button
+                                                                className="justifier-btn retry"
+                                                                onClick={() => openJustificationModal(session)}
+                                                            >
+                                                                CHANGER LA JUSTIFICATION
+                                                            </button>
+                                                        ) : (
+                                                            <div className="justification-expired-badge">
+                                                                <span>Delai depasse</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ) : getJustificationStatus(session) === 'REFUSEE' ? (
+                                                    <div className="action-box-stack">
+                                                        <div className="justification-status-badge rejected">
+                                                            <span>Refusee</span>
+                                                        </div>
+                                                        {canChangeJustification(session) ? (
+                                                            <button
+                                                                className="justifier-btn retry"
+                                                                onClick={() => openJustificationModal(session)}
+                                                            >
+                                                                Renvoyer
+                                                            </button>
+                                                        ) : (
+                                                            <div className="justification-expired-badge">
+                                                                <span>Delai depasse</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ) : canChangeJustification(session) ? (
                                                     <button
                                                         className="justifier-btn"
                                                         onClick={() => openJustificationModal(session)}

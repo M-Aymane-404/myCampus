@@ -3,6 +3,7 @@ import { UserCheck, ChevronDown, Loader2, X, Calendar } from 'lucide-react';
 import { apiEnseignementsProfesseur } from '../services/professeur/apiEnseignementsProfesseur';
 import apiSeancesProfesseur from '../services/professeur/apiSeancesProfesseur';
 import { apiPresencesProfesseur } from '../services/professeur/apiPresencesProfesseur';
+import { apiAuth } from '../services/apiAuth';
 import './GestionPresenceProfesseur.css';
 
 const AVATAR_COLORS = ['blue', 'pink', 'purple', 'brown', 'green', 'grey', 'green-light', 'purple-light'];
@@ -91,6 +92,43 @@ const getStatusMeta = (status) => {
   return { label: 'Non defini', className: 'default' };
 };
 
+const hasJustification = (ligne) =>
+  Boolean(ligne?.justificationSoumise || ligne?.motif || ligne?.motifUrl || ligne?.motifNom || ligne?.typeMotif);
+
+const getJustificationStatus = (ligne) => {
+  const normalized = String(ligne?.statutJustificatif || '').trim().toUpperCase();
+
+  if (normalized === 'VALIDE') return { key: 'validated', label: 'Justifie' };
+  if (normalized === 'REFUSE') return { key: 'rejected', label: 'Refuse' };
+  if (normalized === 'EN_ATTENTE') return { key: 'pending', label: 'En attente' };
+  if (ligne?.justifiee) return { key: 'validated', label: 'Justifie' };
+  if (hasJustification(ligne)) return { key: 'pending', label: 'En attente' };
+
+  return { key: 'empty', label: 'Aucun justificatif' };
+};
+
+const openJustificationFile = async (motifUrl) => {
+  if (!motifUrl) {
+    throw new Error('Aucun justificatif depose pour cette absence.');
+  }
+
+  const fullUrl = motifUrl.startsWith('http') ? motifUrl : `http://localhost:8080${motifUrl}`;
+  const headers = await apiAuth.getAuthHeadersWithRefresh();
+  const response = await fetch(fullUrl, {
+    headers,
+    credentials: 'include'
+  });
+
+  if (!response.ok) {
+    throw new Error('Impossible de consulter le justificatif.');
+  }
+
+  const blob = await response.blob();
+  const objectUrl = window.URL.createObjectURL(blob);
+  window.open(objectUrl, '_blank', 'noopener,noreferrer');
+  window.setTimeout(() => window.URL.revokeObjectURL(objectUrl), 60000);
+};
+
 const GestionPresenceProfesseur = () => {
   const [enseignements, setEnseignements] = useState([]);
   const [selectedEnseignement, setSelectedEnseignement] = useState(null);
@@ -105,7 +143,32 @@ const GestionPresenceProfesseur = () => {
   const [loadingFeuille, setLoadingFeuille] = useState(false);
 
   const [saving, setSaving] = useState({});
+  const [processingJustification, setProcessingJustification] = useState({});
   const [error, setError] = useState(null);
+
+  const chargerFeuille = async (seanceId, showLoader = true) => {
+    if (!seanceId) return;
+
+    if (showLoader) {
+      setLoadingFeuille(true);
+      setFeuille(null);
+      setLignes([]);
+    }
+
+    setError(null);
+
+    try {
+      const data = await apiPresencesProfesseur.chargerFeuille(seanceId);
+      setFeuille(data || null);
+      setLignes(Array.isArray(data?.lignes) ? data.lignes : []);
+    } catch (err) {
+      setError(`Erreur lors du chargement : ${err.message}`);
+    } finally {
+      if (showLoader) {
+        setLoadingFeuille(false);
+      }
+    }
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -173,22 +236,10 @@ const GestionPresenceProfesseur = () => {
     let cancelled = false;
 
     const load = async () => {
-      setLoadingFeuille(true);
-      setFeuille(null);
-      setLignes([]);
-      setError(null);
-
       try {
-        const data = await apiPresencesProfesseur.chargerFeuille(selectedSeance.id);
-
-        if (!cancelled) {
-          setFeuille(data || null);
-          setLignes(Array.isArray(data?.lignes) ? data.lignes : []);
-        }
+        await chargerFeuille(selectedSeance.id, true);
       } catch (err) {
         if (!cancelled) setError(`Erreur lors du chargement : ${err.message}`);
-      } finally {
-        if (!cancelled) setLoadingFeuille(false);
       }
     };
 
@@ -198,6 +249,20 @@ const GestionPresenceProfesseur = () => {
       cancelled = true;
     };
   }, [selectedSeance]);
+
+  useEffect(() => {
+    if (!selectedSeance?.id) return undefined;
+
+    const interval = window.setInterval(() => {
+      if (Object.values(saving).some(Boolean) || Object.values(processingJustification).some(Boolean)) {
+        return;
+      }
+
+      chargerFeuille(selectedSeance.id, false).catch(() => {});
+    }, 10000);
+
+    return () => window.clearInterval(interval);
+  }, [selectedSeance?.id, saving, processingJustification]);
 
   const handleStatusChange = async (apogee, newStatus) => {
     if (!selectedSeance?.id) return;
@@ -227,6 +292,27 @@ const GestionPresenceProfesseur = () => {
       setError(`Erreur enregistrement : ${err.message}`);
     } finally {
       setSaving((prev) => ({ ...prev, [apogee]: false }));
+    }
+  };
+
+  const handleJustificationDecision = async (ligne, action) => {
+    if (!selectedSeance?.id || !ligne?.idPresence) return;
+
+    setProcessingJustification((prev) => ({ ...prev, [ligne.idPresence]: action }));
+    setError(null);
+
+    try {
+      const updated = action === 'approve'
+        ? await apiPresencesProfesseur.validerJustificatif(selectedSeance.id, ligne.idPresence)
+        : await apiPresencesProfesseur.refuserJustificatif(selectedSeance.id, ligne.idPresence);
+
+      setLignes((prev) =>
+        prev.map((item) => (item.idPresence === ligne.idPresence ? { ...item, ...updated } : item))
+      );
+    } catch (err) {
+      setError(err.message || 'Erreur lors du traitement du justificatif.');
+    } finally {
+      setProcessingJustification((prev) => ({ ...prev, [ligne.idPresence]: null }));
     }
   };
 
@@ -366,45 +452,116 @@ const GestionPresenceProfesseur = () => {
         )}
 
         {!loadingFeuille && lignes.length > 0 && (
-            <div className="student-grid">
-              {lignes.map((ligne, index) => {
-                const statusMeta = getStatusMeta(ligne.status);
+            <div className="presence-lines-card">
+              <div className="presence-lines-head">
+                <span>Etudiant</span>
+                <span>Statut</span>
+                <span>Actions</span>
+                <span>Justificatif</span>
+              </div>
 
-                return (
-                  <div
-                      key={ligne.idEtudiant || ligne.apogee}
-                      className={`student-card status-${statusMeta.className}`}
-                  >
-                    <div className={`student-status-badge ${statusMeta.className}`}>
-                      {statusMeta.label}
-                    </div>
-                    <div className={`student-avatar avatar-${colorFor(index)}`}>
-                      {initiales(ligne.nomEtudiant, ligne.prenomEtudiant)}
-                    </div>
-                    <h3 className="student-modal-name">
-                      {ligne.prenomEtudiant} {ligne.nomEtudiant}
-                    </h3>
-                    <span className="student-modal-id">Apogee : {ligne.apogee}</span>
+              <div className="presence-lines-body">
+                {lignes.map((ligne, index) => {
+                  const statusMeta = getStatusMeta(ligne.status);
+                  const justificationStatus = getJustificationStatus(ligne);
+                  const canReviewJustification = hasJustification(ligne) && justificationStatus.key === 'pending';
 
-                    <div className="student-actions">
-                      <button
-                          className={`btn-state btn-present ${normalizeStatus(ligne.status) === 'PRESENT' ? 'active' : ''}`}
-                          onClick={() => handleStatusChange(ligne.apogee, 'PRESENT')}
-                          disabled={saving[ligne.apogee]}
-                      >
-                        {saving[ligne.apogee] ? '...' : 'OK'} Present
-                      </button>
-                      <button
-                          className={`btn-state btn-absent ${normalizeStatus(ligne.status) === 'ABSENT' ? 'active' : ''}`}
-                          onClick={() => handleStatusChange(ligne.apogee, 'ABSENT')}
-                          disabled={saving[ligne.apogee]}
-                      >
-                        {saving[ligne.apogee] ? '...' : 'X'} Absent
-                      </button>
+                  return (
+                    <div
+                        key={ligne.idEtudiant || ligne.apogee}
+                        className={`presence-line-row status-${statusMeta.className}`}
+                    >
+                      <div className="presence-line-student">
+                        <div className={`student-avatar avatar-${colorFor(index)}`}>
+                          {initiales(ligne.nomEtudiant, ligne.prenomEtudiant)}
+                        </div>
+                        <div className="presence-line-student-copy">
+                          <strong>{ligne.prenomEtudiant} {ligne.nomEtudiant}</strong>
+                          <span>Apogee : {ligne.apogee}</span>
+                        </div>
+                      </div>
+
+                      <div className="presence-line-status">
+                        <span className={`student-status-badge ${statusMeta.className}`}>
+                          {statusMeta.label}
+                        </span>
+                      </div>
+
+                      <div className="student-actions">
+                        <button
+                            className={`btn-state btn-present ${normalizeStatus(ligne.status) === 'PRESENT' ? 'active' : ''}`}
+                            onClick={() => handleStatusChange(ligne.apogee, 'PRESENT')}
+                            disabled={saving[ligne.apogee]}
+                        >
+                          {saving[ligne.apogee] ? '...' : 'Present'}
+                        </button>
+                        <button
+                            className={`btn-state btn-absent ${normalizeStatus(ligne.status) === 'ABSENT' ? 'active' : ''}`}
+                            onClick={() => handleStatusChange(ligne.apogee, 'ABSENT')}
+                            disabled={saving[ligne.apogee]}
+                        >
+                          {saving[ligne.apogee] ? '...' : 'Absent'}
+                        </button>
+                      </div>
+
+                      <div className="presence-line-justification">
+                        {normalizeStatus(ligne.status) === 'ABSENT' ? (
+                          <div className="justification-panel">
+                            <div className={`justification-state ${justificationStatus.key}`}>
+                              <strong>{justificationStatus.label}</strong>
+                              <span>
+                                {ligne.typeMotif || ligne.motif || (ligne.motifNom ? ligne.motifNom : 'Aucun document soumis')}
+                              </span>
+                            </div>
+
+                            {hasJustification(ligne) ? (
+                              <div className="justification-actions">
+                                <button
+                                  type="button"
+                                  className="btn-justification btn-view"
+                                  onClick={() =>
+                                    openJustificationFile(ligne.motifUrl).catch((err) =>
+                                      setError(err.message || 'Impossible de consulter le justificatif.')
+                                    )
+                                  }
+                                >
+                                  Consulter
+                                </button>
+
+                                {canReviewJustification ? (
+                                  <>
+                                    <button
+                                      type="button"
+                                      className="btn-justification btn-approve"
+                                      disabled={Boolean(processingJustification[ligne.idPresence])}
+                                      onClick={() => handleJustificationDecision(ligne, 'approve')}
+                                    >
+                                      {processingJustification[ligne.idPresence] === 'approve' ? '...' : 'Valider'}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="btn-justification btn-reject"
+                                      disabled={Boolean(processingJustification[ligne.idPresence])}
+                                      onClick={() => handleJustificationDecision(ligne, 'reject')}
+                                    >
+                                      {processingJustification[ligne.idPresence] === 'reject' ? '...' : 'Refuser'}
+                                    </button>
+                                  </>
+                                ) : null}
+                              </div>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <div className="justification-state empty">
+                            <strong>Non applicable</strong>
+                            <span>Le justificatif apparait seulement pour les absences.</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
         )}
 

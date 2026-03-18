@@ -7,6 +7,7 @@ import com.mycampus.backend.dto.etudiant.DonneeSortie.ReleveDeNote.MatiereDeRele
 import com.mycampus.backend.dto.etudiant.DonneeSortie.ReleveDeNote.ModuleDeReleveEtudiantDTO;
  import com.mycampus.backend.entites.*;
 import com.mycampus.backend.entites.Module;
+import com.mycampus.backend.enumerations.StatutJustificatif;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
@@ -88,7 +89,17 @@ public class StructureEtudiantMapper {
     public PresenceSortieEtudiantDTO DuPresenceVersPresenceSortieEtudiantDTO(Presence presence) {
         PresenceSortieEtudiantDTO presenceSortieEtudiantDTO = new PresenceSortieEtudiantDTO();
         BeanUtils.copyProperties(presence, presenceSortieEtudiantDTO);
-
+        boolean justificationSoumise =
+                presence.getTypeMotif() != null
+                        || (presence.getDescriptionDeJustification() != null && !presence.getDescriptionDeJustification().isBlank())
+                        || (presence.getMotifUrl() != null && !presence.getMotifUrl().isBlank())
+                        || (presence.getMotifNom() != null && !presence.getMotifNom().isBlank());
+        StatutJustificatif statutJustificatif = presence.getStatutJustificatif() != null
+                ? presence.getStatutJustificatif()
+                : (justificationSoumise ? StatutJustificatif.EN_ATTENTE : StatutJustificatif.AUCUN);
+        presenceSortieEtudiantDTO.setStatutJustificatif(statutJustificatif);
+        presenceSortieEtudiantDTO.setJustificationSoumise(justificationSoumise);
+        presenceSortieEtudiantDTO.setJustificationValidee(statutJustificatif == StatutJustificatif.VALIDE);
 
 
          return presenceSortieEtudiantDTO;

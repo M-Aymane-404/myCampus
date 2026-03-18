@@ -1,22 +1,36 @@
-// src/main/java/com/mycampus/backend/metier/professeur/presences/GestionPresencesProfesseurMetierImpl.java
 package com.mycampus.backend.metier.professeur.presences;
 
 import com.mycampus.backend.dto.professeur.DonneeEntrer.presences.PresenceEntrerDTO;
 import com.mycampus.backend.dto.professeur.DonneeSortie.presences.EtudiantPresenceSortieDTO;
 import com.mycampus.backend.dto.professeur.DonneeSortie.presences.FeuilleAppelPresenceSortieDTO;
 import com.mycampus.backend.dto.professeur.DonneeSortie.presences.LignePresenceSortieDTO;
-import com.mycampus.backend.entites.*;
+import com.mycampus.backend.entites.Classe;
+import com.mycampus.backend.entites.Etudiant;
+import com.mycampus.backend.entites.Presence;
+import com.mycampus.backend.entites.Professeur;
+import com.mycampus.backend.entites.Seance;
 import com.mycampus.backend.exceptions.ClasseException;
 import com.mycampus.backend.exceptions.SeancesProfesseurException;
 import com.mycampus.backend.exceptions.UtilisateursException;
-import com.mycampus.backend.repositorys.*;
+import com.mycampus.backend.enumerations.StatutJustificatif;
+import com.mycampus.backend.enumerations.StatusAbsence;
+import com.mycampus.backend.repositorys.AffectationEnseignementRepository;
+import com.mycampus.backend.repositorys.ClasseRepository;
+import com.mycampus.backend.repositorys.EtudiantRepository;
+import com.mycampus.backend.repositorys.PresenceRepository;
+import com.mycampus.backend.repositorys.ProfesseurRepository;
+import com.mycampus.backend.repositorys.SeanceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 @Service
 @Transactional
@@ -34,6 +48,7 @@ public class GestionPresencesProfesseurMetierImpl implements GestionPresencesPro
         if (!StringUtils.hasText(professeurPpr)) {
             throw new SeancesProfesseurException("Le PPR du professeur est obligatoire.");
         }
+
         return professeurRepository.findByPpr(professeurPpr)
                 .orElseThrow(() -> new SeancesProfesseurException("Professeur introuvable avec ce PPR."));
     }
@@ -47,7 +62,7 @@ public class GestionPresencesProfesseurMetierImpl implements GestionPresencesPro
 
         return seanceRepository
                 .findByIdAndAffectationEnseignement_Professeur_Ppr(seanceId, professeurPpr)
-                .orElseThrow(() -> new SeancesProfesseurException("Séance introuvable ou non autorisée."));
+                .orElseThrow(() -> new SeancesProfesseurException("Seance introuvable ou non autorisee."));
     }
 
     private Classe requireClassePourProfesseur(String professeurPpr, String codeClasse) throws ClasseException {
@@ -67,7 +82,7 @@ public class GestionPresencesProfesseurMetierImpl implements GestionPresencesPro
 
         boolean autorise = affectationEnseignementRepository.existsByProfesseurIdAndClasseId(prof.getId(), classe.getId());
         if (!autorise) {
-            throw new ClasseException("Accès refusé : cette classe n'est pas liée à ce professeur.");
+            throw new ClasseException("Acces refuse : cette classe n'est pas liee a ce professeur.");
         }
 
         return classe;
@@ -75,10 +90,55 @@ public class GestionPresencesProfesseurMetierImpl implements GestionPresencesPro
 
     private Etudiant requireEtudiantParApogee(String apogee) throws SeancesProfesseurException {
         if (!StringUtils.hasText(apogee)) {
-            throw new SeancesProfesseurException("Apogée obligatoire.");
+            throw new SeancesProfesseurException("Apogee obligatoire.");
         }
+
         return etudiantRepository.findByApogee(apogee)
-                .orElseThrow(() -> new SeancesProfesseurException("Étudiant introuvable (apogée: " + apogee + ")."));
+                .orElseThrow(() -> new SeancesProfesseurException("Etudiant introuvable (apogee: " + apogee + ")."));
+    }
+
+    private Presence requirePresencePourSeance(String professeurPpr, Long seanceId, Long presenceId)
+            throws SeancesProfesseurException {
+        requireSeancePourProfesseur(professeurPpr, seanceId);
+
+        Presence presence = presenceRepository.findById(presenceId)
+                .orElseThrow(() -> new SeancesProfesseurException("Presence introuvable."));
+
+        if (presence.getSeance() == null || !Objects.equals(presence.getSeance().getId(), seanceId)) {
+            throw new SeancesProfesseurException("La presence ne correspond pas a cette seance.");
+        }
+
+        return presence;
+    }
+
+    private LignePresenceSortieDTO toLignePresenceSortieDTO(Presence presence, Etudiant etudiant) {
+        boolean justificationSoumise =
+                presence != null && (
+                        StringUtils.hasText(presence.getDescriptionDeJustification())
+                                || StringUtils.hasText(presence.getMotifUrl())
+                                || StringUtils.hasText(presence.getMotifNom())
+                                || presence.getTypeMotif() != null
+                );
+        StatutJustificatif statutJustificatif = presence != null && presence.getStatutJustificatif() != null
+                ? presence.getStatutJustificatif()
+                : (justificationSoumise ? StatutJustificatif.EN_ATTENTE : StatutJustificatif.AUCUN);
+
+        return LignePresenceSortieDTO.builder()
+                .idPresence(presence != null ? presence.getId() : null)
+                .idEtudiant(etudiant != null ? etudiant.getId() : null)
+                .apogee(etudiant != null ? etudiant.getApogee() : null)
+                .nomEtudiant(etudiant != null ? etudiant.getNom() : null)
+                .prenomEtudiant(etudiant != null ? etudiant.getPrenom() : null)
+                .status(presence != null ? presence.getStatus() : null)
+                .statutJustificatif(statutJustificatif)
+                .justifiee(statutJustificatif == StatutJustificatif.VALIDE)
+                .justificationSoumise(justificationSoumise)
+                .motif(presence != null ? presence.getDescriptionDeJustification() : null)
+                .typeMotif(presence != null ? presence.getTypeMotif() : null)
+                .motifUrl(presence != null ? presence.getMotifUrl() : null)
+                .motifNom(presence != null ? presence.getMotifNom() : null)
+                .dateDeclaration(presence != null ? presence.getDateDeclaration() : null)
+                .build();
     }
 
     @Transactional(readOnly = true)
@@ -113,49 +173,22 @@ public class GestionPresencesProfesseurMetierImpl implements GestionPresencesPro
 
         Long classeId = seance.getAffectationEnseignement().getClasse().getId();
         List<Etudiant> etudiants = etudiantRepository.findByClasseId(classeId);
-
-        // EntityGraph => p.getEtudiant() is loaded safely
         List<Presence> presences = presenceRepository
                 .findBySeance_IdAndSeance_AffectationEnseignement_Professeur_Ppr(seanceId, professeurPpr);
 
         Map<Long, LignePresenceSortieDTO> parIdEtudiant = new HashMap<>();
-        for (Presence p : presences) {
-            Etudiant e = p.getEtudiant();
-            parIdEtudiant.put(
-                    e.getId(),
-                    LignePresenceSortieDTO.builder()
-                            .idPresence(p.getId())
-                            .idEtudiant(e.getId())
-                            .apogee(e.getApogee())
-                            .nomEtudiant(e.getNom())
-                            .prenomEtudiant(e.getPrenom())
-                            .status(p.getStatus())
-                            .justifiee(p.isValidationMotif())
-                            .motif(p.getDescriptionDeJustification())
-                            .dateDeclaration(p.getDateDeclaration())
-                            .build()
-            );
+        for (Presence presence : presences) {
+            Etudiant etudiant = presence.getEtudiant();
+            parIdEtudiant.put(etudiant.getId(), toLignePresenceSortieDTO(presence, etudiant));
         }
 
         List<LignePresenceSortieDTO> lignesFinales = new ArrayList<>();
-        for (Etudiant e : etudiants) {
-            LignePresenceSortieDTO ligne = parIdEtudiant.get(e.getId());
+        for (Etudiant etudiant : etudiants) {
+            LignePresenceSortieDTO ligne = parIdEtudiant.get(etudiant.getId());
             if (ligne != null) {
                 lignesFinales.add(ligne);
             } else {
-                lignesFinales.add(
-                        LignePresenceSortieDTO.builder()
-                                .idPresence(null)
-                                .idEtudiant(e.getId())
-                                .apogee(e.getApogee())
-                                .nomEtudiant(e.getNom())
-                                .prenomEtudiant(e.getPrenom())
-                                .status(null) // non saisi
-                                .justifiee(false)
-                                .motif(null)
-                                .dateDeclaration(null)
-                                .build()
-                );
+                lignesFinales.add(toLignePresenceSortieDTO(null, etudiant));
             }
         }
 
@@ -178,10 +211,10 @@ public class GestionPresencesProfesseurMetierImpl implements GestionPresencesPro
         requireProfesseurPpr(professeurPpr);
 
         if (dto == null) {
-            throw new SeancesProfesseurException("Les données de saisie des présences sont obligatoires.");
+            throw new SeancesProfesseurException("Les donnees de saisie des presences sont obligatoires.");
         }
         if (!StringUtils.hasText(dto.getApogee())) {
-            throw new SeancesProfesseurException("Apogée obligatoire.");
+            throw new SeancesProfesseurException("Apogee obligatoire.");
         }
         if (dto.getStatus() == null) {
             throw new SeancesProfesseurException("Statut obligatoire.");
@@ -192,10 +225,9 @@ public class GestionPresencesProfesseurMetierImpl implements GestionPresencesPro
 
         boolean appartient = etudiantRepository.TrouverEtudiantExistenClasse(seanceId, etudiant.getId());
         if (!appartient) {
-            throw new SeancesProfesseurException("L'étudiant n'appartient pas à la classe de cette séance.");
+            throw new SeancesProfesseurException("L'etudiant n'appartient pas a la classe de cette seance.");
         }
 
-        // UPSERT (no duplicates)
         Presence presence = presenceRepository
                 .findBySeance_IdAndEtudiant_Apogee(seanceId, dto.getApogee())
                 .orElseGet(() -> Presence.builder()
@@ -205,28 +237,56 @@ public class GestionPresencesProfesseurMetierImpl implements GestionPresencesPro
 
         presence.setStatus(dto.getStatus());
         presence.setDateDeclaration(LocalDateTime.now());
-        // PresenceEntrerDTO has only apogee + status => we do NOT touch justification fields here
+        if (dto.getStatus() == StatusAbsence.PRESENT) {
+            presence.setDescriptionDeJustification(null);
+            presence.setTypeMotif(null);
+            presence.setMotifUrl(null);
+            presence.setMotifNom(null);
+            presence.setStatutJustificatif(StatutJustificatif.AUCUN);
+        }
 
         Presence saved = presenceRepository.save(presence);
-
-        return LignePresenceSortieDTO.builder()
-                .idPresence(saved.getId())
-                .idEtudiant(etudiant.getId())
-                .apogee(etudiant.getApogee())
-                .nomEtudiant(etudiant.getNom())
-                .prenomEtudiant(etudiant.getPrenom())
-                .status(saved.getStatus())
-                .justifiee(saved.isValidationMotif())
-                .motif(saved.getDescriptionDeJustification())
-                .dateDeclaration(saved.getDateDeclaration())
-                .build();
+        return toLignePresenceSortieDTO(saved, etudiant);
     }
 
-   /* @Override
-    @Transactional(readOnly = true)
-    public String TrouverProfesseurPprParemail(String email) throws UtilisateursException {
-        Professeur prof = professeurRepository.findByEmail(email)
-                .orElseThrow(() -> new UtilisateursException("Prof introuvable avec l'email: " + email));
-        return prof.getPpr();
-    }*/
+    @Override
+    public LignePresenceSortieDTO validerJustificatif(String professeurPpr, Long seanceId, Long presenceId)
+            throws SeancesProfesseurException {
+        Presence presence = requirePresencePourSeance(professeurPpr, seanceId, presenceId);
+
+        boolean justificationSoumise =
+                StringUtils.hasText(presence.getDescriptionDeJustification())
+                        || StringUtils.hasText(presence.getMotifUrl())
+                        || StringUtils.hasText(presence.getMotifNom())
+                        || presence.getTypeMotif() != null;
+
+        if (!justificationSoumise) {
+            throw new SeancesProfesseurException("Aucun justificatif soumis pour cette absence.");
+        }
+
+        presence.setStatutJustificatif(StatutJustificatif.VALIDE);
+        Presence saved = presenceRepository.save(presence);
+        return toLignePresenceSortieDTO(saved, saved.getEtudiant());
+    }
+
+    @Override
+    public LignePresenceSortieDTO refuserJustificatif(String professeurPpr, Long seanceId, Long presenceId)
+            throws SeancesProfesseurException {
+        Presence presence = requirePresencePourSeance(professeurPpr, seanceId, presenceId);
+
+        boolean justificationSoumise =
+                StringUtils.hasText(presence.getDescriptionDeJustification())
+                        || StringUtils.hasText(presence.getMotifUrl())
+                        || StringUtils.hasText(presence.getMotifNom())
+                        || presence.getTypeMotif() != null;
+
+        if (!justificationSoumise) {
+            throw new SeancesProfesseurException("Aucun justificatif soumis pour cette absence.");
+        }
+
+        presence.setStatutJustificatif(StatutJustificatif.REFUSE);
+
+        Presence saved = presenceRepository.save(presence);
+        return toLignePresenceSortieDTO(saved, saved.getEtudiant());
+    }
 }

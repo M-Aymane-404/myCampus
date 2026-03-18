@@ -232,7 +232,7 @@
 }
 
 .prof-card {
-  padding: 18px;
+  padding: 16px;
 }
 
 .prof-card-head {
@@ -268,7 +268,7 @@
 .prof-focus-card {
   background: var(--prof-dark);
   color: #fff;
-  padding: 20px;
+  padding: 16px;
   border-color: rgba(15, 118, 110, 0.22);
   position: relative;
   overflow: hidden;
@@ -294,7 +294,7 @@
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
-  margin-bottom: 14px;
+  margin-bottom: 10px;
 }
 
 .prof-type-pill,
@@ -334,8 +334,8 @@
 }
 
 .prof-session-body h3 {
-  margin: 0 0 12px;
-  font-size: 19px;
+  margin: 0 0 8px;
+  font-size: 17px;
   line-height: 1.2;
 }
 
@@ -347,14 +347,14 @@
 .prof-session-info-main {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 14px;
 }
 
 .prof-session-time {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: #2dd4bf;
-  padding-right: 18px;
+  padding-right: 14px;
   border-right: 1px solid rgba(255, 255, 255, 0.12);
   flex-shrink: 0;
 }
@@ -362,31 +362,31 @@
 .prof-session-details-text {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .prof-session-footer {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 10px;
 }
 
 .prof-session-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 8px;
+  gap: 6px;
 }
 
 .prof-meta-chip {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 16px;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 14px;
   background: #f8fafc;
   color: #475569;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
 }
 
@@ -426,12 +426,12 @@
 .prof-alert-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .prof-alert-item {
   border-radius: 16px;
-  padding: 14px;
+  padding: 12px;
   border: 1px solid rgba(226, 232, 240, 0.88);
   background: #fff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
@@ -441,11 +441,11 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .prof-alert-item-head strong {
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .prof-alert-dot {
@@ -470,8 +470,8 @@
 
 .prof-alert-value {
   display: block;
-  margin-bottom: 6px;
-  font-size: 22px;
+  margin-bottom: 4px;
+  font-size: 19px;
   line-height: 1;
   font-weight: 800;
   color: var(--prof-dark);
@@ -479,8 +479,8 @@
 
 .prof-alert-item p {
   margin: 0;
-  font-size: 12px;
-  line-height: 1.5;
+  font-size: 11px;
+  line-height: 1.4;
   color: var(--prof-text-muted);
 }
 

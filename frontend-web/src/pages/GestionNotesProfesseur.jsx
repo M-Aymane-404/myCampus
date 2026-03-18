@@ -814,36 +814,38 @@ const GestionNotesProfesseur = () => {
                     </div>
                   </div>
 
-                  <div className="grade-table-card">
-                    <div className="table-title-row">
-                      <div className="title-with-icon">
-                        <div className="plus-icon-box">
-                          <ClipboardList size={20} />
+                    <div className="grade-table-card">
+                      <div className="table-title-row">
+                        <div className="title-with-icon">
+                          <div className="plus-icon-box">
+                            <ClipboardList size={20} />
+                          </div>
+                          <div className="table-title-copy">
+                            <h2>
+                              {feuille?.nomMatiere || selectedExamen?.nomMatiere} - Examen n°
+                              {feuille?.numeroExamen || selectedExamen?.numeroExamen}
+                            </h2>
+                            {selectedExamen?.etat === 'PROGRAMME' && (
+                                <p className="table-info-warning">
+                                  Examen planifie : la saisie des notes est desactivee tant que l'etat n'est
+                                  pas passe a <strong>PASSE</strong>.
+                                </p>
+                            )}
+                            {selectedExamen?.etat === 'CORRIGE' && (
+                                <p className="table-info-neutral">
+                                  Examen deja corrige : toute modification de note necessitera une
+                                  republication.
+                                </p>
+                            )}
+                          </div>
                         </div>
-                        <div>
-                          <h2>
-                            {feuille?.nomMatiere || selectedExamen?.nomMatiere} - Examen n°
-                            {feuille?.numeroExamen || selectedExamen?.numeroExamen}
-                          </h2>
-                          {selectedExamen?.etat === 'PROGRAMME' && (
-                              <p className="table-info-warning">
-                                Examen planifie : la saisie des notes est desactivee tant que l'etat n'est
-                                pas passe a <strong>PASSE</strong>.
-                              </p>
-                          )}
-                          {selectedExamen?.etat === 'CORRIGE' && (
-                              <p className="table-info-neutral">
-                                Examen deja corrige : toute modification de note necessitera une
-                                republication.
-                              </p>
-                          )}
+
+                        <div className="exam-card-header-actions">
+                          <span className="student-badge">
+                            {stats.totalEtudiants || lignes.length} ETUDIANT{(stats.totalEtudiants || lignes.length) > 1 ? 'S' : ''}
+                          </span>
                         </div>
                       </div>
-
-                      <span className="student-badge">
-                        {stats.totalEtudiants || lignes.length} ETUDIANT{(stats.totalEtudiants || lignes.length) > 1 ? 'S' : ''}
-                      </span>
-                    </div>
 
                     {isLoadingFeuille ? (
                         <div className="notes-loading-box">
@@ -851,6 +853,7 @@ const GestionNotesProfesseur = () => {
                           Chargement de la feuille...
                         </div>
                     ) : (
+                        <>
                         <div className="table-responsive-shell">
                           <table className="modern-grades-table">
                             <thead>
@@ -1034,30 +1037,31 @@ const GestionNotesProfesseur = () => {
                             </tbody>
                           </table>
                         </div>
-                    )}
-                  </div>
 
-                  <div className="notes-bottom-actions-card">
-                    <button
-                        className="btn-publish btn-publish-large"
-                        type="button"
-                        onClick={handlePublier}
-                        disabled={!selectedExamen || isSaisieDisabled || publishing}
-                    >
-                      {publishing ? (
-                          <>
-                            <LoaderCircle size={18} className="spin" />
-                            Publication...
-                          </>
-                      ) : (
-                          <>
-                            <Globe size={18} />
-                            {selectedExamen?.etat === 'CORRIGE' && publicationStats.nonPubliees > 0
-                                ? 'Republicer les resultats'
-                                : 'Publier les resultats'}
-                          </>
-                      )}
-                    </button>
+                        <div className="notes-table-footer">
+                          <button
+                              className="btn-publish notes-footer-publish-btn"
+                              type="button"
+                              onClick={handlePublier}
+                              disabled={!selectedExamen || isSaisieDisabled || publishing}
+                          >
+                            {publishing ? (
+                                <>
+                                  <LoaderCircle size={18} className="spin" />
+                                  Publication...
+                                </>
+                            ) : (
+                                <>
+                                  <Globe size={18} />
+                                  {selectedExamen?.etat === 'CORRIGE' && publicationStats.nonPubliees > 0
+                                      ? 'Republicer les resultats'
+                                      : 'Publier les resultats'}
+                                </>
+                            )}
+                          </button>
+                        </div>
+                        </>
+                    )}
                   </div>
 
                   <div className="corrige-section-card">

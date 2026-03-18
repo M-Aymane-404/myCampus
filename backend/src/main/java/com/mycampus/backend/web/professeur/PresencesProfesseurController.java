@@ -50,4 +50,26 @@ public class PresencesProfesseurController {
 
         return ResponseEntity.ok(result);
     }
+
+    @PatchMapping("/{seanceId}/presences/{presenceId}/valider-justificatif")
+    @PreAuthorize("hasAuthority('PROFESSEUR_PRESENCES_MODIFIER')")
+    public ResponseEntity<LignePresenceSortieDTO> validerJustificatif(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long seanceId,
+            @PathVariable Long presenceId
+    ) throws SeancesProfesseurException {
+        String professeurPpr = UtilisateurMetier.trouverProfesseurPprParId(user.getId());
+        return ResponseEntity.ok(presenceMetier.validerJustificatif(professeurPpr, seanceId, presenceId));
+    }
+
+    @PatchMapping("/{seanceId}/presences/{presenceId}/refuser-justificatif")
+    @PreAuthorize("hasAuthority('PROFESSEUR_PRESENCES_MODIFIER')")
+    public ResponseEntity<LignePresenceSortieDTO> refuserJustificatif(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long seanceId,
+            @PathVariable Long presenceId
+    ) throws SeancesProfesseurException {
+        String professeurPpr = UtilisateurMetier.trouverProfesseurPprParId(user.getId());
+        return ResponseEntity.ok(presenceMetier.refuserJustificatif(professeurPpr, seanceId, presenceId));
+    }
 }

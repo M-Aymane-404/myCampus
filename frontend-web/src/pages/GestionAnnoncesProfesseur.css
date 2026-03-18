@@ -2,6 +2,33 @@
   min-height: auto;
 }
 
+.prof-header-switches {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.professeur-communication-center .compose-section,
+.professeur-communication-center .audience-section,
+.professeur-communication-center .audience-card {
+  transition: none;
+}
+
+.professeur-communication-center .compose-section:hover,
+.professeur-communication-center .audience-section:hover,
+.professeur-communication-center .audience-card:hover {
+  transform: none;
+}
+
+.professeur-communication-center .audience-card:hover {
+  background: #ffffff;
+}
+
+.admin-annonce-card .prof-annonce-content {
+  min-height: 0;
+}
+
 .prof-summary-banner {
   display: flex;
   flex-direction: column;
@@ -501,6 +528,11 @@
 }
 
 @media (max-width: 768px) {
+  .prof-header-switches {
+    width: 100%;
+    justify-content: stretch;
+  }
+
   .prof-alert {
     flex-direction: column;
     align-items: flex-start;

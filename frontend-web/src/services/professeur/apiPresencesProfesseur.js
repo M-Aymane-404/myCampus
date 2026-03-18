@@ -17,6 +17,18 @@ export const apiPresencesProfesseur = {
     async enregistrerLigne(seanceId, payload) {
         return this.saisirPresence(seanceId, payload);
     },
+
+    async validerJustificatif(seanceId, presenceId) {
+        return apiProfesseur.fetch(`/seances/${seanceId}/presences/${presenceId}/valider-justificatif`, {
+            method: 'PATCH',
+        });
+    },
+
+    async refuserJustificatif(seanceId, presenceId) {
+        return apiProfesseur.fetch(`/seances/${seanceId}/presences/${presenceId}/refuser-justificatif`, {
+            method: 'PATCH',
+        });
+    },
 };
 
 export default apiPresencesProfesseur;
