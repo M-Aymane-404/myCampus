@@ -18,17 +18,20 @@ const lireErreur = async (response, fallback) => {
 
 const getHeaders = async (json = false) => {
     const headers = await apiAuth.getAuthHeadersWithRefresh();
-    return json
-        ? { ...headers, 'Content-Type': 'application/json' }
-        : headers;
+    return json ? { ...headers, 'Content-Type': 'application/json' } : headers;
 };
 
-const telechargerBlob = async (response, nomFichierParDefaut) => {
-    const blob = await response.blob();
+const lireNomFichier = (response, nomParDefaut) => {
+    const disposition = response.headers.get('content-disposition') || '';
+    const match = disposition.match(/filename="?([^"]+)"?/);
+    return match ? match[1] : nomParDefaut;
+};
+
+const telechargerBlob = async (blob, nomFichier) => {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = nomFichierParDefaut;
+    a.download = nomFichier;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -73,7 +76,7 @@ const apiExamensProfesseur = {
         });
 
         if (!response.ok) {
-            throw new Error(await lireErreur(response, "Impossible de créer l'examen."));
+            throw new Error(await lireErreur(response, "Impossible de creer l'examen."));
         }
 
         return response.json();
@@ -121,13 +124,13 @@ const apiExamensProfesseur = {
         });
 
         if (!response.ok) {
-            throw new Error(await lireErreur(response, "Impossible de déposer le corrigé."));
+            throw new Error(await lireErreur(response, 'Impossible de deposer le corrige.'));
         }
 
         return response.json();
     },
 
-    async telechargerCorrige(examenId) {
+    async obtenirCorrigeBlob(examenId) {
         const response = await fetch(`${BASE_URL}/${examenId}/corrige`, {
             method: 'GET',
             headers: await getHeaders(),
@@ -135,11 +138,18 @@ const apiExamensProfesseur = {
         });
 
         if (!response.ok) {
-            throw new Error(await lireErreur(response, 'Impossible de télécharger le corrigé.'));
+            throw new Error(await lireErreur(response, 'Impossible de telecharger le corrige.'));
         }
 
-        await telechargerBlob(response, `corrige_examen_${examenId}.pdf`);
-        return true;
+        const blob = await response.blob();
+        const filename = lireNomFichier(response, `corrige_examen_${examenId}.pdf`);
+        return { blob, filename };
+    },
+
+    async telechargerCorrige(examenId) {
+        const { blob, filename } = await this.obtenirCorrigeBlob(examenId);
+        await telechargerBlob(blob, filename);
+        return { blob, filename };
     },
 };
 

@@ -96,6 +96,93 @@ const getEtatClass = (etat) => {
   return '';
 };
 
+const getCopyFileLabel = (ligne) =>
+    ligne?.nomCopie ||
+    ligne?.nomFichierCopie ||
+    ligne?.copieNom ||
+    ligne?.copieFilename ||
+    'Fichier depose';
+
+const getCorrigeFileLabel = (examen) =>
+    examen?.nomCorrige ||
+    examen?.nomFichierCorrige ||
+    examen?.corrigeNom ||
+    examen?.corrigeFilename ||
+    'PDF depose';
+
+const getStoredPdfPath = (item, fallbackKeys = []) => {
+  const candidates = [...fallbackKeys, 'copieEtudiantPath', 'copiePath', 'corrigePath', 'fichierPath', 'path'];
+  for (const key of candidates) {
+    const value = item?.[key];
+    if (typeof value === 'string' && value.trim()) return value;
+  }
+  return '';
+};
+
+const getFileNameFromPath = (path) => {
+  if (!path) return '';
+  const normalized = path.split('?')[0].split('#')[0];
+  const segments = normalized.split('/');
+  return segments[segments.length - 1] || '';
+};
+
+const buildBackendFileUrl = (path) => {
+  if (!path) return '';
+  if (path.startsWith('http')) return path;
+  const normalized = path.replace(/\\/g, '/').trim();
+
+  if (normalized.startsWith('/api/') || normalized.startsWith('api/')) {
+    const cleanPath = normalized.startsWith('/') ? normalized : `/${normalized}`;
+    return `http://localhost:8080${cleanPath}`;
+  }
+
+  if (
+      normalized.startsWith('/uploads/') ||
+      normalized.startsWith('uploads/') ||
+      normalized.includes(':/') ||
+      normalized.startsWith('/') ||
+      normalized.includes('/corriges/') ||
+      normalized.includes('/copies/')
+  ) {
+    return `http://localhost:8080/api/public/fichiers/voir?chemin=${encodeURIComponent(path)}`;
+  }
+
+  return `http://localhost:8080/${normalized}`;
+};
+
+const openBlobInNewTab = (blob) => {
+  const objectUrl = window.URL.createObjectURL(blob);
+  window.open(objectUrl, '_blank', 'noopener,noreferrer');
+  window.setTimeout(() => window.URL.revokeObjectURL(objectUrl), 60000);
+};
+
+const openStoredPdf = (path) => {
+  const url = buildBackendFileUrl(path);
+  if (url) {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+};
+
+const downloadStoredPdf = async (path, fallbackName) => {
+  const url = buildBackendFileUrl(path);
+  if (!url) return;
+
+  const response = await fetch(url, { credentials: 'include' });
+  if (!response.ok) {
+    throw new Error(`Erreur HTTP: ${response.status}`);
+  }
+
+  const blob = await response.blob();
+  const objectUrl = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = objectUrl;
+  link.download = getFileNameFromPath(path) || fallbackName || 'document.pdf';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(objectUrl);
+};
+
 const GestionNotesProfesseur = () => {
   const [filtres, setFiltres] = useState([]);
   const [classes, setClasses] = useState([]);
@@ -113,6 +200,8 @@ const GestionNotesProfesseur = () => {
   const [savingEtudiants, setSavingEtudiants] = useState({});
   const [publishing, setPublishing] = useState(false);
   const [uploadingCorrige, setUploadingCorrige] = useState(false);
+  const [copyFileNames, setCopyFileNames] = useState({});
+  const [corrigeFileNames, setCorrigeFileNames] = useState({});
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -416,7 +505,7 @@ const GestionNotesProfesseur = () => {
     if (!selectedExamenId) return;
 
     const confirmed = window.confirm(
-        "Voulez-vous vraiment supprimer cet examen ? Cette action n'est possible que si le backend l'autorise."
+        "Voulez-vous vraiment supprimer cet examen ? Cette action est irreversible."
     );
     if (!confirmed) return;
 
@@ -425,10 +514,10 @@ const GestionNotesProfesseur = () => {
 
     try {
       await apiExamensProfesseur.supprimerExamen(selectedExamenId);
-      const deletedId = selectedExamenId;
+      const deletedLabel = selectedExamen?.numeroExamen ? `n°${selectedExamen.numeroExamen}` : 'selectionne';
       setSelectedExamenId('');
       await refreshExamens();
-      setSuccess(`Examen ${deletedId} supprime avec succes.`);
+      setSuccess(`Examen ${deletedLabel} supprime avec succes.`);
     } catch (err) {
       setError(err.message || "Impossible de supprimer l'examen.");
     }
@@ -509,6 +598,7 @@ const GestionNotesProfesseur = () => {
 
     try {
       await apiExamensProfesseur.deposerCorrige(selectedExamenId, fichier);
+      setCorrigeFileNames((prev) => ({ ...prev, [selectedExamenId]: fichier.name }));
       await refreshExamens(selectedExamenId);
       setSuccess('Corrige depose avec succes.');
     } catch (err) {
@@ -525,6 +615,11 @@ const GestionNotesProfesseur = () => {
   const lignes = feuille?.lignes || [];
   const stats = feuille?.stats || {};
   const selectedExamHasCorrige = !!selectedExamen?.corrigeDisponible;
+  const selectedCorrigePath = getStoredPdfPath(selectedExamen, ['corrigePath']);
+  const selectedCorrigeLabel =
+      corrigeFileNames[selectedExamenId] ||
+      getFileNameFromPath(selectedCorrigePath) ||
+      getCorrigeFileLabel(selectedExamen);
 
   return (
       <div className="gestion-notes-modern notes-v2-page">
@@ -582,91 +677,6 @@ const GestionNotesProfesseur = () => {
             </div>
         )}
 
-        <div className="notes-toolbar-card">
-          <div className="notes-toolbar-grid">
-            <div className="notes-select-group">
-              <label>Classe</label>
-              <div className="notes-select-shell">
-                <select
-                    value={selectedClasseCode}
-                    onChange={(e) => setSelectedClasseCode(e.target.value)}
-                    disabled={isLoadingFiltres}
-                >
-                  {classes.map((classe) => (
-                      <option key={classe.codeClasse} value={classe.codeClasse}>
-                        {classe.nomClasse || classe.codeClasse}
-                      </option>
-                  ))}
-                </select>
-                <ChevronDown size={18} />
-              </div>
-            </div>
-
-            <div className="notes-select-group">
-              <label>Matiere</label>
-              <div className="notes-select-shell">
-                <select
-                    value={selectedMatiereCode}
-                    onChange={(e) => setSelectedMatiereCode(e.target.value)}
-                    disabled={!selectedClasse || isLoadingFiltres}
-                >
-                  {matieres.map((matiere) => (
-                      <option key={matiere.codeMatiere} value={matiere.codeMatiere}>
-                        {matiere.nomMatiere}
-                      </option>
-                  ))}
-                </select>
-                <ChevronDown size={18} />
-              </div>
-            </div>
-
-            <div className="notes-select-group">
-              <label>Examen</label>
-              <div className="notes-select-shell">
-                <select
-                    value={selectedExamenId}
-                    onChange={(e) => setSelectedExamenId(e.target.value)}
-                    disabled={isLoadingExamens || examens.length === 0}
-                >
-                  {examens.length === 0 ? (
-                      <option value="">Aucun examen</option>
-                  ) : (
-                      examens.map((exam) => (
-                          <option key={exam.idExamen} value={exam.idExamen}>
-                            {formatExamenLabel(exam)}
-                          </option>
-                      ))
-                  )}
-                </select>
-                <ChevronDown size={18} />
-              </div>
-            </div>
-
-            <div className="notes-select-group">
-              <label>Etat rapide</label>
-              <div className="notes-select-shell">
-                <select
-                    value={selectedExamen?.etat || ''}
-                    onChange={(e) => handleQuickEtatChange(e.target.value)}
-                    disabled={!selectedExamen}
-                >
-                  {!selectedExamen ? (
-                      <option value="">Aucun examen</option>
-                  ) : (
-                      ETAT_EXAMEN_OPTIONS.map((etat) => (
-                          <option key={etat} value={etat}>
-                            {etat}
-                          </option>
-                      ))
-                  )}
-                </select>
-                <ChevronDown size={18} />
-              </div>
-            </div>
-          </div>
-
-        </div>
-
         <div className="notes-page-body">
           <div className="notes-main">
             {!selectedExamenId ? (
@@ -681,6 +691,40 @@ const GestionNotesProfesseur = () => {
                 </div>
             ) : (
                 <>
+                  <div className="stats-card notes-inline-stats">
+                    <div className="stats-card-header">
+                      <TrendingUp size={16} color="#10B981" />
+                      <span>STATISTIQUES</span>
+                    </div>
+
+                    <div className="notes-inline-stats-grid">
+                      <div className="main-stat-box notes-inline-stat-main">
+                        <div>
+                          <span className="stat-label-mini">MOYENNE GENERALE</span>
+                          <div className="stat-value-large">
+                            {stats.moyenne != null ? `${Number(stats.moyenne).toFixed(2)}/20` : '--'}
+                          </div>
+                        </div>
+                        <Award size={32} className="medal-icon-box" />
+                      </div>
+
+                      <div className="stat-pill-small">
+                        <h4>MAX</h4>
+                        <p>{stats.max != null ? Number(stats.max).toFixed(2) : '--'}</p>
+                      </div>
+                      <div className="stat-pill-small">
+                        <h4>MIN</h4>
+                        <p>{stats.min != null ? Number(stats.min).toFixed(2) : '--'}</p>
+                      </div>
+                      <div className="stat-pill-small">
+                        <h4>SAISIS</h4>
+                        <p>
+                          {stats.nbNotesSaisies || 0}/{stats.totalEtudiants || 0}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="grade-table-card">
                     <div className="table-title-row">
                       <div className="title-with-icon">
@@ -732,6 +776,13 @@ const GestionNotesProfesseur = () => {
 
                             <tbody>
                             {lignes.map((ligne) => (
+                                (() => {
+                                  const ligneCopyPath = getStoredPdfPath(ligne, ['copieEtudiantPath', 'copiePath']);
+                                  const ligneCopyLabel =
+                                      copyFileNames[ligne.idEtudiant] ||
+                                      getFileNameFromPath(ligneCopyPath) ||
+                                      getCopyFileLabel(ligne);
+                                  return (
                                 <tr key={ligne.idEtudiant}>
                                   <td className="student-cell">
                                     <div className="student-avatar">
@@ -778,6 +829,34 @@ const GestionNotesProfesseur = () => {
 
                                   <td>
                                     <div className="copy-actions-cell">
+                                      {ligne.copieDisponible ? (
+                                          <button
+                                              type="button"
+                                              className="copy-file-indicator"
+                                              title={ligneCopyLabel}
+                                              onClick={() =>
+                                                  ligneCopyPath
+                                                      ? Promise.resolve(openStoredPdf(ligneCopyPath))
+                                                      : apiNotesProfesseur
+                                                          .obtenirCopieEtudiantBlob(
+                                                              selectedClasseCode,
+                                                              selectedExamenId,
+                                                              ligne.idEtudiant
+                                                          )
+                                                          .then(({ blob, filename }) => {
+                                                            setCopyFileNames((prev) => ({ ...prev, [ligne.idEtudiant]: filename }));
+                                                            openBlobInNewTab(blob);
+                                                          })
+                                                          .catch((err) =>
+                                                              setError(err.message || 'Erreur lors de la consultation du fichier.')
+                                                          )
+                                              }
+                                          >
+                                            <FileText size={14} />
+                                            <span>{ligneCopyLabel}</span>
+                                          </button>
+                                      ) : null}
+
                                       <label className="copy-upload-btn">
                                         <FileUp size={14} />
                                         Deposer
@@ -794,6 +873,7 @@ const GestionNotesProfesseur = () => {
                                                     ligne.idEtudiant,
                                                     file
                                                 );
+                                                setCopyFileNames((prev) => ({ ...prev, [ligne.idEtudiant]: file.name }));
                                                 await refreshFeuille();
                                                 setSuccess(`Copie deposee pour ${ligne.nom} ${ligne.prenom}.`);
                                               } catch (err) {
@@ -810,13 +890,22 @@ const GestionNotesProfesseur = () => {
                                           type="button"
                                           disabled={!ligne.copieDisponible}
                                           onClick={() =>
-                                              apiNotesProfesseur.telechargerCopieEtudiant(
-                                                  selectedClasseCode,
-                                                  selectedExamenId,
-                                                  ligne.idEtudiant
-                                              ).catch((err) =>
-                                                  setError(err.message || 'Erreur lors du telechargement.')
-                                              )
+                                              ligneCopyPath
+                                                  ? downloadStoredPdf(ligneCopyPath, ligneCopyLabel).catch((err) =>
+                                                      setError(err.message || 'Erreur lors du telechargement.')
+                                                  )
+                                                  : apiNotesProfesseur
+                                                      .telechargerCopieEtudiant(
+                                                          selectedClasseCode,
+                                                          selectedExamenId,
+                                                          ligne.idEtudiant
+                                                      )
+                                                      .then(({ filename }) =>
+                                                          setCopyFileNames((prev) => ({ ...prev, [ligne.idEtudiant]: filename }))
+                                                      )
+                                                      .catch((err) =>
+                                                          setError(err.message || 'Erreur lors du telechargement.')
+                                                      )
                                           }
                                       >
                                         <Download size={14} />
@@ -825,6 +914,8 @@ const GestionNotesProfesseur = () => {
                                     </div>
                                   </td>
                                 </tr>
+                                  );
+                                })()
                             ))}
 
                             {lignes.length === 0 && (
@@ -868,6 +959,16 @@ const GestionNotesProfesseur = () => {
                       <CheckCircle2 size={14} />
                       Auto-save actif a chaque sortie du champ
                     </div>
+
+                    <button
+                        className="exam-action-outline danger notes-inline-delete"
+                        type="button"
+                        disabled={!selectedExamen}
+                        onClick={handleDeleteExam}
+                    >
+                      <X size={16} />
+                      Supprimer examen
+                    </button>
                   </div>
 
                   <div className="corrige-section-card">
@@ -882,10 +983,42 @@ const GestionNotesProfesseur = () => {
                         </div>
                       </div>
 
-                      <div className="corrige-section-meta">
-                        <span className="corrige-meta-label">Corrige</span>
-                        <strong>{selectedExamHasCorrige ? 'Disponible' : 'Non depose'}</strong>
-                      </div>
+                    </div>
+
+                    <div className={`corrige-file-banner ${selectedExamHasCorrige ? 'is-available' : ''}`}>
+                      {selectedExamHasCorrige ? (
+                          <button
+                              type="button"
+                              className="corrige-file-link"
+                              onClick={() =>
+                                  selectedCorrigePath
+                                      ? Promise.resolve(openStoredPdf(selectedCorrigePath))
+                                      : apiExamensProfesseur
+                                          .obtenirCorrigeBlob(selectedExamenId)
+                                          .then(({ blob, filename }) => {
+                                            setCorrigeFileNames((prev) => ({ ...prev, [selectedExamenId]: filename }));
+                                            openBlobInNewTab(blob);
+                                          })
+                                          .catch((err) =>
+                                              setError(err.message || 'Erreur lors de la consultation du corrige.')
+                                          )
+                              }
+                          >
+                            <FileText size={16} />
+                            <div>
+                              <span>PDF du corrige depose</span>
+                              <strong>{selectedCorrigeLabel}</strong>
+                            </div>
+                          </button>
+                      ) : (
+                          <>
+                            <FileText size={16} />
+                            <div>
+                              <span>Aucun PDF depose</span>
+                              <strong>Deposez un seul fichier PDF</strong>
+                            </div>
+                          </>
+                      )}
                     </div>
 
                     <div className="corrige-section-actions">
@@ -912,25 +1045,22 @@ const GestionNotesProfesseur = () => {
                           type="button"
                           disabled={!selectedExamHasCorrige}
                           onClick={() =>
-                              apiExamensProfesseur.telechargerCorrige(selectedExamenId).catch((err) =>
-                                  setError(err.message || 'Erreur lors du telechargement du corrige.')
-                              )
+                              selectedCorrigePath
+                                  ? downloadStoredPdf(selectedCorrigePath, selectedCorrigeLabel).catch((err) =>
+                                      setError(err.message || 'Erreur lors du telechargement du corrige.')
+                                  )
+                                  : apiExamensProfesseur
+                                      .telechargerCorrige(selectedExamenId)
+                                      .then(({ filename }) =>
+                                          setCorrigeFileNames((prev) => ({ ...prev, [selectedExamenId]: filename }))
+                                      )
+                                      .catch((err) =>
+                                          setError(err.message || 'Erreur lors du telechargement du corrige.')
+                                      )
                           }
                       >
                         <Download size={18} />
                         Telecharger corrige
-                      </button>
-                    </div>
-
-                    <div className="corrige-section-footer">
-                      <button
-                          className="btn-danger corrige-delete-btn"
-                          type="button"
-                          disabled={!selectedExamen}
-                          onClick={handleDeleteExam}
-                      >
-                        <X size={16} />
-                        Supprimer examen
                       </button>
                     </div>
                   </div>
@@ -939,36 +1069,69 @@ const GestionNotesProfesseur = () => {
           </div>
 
           <aside className="notes-side">
-            <div className="stats-card right-side-card">
-              <div className="stats-card-header">
-                <TrendingUp size={16} color="#10B981" />
-                <span>STATISTIQUES</span>
+            <div className="notes-toolbar-card notes-toolbar-side-card">
+              <div className="side-card-title">
+                <BookOpen size={16} />
+                <span>FILTRES</span>
               </div>
 
-              <div className="main-stat-box">
-                <div>
-                  <span className="stat-label-mini">MOYENNE GENERALE</span>
-                  <div className="stat-value-large">
-                    {stats.moyenne != null ? `${Number(stats.moyenne).toFixed(2)}/20` : '--'}
+              <div className="notes-toolbar-grid notes-toolbar-grid-side">
+                <div className="notes-select-group">
+                  <label>Classe</label>
+                  <div className="notes-select-shell">
+                    <select
+                        value={selectedClasseCode}
+                        onChange={(e) => setSelectedClasseCode(e.target.value)}
+                        disabled={isLoadingFiltres}
+                    >
+                      {classes.map((classe) => (
+                          <option key={classe.codeClasse} value={classe.codeClasse}>
+                            {classe.nomClasse || classe.codeClasse}
+                          </option>
+                      ))}
+                    </select>
+                    <ChevronDown size={18} />
                   </div>
                 </div>
-                <Award size={36} className="medal-icon-box" />
-              </div>
 
-              <div className="secondary-stats vertical-stats">
-                <div className="stat-pill-small">
-                  <h4>MAX</h4>
-                  <p>{stats.max != null ? Number(stats.max).toFixed(2) : '--'}</p>
+                <div className="notes-select-group">
+                  <label>Matiere</label>
+                  <div className="notes-select-shell">
+                    <select
+                        value={selectedMatiereCode}
+                        onChange={(e) => setSelectedMatiereCode(e.target.value)}
+                        disabled={!selectedClasse || isLoadingFiltres}
+                    >
+                      {matieres.map((matiere) => (
+                          <option key={matiere.codeMatiere} value={matiere.codeMatiere}>
+                            {matiere.nomMatiere}
+                          </option>
+                      ))}
+                    </select>
+                    <ChevronDown size={18} />
+                  </div>
                 </div>
-                <div className="stat-pill-small">
-                  <h4>MIN</h4>
-                  <p>{stats.min != null ? Number(stats.min).toFixed(2) : '--'}</p>
-                </div>
-                <div className="stat-pill-small">
-                  <h4>SAISIS</h4>
-                  <p>
-                    {stats.nbNotesSaisies || 0}/{stats.totalEtudiants || 0}
-                  </p>
+
+                <div className="notes-select-group">
+                  <label>Examen</label>
+                  <div className="notes-select-shell">
+                    <select
+                        value={selectedExamenId}
+                        onChange={(e) => setSelectedExamenId(e.target.value)}
+                        disabled={isLoadingExamens || examens.length === 0}
+                    >
+                      {examens.length === 0 ? (
+                          <option value="">Aucun examen</option>
+                      ) : (
+                          examens.map((exam) => (
+                              <option key={exam.idExamen} value={exam.idExamen}>
+                                {formatExamenLabel(exam)}
+                              </option>
+                          ))
+                      )}
+                    </select>
+                    <ChevronDown size={18} />
+                  </div>
                 </div>
               </div>
             </div>
@@ -1011,6 +1174,31 @@ const GestionNotesProfesseur = () => {
               ) : (
                   <div className="side-empty">Selectionnez un examen.</div>
               )}
+
+              <div className="exam-status-editor">
+                <div className="exam-status-editor-copy">
+                  <span>Mise a jour d'etat</span>
+                  <small>Action distincte des filtres de recherche.</small>
+                </div>
+                <div className="notes-select-shell notes-select-shell-compact">
+                  <select
+                      value={selectedExamen?.etat || ''}
+                      onChange={(e) => handleQuickEtatChange(e.target.value)}
+                      disabled={!selectedExamen}
+                  >
+                    {!selectedExamen ? (
+                        <option value="">Aucun examen</option>
+                    ) : (
+                        ETAT_EXAMEN_OPTIONS.map((etat) => (
+                            <option key={etat} value={etat}>
+                              {etat}
+                            </option>
+                        ))
+                    )}
+                  </select>
+                  <ChevronDown size={18} />
+                </div>
+              </div>
             </div>
 
             <div className="exam-context-card right-side-card">
