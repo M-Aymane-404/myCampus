@@ -2,6 +2,11 @@ import { authenticatedFetch } from '../utils/apiInterceptor';
 
 const BASE_URL = 'http://localhost:8080/api/etudiant';
 
+const formatSeanceDate = (date) => {
+    if (!date) return 'Date inconnue';
+    return new Date(date).toLocaleDateString('fr-FR');
+};
+
 export const apiCours = {
     getSemesters() {
         return ['S1', 'S2', 'S3', 'S4', 'S5', 'S6'];
@@ -93,12 +98,15 @@ export const apiCours = {
                 matiere.seances.forEach((seance) => {
                     const promise = this.getRessources(seance.id).then((ressources) => {
                         ressources.forEach((res) => {
+                            const typeSeance = seance.type || seance.typeSeance || 'SEANCE';
                             allResources.push({
                                 ...res,
                                 matiereNom: matiere.nom,
                                 codeMatiere: matiere.codeMatiere,
-                                typeSeance: seance.typeSeance,
-                                seanceId: seance.id
+                                typeSeance,
+                                seanceId: seance.id,
+                                seanceDate: seance.date || null,
+                                seanceLabel: `${matiere.nom} - ${typeSeance} - ${formatSeanceDate(seance.date)}`
                             });
                         });
                     });

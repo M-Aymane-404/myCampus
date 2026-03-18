@@ -221,9 +221,11 @@ export const apiAnnoncesProfesseur = {
     return true;
   },
 
-  async ajouterRessourceAnnonce(annonceId, fichier) {
+  async ajouterRessourcesAnnonce(annonceId, fichiers) {
     const formData = new FormData();
-    formData.append('fichier', fichier);
+    (Array.isArray(fichiers) ? fichiers : []).forEach((fichier) => {
+      formData.append('fichiers', fichier);
+    });
 
     const response = await fetch(`${BASE_URL}/annonces/${annonceId}/ressources`, {
       method: 'POST',
@@ -234,7 +236,7 @@ export const apiAnnoncesProfesseur = {
 
     if (!response.ok) {
       throw new Error(
-        await lireErreur(response, "Erreur lors de l'envoi de la ressource.")
+        await lireErreur(response, "Erreur lors de l'envoi des ressources.")
       );
     }
 
@@ -279,3 +281,5 @@ export const apiAnnoncesProfesseur = {
 };
 
 export default apiAnnoncesProfesseur;
+
+

@@ -78,6 +78,7 @@ public class GestionAnnoncesProfesseurMetierImpl implements GestionAnnoncesProfe
                     .build();
             
             Annonce savedAnnonce = annonceRepository.save(annonce);
+            notifierAnnoncePubliee(savedAnnonce, auteur.getId());
             log.info("Annonce créée avec succès: {}", savedAnnonce.getId());
             
             return annonceMapper.changerVersSortieDTO(savedAnnonce);

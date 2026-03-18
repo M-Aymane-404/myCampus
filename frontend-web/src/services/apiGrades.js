@@ -87,6 +87,17 @@ export const apiGrades = {
             const results = await Promise.all(promises);
 
             const validSemesters = results.filter((r) => r && r.modules);
+            const hasCompleteTranscript = results.length === dynamicSemesters.length
+                && results.every((sem) =>
+                    sem
+                    && Array.isArray(sem.modules)
+                    && sem.modules.length > 0
+                    && sem.moyenneSession !== null
+                    && sem.moyenneSession !== undefined
+                    && sem.modules.every(
+                        (mod) => mod.moyenneDuModule !== null && mod.moyenneDuModule !== undefined
+                    )
+                );
 
             let totalModules = 0;
             let validatedModules = 0;
@@ -109,10 +120,13 @@ export const apiGrades = {
                 }
             });
 
-            const generalAverage = countAverages > 0 ? (sumAverages / countAverages) : 0;
+            const generalAverage = hasCompleteTranscript && countAverages > 0
+                ? (sumAverages / countAverages)
+                : null;
 
             let finalMention = 'Passable';
-            if (generalAverage >= 16) finalMention = 'Tres Bien';
+            if (generalAverage === null) finalMention = '-';
+            else if (generalAverage >= 16) finalMention = 'Tres Bien';
             else if (generalAverage >= 14) finalMention = 'Bien';
             else if (generalAverage >= 12) finalMention = 'Assez Bien';
             else if (generalAverage < 10) finalMention = 'Ajourne';
@@ -127,7 +141,8 @@ export const apiGrades = {
                 specialization: profile.codeClasse || 'Genie Informatique',
                 studentName: `${profile.prenom || ''} ${profile.nom || ''}`.trim(),
                 studentId: profile.apogee || 'N/A',
-                generalAverage: generalAverage.toFixed(2),
+                generalAverage: generalAverage !== null ? generalAverage.toFixed(2) : null,
+                hasCompleteTranscript,
                 validatedModules,
                 totalModules,
                 finalMention,
@@ -143,7 +158,8 @@ export const apiGrades = {
             return {
                 degree: 'N/A',
                 specialization: 'N/A',
-                generalAverage: '0.00',
+                generalAverage: null,
+                hasCompleteTranscript: false,
                 validatedModules: 0,
                 totalModules: 0,
                 finalMention: '-',

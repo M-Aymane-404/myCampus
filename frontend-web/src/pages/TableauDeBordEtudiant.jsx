@@ -1,160 +1,45 @@
-import { useEffect, useState } from 'react';
-import {
-  AlertCircle,
-  Award,
-  BarChart3,
-  Bell,
-  BookOpen,
-  ChevronRight,
-  Circle,
-  Clock,
-  Layers3,
-  MapPin,
-  TrendingUp
-} from 'lucide-react';
+﻿import { useState, useEffect } from 'react';
+import { Bell, GraduationCap, Clock, MapPin, TrendingUp, AlertCircle, BookOpen, ChevronRight, Circle } from 'lucide-react';
 import { apiEtudiant } from '../services/apiEtudiant';
-import { apiGrades } from '../services/apiGrades';
 import './TableauDeBordEtudiant.css';
 
-const EMPTY_GRADE_INSIGHTS = {
-  globalAverage: null,
-  validatedModules: 0,
-  totalModules: 0,
-  classSnapshots: [],
-  subjectStats: []
-};
-
-const formatGrade = (value) => (Number.isFinite(value) ? value.toFixed(2) : '--');
-
-const getGradeTone = (value) => {
-  if (!Number.isFinite(value)) return 'neutral';
-  if (value >= 14) return 'strong';
-  if (value >= 10) return 'good';
-  return 'alert';
-};
-
 const TableauDeBordEtudiant = ({ surNavigation }) => {
+  console.log('DEBUG: TableauDeBordEtudiant component rendered');
+
   const [dashboardData, setDashboardData] = useState(null);
-  const [gradeInsights, setGradeInsights] = useState(EMPTY_GRADE_INSIGHTS);
   const [annonces, setAnnonces] = useState([]);
   const [nextSession, setNextSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchGradeInsights = async () => {
-      try {
-        const globalStats = await apiGrades.fetchGlobalStats();
-        const semesterNumbers = globalStats?.availableSemesters || [1];
-        const semesterResults = await Promise.all(
-          semesterNumbers.map((semester) => apiGrades.fetchStudentGrades(semester))
-        );
-
-        const validSemesters = semesterResults
-          .map((semesterData, index) => ({
-            semesterNumber: semesterNumbers[index],
-            semesterData
-          }))
-          .filter(({ semesterData }) => semesterData && Array.isArray(semesterData.modules));
-
-        const classSnapshots = validSemesters.map(({ semesterNumber, semesterData }) => {
-          const modules = semesterData.modules || [];
-          const validatedCount = modules.filter((module) => Number(module.moyenneDuModule) >= 10).length;
-          const computedAverage = modules.length
-            ? modules.reduce((sum, module) => sum + (Number(module.moyenneDuModule) || 0), 0) / modules.length
-            : 0;
-          const average = Number(semesterData.moyenneSession) || computedAverage;
-
-          return {
-            id: `S${semesterNumber}`,
-            label: `Semestre ${semesterNumber}`,
-            average,
-            validatedCount,
-            moduleCount: modules.length
-          };
-        });
-
-        const subjectMap = new Map();
-        validSemesters.forEach(({ semesterData, semesterNumber }) => {
-          (semesterData.modules || []).forEach((module, moduleIndex) => {
-            const moduleName = module.nomDuModule || `Module ${moduleIndex + 1}`;
-            const moduleAverage = Number(module.moyenneDuModule) || 0;
-            const subjects = Array.isArray(module.matieres) && module.matieres.length > 0
-              ? module.matieres
-              : [{ nomDuMatiere: moduleName, moyenneDuMatiere: moduleAverage }];
-
-            subjects.forEach((subject, subjectIndex) => {
-              const subjectName = subject.nomDuMatiere || `${moduleName} ${subjectIndex + 1}`;
-              const rawScore = Number(subject.moyenneDuMatiere);
-              const score = Number.isFinite(rawScore) ? rawScore : moduleAverage;
-              const key = `${moduleName}-${subjectName}`;
-              const existing = subjectMap.get(key) || {
-                id: key,
-                moduleName,
-                subjectName,
-                total: 0,
-                count: 0,
-                latestSemester: semesterNumber,
-                latestScore: score
-              };
-
-              existing.total += score;
-              existing.count += 1;
-              if (semesterNumber >= existing.latestSemester) {
-                existing.latestSemester = semesterNumber;
-                existing.latestScore = score;
-              }
-
-              subjectMap.set(key, existing);
-            });
-          });
-        });
-
-        const subjectStats = Array.from(subjectMap.values())
-          .map((subject) => ({
-            ...subject,
-            average: subject.count > 0 ? subject.total / subject.count : 0
-          }))
-          .sort((a, b) => b.average - a.average)
-          .slice(0, 6);
-
-        setGradeInsights({
-          globalAverage: Number(globalStats?.generalAverage) || null,
-          validatedModules: globalStats?.validatedModules || 0,
-          totalModules: globalStats?.totalModules || 0,
-          classSnapshots,
-          subjectStats
-        });
-      } catch (gradesError) {
-        console.warn('Failed to fetch grade insights:', gradesError);
-        setGradeInsights(EMPTY_GRADE_INSIGHTS);
-      }
-    };
-
     const fetchData = async () => {
       try {
         setLoading(true);
-
+        
+        // Fetch dashboard data first
         const dashboardResponse = await apiEtudiant.getDashboardData();
         setDashboardData(dashboardResponse);
-
-        await fetchGradeInsights();
-
+        
+        // Fetch next session
         try {
           const nextSessionResponse = await apiEtudiant.getNextSession();
+          console.log('Next session response:', nextSessionResponse);
           setNextSession(nextSessionResponse);
         } catch (nextSessionError) {
           console.warn('Failed to fetch next session:', nextSessionError);
           setNextSession(null);
         }
-
+        
+        // Try to fetch announcements, but don't fail the entire dashboard if it fails
         try {
           const annoncesResponse = await apiEtudiant.getAnnonces();
           setAnnonces(annoncesResponse || []);
         } catch (annoncesError) {
           console.warn('Failed to fetch announcements, continuing without them:', annoncesError);
-          setAnnonces([]);
+          setAnnonces([]); // Set empty array as fallback
         }
+        
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
         setError(err.message);
@@ -187,11 +72,12 @@ const TableauDeBordEtudiant = ({ surNavigation }) => {
     );
   }
 
+  // Helper function to calculate time ago
   const getTimeAgo = (dateString) => {
     const now = new Date();
     const date = new Date(dateString);
     const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
-
+    
     if (diffInHours < 1) return 'IL Y A 1H';
     if (diffInHours < 24) return `IL Y A ${diffInHours}H`;
     const diffInDays = Math.floor(diffInHours / 24);
@@ -200,14 +86,16 @@ const TableauDeBordEtudiant = ({ surNavigation }) => {
 
   return (
     <div className="tableau-de-bord-etudiant">
+      {/* Header Section */}
       <div className="etudiant-header">
         <div className="header-content">
           <div className="header-info">
             <h1>Espace Etudiant</h1>
             <p>
-              {dashboardData?.entete
-                ? `${dashboardData.entete.niveau || ''} ${dashboardData.entete.filiere || ''} • ${dashboardData.entete.session || 'Session en cours'}`
-                : 'Parcours academique • Session en cours'}
+              {dashboardData?.entete ? 
+                `${dashboardData.entete.niveau || ''} ${dashboardData.entete.filiere || ''} | ${dashboardData.entete.session || 'Session d\'Automne 2023'}` : 
+                'L3 Informatique | Session d\'Automne 2023'
+              }
             </p>
           </div>
           <div className="session-status">
@@ -217,16 +105,19 @@ const TableauDeBordEtudiant = ({ surNavigation }) => {
         </div>
       </div>
 
+      {/* Main Content Grid */}
       <div className="dashboard-grid">
+        {/* Left column for Announcements and Bottom Cards */}
         <div className="left-column">
+          {/* Announcements Section */}
           <div className="announcements-section">
             <div className="announcements-header">
               <div className="section-label">
                 <Bell className="label-icon" size={20} />
-                <h3>Annonces de vos professeurs</h3>
+                <h3>Annonces de vos Professeurs</h3>
               </div>
               <div className="announcements-badge">
-                {annonces.length > 0 ? `${annonces.length} nouvelles` : '0 nouvelle'}
+                {annonces.length > 0 ? `${annonces.length} NOUVELLES` : '0 NOUVELLES'}
               </div>
             </div>
 
@@ -236,8 +127,8 @@ const TableauDeBordEtudiant = ({ surNavigation }) => {
                   {annonces.slice(0, 3).map((annonce) => {
                     const timeAgo = getTimeAgo(annonce.datePublication);
                     return (
-                      <div
-                        key={annonce.id}
+                      <div 
+                        key={annonce.id} 
                         className="annonce-box"
                         onClick={() => surNavigation('annonces')}
                       >
@@ -269,11 +160,13 @@ const TableauDeBordEtudiant = ({ surNavigation }) => {
             </div>
           </div>
 
+          {/* Bottom Row with Attendance and Next Session */}
           <div className="bottom-row">
+            {/* Attendance Card */}
             <div className="card-modern attendance-card">
               <div className="section-label">
                 <TrendingUp className="label-icon" size={20} />
-                <h3>Assiduite globale</h3>
+                <h3>Taux de presence</h3>
               </div>
 
               <div className="attendance-content">
@@ -325,8 +218,9 @@ const TableauDeBordEtudiant = ({ surNavigation }) => {
               </div>
             </div>
 
+            {/* Next Session Card */}
             <div className="card-modern next-session-card">
-              <h3>Prochaine seance</h3>
+              <h3>Prochaine Seance</h3>
               <div className="session-info-main">
                 {nextSession?.prochaineSeance ? (
                   <>
@@ -362,94 +256,39 @@ const TableauDeBordEtudiant = ({ surNavigation }) => {
           </div>
         </div>
 
+        {/* Right column for Grades */}
         <div className="grades-sidebar card-modern">
-          <div className="grades-header grade-insights-header">
-            <div className="section-title-stack">
-              <div className="section-label compact">
-                <BarChart3 className="label-icon" size={20} />
-                <h3>Statistiques des notes</h3>
-              </div>
-              <p>Une lecture plus utile de vos resultats, par semestre et par matiere.</p>
-            </div>
-            <button className="inline-link-btn" onClick={() => surNavigation('notes')}>
-              Voir tous les bulletins
-            </button>
+          <div className="grades-header">
+            <GraduationCap className="label-icon" size={22} />
+            <h3>Dernieres Notes</h3>
           </div>
 
-          <div className="grade-summary-strip">
-            <div className="summary-chip">
-              <span>Moyenne generale</span>
-              <strong>{formatGrade(gradeInsights.globalAverage)}</strong>
-            </div>
-            <div className="summary-chip">
-              <span>Modules valides</span>
-              <strong>{gradeInsights.validatedModules}/{gradeInsights.totalModules}</strong>
-            </div>
-          </div>
-
-          <div className="insights-block">
-            <div className="insights-block-header">
-              <Layers3 size={18} />
-              <h4>Par classe / semestre</h4>
-            </div>
-            <div className="semester-stats-list">
-              {gradeInsights.classSnapshots.length > 0 ? (
-                gradeInsights.classSnapshots.map((snapshot) => (
-                  <div key={snapshot.id} className="semester-stat-card">
-                    <div className="semester-stat-top">
-                      <div>
-                        <span className="semester-label">{snapshot.label}</span>
-                        <strong>{formatGrade(snapshot.average)}/20</strong>
-                      </div>
-                      <span className={`grade-badge ${getGradeTone(snapshot.average)}`}>
-                        {snapshot.validatedCount}/{snapshot.moduleCount} valides
-                      </span>
-                    </div>
-                    <div className="semester-progress-track">
-                      <div
-                        className={`semester-progress-fill ${getGradeTone(snapshot.average)}`}
-                        style={{ width: `${Math.max(8, Math.min((snapshot.average / 20) * 100, 100))}%` }}
-                      />
+          <div className="grades-list">
+            {dashboardData?.dernieresNotes?.length > 0 ? (
+              dashboardData.dernieresNotes.map((grade, index) => (
+                <div key={index} className="grade-list-item">
+                  <div className="grade-icon-box">
+                    <BookOpen size={20} />
+                  </div>
+                  <div className="grade-subject-info">
+                    <h4>{grade.matiere}</h4>
+                    <div className="grade-date">
+                      {(() => {
+                        if (!grade.datePublication) return 'DATE INCONNUE';
+                        const date = new Date(grade.datePublication);
+                        return isNaN(date.getTime()) ? 'DATE INCONNUE' : date.toISOString().split('T')[0];
+                      })()}
                     </div>
                   </div>
-                ))
-              ) : (
-                <p className="empty-insight">Aucune statistique de semestre disponible.</p>
-              )}
-            </div>
+                  <div className="grade-number">{grade.note}</div>
+                </div>
+              ))
+            ) : null}
           </div>
 
-          <div className="insights-block">
-            <div className="insights-block-header">
-              <Award size={18} />
-              <h4>Par matiere</h4>
-            </div>
-            <div className="subject-stats-list">
-              {gradeInsights.subjectStats.length > 0 ? (
-                gradeInsights.subjectStats.map((subject) => (
-                  <div key={subject.id} className="subject-stat-row">
-                    <div className="subject-stat-main">
-                      <div className="grade-icon-box">
-                        <BookOpen size={18} />
-                      </div>
-                      <div className="subject-stat-text">
-                        <h5>{subject.subjectName}</h5>
-                        <span>{subject.moduleName} • S{subject.latestSemester}</span>
-                      </div>
-                    </div>
-                    <div className="subject-stat-score">
-                      <strong>{formatGrade(subject.average)}</strong>
-                      <span className={`grade-badge ${getGradeTone(subject.latestScore)}`}>
-                        Derniere note {formatGrade(subject.latestScore)}
-                      </span>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="empty-insight">Aucune statistique de matiere disponible.</p>
-              )}
-            </div>
-          </div>
+          <button className="view-bulletins-btn" onClick={() => surNavigation('notes')}>
+            VOIR TOUS LES BULLETINS
+          </button>
         </div>
       </div>
     </div>
@@ -457,3 +296,4 @@ const TableauDeBordEtudiant = ({ surNavigation }) => {
 };
 
 export default TableauDeBordEtudiant;
+

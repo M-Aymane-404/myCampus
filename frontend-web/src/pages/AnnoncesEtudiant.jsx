@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import {
   Search,
   FileText,
@@ -17,6 +17,15 @@ const libellesTypeAnnonce = {
   REUNION: 'REUNION',
   EXAMEN: 'EXAMEN',
 };
+
+const filtresTypeAnnonce = [
+  'TOUS',
+  'EXAMEN',
+  'COURS',
+  'REUNION',
+  'EVENT',
+  'AUTRES',
+];
 
 const AnnoncesEtudiant = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -86,21 +95,30 @@ const AnnoncesEtudiant = () => {
   }, [activeAnnonce, ressourcesParAnnonce]);
 
   const transformBackendData = (backendData) =>
-    (Array.isArray(backendData) ? backendData : []).map((annonce) => ({
-      id: annonce.id,
-      title: annonce.titre,
-      date: formatDate(annonce.datePublication),
-      fullDate: formatFullDate(annonce.datePublication),
-      category: getCategoryLabel(annonce.typeAnnonce, annonce.cibleType),
-      subject: annonce.codeClasse || 'General',
-      professor: annonce.auteur
-        ? `${annonce.auteur.prenom} ${annonce.auteur.nom}`
-        : 'Administration',
-      authorId: annonce.auteur?.id,
-      authorPhoto: annonce.auteur?.photoPath || null,
-      hasDot: !annonce.publiee,
-      content: annonce.contenu,
-    }));
+    (Array.isArray(backendData) ? backendData : [])
+      .map((annonce) => {
+        const publishedAt = annonce.datePublication || annonce.dateCreation || null;
+        const publishedTimestamp = publishedAt ? new Date(publishedAt).getTime() : 0;
+
+        return {
+          id: annonce.id,
+          title: annonce.titre,
+          date: formatDate(publishedAt),
+          fullDate: formatFullDate(publishedAt),
+          publishedAt,
+          publishedTimestamp: Number.isNaN(publishedTimestamp) ? 0 : publishedTimestamp,
+          category: getCategoryLabel(annonce.typeAnnonce, annonce.cibleType),
+          subject: annonce.codeClasse || 'General',
+          professor: annonce.auteur
+            ? `${annonce.auteur.prenom} ${annonce.auteur.nom}`
+            : 'Administration',
+          authorId: annonce.auteur?.id,
+          authorPhoto: annonce.auteur?.photoPath || null,
+          hasDot: !annonce.publiee,
+          content: annonce.contenu,
+        };
+      })
+      .sort((a, b) => b.publishedTimestamp - a.publishedTimestamp);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -220,7 +238,7 @@ const AnnoncesEtudiant = () => {
             </div>
 
             <div className="ann-filters">
-              {['TOUS', 'EXAMEN', 'COURS', 'AUTRES'].map((filter) => (
+              {filtresTypeAnnonce.map((filter) => (
                 <button
                   key={filter}
                   className={`ann-filter-pill ${activeFilter === filter ? 'active' : ''}`}
@@ -365,3 +383,4 @@ const AnnoncesEtudiant = () => {
 };
 
 export default AnnoncesEtudiant;
+

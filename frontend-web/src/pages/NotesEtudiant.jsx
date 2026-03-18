@@ -57,7 +57,8 @@ const NotesEtudiant = () => {
         specialization: 'Chargement...',
         studentName: 'Chargement...',
         studentId: '...',
-        generalAverage: 0,
+        generalAverage: null,
+        hasCompleteTranscript: false,
         validatedModules: 0,
         totalModules: 0,
         sessionStatus: '...',
@@ -327,18 +328,14 @@ const NotesEtudiant = () => {
                     </div>
 
                     <div className="banner-metrics">
-                        <div className="metric-item">
-                            <span className="metric-label">MOYENNE GENERALE</span>
-                            <div className="metric-value highlight">
-                                {studentStats.generalAverage}<span>/20</span>
+                        {studentStats.hasCompleteTranscript && studentStats.generalAverage !== null && (
+                            <div className="metric-item">
+                                <span className="metric-label">MOYENNE GENERALE</span>
+                                <div className="metric-value highlight">
+                                    {studentStats.generalAverage}<span>/20</span>
+                                </div>
                             </div>
-                        </div>
-                        <div className="metric-item">
-                            <span className="metric-label">PARCOURS</span>
-                            <div className="metric-value accent">
-                                {studentStats.validatedModules}<span>/{studentStats.totalModules}</span>
-                            </div>
-                        </div>
+                        )}
                     </div>
                 </header>
 

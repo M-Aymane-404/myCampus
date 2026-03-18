@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
     Search,
     Book,
@@ -7,9 +7,7 @@ import {
     ExternalLink,
     Library,
     FileText,
-    Layout,
     Terminal,
-    ChevronRight,
     ChevronDown,
     Filter
 } from 'lucide-react';
@@ -19,9 +17,8 @@ import { apiCours } from '../services/apiCours';
 const CoursBibliotheque = () => {
     const [modules, setModules] = useState([]);
     const [activeModule, setActiveModule] = useState(null);
-    const [activeTab, setActiveTab] = useState('TOUS');
     const [resourceSearch, setResourceSearch] = useState('');
-    const [activeSemester, setActiveSemester] = useState('S4'); // Will be updated by profile
+    const [activeSemester, setActiveSemester] = useState('S4');
     const [semesters, setSemesters] = useState(apiCours.getSemesters());
     const [resources, setResources] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -29,11 +26,10 @@ const CoursBibliotheque = () => {
     const [error, setError] = useState(null);
     const [studentProfile, setStudentProfile] = useState(null);
     const [selectedSeance, setSelectedSeance] = useState('TOUS');
-    const [selectedDate, setSelectedDate] = useState('');
     const [selectedMatiere, setSelectedMatiere] = useState('TOUS');
     const [availableMatieres, setAvailableMatieres] = useState([]);
+    const [availableSeances, setAvailableSeances] = useState([]);
 
-    // Fetch Profile once on mount
     useEffect(() => {
         const fetchProfile = async () => {
             try {
@@ -43,7 +39,7 @@ const CoursBibliotheque = () => {
                     setActiveSemester(profile.semestreActuel);
                 }
             } catch (err) {
-                console.error("Erreur lors de la récupération du profil:", err);
+                console.error("Erreur lors de la recuperation du profil:", err);
             }
         };
         fetchProfile();
@@ -62,9 +58,9 @@ const CoursBibliotheque = () => {
                     setActiveModule(null);
                     setResources([]);
                 }
-            } catch (error) {
-                console.error('Erreur lors du chargement des modules:', error);
-                setError("Impossible de charger les modules. Le serveur a rencontré une erreur.");
+            } catch (fetchError) {
+                console.error('Erreur lors du chargement des modules:', fetchError);
+                setError("Impossible de charger les modules. Le serveur a rencontre une erreur.");
                 setModules([]);
             } finally {
                 setLoading(false);
@@ -78,19 +74,37 @@ const CoursBibliotheque = () => {
             if (!activeModule) {
                 setResources([]);
                 setAvailableMatieres([]);
+                setAvailableSeances([]);
                 return;
             }
+
             try {
                 setResourcesLoading(true);
                 const data = await apiCours.getAggregatedResources(activeModule);
                 setResources(data);
-                
-                // Extract unique matieres for filter dropdown
-                const uniqueMatieres = [...new Set(data.map(r => r.matiereNom).filter(Boolean))];
+
+                const uniqueMatieres = [...new Set(data.map((r) => r.matiereNom).filter(Boolean))];
                 setAvailableMatieres(uniqueMatieres);
-            } catch (error) {
-                console.error('Erreur lors de l\'agrégation des ressources:', error);
+
+                const uniqueSeances = Array.from(
+                    new Map(
+                        data
+                            .filter((r) => r.seanceId)
+                            .map((r) => [
+                                r.seanceId,
+                                {
+                                    id: r.seanceId,
+                                    label: r.seanceLabel || `Seance ${r.seanceId}`,
+                                },
+                            ])
+                    ).values()
+                );
+                setAvailableSeances(uniqueSeances);
+                setSelectedSeance('TOUS');
+            } catch (fetchError) {
+                console.error("Erreur lors de l'agregation des ressources:", fetchError);
                 setAvailableMatieres([]);
+                setAvailableSeances([]);
             } finally {
                 setResourcesLoading(false);
             }
@@ -98,40 +112,64 @@ const CoursBibliotheque = () => {
         fetchAggregatedResources();
     }, [activeModule]);
 
-    const filteredResources = resources.filter(r => {
-        const typeMime = r.typeMime || '';
-        const typeSeance = r.typeSeance || '';
-        const matiereNom = r.matiereNom || '';
-        const dateUpload = r.dateUpload || '';
-        
-        // Filter by date
-        const matchesDate = !selectedDate || 
-            new Date(dateUpload).toDateString() === new Date(selectedDate).toDateString();
-        
-        // Filter by matiere
-        const matchesMatiere = selectedMatiere === 'TOUS' || matiereNom === selectedMatiere;
-        
-        // Filter by search
-        const matchesSearch = r.nomOriginal.toLowerCase().includes(resourceSearch.toLowerCase());
-        
-        return matchesDate && matchesMatiere && matchesSearch;
+    const filteredAvailableSeances = useMemo(() => {
+        if (selectedMatiere === 'TOUS') {
+            return availableSeances;
+        }
+
+        return availableSeances.filter((seance) =>
+            resources.some(
+                (resource) =>
+                    resource.seanceId === seance.id &&
+                    resource.matiereNom === selectedMatiere
+            )
+        );
+    }, [availableSeances, resources, selectedMatiere]);
+
+    useEffect(() => {
+        if (
+            selectedSeance !== 'TOUS' &&
+            !filteredAvailableSeances.some(
+                (seance) => String(seance.id) === selectedSeance
+            )
+        ) {
+            setSelectedSeance('TOUS');
+        }
+    }, [filteredAvailableSeances, selectedSeance]);
+
+    const filteredResources = resources.filter((resource) => {
+        const matiereNom = resource.matiereNom || '';
+
+        const matchesSeance =
+            selectedSeance === 'TOUS' || String(resource.seanceId) === selectedSeance;
+
+        const matchesMatiere =
+            selectedMatiere === 'TOUS' || matiereNom === selectedMatiere;
+
+        const matchesSearch = resource.nomOriginal
+            .toLowerCase()
+            .includes(resourceSearch.toLowerCase());
+
+        return matchesSeance && matchesMatiere && matchesSearch;
     });
 
-    const getActiveModuleName = () => {
-        return modules.find(m => m.codeModule === activeModule)?.nom || 'Module';
-    };
+    const getActiveModuleName = () =>
+        modules.find((module) => module.codeModule === activeModule)?.nom || 'Module';
 
-    const handleDownload = (res) => {
+    const handleDownload = (resource) => {
         const link = document.createElement('a');
-        link.href = `http://localhost:8080/api/public/fichiers/voir?chemin=${encodeURIComponent(res.chemin)}`;
-        link.download = res.nomOriginal;
+        link.href = `http://localhost:8080/api/public/fichiers/voir?chemin=${encodeURIComponent(resource.chemin)}`;
+        link.download = resource.nomOriginal;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
     };
 
-    const handleView = (res) => {
-        window.open(`http://localhost:8080/api/public/fichiers/voir?chemin=${encodeURIComponent(res.chemin)}`, '_blank');
+    const handleView = (resource) => {
+        window.open(
+            `http://localhost:8080/api/public/fichiers/voir?chemin=${encodeURIComponent(resource.chemin)}`,
+            '_blank'
+        );
     };
 
     const formatSize = (bytes) => {
@@ -148,9 +186,9 @@ const CoursBibliotheque = () => {
     };
 
     const getIconForType = (type) => {
-        const t = (type || '').toLowerCase();
-        if (t.includes('pdf')) return Book;
-        if (t.includes('word') || t.includes('text')) return FileText;
+        const normalized = (type || '').toLowerCase();
+        if (normalized.includes('pdf')) return Book;
+        if (normalized.includes('word') || normalized.includes('text')) return FileText;
         return Terminal;
     };
 
@@ -160,7 +198,6 @@ const CoursBibliotheque = () => {
 
     return (
         <div className="cb-container">
-            {/* Sidebar */}
             <aside className="cb-sidebar">
                 <div className="cb-sidebar-header">
                     <div className="cb-sidebar-header-top">
@@ -179,8 +216,10 @@ const CoursBibliotheque = () => {
                                 onChange={(e) => setActiveSemester(e.target.value)}
                                 className="cb-semester-select-minimal"
                             >
-                                {semesters.map(s => (
-                                    <option key={s} value={s}>{s}</option>
+                                {semesters.map((semester) => (
+                                    <option key={semester} value={semester}>
+                                        {semester}
+                                    </option>
                                 ))}
                             </select>
                             <ChevronDown size={14} className="cb-select-arrow" />
@@ -191,17 +230,21 @@ const CoursBibliotheque = () => {
                 <div className="cb-module-list">
                     {error ? (
                         <div className="cb-error-container" style={{ padding: '20px', textAlign: 'center' }}>
-                            <div className="cb-error-msg" style={{ color: '#ef4444', fontSize: '0.875rem', marginBottom: '10px' }}>
+                            <div
+                                className="cb-error-msg"
+                                style={{ color: '#ef4444', fontSize: '0.875rem', marginBottom: '10px' }}
+                            >
                                 {error}
                             </div>
                             <button
-                                onClick={() => setActiveSemester(prev => {
-                                    // Trigger re-fetch by cycling value or same value
-                                    const val = activeSemester;
-                                    setActiveSemester('');
-                                    setTimeout(() => setActiveSemester(val), 10);
-                                    return prev;
-                                })}
+                                onClick={() =>
+                                    setActiveSemester((previous) => {
+                                        const current = activeSemester;
+                                        setActiveSemester('');
+                                        setTimeout(() => setActiveSemester(current), 10);
+                                        return previous;
+                                    })
+                                }
                                 className="cb-retry-btn"
                                 style={{
                                     padding: '6px 12px',
@@ -210,15 +253,15 @@ const CoursBibliotheque = () => {
                                     border: 'none',
                                     borderRadius: '6px',
                                     cursor: 'pointer',
-                                    fontSize: '0.75rem'
+                                    fontSize: '0.75rem',
                                 }}
                             >
-                                Réessayer
+                                Reessayer
                             </button>
                         </div>
                     ) : (
                         <>
-                            {modules.map(module => (
+                            {modules.map((module) => (
                                 <div
                                     key={module.codeModule}
                                     className={`cb-module-item ${activeModule === module.codeModule ? 'active' : ''}`}
@@ -240,40 +283,17 @@ const CoursBibliotheque = () => {
                 </div>
             </aside>
 
-            {/* Main Content */}
             <main className="cb-main">
                 <header className="cb-header">
                     <div className="cb-header-row">
                         <h1 className="cb-title">{getActiveModuleName()}</h1>
-
-                        <div className="cb-tabs">
-                            {['TOUS', 'COURS', 'TD', 'TP'].map(tab => (
-                                <button
-                                    key={tab}
-                                    className={`cb-tab ${activeTab === tab ? 'active' : ''}`}
-                                    onClick={() => setActiveTab(tab)}
-                                >
-                                    {tab}
-                                </button>
-                            ))}
-                        </div>
                     </div>
                 </header>
 
                 <section className="cb-content-controls">
                     <div className="cb-filters-row">
                         <div className="cb-filter-group">
-                            <label className="cb-filter-label">Date de séance:</label>
-                            <input
-                                type="date"
-                                value={selectedDate}
-                                onChange={(e) => setSelectedDate(e.target.value)}
-                                className="cb-filter-select"
-                            />
-                        </div>
-                        
-                        <div className="cb-filter-group">
-                            <label className="cb-filter-label">Matière:</label>
+                            <label className="cb-filter-label">Matiere:</label>
                             <select
                                 value={selectedMatiere}
                                 onChange={(e) => setSelectedMatiere(e.target.value)}
@@ -281,16 +301,35 @@ const CoursBibliotheque = () => {
                                 disabled={availableMatieres.length === 0}
                             >
                                 <option value="TOUS">Toutes</option>
-                                {availableMatieres.map(matiere => (
-                                    <option key={matiere} value={matiere}>{matiere}</option>
+                                {availableMatieres.map((matiere) => (
+                                    <option key={matiere} value={matiere}>
+                                        {matiere}
+                                    </option>
                                 ))}
                             </select>
                         </div>
-                        
-                        <button 
+
+                        <div className="cb-filter-group">
+                            <label className="cb-filter-label">Seance:</label>
+                            <select
+                                value={selectedSeance}
+                                onChange={(e) => setSelectedSeance(e.target.value)}
+                                className="cb-filter-select"
+                                disabled={filteredAvailableSeances.length === 0}
+                            >
+                                <option value="TOUS">Toutes les seances</option>
+                                {filteredAvailableSeances.map((seance) => (
+                                    <option key={seance.id} value={String(seance.id)}>
+                                        {seance.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <button
                             className="cb-clear-filters-btn"
                             onClick={() => {
-                                setSelectedDate('');
+                                setSelectedSeance('TOUS');
                                 setSelectedMatiere('TOUS');
                                 setResourceSearch('');
                             }}
@@ -298,7 +337,7 @@ const CoursBibliotheque = () => {
                             Effacer les filtres
                         </button>
                     </div>
-                    
+
                     <div className="cb-search-box cb-resource-search">
                         <Search size={18} />
                         <input
@@ -313,34 +352,34 @@ const CoursBibliotheque = () => {
                 <section className="cb-resources-container">
                     {resourcesLoading ? (
                         <div className="cb-resources-loading" style={{ padding: '3rem', textAlign: 'center', color: '#6366f1' }}>
-                            <span>Récupération des ressources en cours...</span>
+                            <span>Recuperation des ressources en cours...</span>
                         </div>
                     ) : (
                         <table className="cb-table">
                             <thead>
                                 <tr>
                                     <th>RESSOURCE</th>
-                                    <th>MATIÈRE</th>
+                                    <th>MATIERE</th>
                                     <th>DATE</th>
                                     <th>TAILLE</th>
                                     <th>ACTIONS</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredResources.map(res => {
-                                    const Icon = getIconForType(res.typeMime);
+                                {filteredResources.map((resource) => {
+                                    const Icon = getIconForType(resource.typeMime);
                                     return (
-                                        <tr key={res.id}>
+                                        <tr key={resource.id}>
                                             <td>
                                                 <div className="cb-resource-info">
-                                                    <div className={`cb-res-icon-box ${(res.typeMime || '').includes('pdf') ? 'cours' : 'td'}`}>
+                                                    <div className={`cb-res-icon-box ${(resource.typeMime || '').includes('pdf') ? 'cours' : 'td'}`}>
                                                         <Icon size={20} />
                                                     </div>
                                                     <div className="cb-res-details">
-                                                        <span className="cb-res-name">{res.nomOriginal}</span>
+                                                        <span className="cb-res-name">{resource.nomOriginal}</span>
                                                         <div className="cb-res-meta">
-                                                            <span className={`cb-res-type-badge ${(res.typeMime || '').includes('pdf') ? 'cours' : 'td'}`}>
-                                                                {res.typeSeance || 'DOCUMENT'}
+                                                            <span className={`cb-res-type-badge ${(resource.typeMime || '').includes('pdf') ? 'cours' : 'td'}`}>
+                                                                {resource.typeSeance || 'DOCUMENT'}
                                                             </span>
                                                         </div>
                                                     </div>
@@ -348,26 +387,26 @@ const CoursBibliotheque = () => {
                                             </td>
                                             <td>
                                                 <div className="cb-matiere-badge" style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                                                    {res.matiereNom}
+                                                    {resource.matiereNom}
                                                 </div>
                                             </td>
                                             <td>
                                                 <div className="cb-date-box">
                                                     <Calendar size={16} className="cb-text-light" />
-                                                    <span>{formatDate(res.dateUpload)}</span>
+                                                    <span>{formatDate(resource.dateUpload)}</span>
                                                 </div>
                                             </td>
                                             <td>
                                                 <div className="cb-size-box">
-                                                    <span>{formatSize(res.taille)}</span>
+                                                    <span>{formatSize(resource.taille)}</span>
                                                 </div>
                                             </td>
                                             <td>
                                                 <div className="cb-actions">
-                                                    <button className="cb-action-btn" title="Télécharger" onClick={() => handleDownload(res)}>
+                                                    <button className="cb-action-btn" title="Telecharger" onClick={() => handleDownload(resource)}>
                                                         <Download size={16} />
                                                     </button>
-                                                    <button className="cb-action-btn secondary" title="Ouvrir" onClick={() => handleView(res)}>
+                                                    <button className="cb-action-btn secondary" title="Ouvrir" onClick={() => handleView(resource)}>
                                                         <ExternalLink size={16} />
                                                     </button>
                                                 </div>
@@ -378,7 +417,7 @@ const CoursBibliotheque = () => {
                                 {filteredResources.length === 0 && (
                                     <tr>
                                         <td colSpan="5" style={{ textAlign: 'center', padding: '3rem', color: 'var(--cb-text-light)' }}>
-                                            Aucune ressource trouvée pour ce module.
+                                            Aucune ressource trouvee pour ce module.
                                         </td>
                                     </tr>
                                 )}
@@ -392,4 +431,3 @@ const CoursBibliotheque = () => {
 };
 
 export default CoursBibliotheque;
-

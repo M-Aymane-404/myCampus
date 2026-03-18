@@ -126,9 +126,10 @@ class _NotificationTileProfesseur extends StatelessWidget {
               width: 11,
               height: 11,
               decoration: BoxDecoration(
-                color: notification.lu
-                    ? const Color(0xFFCBD5E1)
-                    : const Color(0xFFEF4444),
+                color:
+                    notification.lu
+                        ? const Color(0xFFCBD5E1)
+                        : const Color(0xFFEF4444),
                 shape: BoxShape.circle,
               ),
             ),

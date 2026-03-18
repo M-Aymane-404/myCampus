@@ -103,12 +103,16 @@ public class AdminAnnonceController {
     }
 
     @PostMapping(value = "/{annonceId}/ressources", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "Ajouter une ressource attachee", description = "Ajoute une ressource attachee a une annonce.")
-    public ResponseEntity<RessourceAnnonceSortieDTO> ajouterRessource(
+    @Operation(summary = "Ajouter des ressources attachees", description = "Ajoute une ou plusieurs ressources attachees a une annonce.")
+    public ResponseEntity<List<RessourceAnnonceSortieDTO>> ajouterRessources(
             @PathVariable Long annonceId,
-            @RequestPart("fichier") MultipartFile fichier) {
+            @RequestPart(value = "fichiers", required = false) List<MultipartFile> fichiers,
+            @RequestPart(value = "fichier", required = false) MultipartFile fichier) {
 
-        RessourceAnnonceSortieDTO result = gestionRessourcesAnnonceMetier.ajouterRessourceAdmin(annonceId, fichier);
+        List<RessourceAnnonceSortieDTO> result = gestionRessourcesAnnonceMetier.ajouterRessourcesAdmin(
+                annonceId,
+                normaliserFichiers(fichiers, fichier)
+        );
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 
@@ -143,5 +147,15 @@ public class AdminAnnonceController {
         } catch (MalformedURLException e) {
             throw new IllegalArgumentException("Chemin du fichier invalide.");
         }
+    }
+
+    private List<MultipartFile> normaliserFichiers(List<MultipartFile> fichiers, MultipartFile fichier) {
+        if (fichiers != null && !fichiers.isEmpty()) {
+            return fichiers;
+        }
+        if (fichier != null && !fichier.isEmpty()) {
+            return List.of(fichier);
+        }
+        return List.of();
     }
 }

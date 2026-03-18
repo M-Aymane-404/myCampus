@@ -9,13 +9,13 @@ import java.util.List;
 
 public interface GestionRessourcesAnnonceMetier {
 
-    RessourceAnnonceSortieDTO ajouterRessourceAdmin(Long annonceId, MultipartFile fichier);
+    List<RessourceAnnonceSortieDTO> ajouterRessourcesAdmin(Long annonceId, List<MultipartFile> fichiers);
 
     List<RessourceAnnonceSortieDTO> listerRessourcesAdmin(Long annonceId);
 
     TelechargementRessourceAnnonceSortieDTO preparerTelechargementAdmin(Long ressourceId);
 
-    RessourceAnnonceSortieDTO ajouterRessourceProfesseur(Long annonceId, String emailProfesseur, MultipartFile fichier);
+    List<RessourceAnnonceSortieDTO> ajouterRessourcesProfesseur(Long annonceId, String emailProfesseur, List<MultipartFile> fichiers);
 
     List<RessourceAnnonceSortieDTO> listerRessourcesProfesseur(Long annonceId, String emailProfesseur);
 
