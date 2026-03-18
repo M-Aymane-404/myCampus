@@ -5,6 +5,8 @@ import com.mycampus.backend.enumerations.TypeAnnonce;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.time.LocalDateTime;
 
 @Entity
@@ -34,9 +36,6 @@ public class Annonce {
      @Column(nullable = false)
      private TypeAnnonce  typeAnnonce;
 
-     @Builder.Default
-     private boolean urgent = false;
-
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -55,5 +54,8 @@ public class Annonce {
     @JoinColumn(name = "departement_id")
     private Departement departement;
 
+    @OneToMany(mappedBy = "annonce", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<RessourceAnnonce> ressources = new ArrayList<>();
 
 }

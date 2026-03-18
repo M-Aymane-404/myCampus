@@ -1,26 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
-
-import { User, Plus, Calendar, Save, Loader2, Eye, EyeOff } from 'lucide-react';
-
+import { User, Plus, Save, Loader2, Eye, EyeOff, Lock, Phone } from 'lucide-react';
 import { apiAuth } from '../services/apiAuth';
-
 import { apiEtudiant } from '../services/apiEtudiant';
-
 import { apiAdmin } from '../services/apiAdmin';
-
 import './ProfilPage.css';
 
-
-
 const ProfilPage = () => {
-
     const [loading, setLoading] = useState(true);
-
     const [saving, setSaving] = useState(false);
-
     const [error, setError] = useState(null);
-
-    // Password change state
     const [passwordData, setPasswordData] = useState({
         currentPassword: '',
         newPassword: '',
@@ -32,800 +20,396 @@ const ProfilPage = () => {
         confirm: false
     });
     const [passwordError, setPasswordError] = useState('');
-
-
-
+    const [telephoneInitial, setTelephoneInitial] = useState('');
     const [infosUtilisateur, setInfosUtilisateur] = useState({
-
         nom: '',
-
         prenom: '',
-
         email: '',
-
         tel: '',
-
         role: '',
-
         cin: '',
-
         apogee: '',
-
         dateNaissance: '',
-
         grade: '',
-
         photoUrl: null
-
     });
-
-
-
-    // Photo upload state
-
     const [photoPreview, setPhotoPreview] = useState(null);
-
     const fileInputRef = useRef(null);
 
-
-
     useEffect(() => {
-
         const chargerProfil = async () => {
-
             try {
-
                 setLoading(true);
 
                 const user = apiAuth.getUser();
-
-                let data;
-
-                
-
-                // Use different API based on user role
-
-                if (user.role === 'admin') {
-
-                    data = await apiAdmin.getProfile();
-
-                } else {
-
-                    data = await apiEtudiant.getProfile();
-
-                }
-
-                
+                const data = user.role === 'admin'
+                    ? await apiAdmin.getProfile()
+                    : await apiEtudiant.getProfile();
 
                 setInfosUtilisateur({
-
                     nom: data.nom || '',
-
                     prenom: data.prenom || '',
-
                     email: data.email || '',
-
                     tel: data.tel || '',
-
                     role: data.role || user.role || 'ETUDIANT',
-
                     cin: data.cin || '',
-
-                    apogee: data.apogee || data.ppr || '', // Handle both student apogee and admin ppr
+                    apogee: data.apogee || data.ppr || '',
                     dateNaissance: data.dateNaissance || '',
                     grade: data.grade || '',
-
                     photoUrl: data.photoUrl || null
-
                 });
-
-
+                setTelephoneInitial(data.tel || '');
 
                 if (data.photoUrl) {
-
-                    // Handle different photo URL formats
-
-                    setPhotoPreview(data.photoUrl.startsWith('http') ? data.photoUrl : `http://localhost:8080${data.photoUrl}`);
-
+                    setPhotoPreview(
+                        data.photoUrl.startsWith('http')
+                            ? data.photoUrl
+                            : `http://localhost:8080${data.photoUrl}`
+                    );
                 }
-
             } catch (err) {
-
-                console.error("Erreur lors du chargement du profil:", err);
-
-                setError("Impossible de charger les informations du profil.");
-
+                console.error('Erreur lors du chargement du profil:', err);
+                setError('Impossible de charger les informations du profil.');
             } finally {
-
                 setLoading(false);
-
             }
-
         };
 
-
-
         chargerProfil();
-
     }, []);
 
-
-
-    const handleChange = (e) => {
-
-        const { name, value } = e.target;
-
-        setInfosUtilisateur(prev => ({ ...prev, [name]: value }));
-
+    const handleTelephoneChange = (e) => {
+        setInfosUtilisateur((prev) => ({ ...prev, tel: e.target.value }));
     };
 
     const handlePasswordChange = (e) => {
-
         const { name, value } = e.target;
-
-        setPasswordData(prev => ({ ...prev, [name]: value }));
-
-        setPasswordError(''); // Clear error when user types
-
+        setPasswordData((prev) => ({ ...prev, [name]: value }));
+        setPasswordError('');
     };
 
     const togglePasswordVisibility = (field) => {
-
-        setShowPasswords(prev => ({ ...prev, [field]: !prev[field] }));
-
+        setShowPasswords((prev) => ({ ...prev, [field]: !prev[field] }));
     };
 
     const validatePasswordData = () => {
-
         if (!passwordData.currentPassword) {
-
             setPasswordError('Veuillez saisir votre mot de passe actuel');
-
             return false;
-
         }
 
         if (!passwordData.newPassword) {
-
             setPasswordError('Veuillez saisir votre nouveau mot de passe');
-
             return false;
-
         }
 
         if (passwordData.newPassword.length < 8) {
-
-            setPasswordError('Le nouveau mot de passe doit contenir au moins 8 caractères');
-
+            setPasswordError('Le nouveau mot de passe doit contenir au moins 8 caracteres');
             return false;
-
         }
 
         if (passwordData.newPassword !== passwordData.confirmPassword) {
-
             setPasswordError('Les mots de passe ne correspondent pas');
-
             return false;
-
         }
 
         if (passwordData.currentPassword === passwordData.newPassword) {
-
-            setPasswordError('Le nouveau mot de passe doit être différent de l\'ancien');
-
+            setPasswordError('Le nouveau mot de passe doit etre different de l ancien');
             return false;
-
         }
 
         return true;
-
     };
 
     const handlePasswordChangeSubmit = async () => {
-
         if (!validatePasswordData()) {
-
             return;
-
         }
 
         try {
-
             setSaving(true);
 
             const user = apiAuth.getUser();
-
-            const profileData = {
-
-                nom: infosUtilisateur.nom,
-
-                prenom: infosUtilisateur.prenom,
-
-                tel: infosUtilisateur.tel,
-
-                email: infosUtilisateur.email,
-
+            const payload = {
                 ancienPassword: passwordData.currentPassword,
-
                 nouveauPassword: passwordData.newPassword
-
             };
 
-            // Add grade for admin or dateNaissance for student
             if (user.role === 'admin') {
-                profileData.grade = infosUtilisateur.grade;
+                await apiAdmin.updateProfile(payload);
             } else {
-                profileData.dateNaissance = infosUtilisateur.dateNaissance;
+                await apiEtudiant.updateProfile(payload);
             }
-
-            // Use different API based on user role
-
-            if (user.role === 'admin') {
-
-                await apiAdmin.updateProfile(profileData);
-
-            } else {
-
-                await apiEtudiant.updateProfile(profileData);
-
-            }
-
-            // Clear password fields
 
             setPasswordData({
-
                 currentPassword: '',
-
                 newPassword: '',
-
                 confirmPassword: ''
-
             });
-
             setPasswordError('');
 
-            alert('Mot de passe modifié avec succès !');
-
+            alert('Mot de passe modifie avec succes !');
         } catch (err) {
-
             console.error('Erreur lors du changement de mot de passe:', err);
-
             setPasswordError(err.message || 'Erreur lors du changement de mot de passe');
-
         } finally {
-
             setSaving(false);
-
         }
-
     };
 
-
-
     const handleSave = async () => {
+        if (infosUtilisateur.tel === telephoneInitial) {
+            return;
+        }
 
         try {
-
             setSaving(true);
 
             const user = apiAuth.getUser();
-
-            const profileData = {
-
-                nom: infosUtilisateur.nom,
-
-                prenom: infosUtilisateur.prenom,
-
-                tel: infosUtilisateur.tel,
-
-                email: infosUtilisateur.email
-
-            };
-
-            // Add grade for admin or dateNaissance for student
-            if (user.role === 'admin') {
-                profileData.grade = infosUtilisateur.grade;
-            } else {
-                profileData.dateNaissance = infosUtilisateur.dateNaissance;
-            }
-
-
-
-            // Use different API based on user role
+            const payload = { tel: infosUtilisateur.tel };
 
             if (user.role === 'admin') {
-
-                await apiAdmin.updateProfile(profileData);
-
+                await apiAdmin.updateProfile(payload);
             } else {
-
-                await apiEtudiant.updateProfile(profileData);
-
+                await apiEtudiant.updateProfile(payload);
             }
 
-
-
-            // Update local storage via apiAuth for synchronization with other components
-
-            apiAuth.updateUser({
-
-                nom: infosUtilisateur.nom,
-
-                prenom: infosUtilisateur.prenom,
-
-                email: infosUtilisateur.email
-
-            });
-
-
-
-            // Notify header/other components
-
-            window.dispatchEvent(new Event('user-updated'));
-
-
-
-            alert("Modifications enregistrées avec succès !");
-
+            setTelephoneInitial(infosUtilisateur.tel);
+            alert('Telephone mis a jour avec succes !');
         } catch (err) {
-
-            console.error("Erreur détaillée lors de la sauvegarde:", err);
-
-
-
-            // Helpful message if backend is not ready
-
-            if (err.message.includes('405') || err.message.includes('404')) {
-
-                alert(`Le bouton ne peut pas enregistrer car l'API de mise à jour n'est pas encore implémentée par votre équipe backend.\n\nVérifiez que le contrôleur Java gère bien la méthode de mise à jour.`);
-
-            } else {
-
-                alert(`Erreur: ${err.message}`);
-
-            }
-
+            console.error('Erreur detaillee lors de la sauvegarde:', err);
+            alert(`Erreur: ${err.message}`);
         } finally {
-
             setSaving(false);
-
         }
-
     };
-
-
 
     const handlePhotoClick = () => {
-
-        fileInputRef.current.click();
-
+        fileInputRef.current?.click();
     };
-
-
 
     const handlePhotoChange = async (e) => {
-
         const file = e.target.files[0];
 
-        if (file) {
-
-            if (file.size > 5 * 1024 * 1024) { // 5MB limit
-
-                alert("La taille de l'image ne doit pas dépasser 5 Mo.");
-
-                return;
-
-            }
-
-
-
-            try {
-
-                // 1. Show preview immediately for better UX
-
-                const reader = new FileReader();
-
-                reader.onloadend = () => {
-
-                    setPhotoPreview(reader.result);
-
-                };
-
-                reader.readAsDataURL(file);
-
-
-
-                // 2. Upload to backend using role-based API
-
-                const user = apiAuth.getUser();
-
-                let response;
-
-                
-
-                if (user.role === 'admin') {
-
-                    response = await apiAdmin.uploadPhoto(file);
-
-                } else {
-
-                    response = await apiEtudiant.uploadPhoto(file);
-
-                }
-
-
-
-                // 3. Update photo in local state and session
-
-                const photoUrl = response.url || response.photoUrl || response.photo || response.fileName || response.photoNom; // Handle different response formats
-
-                
-
-                if (!photoUrl) {
-
-                    console.error('Response structure:', response);
-
-                    throw new Error('Réponse du serveur invalide: URL de photo non trouvée');
-
-                }
-
-                
-
-                const fullPhotoUrl = photoUrl.startsWith('http') ? photoUrl : `http://localhost:8080${photoUrl}`;
-
-
-
-                setInfosUtilisateur(prev => ({ ...prev, photoUrl: photoUrl }));
-                setPhotoPreview(fullPhotoUrl);
-
-                apiAuth.updateUser({ photoProfile: fullPhotoUrl });
-                window.dispatchEvent(new Event('user-updated'));
-
-                // Refresh profile data to get the latest photoUrl from backend
-                try {
-                    let refreshedData;
-                    if (user.role === 'admin') {
-                        refreshedData = await apiAdmin.getProfile();
-                    } else {
-                        refreshedData = await apiEtudiant.getProfile();
-                    }
-                    
-                    // Update the photoUrl in state with the fresh data from backend
-                    if (refreshedData.photoUrl) {
-                        setInfosUtilisateur(prev => ({ 
-                            ...prev, 
-                            photoUrl: refreshedData.photoUrl 
-                        }));
-                        const refreshedPhotoUrl = refreshedData.photoUrl.startsWith('http') ? 
-                            refreshedData.photoUrl : 
-                            `http://localhost:8080${refreshedData.photoUrl}`;
-                        setPhotoPreview(refreshedPhotoUrl);
-                        apiAuth.updateUser({ photoProfile: refreshedPhotoUrl });
-                    }
-                } catch (refreshError) {
-                    console.warn('Could not refresh profile data after photo upload:', refreshError);
-                    // Continue anyway since the photo was uploaded successfully
-                }
-
-                alert("Photo de profil mise à jour !");
-
-            } catch (err) {
-
-                console.error("Erreur lors de l'upload de la photo:", err);
-
-                alert(`Erreur lors de l'envoi de la photo: ${err.message}`);
-
-            }
-
+        if (!file) {
+            return;
         }
 
+        if (file.size > 5 * 1024 * 1024) {
+            alert("La taille de l'image ne doit pas depasser 5 Mo.");
+            return;
+        }
+
+        try {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setPhotoPreview(reader.result);
+            };
+            reader.readAsDataURL(file);
+
+            const user = apiAuth.getUser();
+            const response = user.role === 'admin'
+                ? await apiAdmin.uploadPhoto(file)
+                : await apiEtudiant.uploadPhoto(file);
+
+            const photoUrl =
+                response.url ||
+                response.photoUrl ||
+                response.photo ||
+                response.fileName ||
+                response.photoNom;
+
+            if (!photoUrl) {
+                console.error('Response structure:', response);
+                throw new Error('Reponse du serveur invalide: URL de photo non trouvee');
+            }
+
+            const fullPhotoUrl = photoUrl.startsWith('http')
+                ? photoUrl
+                : `http://localhost:8080${photoUrl}`;
+
+            setInfosUtilisateur((prev) => ({ ...prev, photoUrl }));
+            setPhotoPreview(fullPhotoUrl);
+            apiAuth.updateUser({ photoProfile: fullPhotoUrl });
+            window.dispatchEvent(new Event('user-updated'));
+
+            try {
+                const refreshedData = user.role === 'admin'
+                    ? await apiAdmin.getProfile()
+                    : await apiEtudiant.getProfile();
+
+                if (refreshedData.photoUrl) {
+                    const refreshedPhotoUrl = refreshedData.photoUrl.startsWith('http')
+                        ? refreshedData.photoUrl
+                        : `http://localhost:8080${refreshedData.photoUrl}`;
+
+                    setInfosUtilisateur((prev) => ({
+                        ...prev,
+                        photoUrl: refreshedData.photoUrl
+                    }));
+                    setPhotoPreview(refreshedPhotoUrl);
+                    apiAuth.updateUser({ photoProfile: refreshedPhotoUrl });
+                }
+            } catch (refreshError) {
+                console.warn('Could not refresh profile data after photo upload:', refreshError);
+            }
+
+            alert('Photo de profil mise a jour !');
+        } catch (err) {
+            console.error("Erreur lors de l'upload de la photo:", err);
+            alert(`Erreur lors de l'envoi de la photo: ${err.message}`);
+        }
     };
 
-
-
-    const currentRole = infosUtilisateur.role ? infosUtilisateur.role.toUpperCase() : 'ETUDIANT';
-    
-    // Helper function to determine if user is student
+    const currentRole = infosUtilisateur.role
+        ? infosUtilisateur.role.toUpperCase()
+        : 'ETUDIANT';
+    const telephoneModifie = infosUtilisateur.tel !== telephoneInitial;
     const isStudent = () => {
         const role = infosUtilisateur.role || apiAuth.getUser()?.role || '';
         return role.toLowerCase() !== 'admin';
     };
 
-
-
     const getDisplayName = () => {
-
         if (infosUtilisateur.prenom && infosUtilisateur.nom) {
-
             return `${infosUtilisateur.prenom} ${infosUtilisateur.nom}`;
-
         }
 
-        return infosUtilisateur.email.split('@')[0] || 'Utilisateur';
-
+        return infosUtilisateur.email
+            ? infosUtilisateur.email.split('@')[0]
+            : 'Utilisateur';
     };
 
-
-
     if (loading) {
-
         return (
-
             <div className="profil-loading">
-
                 <Loader2 className="animate-spin" size={48} />
-
                 <p>Chargement de votre profil...</p>
-
             </div>
-
         );
-
     }
-
-
 
     if (error) {
-
         return (
-
             <div className="profil-error">
-
                 <p>{error}</p>
-
-                <button onClick={() => window.location.reload()} className="btn-retry">Réessayer</button>
-
+                <button onClick={() => window.location.reload()} className="btn-retry">Reessayer</button>
             </div>
-
         );
-
     }
 
-
-
     return (
-
         <div className="profil-page">
-
             <div className="profil-header">
-
                 <h1>Mon Profil Personnel</h1>
-
-                <p>Gérez vos informations personnelles et académiques.</p>
-
+                <p>Modifiez uniquement votre telephone, votre mot de passe et votre photo de profil.</p>
             </div>
 
-
-
             <div className="profile-page-layout">
-
-                {/* Left Sidebar */}
-
                 <div className="profile-sidebar">
-
                     <div className="profile-card">
-
                         <div className="profile-avatar-box">
-
                             {photoPreview ? (
-
                                 <img src={photoPreview} alt="Profil" className="profile-avatar-image" />
-
                             ) : (
-
                                 <span className="profile-avatar-initials">
-
                                     {infosUtilisateur.prenom ? infosUtilisateur.prenom.charAt(0) : ''}
-
                                     {infosUtilisateur.nom ? infosUtilisateur.nom.charAt(0) : ''}
-
                                 </span>
-
                             )}
 
                             <input
-
                                 type="file"
-
                                 ref={fileInputRef}
-
                                 onChange={handlePhotoChange}
-
                                 style={{ display: 'none' }}
-
                                 accept="image/*"
-
                             />
 
                             <button className="btn-add-photo" onClick={handlePhotoClick}>
-
                                 <Plus size={16} />
-
                             </button>
-
                         </div>
 
                         <h2 className="profile-name">{getDisplayName()}</h2>
 
                         <div className="profile-role-tag">
-
-                            {currentRole === 'ETUDIANT' ? 'ÉTUDIANT' : currentRole}
-
+                            {currentRole === 'ETUDIANT' ? 'ETUDIANT' : currentRole}
                         </div>
 
-
-
                         <div className="profile-meta-row">
-
-                            <span className="meta-label">
-
-                                {isStudent() ? 'APOGEE' : 'PPR'}
-
-                            </span>
-
+                            <span className="meta-label">{isStudent() ? 'APOGEE' : 'PPR'}</span>
                             <span className="meta-value">{infosUtilisateur.apogee || 'N/A'}</span>
-
                         </div>
 
                         <div className="profile-meta-row">
-
                             <span className="meta-label">CIN</span>
-
                             <span className="meta-value">{infosUtilisateur.cin || 'N/A'}</span>
-
                         </div>
-
                     </div>
-
-
-
-
-
                 </div>
 
-
-
-                {/* Right Main Content */}
-
                 <div className="profile-main">
-
                     <div className="profile-section-header">
-
                         <User size={20} className="section-icon" />
-
-                        <h3>Informations Personnelles</h3>
-
+                        <h3>Informations personnelles</h3>
                     </div>
-
-
 
                     <div className="profile-grid">
-
                         <div className="profile-input-group">
-
-                            <label>PRÉNOM</label>
-
-                            <input
-
-                                type="text"
-
-                                name="prenom"
-
-                                value={infosUtilisateur.prenom}
-
-                                onChange={handleChange}
-
-                                className="profile-input-field"
-
-                            />
-
+                            <label>Prenom</label>
+                            <div className="profile-static-field">{infosUtilisateur.prenom || 'N/A'}</div>
                         </div>
 
-
-
                         <div className="profile-input-group">
-
-                            <label>NOM</label>
-
-                            <input
-
-                                type="text"
-
-                                name="nom"
-
-                                value={infosUtilisateur.nom}
-
-                                onChange={handleChange}
-
-                                className="profile-input-field"
-
-                            />
-
+                            <label>Nom</label>
+                            <div className="profile-static-field">{infosUtilisateur.nom || 'N/A'}</div>
                         </div>
 
-
-
                         <div className="profile-input-group">
-
-                            <label>{infosUtilisateur.role === 'admin' ? 'GRADE' : 'DATE DE NAISSANCE'}</label>
-
-                            <input
-
-                                type={infosUtilisateur.role === 'admin' ? 'text' : 'date'}
-
-                                name={infosUtilisateur.role === 'admin' ? 'grade' : 'dateNaissance'}
-
-                                value={infosUtilisateur.role === 'admin' ? infosUtilisateur.grade : infosUtilisateur.dateNaissance}
-
-                                onChange={handleChange}
-
-                                className="profile-input-field"
-
-                            />
-
+                            <label>{infosUtilisateur.role === 'admin' ? 'Grade' : 'Date de naissance'}</label>
+                            <div className="profile-static-field">
+                                {infosUtilisateur.role === 'admin'
+                                    ? (infosUtilisateur.grade || 'N/A')
+                                    : (infosUtilisateur.dateNaissance || 'N/A')}
+                            </div>
                         </div>
 
-
-
                         <div className="profile-input-group">
-
-                            <label>NUMÉRO DE TÉLÉPHONE</label>
-
+                            <label>Numero de telephone</label>
                             <input
-
                                 type="tel"
-
                                 name="tel"
-
                                 value={infosUtilisateur.tel}
-
-                                onChange={handleChange}
-
+                                onChange={handleTelephoneChange}
                                 className="profile-input-field"
-
                             />
-
+                            <span className="profile-field-help">Ce champ est modifiable.</span>
                         </div>
-
-
 
                         <div className="profile-input-group full-width">
-
-                            <label>ADRESSE MAIl</label>
-
-                            <input
-
-                                type="email"
-
-                                name="email"
-
-                                value={infosUtilisateur.email}
-
-                                onChange={handleChange}
-
-                                className="profile-input-field"
-
-                            />
-
+                            <label>Adresse mail</label>
+                            <div className="profile-static-field">{infosUtilisateur.email || 'N/A'}</div>
                         </div>
-
-
-
                     </div>
 
-                    {/* Password Change Section */}
+                    <div className="profile-permissions-note">
+                        <Phone size={16} />
+                        <span>Seuls le numero de telephone, le mot de passe et la photo de profil peuvent etre modifies.</span>
+                    </div>
+
                     <div className="password-section">
                         <div className="profile-section-header">
-                            <User size={20} className="section-icon" />
-                            <h3>Changement de Mot de Passe</h3>
+                            <Lock size={20} className="section-icon" />
+                            <h3>Changement de mot de passe</h3>
                         </div>
 
                         <div className="profile-grid">
                             <div className="profile-input-group">
-                                <label>MOT DE PASSE ACTUEL</label>
+                                <label>Mot de passe actuel</label>
                                 <div className="password-input-wrapper">
                                     <input
-                                        type={showPasswords.current ? "text" : "password"}
+                                        type={showPasswords.current ? 'text' : 'password'}
                                         name="currentPassword"
                                         value={passwordData.currentPassword}
                                         onChange={handlePasswordChange}
@@ -843,10 +427,10 @@ const ProfilPage = () => {
                             </div>
 
                             <div className="profile-input-group">
-                                <label>NOUVEAU MOT DE PASSE</label>
+                                <label>Nouveau mot de passe</label>
                                 <div className="password-input-wrapper">
                                     <input
-                                        type={showPasswords.new ? "text" : "password"}
+                                        type={showPasswords.new ? 'text' : 'password'}
                                         name="newPassword"
                                         value={passwordData.newPassword}
                                         onChange={handlePasswordChange}
@@ -864,10 +448,10 @@ const ProfilPage = () => {
                             </div>
 
                             <div className="profile-input-group">
-                                <label>CONFIRMER LE MOT DE PASSE</label>
+                                <label>Confirmer le mot de passe</label>
                                 <div className="password-input-wrapper">
                                     <input
-                                        type={showPasswords.confirm ? "text" : "password"}
+                                        type={showPasswords.confirm ? 'text' : 'password'}
                                         name="confirmPassword"
                                         value={passwordData.confirmPassword}
                                         onChange={handlePasswordChange}
@@ -893,9 +477,9 @@ const ProfilPage = () => {
                             )}
                         </div>
 
-                        <button 
-                            className="btn-change-password" 
-                            onClick={handlePasswordChangeSubmit} 
+                        <button
+                            className="btn-change-password"
+                            onClick={handlePasswordChangeSubmit}
                             disabled={saving || !passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword}
                         >
                             {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
@@ -903,25 +487,14 @@ const ProfilPage = () => {
                         </button>
                     </div>
 
-                    <button className="btn-save-changes" onClick={handleSave} disabled={saving}>
-
+                    <button className="btn-save-changes" onClick={handleSave} disabled={saving || !telephoneModifie}>
                         {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
-
-                        <span>{saving ? 'Enregistrement...' : 'Sauvegarder'}</span>
-
+                        <span>{saving ? 'Enregistrement...' : 'Enregistrer le telephone'}</span>
                     </button>
-
                 </div>
-
             </div>
-
         </div>
-
     );
-
 };
 
-
-
 export default ProfilPage;
-

@@ -561,8 +561,6 @@ public class PedagogiqueDataSeeder {
                        .datePublication(today)
                 .classe(ilcs)
                 .publiee(true)
-               .urgent(false)
-
                .typeAnnonce(TypeAnnonce.EXAMEN)
                 .build());
 
@@ -573,8 +571,6 @@ public class PedagogiqueDataSeeder {
                 .auteur(admin)
                         .datePublication( today.minusDays(2))
                 .typeAnnonce(TypeAnnonce.AUTRES)
-                .urgent(false)
-
                 .publiee(true)
                 .build());
 
@@ -586,8 +582,6 @@ public class PedagogiqueDataSeeder {
                 .datePublication(today)
                 .departement(infoDept)
                 .typeAnnonce(TypeAnnonce.COURS)
-                .urgent(false)
-
                 .publiee(true)
                 .build());
 
@@ -599,8 +593,6 @@ public class PedagogiqueDataSeeder {
                 .datePublication( today.minusDays(2))
                 .publiee(true)
                 .typeAnnonce(TypeAnnonce.AUTRES)
-                        .urgent(true)
-
                 .build());
     }
 

@@ -4,8 +4,8 @@ import com.mycampus.backend.dto.administrateur.DonneEntrer.Creation.EtudiantEntr
 import com.mycampus.backend.dto.administrateur.DonneEntrer.Modification.EtudiantModificationDTO;
 import com.mycampus.backend.dto.administrateur.DonneSortie.EtudiantSortieDTO;
 import com.mycampus.backend.metier.administrateur.utilisateurs.GestionUtilisateursMetier;
-import lombok.RequiredArgsConstructor;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;

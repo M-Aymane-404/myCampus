@@ -12,6 +12,7 @@ import com.mycampus.backend.enumerations.TypeNotification;
 import com.mycampus.backend.exceptions.UtilisateursException;
 import com.mycampus.backend.mappers.annonce.AnnonceMapper;
 import com.mycampus.backend.metier.Notification.NotificationMetier;
+import com.mycampus.backend.metier.annonces.ressources.GestionRessourcesAnnonceMetier;
 import com.mycampus.backend.repositorys.AnnonceRepository;
 import com.mycampus.backend.repositorys.ClasseRepository;
 import com.mycampus.backend.repositorys.DepartementRepository;
@@ -36,6 +37,7 @@ public class GestionAnnoncesAdministrateurMetierImpl implements GestionAnnoncesA
     private final AnnonceMapper annonceMapper;
     private final DepartementRepository departementRepository;
     private final NotificationMetier notificationMetier;
+    private final GestionRessourcesAnnonceMetier gestionRessourcesAnnonceMetier;
 
     @Override
     @Transactional
@@ -71,7 +73,6 @@ public class GestionAnnoncesAdministrateurMetierImpl implements GestionAnnoncesA
                 .datePublication(LocalDateTime.now())
                 .publiee(true)
                 .typeAnnonce(annonceDTO.getTypeAnnonce())
-                .urgent(annonceDTO.isUrgent())
                 .cibleType(annonceDTO.getCibleType())
                 .auteur(auteur)
                 .classe(classe)
@@ -108,11 +109,11 @@ public class GestionAnnoncesAdministrateurMetierImpl implements GestionAnnoncesA
     public void supprimerAnnonce(Long annonceId) {
         log.info("Suppression de l'annonce: {}", annonceId);
 
-        if (!annonceRepository.existsById(annonceId)) {
-            throw new UtilisateursException("Annonce non trouvee");
-        }
+        Annonce annonce = annonceRepository.findById(annonceId)
+                .orElseThrow(() -> new UtilisateursException("Annonce non trouvee"));
 
-        annonceRepository.deleteById(annonceId);
+        gestionRessourcesAnnonceMetier.supprimerRessourcesSilencieusement(annonce);
+        annonceRepository.delete(annonce);
         log.info("Annonce supprimee avec succes");
     }
 

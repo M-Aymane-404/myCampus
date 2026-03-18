@@ -11,7 +11,6 @@ import GestionModules from './pages/GestionModules';
 import GestionClasses from './pages/GestionClasses';
 import GestionEmploiTemps from './pages/GestionEmploiTemps';
 import GestionComptes from './pages/GestionComptes';
-import JournalAuditPage from './pages/JournalAuditPage';
 import GestionAnnoncesAdmin from './pages/GestionAnnoncesAdmin';
 import TableauDeBordProfesseur from './pages/TableauDeBordProfesseur';
 import GestionCoursProfesseur from './pages/GestionCoursProfesseur';
@@ -297,8 +296,6 @@ function App() {
         return <GestionComptes />;
       case 'annonces-admin':
         return <GestionAnnoncesAdmin />;
-      case 'journal-audit':
-        return <JournalAuditPage />;
       case 'profil':
         return <ProfilPage />;
       default:

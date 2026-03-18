@@ -33,8 +33,7 @@ import java.util.UUID;
 public class GestionDeMotifDePresenceMetierImpl implements GestionDeMotifDePresenceMetier {
 
 
-    private final EtudiantRepository etudiantRepository;
-    private final PresenceRepository presenceRepository;
+     private final PresenceRepository presenceRepository;
     private static final Set<String> ALLOWED = Set.of(
             "image/png",
             "image/jpeg",

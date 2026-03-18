@@ -1,5 +1,7 @@
 package com.mycampus.backend.enumerations;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+
 public enum NiveauAnnee {
 
     A1("1A"),
@@ -19,12 +21,24 @@ public enum NiveauAnnee {
         return valeur;
     }
 
-    public static NiveauAnnee fromValeur(String valeur) {
+    @JsonCreator
+    public static NiveauAnnee fromJson(String valeur) {
+        if (valeur == null) {
+            return null;
+        }
+
+        String normalizedValue = valeur.trim();
+
         for (NiveauAnnee n : values()) {
-            if (n.valeur.equalsIgnoreCase(valeur)) {
+            if (n.name().equalsIgnoreCase(normalizedValue) || n.valeur.equalsIgnoreCase(normalizedValue)) {
                 return n;
             }
         }
+
         throw new IllegalArgumentException("Niveau invalide: " + valeur);
+    }
+
+    public static NiveauAnnee fromValeur(String valeur) {
+        return fromJson(valeur);
     }
 }
