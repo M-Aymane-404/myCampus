@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Bell, GraduationCap, Clock, MapPin, TrendingUp, AlertCircle, BookOpen, ChevronRight, Circle } from 'lucide-react';
 import { apiEtudiant } from '../services/apiEtudiant';
 import './TableauDeBordEtudiant.css';
@@ -130,7 +130,7 @@ const TableauDeBordEtudiant = ({ surNavigation }) => {
                       <div 
                         key={annonce.id} 
                         className="annonce-box"
-                        onClick={() => surNavigation('annonces')}
+                        onClick={() => surNavigation({ id: 'annonces', params: { annonceSelectionneeId: annonce.id } })}
                       >
                         <div className="annonce-box-header">
                           <div className="annonce-left">

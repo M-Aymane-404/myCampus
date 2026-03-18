@@ -72,6 +72,7 @@ class EnseignementProfesseurMobileDTO {
     required this.classeNom,
     required this.codeMatiere,
     required this.matiereNom,
+    required this.anneeUniversitaire,
   });
 
   final int? id;
@@ -79,6 +80,7 @@ class EnseignementProfesseurMobileDTO {
   final String classeNom;
   final String codeMatiere;
   final String matiereNom;
+  final String anneeUniversitaire;
 
   factory EnseignementProfesseurMobileDTO.fromJson(Map<String, dynamic> json) {
     return EnseignementProfesseurMobileDTO(
@@ -91,12 +93,15 @@ class EnseignementProfesseurMobileDTO {
       matiereNom:
           (json['matiereNom'] ?? json['nomMatiere'] ?? json['codeMatiere'] ?? '')
               .toString(),
+      anneeUniversitaire:
+          (json['anneeUniversitaire'] ?? json['annee'] ?? '').toString(),
     );
   }
 }
 
 class SeanceProfesseurMobileDTO {
   const SeanceProfesseurMobileDTO({
+    required this.id,
     required this.jour,
     required this.heureDebut,
     required this.heureFin,
@@ -105,8 +110,10 @@ class SeanceProfesseurMobileDTO {
     required this.salle,
     required this.codeClasse,
     required this.classeNom,
+    required this.codeMatiere,
   });
 
+  final int? id;
   final String jour;
   final String heureDebut;
   final String heureFin;
@@ -115,9 +122,11 @@ class SeanceProfesseurMobileDTO {
   final String salle;
   final String codeClasse;
   final String classeNom;
+  final String codeMatiere;
 
   factory SeanceProfesseurMobileDTO.fromJson(Map<String, dynamic> json) {
     return SeanceProfesseurMobileDTO(
+      id: json['id'] is num ? (json['id'] as num).toInt() : null,
       jour:
           (json['jour'] ??
                   json['dayOfWeek'] ??
@@ -143,6 +152,7 @@ class SeanceProfesseurMobileDTO {
       typeSeance: (json['typeSeance'] ?? json['type'] ?? 'COURS').toString(),
       salle: (json['salle'] ?? '').toString(),
       codeClasse: (json['codeClasse'] ?? '').toString(),
+      codeMatiere: (json['codeMatiere'] ?? '').toString(),
       classeNom:
           (json['classeNom'] ?? json['nomClasse'] ?? json['codeClasse'] ?? '')
               .toString(),

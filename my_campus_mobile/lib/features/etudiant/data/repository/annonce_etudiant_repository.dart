@@ -1,5 +1,6 @@
 import '../api/annonce_etudiant_api.dart';
 import '../dto/annonce_etudiant_dto.dart';
+import '../dto/ressource_annonce_dto.dart';
 
 class AnnonceEtudiantRepository {
   final AnnonceEtudiantApi _api;
@@ -33,4 +34,15 @@ class AnnonceEtudiantRepository {
   }
 
   bool estLue(int id) => _idsLus.contains(id);
+
+  Future<List<RessourceAnnonceDTO>> recupererRessources(int annonceId) async {
+    final data = await _api.recupererRessources(annonceId);
+    return data
+        .map(
+          (entry) => RessourceAnnonceDTO.fromJson(
+            (entry as Map).cast<String, dynamic>(),
+          ),
+        )
+        .toList();
+  }
 }

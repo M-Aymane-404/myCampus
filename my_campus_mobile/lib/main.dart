@@ -34,11 +34,14 @@ import 'features/etudiant/presentation/page_notifications_etudiant.dart';
 import 'features/etudiant/presentation/page_presence_etudiant.dart';
 import 'features/etudiant/presentation/page_profil_etudiant.dart';
 import 'features/professeur/data/api/professeur_api.dart';
+import 'features/professeur/data/api/notification_professeur_api.dart';
+import 'features/professeur/data/api/ressource_seance_professeur_api.dart';
+import 'features/professeur/data/controller/controleur_cours_professeur.dart';
 import 'features/professeur/data/controller/controleur_espace_professeur.dart';
 import 'features/professeur/data/controller/controleur_notification_professeur.dart';
-import 'features/professeur/data/api/notification_professeur_api.dart';
 import 'features/professeur/data/repository/notification_professeur_repository.dart';
 import 'features/professeur/data/repository/professeur_repository.dart';
+import 'features/professeur/data/repository/ressource_seance_professeur_repository.dart';
 import 'features/professeur/presentation/professeur_shell.dart';
 
 void main() async {
@@ -115,6 +118,14 @@ class MyApp extends StatelessWidget {
         Provider<ProfesseurRepository>(
           create: (ctx) => ProfesseurRepository(ctx.read<ProfesseurApi>()),
         ),
+        Provider<RessourceSeanceProfesseurApi>(
+          create: (_) => RessourceSeanceProfesseurApi(ClientDio.dioInstance),
+        ),
+        Provider<RessourceSeanceProfesseurRepository>(
+          create: (ctx) => RessourceSeanceProfesseurRepository(
+            ctx.read<RessourceSeanceProfesseurApi>(),
+          ),
+        ),
         Provider<NotificationProfesseurRepository>(
           create:
               (ctx) => NotificationProfesseurRepository(
@@ -166,6 +177,18 @@ class MyApp extends StatelessWidget {
                   ControleurEspaceProfesseur(ctx.read<ProfesseurRepository>()),
           update:
               (ctx, repo, ctrl) => ctrl ?? ControleurEspaceProfesseur(repo),
+        ),
+        ChangeNotifierProxyProvider2<
+          ProfesseurRepository,
+          RessourceSeanceProfesseurRepository,
+          ControleurCoursProfesseur
+        >(
+          create: (ctx) => ControleurCoursProfesseur(
+            ctx.read<ProfesseurRepository>(),
+            ctx.read<RessourceSeanceProfesseurRepository>(),
+          ),
+          update: (ctx, repo, resRepo, ctrl) =>
+              ctrl ?? ControleurCoursProfesseur(repo, resRepo),
         ),
         ChangeNotifierProxyProvider<
           AnnonceEtudiantRepository,

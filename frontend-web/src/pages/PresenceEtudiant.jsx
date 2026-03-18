@@ -462,12 +462,14 @@ const PresenceEtudiant = () => {
                             const dateDeclObj = parseBackendDate(session.dateDeclaration);
                             const timeStr = dateDeclObj ? dateDeclObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--';
 
-                            const courseName = session.seance?.type || 'Cours';
+                            const courseName = session.seance?.matiereNom || session.seance?.type || 'Cours';
+                            const courseCode = session.seance?.codeMatiere || '';
+                            const courseType = session.seance?.type || 'Cours';
                             const profName = session.seance?.prof || 'Enseignant';
                             const roomName = session.seance?.salle || 'Salle';
 
                             return (
-                                <div key={session.id || idx} className="presence-card">
+                                <div key={session.seance?.id || session.id || idx} className="presence-card">
                                     <div className="time-box">
                                         <span className="date-text">{eventDateObj.toLocaleDateString()}</span>
                                         <span className="hour-text">{timeStr}</span>
@@ -479,7 +481,9 @@ const PresenceEtudiant = () => {
 
                                     <div className="course-info-box">
                                         <h3>{courseName}</h3>
+                                        {courseCode && <div className="course-code">{courseCode}</div>}
                                         <div className="prof-room">
+                                            <span><Book size={12} /> {courseType}</span>
                                             <span><User size={12} /> {profName}</span>
                                             <span><MapPin size={12} /> {roomName}</span>
                                         </div>
@@ -642,4 +646,6 @@ const PresenceEtudiant = () => {
 };
 
 export default PresenceEtudiant;
+
+
 

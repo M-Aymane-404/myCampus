@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Search,
   FileText,
@@ -6,6 +6,7 @@ import {
   User,
   Paperclip,
   RefreshCw,
+  ExternalLink,
 } from 'lucide-react';
 import { apiAnnonces } from '../services/apiAnnonces';
 import './AnnoncesEtudiant.css';
@@ -27,7 +28,67 @@ const filtresTypeAnnonce = [
   'AUTRES',
 ];
 
-const AnnoncesEtudiant = () => {
+const getCategoryLabel = (typeAnnonce, cibleType) => {
+  if (typeAnnonce && libellesTypeAnnonce[typeAnnonce]) {
+    return libellesTypeAnnonce[typeAnnonce];
+  }
+
+  if (cibleType === 'ETUDIANTS_CLASSE') {
+    return 'COURS';
+  }
+
+  return 'AUTRES';
+};
+
+const formatDate = (dateString) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).toUpperCase();
+};
+
+const formatFullDate = (dateString) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
+const transformAnnonce = (annonce) => {
+  const publishedAt = annonce?.datePublication || annonce?.dateCreation || null;
+  const publishedTimestamp = publishedAt ? new Date(publishedAt).getTime() : 0;
+
+  return {
+    id: annonce?.id,
+    title: annonce?.titre || 'Sans titre',
+    date: formatDate(publishedAt),
+    fullDate: formatFullDate(publishedAt),
+    publishedAt,
+    publishedTimestamp: Number.isNaN(publishedTimestamp) ? 0 : publishedTimestamp,
+    category: getCategoryLabel(annonce?.typeAnnonce, annonce?.cibleType),
+    subject: annonce?.codeClasse || 'General',
+    professor: annonce?.auteur
+      ? `${annonce.auteur.prenom} ${annonce.auteur.nom}`
+      : 'Administration',
+    authorId: annonce?.auteur?.id,
+    authorPhoto: annonce?.auteur?.photoPath || null,
+    hasDot: !annonce?.publiee,
+    content: annonce?.contenu || '',
+  };
+};
+
+const transformBackendData = (backendData) =>
+  (Array.isArray(backendData) ? backendData : [])
+    .map(transformAnnonce)
+    .sort((a, b) => b.publishedTimestamp - a.publishedTimestamp);
+
+const AnnoncesEtudiant = ({ annonceSelectionneeId = null }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('TOUS');
   const [announcements, setAnnouncements] = useState([]);
@@ -49,6 +110,15 @@ const AnnoncesEtudiant = () => {
           return null;
         }
 
+        if (annonceSelectionneeId != null) {
+          const annonceCible = transformedData.find(
+            (item) => String(item.id) === String(annonceSelectionneeId)
+          );
+          if (annonceCible) {
+            return annonceCible;
+          }
+        }
+
         if (previous) {
           return transformedData.find((item) => item.id === previous.id) || transformedData[0];
         }
@@ -56,7 +126,7 @@ const AnnoncesEtudiant = () => {
         return transformedData[0];
       });
     } catch (err) {
-      setError('Erreur lors du chargement des annonces');
+      setError(err.message || 'Erreur lors du chargement des annonces');
       console.error('Error fetching announcements:', err);
     } finally {
       setLoading(false);
@@ -66,6 +136,49 @@ const AnnoncesEtudiant = () => {
   useEffect(() => {
     fetchAnnonces();
   }, []);
+
+  useEffect(() => {
+    if (annonceSelectionneeId == null || !announcements.length) {
+      return;
+    }
+
+    const annonceCible = announcements.find(
+      (item) => String(item.id) === String(annonceSelectionneeId)
+    );
+
+    if (annonceCible && annonceCible.id !== activeAnnonce?.id) {
+      setActiveAnnonce(annonceCible);
+    }
+  }, [annonceSelectionneeId, announcements, activeAnnonce]);
+
+  useEffect(() => {
+    if (annonceSelectionneeId == null || announcements.some((item) => String(item.id) === String(annonceSelectionneeId))) {
+      return;
+    }
+
+    const chargerAnnonceCible = async () => {
+      try {
+        const annonce = await apiAnnonces.etudiant.obtenirParId(annonceSelectionneeId);
+        const annonceTransformee = transformAnnonce(annonce);
+
+        setAnnouncements((prev) => {
+          if (prev.some((item) => String(item.id) === String(annonceTransformee.id))) {
+            return prev;
+          }
+
+          return [...prev, annonceTransformee].sort(
+            (a, b) => b.publishedTimestamp - a.publishedTimestamp
+          );
+        });
+        setActiveAnnonce(annonceTransformee);
+      } catch (err) {
+        console.error('Error fetching targeted announcement:', err);
+        setError(err.message || "Impossible d'ouvrir l'annonce demandee.");
+      }
+    };
+
+    chargerAnnonceCible();
+  }, [annonceSelectionneeId, announcements]);
 
   useEffect(() => {
     if (!activeAnnonce?.id || ressourcesParAnnonce[activeAnnonce.id]) {
@@ -94,52 +207,6 @@ const AnnoncesEtudiant = () => {
     chargerRessources();
   }, [activeAnnonce, ressourcesParAnnonce]);
 
-  const transformBackendData = (backendData) =>
-    (Array.isArray(backendData) ? backendData : [])
-      .map((annonce) => {
-        const publishedAt = annonce.datePublication || annonce.dateCreation || null;
-        const publishedTimestamp = publishedAt ? new Date(publishedAt).getTime() : 0;
-
-        return {
-          id: annonce.id,
-          title: annonce.titre,
-          date: formatDate(publishedAt),
-          fullDate: formatFullDate(publishedAt),
-          publishedAt,
-          publishedTimestamp: Number.isNaN(publishedTimestamp) ? 0 : publishedTimestamp,
-          category: getCategoryLabel(annonce.typeAnnonce, annonce.cibleType),
-          subject: annonce.codeClasse || 'General',
-          professor: annonce.auteur
-            ? `${annonce.auteur.prenom} ${annonce.auteur.nom}`
-            : 'Administration',
-          authorId: annonce.auteur?.id,
-          authorPhoto: annonce.auteur?.photoPath || null,
-          hasDot: !annonce.publiee,
-          content: annonce.contenu,
-        };
-      })
-      .sort((a, b) => b.publishedTimestamp - a.publishedTimestamp);
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('fr-FR', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    }).toUpperCase();
-  };
-
-  const formatFullDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('fr-FR', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
   const formatFileSize = (taille) => {
     if (!taille || Number.isNaN(Number(taille))) {
       return 'Taille inconnue';
@@ -156,18 +223,6 @@ const AnnoncesEtudiant = () => {
 
     const precision = unitIndex === 0 ? 0 : 1;
     return `${valeur.toFixed(precision)} ${units[unitIndex]}`;
-  };
-
-  const getCategoryLabel = (typeAnnonce, cibleType) => {
-    if (typeAnnonce && libellesTypeAnnonce[typeAnnonce]) {
-      return libellesTypeAnnonce[typeAnnonce];
-    }
-
-    if (cibleType === 'ETUDIANTS_CLASSE') {
-      return 'COURS';
-    }
-
-    return 'AUTRES';
   };
 
   const filteredAnnonces = useMemo(
@@ -189,9 +244,19 @@ const AnnoncesEtudiant = () => {
 
   const telechargerRessource = async (ressourceId) => {
     try {
+      setError(null);
       await apiAnnonces.etudiant.telechargerRessource(ressourceId);
     } catch (err) {
       setError(err.message || 'Erreur lors du telechargement de la ressource');
+    }
+  };
+
+  const consulterRessource = async (ressourceId) => {
+    try {
+      setError(null);
+      await apiAnnonces.etudiant.consulterRessource(ressourceId);
+    } catch (err) {
+      setError(err.message || 'Erreur lors de l ouverture de la ressource');
     }
   };
 
@@ -346,11 +411,9 @@ const AnnoncesEtudiant = () => {
                       </div>
                     ) : ressourcesActives.length > 0 ? (
                       ressourcesActives.map((ressource) => (
-                        <button
+                        <div
                           key={ressource.id}
-                          type="button"
                           className="ann-resource-card"
-                          onClick={() => telechargerRessource(ressource.id)}
                         >
                           <div className="ann-resource-icon">
                             <FileText size={20} />
@@ -359,8 +422,25 @@ const AnnoncesEtudiant = () => {
                             <strong>{ressource.nomOriginal}</strong>
                             <span>{formatFileSize(ressource.taille)}</span>
                           </div>
-                          <Download size={18} />
-                        </button>
+                          <div className="ann-resource-actions">
+                            <button
+                              type="button"
+                              className="ann-resource-btn secondary"
+                              onClick={() => consulterRessource(ressource.id)}
+                            >
+                              <ExternalLink size={16} />
+                              Consulter
+                            </button>
+                            <button
+                              type="button"
+                              className="ann-resource-btn"
+                              onClick={() => telechargerRessource(ressource.id)}
+                            >
+                              <Download size={16} />
+                              Telecharger
+                            </button>
+                          </div>
+                        </div>
                       ))
                     ) : (
                       <div className="ann-no-resources">
@@ -383,4 +463,3 @@ const AnnoncesEtudiant = () => {
 };
 
 export default AnnoncesEtudiant;
-

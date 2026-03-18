@@ -13,4 +13,9 @@ class AnnonceEtudiantApi {
     final resp = await _dio.get('/api/etudiant/annonces/$id');
     return (resp.data as Map).cast<String, dynamic>();
   }
+
+  Future<List<dynamic>> recupererRessources(int annonceId) async {
+    final resp = await _dio.get('/api/etudiant/annonces/$annonceId/ressources');
+    return resp.data as List<dynamic>;
+  }
 }

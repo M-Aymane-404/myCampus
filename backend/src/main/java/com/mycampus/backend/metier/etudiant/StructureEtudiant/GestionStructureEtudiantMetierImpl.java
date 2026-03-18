@@ -29,7 +29,9 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -66,7 +68,7 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
         }
 
         Etudiant etudiant = etudiantRepository.findById(id)
-                .orElseThrow(() -> new EtudiantException("Étudiant introuvable"));
+                .orElseThrow(() -> new EtudiantException("Ã‰tudiant introuvable"));
 
         String codeClasse = null;
         Integer dureeFormation = null;
@@ -105,15 +107,15 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
     @Override
     public EtudiantSortieEtudiantDTO modifierEtudiant(String email, EtudiantModificationEtudiantDTO etudiantModificationDTO) throws UtilisateursException {
         if (email == null || email.trim().isEmpty()) {
-            throw new UtilisateursException("L'email de l'étudiant ne peut pas être nulle");
+            throw new UtilisateursException("L'email de l'Ã©tudiant ne peut pas Ãªtre nulle");
         }
 
         if (etudiantModificationDTO == null) {
-            throw new UtilisateursException("L'étudiant ne peut pas être nul");
+            throw new UtilisateursException("L'Ã©tudiant ne peut pas Ãªtre nul");
         }
 
         Etudiant etudiantAModifier = etudiantRepository.findByEmail(email).orElseThrow(() ->
-                new UtilisateursException("Étudiant introuvable avec l'apogée: " + email));
+                new UtilisateursException("Ã‰tudiant introuvable avec l'apogÃ©e: " + email));
 
 
 
@@ -124,7 +126,7 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
 
         if(etudiantModificationDTO.getTel() != null && !etudiantModificationDTO.getTel().trim().isEmpty()) {
             if(!etudiantAModifier.getTel().equals(etudiantModificationDTO.getTel()) && utilisateurRepository.existsByTel(etudiantModificationDTO.getTel())){
-                throw new UtilisateursException("Un utilisateur avec cet numero existe déjà");
+                throw new UtilisateursException("Un utilisateur avec cet numero existe dÃ©jÃ ");
 
             }
             etudiantAModifier.setTel(etudiantModificationDTO.getTel());
@@ -189,13 +191,13 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
             throw  new EtudiantException("code Module  est obligatoire");
         }
         if (etudiantId == null){
-            throw  new EtudiantException("id étudiant est obligatoire");
+            throw  new EtudiantException("id Ã©tudiant est obligatoire");
         }
 
         List<Matiere> matieres = matiereRepository.findByModule_CodeModule(codeModule);
         Classe classe = classeRepository.findByEtudiant_idEtudiant(etudiantId);
         if(classe == null){
-            throw new EtudiantException("Classe introuvable pour l'étudiant " + etudiantId);
+            throw new EtudiantException("Classe introuvable pour l'Ã©tudiant " + etudiantId);
         }
 
         if(matieres == null){
@@ -221,11 +223,11 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
     @Transactional(readOnly = true)
     public List<SeanceSortieEtudiantDTO> trouverSeanceParCodeMatiereEtFiltrerParTypeSeanceSiExist(Long etudiantId, String codeMatiere, TypeSeance typeSeance) throws EtudiantException {
         if(codeMatiere == null){
-            throw  new EtudiantException("code matière est obligatoire");
+            throw  new EtudiantException("code matiÃ¨re est obligatoire");
         }
 
         if (etudiantId == null){
-            throw  new EtudiantException("id d'étudiant est obligatoire");
+            throw  new EtudiantException("id d'Ã©tudiant est obligatoire");
         }
         Classe classe = classeRepository.findByEtudiant_idEtudiant(etudiantId);
 
@@ -255,12 +257,14 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
     @Override
     @Transactional(readOnly = true)
     public List<PresenceSortieEtudiantDTO> trouverToutPresenceDuEtudiantConnecter(Long IdEtudiant, StatusAbsence status, LocalDate date) throws EtudiantException {
-        if(IdEtudiant == null){
-            throw  new EtudiantException("id d'étudiant est obligatoire");
-
+        if (IdEtudiant == null) {
+            throw new EtudiantException("id d'etudiant est obligatoire");
         }
 
         List<Presence> presences = presenceRepository.findByEtudiant_Id(IdEtudiant);
+        if (presences == null || presences.isEmpty()) {
+            return List.of();
+        }
 
         if (status != null) {
             presences = presences.stream()
@@ -270,34 +274,65 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
 
         if (date != null) {
             presences = presences.stream()
-                    .filter(p -> p.getSeance().getDate().equals(date))
+                    .filter(p -> p.getSeance() != null && date.equals(p.getSeance().getDate()))
                     .toList();
         }
-        if(presences == null){
-            return List.of();
-        }else {
 
-            return presences.stream().map(presence -> {
-                PresenceSortieEtudiantDTO presenceSortieEtudiantDTO = mapper.DuPresenceVersPresenceSortieEtudiantDTO(presence);
-                Seance seanceDuPresence = seanceRepository.findByPresence_presenceId(presence.getId());
-                Professeur prof = professeurRepository.findBySeance_SeanceId(seanceDuPresence.getId());
-
-                MiniSeanceSortieEtudiantDTO seance = new MiniSeanceSortieEtudiantDTO();
-
-                seance.setDate(seanceDuPresence.getDate());
-                seance.setSalle(seanceDuPresence.getSalle());
-                seance.setType(seanceDuPresence.getType());
-                seance.setProf(prof.getNom() + " " + prof.getPrenom());
-
-                presenceSortieEtudiantDTO.setSeance(seance);
-                return presenceSortieEtudiantDTO;
-            }).toList();
-        }
-
+        return presences.stream()
+                .filter(Objects::nonNull)
+                .filter(presence -> presence.getSeance() != null)
+                .collect(Collectors.toMap(
+                        presence -> presence.getSeance().getId(),
+                        presence -> presence,
+                        this::garderPresenceLaPlusRecente,
+                        LinkedHashMap::new
+                ))
+                .values().stream()
+                .sorted(Comparator.comparing(this::extraireDatePresencePourTri).reversed())
+                .map(this::construirePresenceSortieEtudiant)
+                .toList();
     }
 
+    private Presence garderPresenceLaPlusRecente(Presence gauche, Presence droite) {
+        return extraireDatePresencePourTri(gauche).compareTo(extraireDatePresencePourTri(droite)) >= 0 ? gauche : droite;
+    }
 
+    private LocalDateTime extraireDatePresencePourTri(Presence presence) {
+        if (presence == null) {
+            return LocalDateTime.MIN;
+        }
+        if (presence.getDateDeclaration() != null) {
+            return presence.getDateDeclaration();
+        }
+        if (presence.getSeance() != null && presence.getSeance().getHeureDebut() != null) {
+            return presence.getSeance().getHeureDebut();
+        }
+        if (presence.getSeance() != null && presence.getSeance().getDate() != null) {
+            return presence.getSeance().getDate().atStartOfDay();
+        }
+        return LocalDateTime.MIN;
+    }
 
+    private PresenceSortieEtudiantDTO construirePresenceSortieEtudiant(Presence presence) {
+        PresenceSortieEtudiantDTO presenceSortieEtudiantDTO = mapper.DuPresenceVersPresenceSortieEtudiantDTO(presence);
+
+        Seance seanceDuPresence = presence.getSeance();
+        AffectationEnseignement affectation = seanceDuPresence.getAffectationEnseignement();
+        Professeur prof = affectation != null ? affectation.getProfesseur() : null;
+        Matiere matiere = affectation != null ? affectation.getMatiere() : null;
+
+        MiniSeanceSortieEtudiantDTO seance = new MiniSeanceSortieEtudiantDTO();
+        seance.setId(seanceDuPresence.getId());
+        seance.setDate(seanceDuPresence.getDate());
+        seance.setSalle(seanceDuPresence.getSalle());
+        seance.setType(seanceDuPresence.getType());
+        seance.setProf(prof != null ? prof.getNom() + " " + prof.getPrenom() : null);
+        seance.setCodeMatiere(matiere != null ? matiere.getCodeMatiere() : null);
+        seance.setMatiereNom(matiere != null ? matiere.getNom() : null);
+
+        presenceSortieEtudiantDTO.setSeance(seance);
+        return presenceSortieEtudiantDTO;
+    }
 
     @Override
     @Transactional(readOnly = true)
@@ -334,7 +369,7 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
                 .collect(Collectors.toMap(
                         r -> r.getExamen().getId(),
                         r -> r,
-                        (a, b) -> { throw new IllegalStateException("Doublon résultat pour examen_id=" + a.getExamen().getId()); }
+                        (a, b) -> { throw new IllegalStateException("Doublon rÃ©sultat pour examen_id=" + a.getExamen().getId()); }
                 ));
 
 
@@ -365,8 +400,8 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
 
                 matiereDto.setExamens(examensPasses);
 
-                // 2) Calcul moyenne (règle: si rattrapage existe et noté => moyenne = rattrapage,
-                // sinon moyenne = average des NORMAL notés, sinon null)
+                // 2) Calcul moyenne (rÃ¨gle: si rattrapage existe et notÃ© => moyenne = rattrapage,
+                // sinon moyenne = average des NORMAL notÃ©s, sinon null)
                 Double noteRattrapage = examensPasses.stream()
                         .filter(e -> e.getTypeExamen() == TypeExamen.RATTRAPAGE)
                         .map(ExamenDeReleveEtudiantDTO::getNote)
@@ -508,11 +543,11 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
         }
 
        Classe classe =  classeRepository.findByEtudiant_EmailEtudiant(etudiantEmail)
-               .orElseThrow(() -> new UtilisateursException("Étudiant ne Assigne a accan classe introuvable ou non autorisé."));
+               .orElseThrow(() -> new UtilisateursException("Ã‰tudiant ne Assigne a accan classe introuvable ou non autorisÃ©."));
 
         return fichierSeanceRepository
                 .findByIdAndSeance_AffectationEnseignement_Classe_CodeClasse(fichierSeanceId, classe.getCodeClasse())
-                .orElseThrow(() -> new SeancesProfesseurException("Fichier introuvable ou non autorisé."));
+                .orElseThrow(() -> new SeancesProfesseurException("Fichier introuvable ou non autorisÃ©."));
     }
 
     private FichierSeance requireFichierSeancePourProfesseur(Long idEtudiant, Long fichierSeanceId)
@@ -526,13 +561,13 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
 
         Classe classe =  classeRepository.findByEtudiant_idEtudiant(idEtudiant);
         if  (classe == null) {
-            throw new UtilisateursException("Étudiant ne Assigne a accan classe introuvable ou non autorisé.");
+            throw new UtilisateursException("Ã‰tudiant ne Assigne a accan classe introuvable ou non autorisÃ©.");
         }
 
 
         return fichierSeanceRepository
                 .findByIdAndSeance_AffectationEnseignement_Classe_CodeClasse(fichierSeanceId, classe.getCodeClasse())
-                .orElseThrow(() -> new SeancesProfesseurException("Fichier introuvable ou non autorisé."));
+                .orElseThrow(() -> new SeancesProfesseurException("Fichier introuvable ou non autorisÃ©."));
     }
 
 
@@ -540,3 +575,5 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
 
 
 }
+
+

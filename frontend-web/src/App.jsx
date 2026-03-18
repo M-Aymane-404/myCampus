@@ -41,22 +41,22 @@ const detecterTypeMessage = (message) => {
     || texte.includes('impossible')
     || texte.includes('introuvable')
     || texte.includes('echec')
-    || texte.includes('échou')
+    || texte.includes('Ã©chou')
   ) {
     return 'error';
   }
 
   if (
     texte.includes('succes')
-    || texte.includes('succès')
+    || texte.includes('succÃ¨s')
     || texte.includes('reussi')
-    || texte.includes('réussi')
-    || texte.includes('mise à jour')
-    || texte.includes('mis à jour')
-    || texte.includes('supprimé')
-    || texte.includes('créé')
+    || texte.includes('rÃ©ussi')
+    || texte.includes('mise Ã  jour')
+    || texte.includes('mis Ã  jour')
+    || texte.includes('supprimÃ©')
+    || texte.includes('crÃ©Ã©')
     || texte.includes('termine')
-    || texte.includes('terminé')
+    || texte.includes('terminÃ©')
   ) {
     return 'success';
   }
@@ -102,7 +102,8 @@ function App() {
   const [elementActif, setElementActif] = useState('tableau-de-bord');
   const [navigationState, setNavigationState] = useState({
     filiereSelectionnee: null,
-    classeSelectionnee: null
+    classeSelectionnee: null,
+    annonceSelectionneeId: null
   });
   const [messagesGlobaux, setMessagesGlobaux] = useState([]);
   const temporisateursMessagesRef = useRef(new Map());
@@ -228,8 +229,26 @@ function App() {
     };
   }, []);
 
-  const gererChangementElement = (idElement) => {
-    setElementActif(idElement);
+  const gererChangementElement = (destination) => {
+    if (typeof destination === 'string') {
+      setElementActif(destination);
+      return;
+    }
+
+    if (!destination || typeof destination !== 'object') {
+      return;
+    }
+
+    if (destination.params && typeof destination.params === 'object') {
+      setNavigationState((prev) => ({
+        ...prev,
+        ...destination.params,
+      }));
+    }
+
+    if (destination.id) {
+      setElementActif(destination.id);
+    }
   };
 
   const gererVoirClasses = (filiere) => {
@@ -344,7 +363,7 @@ function App() {
       case 'calendrier':
         return <CalendrierEtudiant />;
       case 'annonces':
-        return <AnnoncesEtudiant />;
+        return <AnnoncesEtudiant annonceSelectionneeId={navigationState.annonceSelectionneeId} />;
       default:
         console.log('DEBUG: Rendering default TableauDeBordEtudiant');
         return <TableauDeBordEtudiant surNavigation={gererChangementElement} />;

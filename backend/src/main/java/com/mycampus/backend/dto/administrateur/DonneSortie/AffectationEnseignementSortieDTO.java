@@ -18,4 +18,5 @@ public class AffectationEnseignementSortieDTO {
     private String classeNom;
     private String codeMatiere;
     private String matiereNom;
+    private String anneeUniversitaire;
 }
