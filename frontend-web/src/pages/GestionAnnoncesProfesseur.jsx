@@ -1,16 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  AlertTriangle,
+  CheckCircle2,
+  Eye,
+  GraduationCap,
+  Info,
+  Layers,
   Megaphone,
+  Paperclip,
   Plus,
   Send,
-  GraduationCap,
-  Layers,
-  Info,
-  Eye,
   Trash2,
-  CheckCircle2,
-  AlertTriangle,
-  Paperclip,
   Upload,
   X,
 } from 'lucide-react';
@@ -30,7 +30,32 @@ const FORM_INITIAL = {
   titre: '',
   categorie: 'AUTRES',
   contenu: '',
+  modeCiblage: 'ONE',
   codeClasse: '',
+};
+
+const formaterDate = (dateStr) => {
+  if (!dateStr) return 'Date inconnue';
+
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return 'Date inconnue';
+
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMinutes = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMinutes / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffMinutes < 1) return "A l'instant";
+  if (diffMinutes < 60) return `Il y a ${diffMinutes} minute${diffMinutes > 1 ? 's' : ''}`;
+  if (diffHours < 24) return `Il y a ${diffHours} heure${diffHours > 1 ? 's' : ''}`;
+  if (diffDays < 7) return `Il y a ${diffDays} jour${diffDays > 1 ? 's' : ''}`;
+
+  return date.toLocaleDateString('fr-FR', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  });
 };
 
 const GestionAnnoncesProfesseur = () => {
@@ -76,16 +101,23 @@ const GestionAnnoncesProfesseur = () => {
   };
 
   const classeSelectionnee = useMemo(
-    () =>
-      mesClasses.find((classe) => classe.codeClasse === formulaire.codeClasse) ||
-      null,
-    [mesClasses, formulaire.codeClasse]
+    () => mesClasses.find((classe) => classe.codeClasse === formulaire.codeClasse) || null,
+    [mesClasses, formulaire.codeClasse],
   );
 
-  const isFormValid =
+  const classesCibles = useMemo(() => {
+    if (formulaire.modeCiblage === 'ALL') {
+      return mesClasses.map((classe) => classe.codeClasse).filter(Boolean);
+    }
+
+    return formulaire.codeClasse ? [formulaire.codeClasse] : [];
+  }, [formulaire.modeCiblage, formulaire.codeClasse, mesClasses]);
+
+  const isFormValid = Boolean(
     formulaire.titre.trim() &&
     formulaire.contenu.trim() &&
-    formulaire.codeClasse;
+    classesCibles.length > 0,
+  );
 
   const gererChangement = (e) => {
     const { name, value } = e.target;
@@ -95,7 +127,16 @@ const GestionAnnoncesProfesseur = () => {
   const gererSelectionClasse = (codeClasse) => {
     setFormulaire((prev) => ({
       ...prev,
+      modeCiblage: 'ONE',
       codeClasse: prev.codeClasse === codeClasse ? '' : codeClasse,
+    }));
+  };
+
+  const gererSelectionToutesClasses = () => {
+    setFormulaire((prev) => ({
+      ...prev,
+      modeCiblage: prev.modeCiblage === 'ALL' ? 'ONE' : 'ALL',
+      codeClasse: prev.modeCiblage === 'ALL' ? prev.codeClasse : '',
     }));
   };
 
@@ -111,9 +152,7 @@ const GestionAnnoncesProfesseur = () => {
   };
 
   const retirerFichier = (indexFichier) => {
-    setFichiersSelectionnes((prev) =>
-      prev.filter((_, index) => index !== indexFichier)
-    );
+    setFichiersSelectionnes((prev) => prev.filter((_, index) => index !== indexFichier));
   };
 
   const reinitialiserFormulaire = () => {
@@ -128,8 +167,8 @@ const GestionAnnoncesProfesseur = () => {
 
     await Promise.all(
       fichiersSelectionnes.map((fichier) =>
-        apiAnnoncesProfesseur.ajouterRessourceAnnonce(annonceId, fichier)
-      )
+        apiAnnoncesProfesseur.ajouterRessourceAnnonce(annonceId, fichier),
+      ),
     );
 
     return fichiersSelectionnes.length;
@@ -149,41 +188,59 @@ const GestionAnnoncesProfesseur = () => {
       return;
     }
 
-    if (!formulaire.codeClasse) {
-      setError('Vous devez selectionner une classe.');
+    if (classesCibles.length === 0) {
+      setError('Vous devez selectionner une classe ou choisir toutes les classes.');
       return;
     }
 
     try {
       setSubmitting(true);
 
-      const payload = {
-        titre: formulaire.titre.trim(),
-        contenu: formulaire.contenu.trim(),
-        typeAnnonce: formulaire.categorie,
-        cibleType: 'ETUDIANTS_CLASSE',
-        codeClasse: formulaire.codeClasse,
-        codeDepartement: null,
-      };
+      const annoncesCreees = [];
+      const nbClasses = classesCibles.length;
+      const nbFichiers = fichiersSelectionnes.length;
 
-      const annonceCreee = await apiAnnoncesProfesseur.creerAnnonce(payload);
-      let nbRessources = 0;
+      for (const codeClasse of classesCibles) {
+        const annonceCreee = await apiAnnoncesProfesseur.creerAnnonce({
+          titre: formulaire.titre.trim(),
+          contenu: formulaire.contenu.trim(),
+          typeAnnonce: formulaire.categorie,
+          cibleType: 'ETUDIANTS_CLASSE',
+          codeClasse,
+          codeDepartement: null,
+        });
+
+        annoncesCreees.push(annonceCreee);
+      }
 
       try {
-        nbRessources = await televerserRessources(annonceCreee.id);
+        await Promise.all(annoncesCreees.map((annonce) => televerserRessources(annonce.id)));
       } catch (uploadError) {
         await chargerDonnees(false);
         reinitialiserFormulaire();
-        setSuccess("Annonce creee, mais l'envoi des ressources a echoue.");
+        setSuccess(
+          annoncesCreees.length > 1
+            ? `Annonces creees pour ${annoncesCreees.length} classes, mais l'envoi des ressources a echoue.`
+            : "Annonce creee, mais l'envoi des ressources a echoue.",
+        );
         setError(uploadError.message || "Erreur lors de l'envoi des ressources.");
         return;
       }
 
-      setSuccess(
-        nbRessources > 0
-          ? `Annonce creee avec succes avec ${nbRessources} ressource(s).`
-          : 'Annonce creee avec succes.'
-      );
+      if (nbClasses > 1) {
+        setSuccess(
+          nbFichiers > 0
+            ? `Annonces creees pour ${nbClasses} classes avec ${nbFichiers} ressource(s) par annonce.`
+            : `Annonces creees pour ${nbClasses} classes.`,
+        );
+      } else {
+        setSuccess(
+          nbFichiers > 0
+            ? `Annonce creee avec succes avec ${nbFichiers} ressource(s).`
+            : 'Annonce creee avec succes.',
+        );
+      }
+
       reinitialiserFormulaire();
       await chargerDonnees(false);
     } catch (err) {
@@ -194,9 +251,7 @@ const GestionAnnoncesProfesseur = () => {
   };
 
   const handleSupprimer = async (id) => {
-    const confirmation = window.confirm(
-      'Voulez-vous vraiment supprimer cette annonce ?'
-    );
+    const confirmation = window.confirm('Voulez-vous vraiment supprimer cette annonce ?');
     if (!confirmation) return;
 
     setError('');
@@ -228,36 +283,6 @@ const GestionAnnoncesProfesseur = () => {
     } catch (err) {
       setError(err.message || 'Erreur lors du changement de publication.');
     }
-  };
-
-  const formaterDate = (dateStr) => {
-    if (!dateStr) return 'Date inconnue';
-
-    const date = new Date(dateStr);
-    if (Number.isNaN(date.getTime())) return 'Date inconnue';
-
-    const now = new Date();
-    const diffMs = now - date;
-    const diffMinutes = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMinutes / 60);
-    const diffDays = Math.floor(diffHours / 24);
-
-    if (diffMinutes < 1) return "A l'instant";
-    if (diffMinutes < 60) {
-      return `Il y a ${diffMinutes} minute${diffMinutes > 1 ? 's' : ''}`;
-    }
-    if (diffHours < 24) {
-      return `Il y a ${diffHours} heure${diffHours > 1 ? 's' : ''}`;
-    }
-    if (diffDays < 7) {
-      return `Il y a ${diffDays} jour${diffDays > 1 ? 's' : ''}`;
-    }
-
-    return date.toLocaleDateString('fr-FR', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric',
-    });
   };
 
   return (
@@ -363,15 +388,18 @@ const GestionAnnoncesProfesseur = () => {
             </div>
 
             <div className="prof-selected-class-box">
-              <div className="prof-selected-class-label">CLASSE CIBLEE</div>
+              <div className="prof-selected-class-label">CIBLAGE</div>
               <strong>
-                {classeSelectionnee
-                  ? `${classeSelectionnee.nomClasse} (${classeSelectionnee.codeClasse})`
-                  : 'Aucune classe selectionnee'}
+                {formulaire.modeCiblage === 'ALL'
+                  ? `Toutes mes classes (${classesCibles.length})`
+                  : classeSelectionnee
+                    ? `${classeSelectionnee.nomClasse} (${classeSelectionnee.codeClasse})`
+                    : 'Aucune classe selectionnee'}
               </strong>
               <span>
-                Le backend professeur autorise uniquement les annonces de type
-                <code> ETUDIANTS_CLASSE </code>.
+                {formulaire.modeCiblage === 'ALL'
+                  ? 'Le frontend cree une annonce distincte pour chaque classe selectionnee.'
+                  : 'Le backend professeur accepte uniquement le ciblage par classe.'}
               </span>
             </div>
           </div>
@@ -445,13 +473,30 @@ const GestionAnnoncesProfesseur = () => {
               <Layers size={20} color="#6366f1" />
               AUDIENCE
             </h2>
-            <button
-              className="select-all-toggle"
-              type="button"
-              onClick={() => setFormulaire((prev) => ({ ...prev, codeClasse: '' }))}
-            >
-              REINITIALISER
-            </button>
+            <div className="prof-audience-actions">
+              <button
+                className={`select-all-toggle ${formulaire.modeCiblage === 'ALL' ? 'active' : ''}`}
+                type="button"
+                onClick={gererSelectionToutesClasses}
+              >
+                {formulaire.modeCiblage === 'ALL'
+                  ? 'TOUTES LES CLASSES SELECTIONNEES'
+                  : 'CHOISIR TOUTES LES CLASSES'}
+              </button>
+              <button
+                className="select-all-toggle"
+                type="button"
+                onClick={() =>
+                  setFormulaire((prev) => ({
+                    ...prev,
+                    modeCiblage: 'ONE',
+                    codeClasse: '',
+                  }))
+                }
+              >
+                REINITIALISER
+              </button>
+            </div>
           </div>
 
           {chargement ? (
@@ -463,7 +508,8 @@ const GestionAnnoncesProfesseur = () => {
           ) : (
             <div className="audience-list">
               {mesClasses.map((classe) => {
-                const isSelected = formulaire.codeClasse === classe.codeClasse;
+                const isSelected =
+                  formulaire.modeCiblage === 'ALL' || formulaire.codeClasse === classe.codeClasse;
 
                 return (
                   <div
@@ -472,9 +518,7 @@ const GestionAnnoncesProfesseur = () => {
                     onClick={() => gererSelectionClasse(classe.codeClasse)}
                   >
                     <div className="audience-avatar audience-avatar-class">
-                      {(classe.nomClasse || classe.codeClasse || 'C')
-                        .charAt(0)
-                        .toUpperCase()}
+                      {(classe.nomClasse || classe.codeClasse || 'C').charAt(0).toUpperCase()}
                     </div>
 
                     <div className="audience-info">
@@ -490,14 +534,16 @@ const GestionAnnoncesProfesseur = () => {
 
           <div className="audience-status-bar">
             <Info size={16} />
-            {formulaire.codeClasse
-              ? `1 CLASSE RECEVRA L'ANNONCE : ${formulaire.codeClasse}`
-              : "AUCUNE CLASSE N'EST ENCORE SELECTIONNEE."}
+            {formulaire.modeCiblage === 'ALL'
+              ? `${classesCibles.length} CLASSES RECEVRONT L'ANNONCE.`
+              : formulaire.codeClasse
+                ? `1 CLASSE RECEVRA L'ANNONCE : ${formulaire.codeClasse}`
+                : "AUCUNE CLASSE N'EST ENCORE SELECTIONNEE."}
           </div>
 
           <div className="prof-target-note">
-            Selection unique obligatoire : le backend professeur refuse les
-            annonces globales.
+            Le mode "toutes les classes" duplique la meme annonce sur chaque classe de vos
+            enseignements.
           </div>
         </div>
       </div>
@@ -535,7 +581,6 @@ const GestionAnnoncesProfesseur = () => {
             {mesAnnonces.map((annonce) => {
               const codeClasse =
                 annonce?.classe?.codeClasse || annonce?.codeClasse || 'Classe inconnue';
-
               const nomClasse =
                 annonce?.classe?.nomClasse || annonce?.classe?.nom || codeClasse;
 
@@ -553,7 +598,7 @@ const GestionAnnoncesProfesseur = () => {
                       </div>
 
                       <p className="prof-annonce-meta">
-                        {formaterDate(annonce.datePublication)} • {nomClasse} ({codeClasse})
+                        {formaterDate(annonce.datePublication)} | {nomClasse} ({codeClasse})
                       </p>
                     </div>
                   </div>
@@ -564,9 +609,7 @@ const GestionAnnoncesProfesseur = () => {
 
                   <div className="prof-card-actions">
                     <button
-                      className={`prof-action-btn ${
-                        annonce.publiee ? 'warning' : 'success'
-                      }`}
+                      className={`prof-action-btn ${annonce.publiee ? 'warning' : 'success'}`}
                       type="button"
                       onClick={() => handleTogglePublication(annonce)}
                     >

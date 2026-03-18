@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   FileText,
   ChevronDown,
@@ -36,7 +36,10 @@ const drawerCreationInitial = {
 };
 
 const drawerModificationInitial = {
+  semestre: 'S1',
   dateExamen: '',
+  numeroExamen: '',
+  typeExamen: 'NORMAL',
   duree: 120,
   etat: 'PROGRAMME',
 };
@@ -82,8 +85,8 @@ const toIsoFromLocalInput = (value) => {
 };
 
 const formatExamenLabel = (exam) => {
-  if (!exam) return 'Sélectionner un examen';
-  return `#${exam.numeroExamen} · ${exam.typeExamen} · ${exam.semestre} · ${formatDateShort(exam.dateExamen)} [${exam.etat}]`;
+  if (!exam) return 'Selectionner un examen';
+  return `#${exam.numeroExamen} - ${exam.typeExamen} - ${exam.semestre} - ${formatDateShort(exam.dateExamen)} [${exam.etat}]`;
 };
 
 const getEtatClass = (etat) => {
@@ -91,6 +94,93 @@ const getEtatClass = (etat) => {
   if (etat === 'PASSE') return 'state-passe';
   if (etat === 'CORRIGE') return 'state-corrige';
   return '';
+};
+
+const getCopyFileLabel = (ligne) =>
+    ligne?.nomCopie ||
+    ligne?.nomFichierCopie ||
+    ligne?.copieNom ||
+    ligne?.copieFilename ||
+    'Fichier depose';
+
+const getCorrigeFileLabel = (examen) =>
+    examen?.nomCorrige ||
+    examen?.nomFichierCorrige ||
+    examen?.corrigeNom ||
+    examen?.corrigeFilename ||
+    'PDF depose';
+
+const getStoredPdfPath = (item, fallbackKeys = []) => {
+  const candidates = [...fallbackKeys, 'copieEtudiantPath', 'copiePath', 'corrigePath', 'fichierPath', 'path'];
+  for (const key of candidates) {
+    const value = item?.[key];
+    if (typeof value === 'string' && value.trim()) return value;
+  }
+  return '';
+};
+
+const getFileNameFromPath = (path) => {
+  if (!path) return '';
+  const normalized = path.split('?')[0].split('#')[0];
+  const segments = normalized.split('/');
+  return segments[segments.length - 1] || '';
+};
+
+const buildBackendFileUrl = (path) => {
+  if (!path) return '';
+  if (path.startsWith('http')) return path;
+  const normalized = path.replace(/\\/g, '/').trim();
+
+  if (normalized.startsWith('/api/') || normalized.startsWith('api/')) {
+    const cleanPath = normalized.startsWith('/') ? normalized : `/${normalized}`;
+    return `http://localhost:8080${cleanPath}`;
+  }
+
+  if (
+      normalized.startsWith('/uploads/') ||
+      normalized.startsWith('uploads/') ||
+      normalized.includes(':/') ||
+      normalized.startsWith('/') ||
+      normalized.includes('/corriges/') ||
+      normalized.includes('/copies/')
+  ) {
+    return `http://localhost:8080/api/public/fichiers/voir?chemin=${encodeURIComponent(path)}`;
+  }
+
+  return `http://localhost:8080/${normalized}`;
+};
+
+const openBlobInNewTab = (blob) => {
+  const objectUrl = window.URL.createObjectURL(blob);
+  window.open(objectUrl, '_blank', 'noopener,noreferrer');
+  window.setTimeout(() => window.URL.revokeObjectURL(objectUrl), 60000);
+};
+
+const openStoredPdf = (path) => {
+  const url = buildBackendFileUrl(path);
+  if (url) {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+};
+
+const downloadStoredPdf = async (path, fallbackName) => {
+  const url = buildBackendFileUrl(path);
+  if (!url) return;
+
+  const response = await fetch(url, { credentials: 'include' });
+  if (!response.ok) {
+    throw new Error(`Erreur HTTP: ${response.status}`);
+  }
+
+  const blob = await response.blob();
+  const objectUrl = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = objectUrl;
+  link.download = getFileNameFromPath(path) || fallbackName || 'document.pdf';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(objectUrl);
 };
 
 const GestionNotesProfesseur = () => {
@@ -110,6 +200,8 @@ const GestionNotesProfesseur = () => {
   const [savingEtudiants, setSavingEtudiants] = useState({});
   const [publishing, setPublishing] = useState(false);
   const [uploadingCorrige, setUploadingCorrige] = useState(false);
+  const [copyFileNames, setCopyFileNames] = useState({});
+  const [corrigeFileNames, setCorrigeFileNames] = useState({});
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -303,7 +395,10 @@ const GestionNotesProfesseur = () => {
     if (!selectedExamen) return;
 
     setModificationForm({
+      semestre: selectedExamen.semestre || 'S1',
       dateExamen: toLocalDateTimeInput(selectedExamen.dateExamen),
+      numeroExamen: selectedExamen.numeroExamen || '',
+      typeExamen: selectedExamen.typeExamen || 'NORMAL',
       duree: selectedExamen.duree || 120,
       etat: selectedExamen.etat || 'PROGRAMME',
     });
@@ -327,7 +422,7 @@ const GestionNotesProfesseur = () => {
 
       if (drawerMode === 'create') {
         if (!selectedClasseCode || !selectedMatiereCode) {
-          throw new Error('Sélectionnez une classe et une matière avant de créer un examen.');
+          throw new Error('Selectionnez une classe et une matiere avant de creer un examen.');
         }
 
         const payload = {
@@ -339,8 +434,8 @@ const GestionNotesProfesseur = () => {
         };
 
         if (!payload.dateExamen) throw new Error("La date de l'examen est obligatoire.");
-        if (!payload.numeroExamen) throw new Error("Le numéro de l'examen est obligatoire.");
-        if (!payload.duree) throw new Error('La durée est obligatoire.');
+        if (!payload.numeroExamen) throw new Error("Le numero de l'examen est obligatoire.");
+        if (!payload.duree) throw new Error('La duree est obligatoire.');
 
         const created = await apiExamensProfesseur.creerExamen(
             selectedClasseCode,
@@ -349,23 +444,27 @@ const GestionNotesProfesseur = () => {
         );
 
         await refreshExamens(created?.idExamen);
-        setSuccess('Nouvel examen créé avec succès.');
+        setSuccess('Nouvel examen cree avec succes.');
       } else {
-        if (!selectedExamenId) throw new Error('Aucun examen sélectionné.');
+        if (!selectedExamenId) throw new Error('Aucun examen selectionne.');
 
         const payload = {
+          semestre: modificationForm.semestre,
           dateExamen: toIsoFromLocalInput(modificationForm.dateExamen),
+          numeroExamen: Number(modificationForm.numeroExamen),
+          typeExamen: modificationForm.typeExamen,
           duree: Number(modificationForm.duree),
           etat: modificationForm.etat,
         };
 
         if (!payload.dateExamen) throw new Error("La date de l'examen est obligatoire.");
-        if (!payload.duree) throw new Error('La durée est obligatoire.');
+        if (!payload.numeroExamen) throw new Error("Le numero de l'examen est obligatoire.");
+        if (!payload.duree) throw new Error('La duree est obligatoire.');
 
         await apiExamensProfesseur.modifierExamen(selectedExamenId, payload);
         await refreshExamens(selectedExamenId);
         await refreshFeuille();
-        setSuccess("Examen mis à jour avec succès.");
+        setSuccess("Examen mis a jour avec succes.");
       }
 
       setDrawerOpen(false);
@@ -376,11 +475,37 @@ const GestionNotesProfesseur = () => {
     }
   };
 
+  const handleQuickEtatChange = async (etat) => {
+    if (!selectedExamen) return;
+    if (etat === selectedExamen.etat) return;
+
+    setError('');
+    setSuccess('');
+
+    try {
+      const payload = {
+        semestre: selectedExamen.semestre,
+        dateExamen: selectedExamen.dateExamen,
+        numeroExamen: Number(selectedExamen.numeroExamen),
+        typeExamen: selectedExamen.typeExamen,
+        duree: Number(selectedExamen.duree),
+        etat,
+      };
+
+      await apiExamensProfesseur.modifierExamen(selectedExamenId, payload);
+      await refreshExamens(selectedExamenId);
+      await refreshFeuille();
+      setSuccess(`Etat de l'examen mis a jour : ${etat}.`);
+    } catch (err) {
+      setError(err.message || "Impossible de modifier l'etat de l'examen.");
+    }
+  };
+
   const handleDeleteExam = async () => {
     if (!selectedExamenId) return;
 
     const confirmed = window.confirm(
-        "Voulez-vous vraiment supprimer cet examen ? Cette action n'est possible que si le backend l'autorise."
+        "Voulez-vous vraiment supprimer cet examen ? Cette action est irreversible."
     );
     if (!confirmed) return;
 
@@ -389,10 +514,10 @@ const GestionNotesProfesseur = () => {
 
     try {
       await apiExamensProfesseur.supprimerExamen(selectedExamenId);
-      const deletedId = selectedExamenId;
+      const deletedLabel = selectedExamen?.numeroExamen ? `n°${selectedExamen.numeroExamen}` : 'selectionne';
       setSelectedExamenId('');
       await refreshExamens();
-      setSuccess(`Examen ${deletedId} supprimé avec succès.`);
+      setSuccess(`Examen ${deletedLabel} supprime avec succes.`);
     } catch (err) {
       setError(err.message || "Impossible de supprimer l'examen.");
     }
@@ -411,7 +536,7 @@ const GestionNotesProfesseur = () => {
     const normalized = raw === '' ? null : Number(raw);
 
     if (normalized !== null && (Number.isNaN(normalized) || normalized < 0 || normalized > 20)) {
-      setError(`La note de ${ligne.prenom} ${ligne.nom} doit être comprise entre 0 et 20.`);
+      setError(`La note de ${ligne.prenom} ${ligne.nom} doit etre comprise entre 0 et 20.`);
       return;
     }
 
@@ -455,9 +580,9 @@ const GestionNotesProfesseur = () => {
       const totalPublished = await apiNotesProfesseur.publierNotes(selectedClasseCode, selectedExamenId);
       await refreshExamens(selectedExamenId);
       await refreshFeuille();
-      setSuccess(`${totalPublished} résultat(s) publié(s) avec succès.`);
+      setSuccess(`${totalPublished} resultat(s) publie(s) avec succes.`);
     } catch (err) {
-      setError(err.message || 'Erreur lors de la publication des résultats.');
+      setError(err.message || 'Erreur lors de la publication des resultats.');
     } finally {
       setPublishing(false);
     }
@@ -473,19 +598,28 @@ const GestionNotesProfesseur = () => {
 
     try {
       await apiExamensProfesseur.deposerCorrige(selectedExamenId, fichier);
+      setCorrigeFileNames((prev) => ({ ...prev, [selectedExamenId]: fichier.name }));
       await refreshExamens(selectedExamenId);
-      setSuccess('Corrigé déposé avec succès.');
+      setSuccess('Corrige depose avec succes.');
     } catch (err) {
-      setError(err.message || 'Erreur lors du dépôt du corrigé.');
+      setError(err.message || 'Erreur lors du depot du corrige.');
     } finally {
       setUploadingCorrige(false);
       event.target.value = '';
     }
   };
 
+  const examForm = drawerMode === 'create' ? creationForm : modificationForm;
+  const setExamForm = drawerMode === 'create' ? setCreationForm : setModificationForm;
+
   const lignes = feuille?.lignes || [];
   const stats = feuille?.stats || {};
   const selectedExamHasCorrige = !!selectedExamen?.corrigeDisponible;
+  const selectedCorrigePath = getStoredPdfPath(selectedExamen, ['corrigePath']);
+  const selectedCorrigeLabel =
+      corrigeFileNames[selectedExamenId] ||
+      getFileNameFromPath(selectedCorrigePath) ||
+      getCorrigeFileLabel(selectedExamen);
 
   return (
       <div className="gestion-notes-modern notes-v2-page">
@@ -497,12 +631,12 @@ const GestionNotesProfesseur = () => {
 
             <div className="header-titles">
               <h1>Gestion des notes</h1>
-              <p className="subtitle">SAISIE, EXAMENS & PUBLICATION DES RÉSULTATS</p>
+              <p className="subtitle">SAISIE, EXAMENS & PUBLICATION DES RESULTATS</p>
             </div>
           </div>
 
           <div className="header-actions-inline">
-            <button className="exam-action-outline" onClick={openCreateDrawer} type="button">
+            <button className="exam-action-outline primary" onClick={openCreateDrawer} type="button">
               <Plus size={16} />
               Nouvel examen
             </button>
@@ -526,7 +660,7 @@ const GestionNotesProfesseur = () => {
                 <span>{error}</span>
               </div>
               <button type="button" onClick={() => setError('')}>
-                ✕
+                ×
               </button>
             </div>
         )}
@@ -538,88 +672,10 @@ const GestionNotesProfesseur = () => {
                 <span>{success}</span>
               </div>
               <button type="button" onClick={() => setSuccess('')}>
-                ✕
+                ×
               </button>
             </div>
         )}
-
-        <div className="notes-toolbar-card">
-          <div className="notes-toolbar-grid">
-            <div className="notes-select-group">
-              <label>Classe</label>
-              <div className="notes-select-shell">
-                <select
-                    value={selectedClasseCode}
-                    onChange={(e) => setSelectedClasseCode(e.target.value)}
-                    disabled={isLoadingFiltres}
-                >
-                  {classes.map((classe) => (
-                      <option key={classe.codeClasse} value={classe.codeClasse}>
-                        {classe.nomClasse || classe.codeClasse}
-                      </option>
-                  ))}
-                </select>
-                <ChevronDown size={18} />
-              </div>
-            </div>
-
-            <div className="notes-select-group">
-              <label>Matière</label>
-              <div className="notes-select-shell">
-                <select
-                    value={selectedMatiereCode}
-                    onChange={(e) => setSelectedMatiereCode(e.target.value)}
-                    disabled={!selectedClasse || isLoadingFiltres}
-                >
-                  {matieres.map((matiere) => (
-                      <option key={matiere.codeMatiere} value={matiere.codeMatiere}>
-                        {matiere.nomMatiere}
-                      </option>
-                  ))}
-                </select>
-                <ChevronDown size={18} />
-              </div>
-            </div>
-
-            <div className="notes-select-group">
-              <label>Examen</label>
-              <div className="notes-select-shell">
-                <select
-                    value={selectedExamenId}
-                    onChange={(e) => setSelectedExamenId(e.target.value)}
-                    disabled={isLoadingExamens || examens.length === 0}
-                >
-                  {examens.length === 0 ? (
-                      <option value="">Aucun examen</option>
-                  ) : (
-                      examens.map((exam) => (
-                          <option key={exam.idExamen} value={exam.idExamen}>
-                            {formatExamenLabel(exam)}
-                          </option>
-                      ))
-                  )}
-                </select>
-                <ChevronDown size={18} />
-              </div>
-            </div>
-          </div>
-
-          {selectedExamen && (
-              <div className="notes-exam-summary-bar">
-                <span><strong>Matière :</strong> {selectedExamen.nomMatiere}</span>
-                <span><strong>Type :</strong> {selectedExamen.typeExamen}</span>
-                <span><strong>Semestre :</strong> {selectedExamen.semestre}</span>
-                <span>
-              <strong>État :</strong>{' '}
-                  <b className={`state-badge-inline ${getEtatClass(selectedExamen.etat)}`}>
-                {selectedExamen.etat}
-              </b>
-            </span>
-                <span><strong>Durée :</strong> {selectedExamen.duree} min</span>
-                <span><strong>Date :</strong> {formatDateLong(selectedExamen.dateExamen)}</span>
-              </div>
-          )}
-        </div>
 
         <div className="notes-page-body">
           <div className="notes-main">
@@ -627,14 +683,48 @@ const GestionNotesProfesseur = () => {
                 <div className="notes-empty-card">
                   <BookOpen size={28} />
                   <h3>Aucun examen disponible</h3>
-                  <p>Créez un nouvel examen depuis cette page pour commencer la saisie des notes.</p>
+                  <p>Creez un nouvel examen depuis cette page pour commencer la saisie des notes.</p>
                   <button className="notes-empty-btn" type="button" onClick={openCreateDrawer}>
                     <Plus size={16} />
-                    Créer un examen
+                    Creer un examen
                   </button>
                 </div>
             ) : (
                 <>
+                  <div className="stats-card notes-inline-stats">
+                    <div className="stats-card-header">
+                      <TrendingUp size={16} color="#10B981" />
+                      <span>STATISTIQUES</span>
+                    </div>
+
+                    <div className="notes-inline-stats-grid">
+                      <div className="main-stat-box notes-inline-stat-main">
+                        <div>
+                          <span className="stat-label-mini">MOYENNE GENERALE</span>
+                          <div className="stat-value-large">
+                            {stats.moyenne != null ? `${Number(stats.moyenne).toFixed(2)}/20` : '--'}
+                          </div>
+                        </div>
+                        <Award size={32} className="medal-icon-box" />
+                      </div>
+
+                      <div className="stat-pill-small">
+                        <h4>MAX</h4>
+                        <p>{stats.max != null ? Number(stats.max).toFixed(2) : '--'}</p>
+                      </div>
+                      <div className="stat-pill-small">
+                        <h4>MIN</h4>
+                        <p>{stats.min != null ? Number(stats.min).toFixed(2) : '--'}</p>
+                      </div>
+                      <div className="stat-pill-small">
+                        <h4>SAISIS</h4>
+                        <p>
+                          {stats.nbNotesSaisies || 0}/{stats.totalEtudiants || 0}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="grade-table-card">
                     <div className="table-title-row">
                       <div className="title-with-icon">
@@ -643,18 +733,18 @@ const GestionNotesProfesseur = () => {
                         </div>
                         <div>
                           <h2>
-                            {feuille?.nomMatiere || selectedExamen?.nomMatiere} — Examen n°
+                            {feuille?.nomMatiere || selectedExamen?.nomMatiere} - Examen n°
                             {feuille?.numeroExamen || selectedExamen?.numeroExamen}
                           </h2>
                           {selectedExamen?.etat === 'PROGRAMME' && (
                               <p className="table-info-warning">
-                                Examen planifié : la saisie des notes est désactivée tant que l’état n’est
-                                pas passé à <strong>PASSE</strong>.
+                                Examen planifie : la saisie des notes est desactivee tant que l'etat n'est
+                                pas passe a <strong>PASSE</strong>.
                               </p>
                           )}
                           {selectedExamen?.etat === 'CORRIGE' && (
                               <p className="table-info-neutral">
-                                Examen déjà corrigé : toute modification de note nécessitera une
+                                Examen deja corrige : toute modification de note necessitera une
                                 republication.
                               </p>
                           )}
@@ -662,7 +752,7 @@ const GestionNotesProfesseur = () => {
                       </div>
 
                       <span className="student-badge">
-                    {stats.totalEtudiants || lignes.length} ÉTUDIANT{(stats.totalEtudiants || lignes.length) > 1 ? 'S' : ''}
+                    {stats.totalEtudiants || lignes.length} ETUDIANT{(stats.totalEtudiants || lignes.length) > 1 ? 'S' : ''}
                   </span>
                     </div>
 
@@ -676,8 +766,8 @@ const GestionNotesProfesseur = () => {
                           <table className="modern-grades-table">
                             <thead>
                             <tr>
-                              <th>ÉTUDIANT</th>
-                              <th>APOGÉE</th>
+                              <th>ETUDIANT</th>
+                              <th>APOGEE</th>
                               <th>NOTE (/20)</th>
                               <th>STATUT</th>
                               <th>COPIE</th>
@@ -686,6 +776,13 @@ const GestionNotesProfesseur = () => {
 
                             <tbody>
                             {lignes.map((ligne) => (
+                                (() => {
+                                  const ligneCopyPath = getStoredPdfPath(ligne, ['copieEtudiantPath', 'copiePath']);
+                                  const ligneCopyLabel =
+                                      copyFileNames[ligne.idEtudiant] ||
+                                      getFileNameFromPath(ligneCopyPath) ||
+                                      getCopyFileLabel(ligne);
+                                  return (
                                 <tr key={ligne.idEtudiant}>
                                   <td className="student-cell">
                                     <div className="student-avatar">
@@ -720,11 +817,11 @@ const GestionNotesProfesseur = () => {
                                       {ligne.publiee ? (
                                           <span className="line-status published">
                                     <CheckCircle2 size={14} />
-                                    Publiée
+                                    Publiee
                                   </span>
                                       ) : (
                                           <span className="line-status draft">
-                                    Non publiée
+                                    Non publiee
                                   </span>
                                       )}
                                     </div>
@@ -732,9 +829,37 @@ const GestionNotesProfesseur = () => {
 
                                   <td>
                                     <div className="copy-actions-cell">
+                                      {ligne.copieDisponible ? (
+                                          <button
+                                              type="button"
+                                              className="copy-file-indicator"
+                                              title={ligneCopyLabel}
+                                              onClick={() =>
+                                                  ligneCopyPath
+                                                      ? Promise.resolve(openStoredPdf(ligneCopyPath))
+                                                      : apiNotesProfesseur
+                                                          .obtenirCopieEtudiantBlob(
+                                                              selectedClasseCode,
+                                                              selectedExamenId,
+                                                              ligne.idEtudiant
+                                                          )
+                                                          .then(({ blob, filename }) => {
+                                                            setCopyFileNames((prev) => ({ ...prev, [ligne.idEtudiant]: filename }));
+                                                            openBlobInNewTab(blob);
+                                                          })
+                                                          .catch((err) =>
+                                                              setError(err.message || 'Erreur lors de la consultation du fichier.')
+                                                          )
+                                              }
+                                          >
+                                            <FileText size={14} />
+                                            <span>{ligneCopyLabel}</span>
+                                          </button>
+                                      ) : null}
+
                                       <label className="copy-upload-btn">
                                         <FileUp size={14} />
-                                        Déposer
+                                        Deposer
                                         <input
                                             type="file"
                                             accept="application/pdf"
@@ -748,10 +873,11 @@ const GestionNotesProfesseur = () => {
                                                     ligne.idEtudiant,
                                                     file
                                                 );
+                                                setCopyFileNames((prev) => ({ ...prev, [ligne.idEtudiant]: file.name }));
                                                 await refreshFeuille();
-                                                setSuccess(`Copie déposée pour ${ligne.nom} ${ligne.prenom}.`);
+                                                setSuccess(`Copie deposee pour ${ligne.nom} ${ligne.prenom}.`);
                                               } catch (err) {
-                                                setError(err.message || 'Erreur lors du dépôt de la copie.');
+                                                setError(err.message || 'Erreur lors du depot de la copie.');
                                               } finally {
                                                 e.target.value = '';
                                               }
@@ -764,28 +890,39 @@ const GestionNotesProfesseur = () => {
                                           type="button"
                                           disabled={!ligne.copieDisponible}
                                           onClick={() =>
-                                              apiNotesProfesseur.telechargerCopieEtudiant(
-                                                  selectedClasseCode,
-                                                  selectedExamenId,
-                                                  ligne.idEtudiant
-                                              ).catch((err) =>
-                                                  setError(err.message || 'Erreur lors du téléchargement.')
-                                              )
+                                              ligneCopyPath
+                                                  ? downloadStoredPdf(ligneCopyPath, ligneCopyLabel).catch((err) =>
+                                                      setError(err.message || 'Erreur lors du telechargement.')
+                                                  )
+                                                  : apiNotesProfesseur
+                                                      .telechargerCopieEtudiant(
+                                                          selectedClasseCode,
+                                                          selectedExamenId,
+                                                          ligne.idEtudiant
+                                                      )
+                                                      .then(({ filename }) =>
+                                                          setCopyFileNames((prev) => ({ ...prev, [ligne.idEtudiant]: filename }))
+                                                      )
+                                                      .catch((err) =>
+                                                          setError(err.message || 'Erreur lors du telechargement.')
+                                                      )
                                           }
                                       >
                                         <Download size={14} />
-                                        Télécharger
+                                        Telecharger
                                       </button>
                                     </div>
                                   </td>
                                 </tr>
+                                  );
+                                })()
                             ))}
 
                             {lignes.length === 0 && (
                                 <tr>
                                   <td colSpan="5">
                                     <div className="notes-empty-inline">
-                                      Aucun étudiant trouvé pour cette feuille.
+                                      Aucun etudiant trouve pour cette feuille.
                                     </div>
                                   </td>
                                 </tr>
@@ -812,15 +949,119 @@ const GestionNotesProfesseur = () => {
                           <>
                             <Globe size={18} />
                             {selectedExamen?.etat === 'CORRIGE' && publicationStats.nonPubliees > 0
-                                ? 'Republicer les résultats'
-                                : 'Publier les résultats'}
+                                ? 'Republicer les resultats'
+                                : 'Publier les resultats'}
                           </>
                       )}
                     </button>
 
                     <div className="auto-save-status">
                       <CheckCircle2 size={14} />
-                      Auto-save actif à chaque sortie du champ
+                      Auto-save actif a chaque sortie du champ
+                    </div>
+
+                    <button
+                        className="exam-action-outline danger notes-inline-delete"
+                        type="button"
+                        disabled={!selectedExamen}
+                        onClick={handleDeleteExam}
+                    >
+                      <X size={16} />
+                      Supprimer examen
+                    </button>
+                  </div>
+
+                  <div className="corrige-section-card">
+                    <div className="corrige-section-head">
+                      <div className="corrige-section-copy">
+                        <div className="corrige-section-icon">
+                          <UploadCloud size={18} />
+                        </div>
+                        <div>
+                          <h3>Depot du corrige</h3>
+                          <p>Deposez le corrige officiel ou telechargez la version deja associee a cet examen.</p>
+                        </div>
+                      </div>
+
+                    </div>
+
+                    <div className={`corrige-file-banner ${selectedExamHasCorrige ? 'is-available' : ''}`}>
+                      {selectedExamHasCorrige ? (
+                          <button
+                              type="button"
+                              className="corrige-file-link"
+                              onClick={() =>
+                                  selectedCorrigePath
+                                      ? Promise.resolve(openStoredPdf(selectedCorrigePath))
+                                      : apiExamensProfesseur
+                                          .obtenirCorrigeBlob(selectedExamenId)
+                                          .then(({ blob, filename }) => {
+                                            setCorrigeFileNames((prev) => ({ ...prev, [selectedExamenId]: filename }));
+                                            openBlobInNewTab(blob);
+                                          })
+                                          .catch((err) =>
+                                              setError(err.message || 'Erreur lors de la consultation du corrige.')
+                                          )
+                              }
+                          >
+                            <FileText size={16} />
+                            <div>
+                              <span>PDF du corrige depose</span>
+                              <strong>{selectedCorrigeLabel}</strong>
+                            </div>
+                          </button>
+                      ) : (
+                          <>
+                            <FileText size={16} />
+                            <div>
+                              <span>Aucun PDF depose</span>
+                              <strong>Deposez un seul fichier PDF</strong>
+                            </div>
+                          </>
+                      )}
+                    </div>
+
+                    <div className="corrige-section-actions">
+                      <button
+                          className="btn-draft corrige-btn"
+                          type="button"
+                          onClick={() => corrigInputRef.current?.click()}
+                          disabled={!selectedExamen || uploadingCorrige}
+                      >
+                        {uploadingCorrige ? <LoaderCircle size={18} className="spin" /> : <UploadCloud size={18} />}
+                        Deposer corrige
+                      </button>
+
+                      <input
+                          ref={corrigInputRef}
+                          type="file"
+                          accept="application/pdf"
+                          hidden
+                          onChange={handleUploadCorrige}
+                      />
+
+                      <button
+                          className="btn-draft corrige-btn"
+                          type="button"
+                          disabled={!selectedExamHasCorrige}
+                          onClick={() =>
+                              selectedCorrigePath
+                                  ? downloadStoredPdf(selectedCorrigePath, selectedCorrigeLabel).catch((err) =>
+                                      setError(err.message || 'Erreur lors du telechargement du corrige.')
+                                  )
+                                  : apiExamensProfesseur
+                                      .telechargerCorrige(selectedExamenId)
+                                      .then(({ filename }) =>
+                                          setCorrigeFileNames((prev) => ({ ...prev, [selectedExamenId]: filename }))
+                                      )
+                                      .catch((err) =>
+                                          setError(err.message || 'Erreur lors du telechargement du corrige.')
+                                      )
+                          }
+                      >
+                        <Download size={18} />
+                        Telecharger corrige
+                      </button>
                     </div>
                   </div>
                 </>
@@ -828,36 +1069,69 @@ const GestionNotesProfesseur = () => {
           </div>
 
           <aside className="notes-side">
-            <div className="stats-card right-side-card">
-              <div className="stats-card-header">
-                <TrendingUp size={16} color="#10B981" />
-                <span>STATISTIQUES</span>
+            <div className="notes-toolbar-card notes-toolbar-side-card">
+              <div className="side-card-title">
+                <BookOpen size={16} />
+                <span>FILTRES</span>
               </div>
 
-              <div className="main-stat-box">
-                <div>
-                  <span className="stat-label-mini">MOYENNE GÉNÉRALE</span>
-                  <div className="stat-value-large">
-                    {stats.moyenne != null ? `${Number(stats.moyenne).toFixed(2)}/20` : '--'}
+              <div className="notes-toolbar-grid notes-toolbar-grid-side">
+                <div className="notes-select-group">
+                  <label>Classe</label>
+                  <div className="notes-select-shell">
+                    <select
+                        value={selectedClasseCode}
+                        onChange={(e) => setSelectedClasseCode(e.target.value)}
+                        disabled={isLoadingFiltres}
+                    >
+                      {classes.map((classe) => (
+                          <option key={classe.codeClasse} value={classe.codeClasse}>
+                            {classe.nomClasse || classe.codeClasse}
+                          </option>
+                      ))}
+                    </select>
+                    <ChevronDown size={18} />
                   </div>
                 </div>
-                <Award size={36} className="medal-icon-box" />
-              </div>
 
-              <div className="secondary-stats vertical-stats">
-                <div className="stat-pill-small">
-                  <h4>MAX</h4>
-                  <p>{stats.max != null ? Number(stats.max).toFixed(2) : '--'}</p>
+                <div className="notes-select-group">
+                  <label>Matiere</label>
+                  <div className="notes-select-shell">
+                    <select
+                        value={selectedMatiereCode}
+                        onChange={(e) => setSelectedMatiereCode(e.target.value)}
+                        disabled={!selectedClasse || isLoadingFiltres}
+                    >
+                      {matieres.map((matiere) => (
+                          <option key={matiere.codeMatiere} value={matiere.codeMatiere}>
+                            {matiere.nomMatiere}
+                          </option>
+                      ))}
+                    </select>
+                    <ChevronDown size={18} />
+                  </div>
                 </div>
-                <div className="stat-pill-small">
-                  <h4>MIN</h4>
-                  <p>{stats.min != null ? Number(stats.min).toFixed(2) : '--'}</p>
-                </div>
-                <div className="stat-pill-small">
-                  <h4>SAISIS</h4>
-                  <p>
-                    {stats.nbNotesSaisies || 0}/{stats.totalEtudiants || 0}
-                  </p>
+
+                <div className="notes-select-group">
+                  <label>Examen</label>
+                  <div className="notes-select-shell">
+                    <select
+                        value={selectedExamenId}
+                        onChange={(e) => setSelectedExamenId(e.target.value)}
+                        disabled={isLoadingExamens || examens.length === 0}
+                    >
+                      {examens.length === 0 ? (
+                          <option value="">Aucun examen</option>
+                      ) : (
+                          examens.map((exam) => (
+                              <option key={exam.idExamen} value={exam.idExamen}>
+                                {formatExamenLabel(exam)}
+                              </option>
+                          ))
+                      )}
+                    </select>
+                    <ChevronDown size={18} />
+                  </div>
                 </div>
               </div>
             </div>
@@ -865,7 +1139,7 @@ const GestionNotesProfesseur = () => {
             <div className="exam-context-card right-side-card">
               <div className="side-card-title">
                 <CalendarDays size={16} />
-                <span>ÉTAT DE L’EXAMEN</span>
+                <span>ETAT DE L'EXAMEN</span>
               </div>
 
               {selectedExamen ? (
@@ -875,7 +1149,7 @@ const GestionNotesProfesseur = () => {
                       <strong>{selectedExamen.typeExamen}</strong>
                     </div>
                     <div className="exam-context-item">
-                      <span>Numéro</span>
+                      <span>Numero</span>
                       <strong>#{selectedExamen.numeroExamen}</strong>
                     </div>
                     <div className="exam-context-item">
@@ -883,7 +1157,7 @@ const GestionNotesProfesseur = () => {
                       <strong>{selectedExamen.semestre}</strong>
                     </div>
                     <div className="exam-context-item">
-                      <span>Durée</span>
+                      <span>Duree</span>
                       <strong>{selectedExamen.duree} min</strong>
                     </div>
                     <div className="exam-context-item full">
@@ -891,15 +1165,40 @@ const GestionNotesProfesseur = () => {
                       <strong>{formatDateLong(selectedExamen.dateExamen)}</strong>
                     </div>
                     <div className="exam-context-item full">
-                      <span>État</span>
+                      <span>Etat</span>
                       <strong className={`state-badge ${getEtatClass(selectedExamen.etat)}`}>
                         {selectedExamen.etat}
                       </strong>
                     </div>
                   </div>
               ) : (
-                  <div className="side-empty">Sélectionnez un examen.</div>
+                  <div className="side-empty">Selectionnez un examen.</div>
               )}
+
+              <div className="exam-status-editor">
+                <div className="exam-status-editor-copy">
+                  <span>Mise a jour d'etat</span>
+                  <small>Action distincte des filtres de recherche.</small>
+                </div>
+                <div className="notes-select-shell notes-select-shell-compact">
+                  <select
+                      value={selectedExamen?.etat || ''}
+                      onChange={(e) => handleQuickEtatChange(e.target.value)}
+                      disabled={!selectedExamen}
+                  >
+                    {!selectedExamen ? (
+                        <option value="">Aucun examen</option>
+                    ) : (
+                        ETAT_EXAMEN_OPTIONS.map((etat) => (
+                            <option key={etat} value={etat}>
+                              {etat}
+                            </option>
+                        ))
+                    )}
+                  </select>
+                  <ChevronDown size={18} />
+                </div>
+              </div>
             </div>
 
             <div className="exam-context-card right-side-card">
@@ -910,7 +1209,7 @@ const GestionNotesProfesseur = () => {
 
               <div className="exam-context-grid">
                 <div className="exam-context-item">
-                  <span>Publiées</span>
+                  <span>Publiees</span>
                   <strong>{publicationStats.publiees}</strong>
                 </div>
                 <div className="exam-context-item">
@@ -918,70 +1217,12 @@ const GestionNotesProfesseur = () => {
                   <strong>{publicationStats.nonPubliees}</strong>
                 </div>
                 <div className="exam-context-item full">
-                  <span>Corrigé</span>
-                  <strong>{selectedExamHasCorrige ? 'Disponible' : 'Non déposé'}</strong>
+                  <span>Corrige</span>
+                  <strong>{selectedExamHasCorrige ? 'Disponible' : 'Non depose'}</strong>
                 </div>
               </div>
             </div>
 
-            <div className="actions-container right-side-card">
-              <button className="btn-draft side-btn" type="button" onClick={openCreateDrawer}>
-                <Plus size={18} />
-                Nouvel examen
-              </button>
-
-              <button
-                  className="btn-draft side-btn"
-                  type="button"
-                  onClick={openEditDrawer}
-                  disabled={!selectedExamen}
-              >
-                <Pencil size={18} />
-                Modifier l’examen
-              </button>
-
-              <button
-                  className="btn-draft side-btn"
-                  type="button"
-                  onClick={() => corrigInputRef.current?.click()}
-                  disabled={!selectedExamen || uploadingCorrige}
-              >
-                {uploadingCorrige ? <LoaderCircle size={18} className="spin" /> : <UploadCloud size={18} />}
-                Déposer corrigé
-              </button>
-
-              <input
-                  ref={corrigInputRef}
-                  type="file"
-                  accept="application/pdf"
-                  hidden
-                  onChange={handleUploadCorrige}
-              />
-
-              <button
-                  className="btn-draft side-btn"
-                  type="button"
-                  disabled={!selectedExamHasCorrige}
-                  onClick={() =>
-                      apiExamensProfesseur.telechargerCorrige(selectedExamenId).catch((err) =>
-                          setError(err.message || 'Erreur lors du téléchargement du corrigé.')
-                      )
-                  }
-              >
-                <Download size={18} />
-                Télécharger corrigé
-              </button>
-
-              <button
-                  className="btn-danger side-btn"
-                  type="button"
-                  disabled={!selectedExamen}
-                  onClick={handleDeleteExam}
-              >
-                <X size={18} />
-                Supprimer examen
-              </button>
-            </div>
           </aside>
         </div>
 
@@ -990,11 +1231,11 @@ const GestionNotesProfesseur = () => {
               <div className="exam-drawer" onClick={(e) => e.stopPropagation()}>
                 <div className="exam-drawer-header">
                   <div>
-                    <h3>{drawerMode === 'create' ? 'Nouvel examen' : 'Modifier l’examen'}</h3>
+                    <h3>{drawerMode === 'create' ? 'Nouvel examen' : "Modifier l'examen"}</h3>
                     <p>
                       {drawerMode === 'create'
-                          ? 'Créez un examen puis saisissez directement les notes depuis cette page.'
-                          : 'Le backend autorise ici la modification de la date, de la durée et de l’état.'}
+                          ? 'Creez un examen puis saisissez directement les notes depuis cette page.'
+                          : "Retrouvez le meme formulaire que la creation pour modifier l'examen."}
                     </p>
                   </div>
 
@@ -1003,123 +1244,99 @@ const GestionNotesProfesseur = () => {
                   </button>
                 </div>
 
-                {drawerMode === 'create' ? (
-                    <div className="drawer-form-grid">
-                      <div className="drawer-field">
-                        <label>Semestre</label>
-                        <select
-                            value={creationForm.semestre}
-                            onChange={(e) =>
-                                setCreationForm((prev) => ({ ...prev, semestre: e.target.value }))
-                            }
-                        >
-                          {SEMESTRE_OPTIONS.map((s) => (
-                              <option key={s} value={s}>
-                                {s}
-                              </option>
-                          ))}
-                        </select>
-                      </div>
+                <div className="drawer-form-grid">
+                  <div className="drawer-field">
+                    <label>Semestre</label>
+                    <select
+                        value={examForm.semestre}
+                        onChange={(e) =>
+                            setExamForm((prev) => ({ ...prev, semestre: e.target.value }))
+                        }
+                    >
+                      {SEMESTRE_OPTIONS.map((s) => (
+                          <option key={s} value={s}>
+                            {s}
+                          </option>
+                      ))}
+                    </select>
+                  </div>
 
-                      <div className="drawer-field">
-                        <label>Numéro examen</label>
-                        <input
-                            type="number"
-                            min="1"
-                            value={creationForm.numeroExamen}
-                            onChange={(e) =>
-                                setCreationForm((prev) => ({ ...prev, numeroExamen: e.target.value }))
-                            }
-                        />
-                      </div>
+                  <div className="drawer-field">
+                    <label>Numero examen</label>
+                    <input
+                        type="number"
+                        min="1"
+                        value={examForm.numeroExamen}
+                        onChange={(e) =>
+                            setExamForm((prev) => ({ ...prev, numeroExamen: e.target.value }))
+                        }
+                    />
+                  </div>
 
-                      <div className="drawer-field">
-                        <label>Type examen</label>
-                        <select
-                            value={creationForm.typeExamen}
-                            onChange={(e) =>
-                                setCreationForm((prev) => ({ ...prev, typeExamen: e.target.value }))
-                            }
-                        >
-                          {TYPE_EXAMEN_OPTIONS.map((t) => (
-                              <option key={t} value={t}>
-                                {t}
-                              </option>
-                          ))}
-                        </select>
-                      </div>
+                  <div className="drawer-field">
+                    <label>Type examen</label>
+                    <select
+                        value={examForm.typeExamen}
+                        onChange={(e) =>
+                            setExamForm((prev) => ({ ...prev, typeExamen: e.target.value }))
+                        }
+                    >
+                      {TYPE_EXAMEN_OPTIONS.map((t) => (
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
+                      ))}
+                    </select>
+                  </div>
 
-                      <div className="drawer-field">
-                        <label>Durée (min)</label>
-                        <input
-                            type="number"
-                            min="1"
-                            value={creationForm.duree}
-                            onChange={(e) =>
-                                setCreationForm((prev) => ({ ...prev, duree: e.target.value }))
-                            }
-                        />
-                      </div>
+                  <div className="drawer-field">
+                    <label>Duree (min)</label>
+                    <input
+                        type="number"
+                        min="1"
+                        value={examForm.duree}
+                        onChange={(e) =>
+                            setExamForm((prev) => ({ ...prev, duree: e.target.value }))
+                        }
+                    />
+                  </div>
 
-                      <div className="drawer-field full">
-                        <label>Date examen</label>
-                        <input
-                            type="datetime-local"
-                            value={creationForm.dateExamen}
-                            onChange={(e) =>
-                                setCreationForm((prev) => ({ ...prev, dateExamen: e.target.value }))
-                            }
-                        />
-                      </div>
+                  <div className="drawer-field full">
+                    <label>Date examen</label>
+                    <input
+                        type="datetime-local"
+                        value={examForm.dateExamen}
+                        onChange={(e) =>
+                            setExamForm((prev) => ({ ...prev, dateExamen: e.target.value }))
+                        }
+                    />
+                  </div>
+
+                  {drawerMode === 'edit' && (
+                    <div className="drawer-field full">
+                      <label>Etat</label>
+                      <select
+                          value={modificationForm.etat}
+                          onChange={(e) =>
+                              setModificationForm((prev) => ({ ...prev, etat: e.target.value }))
+                          }
+                      >
+                        {ETAT_EXAMEN_OPTIONS.map((etat) => (
+                            <option key={etat} value={etat}>
+                              {etat}
+                            </option>
+                        ))}
+                      </select>
                     </div>
-                ) : (
-                    <div className="drawer-form-grid">
-                      <div className="drawer-field full">
-                        <label>Date examen</label>
-                        <input
-                            type="datetime-local"
-                            value={modificationForm.dateExamen}
-                            onChange={(e) =>
-                                setModificationForm((prev) => ({ ...prev, dateExamen: e.target.value }))
-                            }
-                        />
-                      </div>
+                  )}
 
-                      <div className="drawer-field">
-                        <label>Durée (min)</label>
-                        <input
-                            type="number"
-                            min="1"
-                            value={modificationForm.duree}
-                            onChange={(e) =>
-                                setModificationForm((prev) => ({ ...prev, duree: e.target.value }))
-                            }
-                        />
-                      </div>
-
-                      <div className="drawer-field">
-                        <label>État</label>
-                        <select
-                            value={modificationForm.etat}
-                            onChange={(e) =>
-                                setModificationForm((prev) => ({ ...prev, etat: e.target.value }))
-                            }
-                        >
-                          {ETAT_EXAMEN_OPTIONS.map((etat) => (
-                              <option key={etat} value={etat}>
-                                {etat}
-                              </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                )}
+                </div>
 
                 <div className="drawer-help-box">
-                  <strong>Logique métier :</strong>
+                  <strong>Logique metier :</strong>
                   <span>
-                PROGRAMME = pas de saisie, PASSE = saisie ouverte, CORRIGE = résultats publiés ou
-                corrigés.
+                PROGRAMME = pas de saisie, PASSE = saisie ouverte, CORRIGE = resultats publies ou
+                corriges.
               </span>
                 </div>
 
@@ -1150,3 +1367,4 @@ const GestionNotesProfesseur = () => {
 };
 
 export default GestionNotesProfesseur;
+

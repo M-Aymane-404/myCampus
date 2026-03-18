@@ -18,17 +18,20 @@ const lireErreur = async (response, fallback) => {
 
 const getHeaders = async (json = false) => {
     const headers = await apiAuth.getAuthHeadersWithRefresh();
-    return json
-        ? { ...headers, 'Content-Type': 'application/json' }
-        : headers;
+    return json ? { ...headers, 'Content-Type': 'application/json' } : headers;
 };
 
-const telechargerBlob = async (response, nomFichierParDefaut) => {
-    const blob = await response.blob();
+const lireNomFichier = (response, nomParDefaut) => {
+    const disposition = response.headers.get('content-disposition') || '';
+    const match = disposition.match(/filename="?([^"]+)"?/);
+    return match ? match[1] : nomParDefaut;
+};
+
+const telechargerBlob = async (blob, nomFichier) => {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = nomFichierParDefaut;
+    a.download = nomFichier;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -37,58 +40,43 @@ const telechargerBlob = async (response, nomFichierParDefaut) => {
 
 const apiNotesProfesseur = {
     async chargerFeuille(codeClasse, examenId) {
-        const response = await fetch(
-            `${BASE_URL}/classes/${codeClasse}/examens/${examenId}/feuille`,
-            {
-                method: 'GET',
-                headers: await getHeaders(),
-                credentials: 'include',
-            }
-        );
+        const response = await fetch(`${BASE_URL}/classes/${codeClasse}/examens/${examenId}/feuille`, {
+            method: 'GET',
+            headers: await getHeaders(),
+            credentials: 'include',
+        });
 
         if (!response.ok) {
-            throw new Error(
-                await lireErreur(response, 'Impossible de charger la feuille de notes.')
-            );
+            throw new Error(await lireErreur(response, 'Impossible de charger la feuille de notes.'));
         }
 
         return response.json();
     },
 
     async autosaveNote(codeClasse, examenId, payload) {
-        const response = await fetch(
-            `${BASE_URL}/classes/${codeClasse}/examens/${examenId}/resultats`,
-            {
-                method: 'PUT',
-                headers: await getHeaders(true),
-                body: JSON.stringify(payload),
-                credentials: 'include',
-            }
-        );
+        const response = await fetch(`${BASE_URL}/classes/${codeClasse}/examens/${examenId}/resultats`, {
+            method: 'PUT',
+            headers: await getHeaders(true),
+            body: JSON.stringify(payload),
+            credentials: 'include',
+        });
 
         if (!response.ok) {
-            throw new Error(
-                await lireErreur(response, "Impossible d'enregistrer la note.")
-            );
+            throw new Error(await lireErreur(response, "Impossible d'enregistrer la note."));
         }
 
         return response.json();
     },
 
     async publierNotes(codeClasse, examenId) {
-        const response = await fetch(
-            `${BASE_URL}/classes/${codeClasse}/examens/${examenId}/publier`,
-            {
-                method: 'POST',
-                headers: await getHeaders(),
-                credentials: 'include',
-            }
-        );
+        const response = await fetch(`${BASE_URL}/classes/${codeClasse}/examens/${examenId}/publier`, {
+            method: 'POST',
+            headers: await getHeaders(),
+            credentials: 'include',
+        });
 
         if (!response.ok) {
-            throw new Error(
-                await lireErreur(response, 'Impossible de publier les résultats.')
-            );
+            throw new Error(await lireErreur(response, 'Impossible de publier les resultats.'));
         }
 
         return response.json();
@@ -99,49 +87,42 @@ const apiNotesProfesseur = {
         const formData = new FormData();
         formData.append('fichier', fichier);
 
-        const response = await fetch(
-            `${BASE_URL}/classes/${codeClasse}/examens/${examenId}/etudiants/${etudiantId}/copie`,
-            {
-                method: 'POST',
-                headers,
-                body: formData,
-                credentials: 'include',
-            }
-        );
+        const response = await fetch(`${BASE_URL}/classes/${codeClasse}/examens/${examenId}/etudiants/${etudiantId}/copie`, {
+            method: 'POST',
+            headers,
+            body: formData,
+            credentials: 'include',
+        });
 
         if (!response.ok) {
-            throw new Error(
-                await lireErreur(response, "Impossible de déposer la copie corrigée.")
-            );
+            throw new Error(await lireErreur(response, 'Impossible de deposer la copie corrigee.'));
         }
 
         return response.json();
     },
 
-    async telechargerCopieEtudiant(codeClasse, examenId, etudiantId) {
-        const response = await fetch(
-            `${BASE_URL}/classes/${codeClasse}/examens/${examenId}/etudiants/${etudiantId}/copie`,
-            {
-                method: 'GET',
-                headers: await getHeaders(),
-                credentials: 'include',
-            }
-        );
+    async obtenirCopieEtudiantBlob(codeClasse, examenId, etudiantId) {
+        const response = await fetch(`${BASE_URL}/classes/${codeClasse}/examens/${examenId}/etudiants/${etudiantId}/copie`, {
+            method: 'GET',
+            headers: await getHeaders(),
+            credentials: 'include',
+        });
 
         if (!response.ok) {
-            throw new Error(
-                await lireErreur(response, 'Impossible de télécharger la copie corrigée.')
-            );
+            throw new Error(await lireErreur(response, 'Impossible de telecharger la copie corrigee.'));
         }
 
-        await telechargerBlob(
-            response,
-            `copie_etudiant_${etudiantId}_examen_${examenId}.pdf`
-        );
-        return true;
+        const blob = await response.blob();
+        const filename = lireNomFichier(response, `copie_corrigee_examen_${examenId}.pdf`);
+        return { blob, filename };
     },
 
-    // alias de compatibilité si ancien code appelle d'autres noms
+    async telechargerCopieEtudiant(codeClasse, examenId, etudiantId) {
+        const { blob, filename } = await this.obtenirCopieEtudiantBlob(codeClasse, examenId, etudiantId);
+        await telechargerBlob(blob, filename);
+        return { blob, filename };
+    },
+
     async obtenirFeuille(codeClasse, examenId) {
         return this.chargerFeuille(codeClasse, examenId);
     },

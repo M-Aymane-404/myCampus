@@ -1,436 +1,731 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
-  BookOpen, ClipboardList, GraduationCap, Megaphone,
-  UserCheck, Clock, MapPin, ChevronRight, AlertCircle,
-  CheckCircle2, Calendar, Loader2, TrendingUp, Bell
+  AlertCircle,
+  BarChart3,
+  Bell,
+  BookOpen,
+  Calendar,
+  CheckCircle2,
+  FileWarning,
+  ClipboardList,
+  Clock,
+  GraduationCap,
+  Layers3,
+  Loader2,
+  MapPin,
+  Trophy,
+  Users,
 } from 'lucide-react';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import { apiTableauDeBordProfesseur } from '../services/professeur/apiTableauDeBordProfesseur';
-import { apiAnnoncesProfesseur }       from '../services/professeur/apiAnnoncesProfesseur';
+import apiExamensProfesseur from '../services/professeur/apiExamensProfesseur';
+import apiNotesProfesseur from '../services/professeur/apiNotesProfesseur';
 import './TableauDeBordProfesseur.css';
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const TYPE_COLOR = { COURS: 'blue', TD: 'green', TP: 'purple' };
 
-const ETAT_CONFIG = {
-  PLANIFIEE: { label: 'Planifiée', color: '#3b82f6', bg: '#eff6ff' },
-  TERMINEE:  { label: 'Terminée',  color: '#10b981', bg: '#f0fdf4' },
-  ANNULEE:   { label: 'Annulée',   color: '#ef4444', bg: '#fee2e2' },
+const NOTE_TABS = [
+  { id: 'classe', label: 'Par classe', icon: Layers3 },
+  { id: 'matiere', label: 'Par matiere', icon: BookOpen },
+];
+
+const CHART_COLORS = ['#5c54ed', '#3d7ea6', '#60a5fa', '#8b5cf6', '#f4a261', '#64748b'];
+
+const EMPTY_NOTE_STATS = {
+  parClasse: [],
+  parMatiere: [],
+  resumeGlobal: {
+    moyenneGenerale: null,
+    noteMaximale: null,
+    noteMinimale: null,
+    tauxReussite: null,
+    notesSaisies: 0,
+    totalAttendu: 0,
+  },
+  meta: {
+    uniqueStudentCount: 0,
+    totalClasses: 0,
+    totalMatieres: 0,
+    notesPubliees: 0,
+    notesEnAttente: 0,
+    examensSansPublication: 0,
+    copiesACorriger: 0,
+    groupesEnDifficulte: 0,
+  },
 };
 
-const ETAT_EXAM_CONFIG = {
-  PROGRAMME: { label: 'Programmé', color: '#3b82f6', bg: '#eff6ff', icon: Clock },
-  PASSE:     { label: 'Passé',     color: '#f59e0b', bg: '#fffbeb', icon: AlertCircle },
-  CORRIGE:   { label: 'Corrigé',   color: '#10b981', bg: '#f0fdf4', icon: CheckCircle2 },
+const formatDate = (value) => {
+  if (!value) return '--';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '--';
+  return date.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: 'short' });
 };
 
-const formatDate = (d) => {
-  if (!d) return '—';
-  return new Date(d).toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: 'short' });
+const formatHour = (value) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 };
 
-const formatHeure = (d) => {
-  if (!d) return '';
-  return new Date(d).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+const formatFloat = (value, digits = 2) => (Number.isFinite(value) ? Number(value).toFixed(digits) : '--');
+const formatPercent = (value) => (Number.isFinite(value) ? `${Math.round(value)}%` : '--');
+const formatCompactNumber = (value) => new Intl.NumberFormat('fr-FR').format(value ?? 0);
+
+const pickFirstValue = (...values) => values.find((value) => value !== undefined && value !== null && value !== '');
+
+const getNestedValue = (source, paths) => {
+  for (const path of paths) {
+    const segments = path.split('.');
+    let current = source;
+
+    for (const segment of segments) {
+      current = current?.[segment];
+      if (current === undefined || current === null || current === '') break;
+    }
+
+    if (current !== undefined && current !== null && current !== '') {
+      return current;
+    }
+  }
+
+  return null;
 };
 
-const tempsDepuis = (dateStr) => {
-  if (!dateStr) return '';
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const h = Math.floor(diff / 3_600_000);
-  const d = Math.floor(h / 24);
-  if (d >= 1) return `IL Y A ${d}J`;
-  if (h >= 1) return `IL Y A ${h}H`;
-  return 'RÉCENT';
+const timeAgo = (value) => {
+  if (!value) return 'RECENT';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'RECENT';
+  const diffMs = Date.now() - date.getTime();
+  const diffHours = Math.floor(diffMs / 3600000);
+  if (diffHours < 1) return 'RECENT';
+  if (diffHours < 24) return `IL Y A ${diffHours}H`;
+  return `IL Y A ${Math.floor(diffHours / 24)}J`;
 };
 
-// ─── Composant principal ──────────────────────────────────────────────────────
+const createAggregate = (label) => ({
+  label,
+  somme: 0,
+  count: 0,
+  max: null,
+  min: null,
+  successCount: 0,
+  totalAttendu: 0,
+});
+
+const updateAggregate = (aggregate, notes, totalAttendu) => {
+  const validNotes = notes.filter((note) => Number.isFinite(note));
+  aggregate.totalAttendu += totalAttendu;
+  if (validNotes.length === 0) return aggregate;
+
+  const localMax = Math.max(...validNotes);
+  const localMin = Math.min(...validNotes);
+  aggregate.somme += validNotes.reduce((sum, note) => sum + note, 0);
+  aggregate.count += validNotes.length;
+  aggregate.max = aggregate.max == null ? localMax : Math.max(aggregate.max, localMax);
+  aggregate.min = aggregate.min == null ? localMin : Math.min(aggregate.min, localMin);
+  aggregate.successCount += validNotes.filter((note) => note >= 10).length;
+  return aggregate;
+};
+
+const finalizeAggregate = (aggregate, suffix = '') => ({
+  id: `${aggregate.label}-${suffix || 'stats'}`,
+  label: aggregate.label,
+  moyenneGenerale: aggregate.count > 0 ? aggregate.somme / aggregate.count : null,
+  noteMaximale: aggregate.max,
+  noteMinimale: aggregate.min,
+  tauxReussite: aggregate.count > 0 ? (aggregate.successCount / aggregate.count) * 100 : null,
+  notesSaisies: aggregate.count,
+  totalAttendu: aggregate.totalAttendu,
+});
+
+const buildNoteStatistics = async () => {
+  const filters = await apiExamensProfesseur.chargerFiltres();
+  const classes = Array.isArray(filters?.classes) ? filters.classes : [];
+  if (classes.length === 0) return EMPTY_NOTE_STATS;
+
+  const classMap = new Map();
+  const subjectMap = new Map();
+  const globalAggregate = createAggregate('global');
+  const studentIds = new Set();
+  let notesPubliees = 0;
+  let notesEnAttente = 0;
+  let examensSansPublication = 0;
+  let copiesACorriger = 0;
+
+  await Promise.all(
+    classes.map(async (classe) => {
+      const codeClasse = classe.codeClasse || classe.nomClasse;
+      const classeLabel = classe.nomClasse || codeClasse || 'Classe';
+      const matieres = Array.isArray(classe.matieres) ? classe.matieres : [];
+      if (!codeClasse || matieres.length === 0) return;
+
+      await Promise.all(
+        matieres.map(async (matiere) => {
+          const codeMatiere = matiere.codeMatiere;
+          const matiereLabel = matiere.nomMatiere || codeMatiere || 'Matiere';
+          if (!codeMatiere) return;
+
+          const examens = await apiExamensProfesseur.listerExamens(codeClasse, codeMatiere);
+          const examensList = Array.isArray(examens) ? examens : [];
+          if (examensList.length === 0) return;
+
+          await Promise.all(
+            examensList.map(async (examen) => {
+              const examenId = examen.idExamen || examen.id;
+              if (!examenId) return;
+
+              const feuille = await apiNotesProfesseur.chargerFeuille(codeClasse, examenId);
+              const lignes = Array.isArray(feuille?.lignes) ? feuille.lignes : [];
+              const notes = [];
+
+              lignes.forEach((ligne) => {
+                const value = ligne.note;
+                const numeric = typeof value === 'string' ? Number(value.replace(',', '.')) : Number(value);
+                if (Number.isFinite(numeric)) notes.push(numeric);
+
+                const studentId = ligne.idEtudiant || ligne.apogee;
+                if (studentId) studentIds.add(studentId);
+
+                if (ligne.publiee) notesPubliees += 1;
+                else notesEnAttente += 1;
+              });
+
+              if (lignes.some((ligne) => !ligne.publiee)) examensSansPublication += 1;
+              if (examen.etat === 'PASSE') copiesACorriger += 1;
+
+              if (!classMap.has(classeLabel)) classMap.set(classeLabel, createAggregate(classeLabel));
+              if (!subjectMap.has(matiereLabel)) subjectMap.set(matiereLabel, createAggregate(matiereLabel));
+
+              updateAggregate(classMap.get(classeLabel), notes, lignes.length);
+              updateAggregate(subjectMap.get(matiereLabel), notes, lignes.length);
+              updateAggregate(globalAggregate, notes, lignes.length);
+            }),
+          );
+        }),
+      );
+    }),
+  );
+
+  const parClasse = Array.from(classMap.values())
+    .map((aggregate) => finalizeAggregate(aggregate, 'classe'))
+    .sort((a, b) => (b.moyenneGenerale || 0) - (a.moyenneGenerale || 0));
+
+  const parMatiere = Array.from(subjectMap.values())
+    .map((aggregate) => finalizeAggregate(aggregate, 'matiere'))
+    .sort((a, b) => (b.moyenneGenerale || 0) - (a.moyenneGenerale || 0));
+
+  return {
+    parClasse,
+    parMatiere,
+    resumeGlobal: finalizeAggregate(globalAggregate, 'global'),
+    meta: {
+      uniqueStudentCount: studentIds.size,
+      totalClasses: parClasse.length,
+      totalMatieres: parMatiere.length,
+      notesPubliees,
+      notesEnAttente,
+      examensSansPublication,
+      copiesACorriger,
+      groupesEnDifficulte: parClasse.filter((item) => (item.tauxReussite ?? 100) < 55 || (item.moyenneGenerale ?? 20) < 10).length,
+    },
+  };
+};
+
+const DashboardTooltip = ({ active, payload }) => {
+  if (!active || !payload?.length) return null;
+  const point = payload[0]?.payload;
+  if (!point) return null;
+
+  return (
+    <div className="prof-chart-tooltip">
+      <strong>{point.label}</strong>
+      <span>Moyenne: {formatFloat(point.moyenneGenerale)}/20</span>
+      <span>Reussite: {formatPercent(point.tauxReussite)}</span>
+      <span>Notes saisies: {point.notesSaisies}/{point.totalAttendu}</span>
+    </div>
+  );
+};
+
+const normalizeSession = (payload) => {
+  const session = payload?.prochaineSeance || payload?.nextSession || payload || null;
+  if (!session || typeof session !== 'object') return null;
+
+  const subject = pickFirstValue(
+    session.matiereNom,
+    session.nomMatiere,
+    session.matiere,
+    session.matiereName,
+    session.moduleName,
+    session.nomModule,
+    session.enseignement?.matiereNom,
+    session.enseignement?.nomMatiere,
+    session.enseignement?.matiere?.nomMatiere,
+    session.enseignement?.matiere?.nom,
+    session.module?.nom,
+    session.nom,
+  );
+
+  const className = pickFirstValue(
+    session.nomClasse,
+    session.classeNom,
+    session.classe,
+    session.codeClasse,
+    session.groupeNom,
+    session.enseignement?.classe?.nomClasse,
+    session.enseignement?.classe?.nom,
+    session.enseignement?.classe?.codeClasse,
+  );
+
+  const room = pickFirstValue(
+    session.salle,
+    session.room,
+    session.nomSalle,
+    session.local,
+    session.enseignement?.salle,
+  );
+
+  const type = pickFirstValue(session.typeSeance, session.type, session.categorie, 'COURS');
+  const start = pickFirstValue(session.start, formatHour(session.heureDebut), session.heureDebut);
+  const end = pickFirstValue(session.end, formatHour(session.heureFin), session.heureFin);
+  const day = pickFirstValue(session.dayOfWeek, session.jour, formatDate(session.date));
+
+  return {
+    ...session,
+    displaySubject: subject || 'Seance a confirmer',
+    displayClass: className || 'Classe',
+    displayRoom: room || 'Salle a definir',
+    displayType: type,
+    displayStart: start || '',
+    displayEnd: end || '',
+    displayDay: day || '--',
+  };
+};
+
+const buildAbsenceInsights = (dashboardData) => {
+  const stats = dashboardData?.stats || {};
+  const alerts = dashboardData?.alertes || dashboardData?.absences || {};
+
+  const todayCount = pickFirstValue(
+    getNestedValue(dashboardData, ['stats.nbAbsencesAujourdhui', 'stats.absencesAujourdhui', 'stats.nbAbsentsJour', 'absences.nbAujourdhui']),
+    0,
+  );
+
+  const pendingCount = pickFirstValue(
+    getNestedValue(dashboardData, ['stats.nbJustificationsEnAttente', 'stats.justificationsEnAttente', 'absences.justificationsEnAttente', 'alertes.justificationsEnAttente']),
+    0,
+  );
+
+  const highRiskCount = pickFirstValue(
+    getNestedValue(dashboardData, ['stats.nbEtudiantsARisqueAbsence', 'stats.etudiantsARisqueAbsence', 'absences.etudiantsARisque', 'alertes.absencesCritiques']),
+    0,
+  );
+
+  const attendanceRate = pickFirstValue(
+    getNestedValue(dashboardData, ['stats.tauxPresence', 'stats.tauxAssiduite', 'absences.tauxPresence']),
+    null,
+  );
+
+  return {
+    todayCount: Number(todayCount) || 0,
+    pendingCount: Number(pendingCount) || 0,
+    highRiskCount: Number(highRiskCount) || 0,
+    attendanceRate: Number.isFinite(Number(attendanceRate)) ? Number(attendanceRate) : null,
+    hasDetails: Object.keys(stats).length > 0 || Object.keys(alerts).length > 0,
+  };
+};
 
 const TableauDeBordProfesseur = ({ surNavigation }) => {
-  const [data, setData]               = useState(null);
+  const [dashboard, setDashboard] = useState(null);
   const [prochaineSeance, setProchaineSeance] = useState(null);
-  const [annonces, setAnnonces]       = useState([]);
-  const [loading, setLoading]         = useState(true);
-  const [error, setError]             = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [activeNoteTab, setActiveNoteTab] = useState('classe');
+  const [notesState, setNotesState] = useState({ loading: true, error: '', data: EMPTY_NOTE_STATS });
 
   useEffect(() => {
-    const fetchAll = async () => {
+    const loadNotesStats = async () => {
+      try {
+        setNotesState((current) => ({ ...current, loading: true, error: '' }));
+        const noteStats = await buildNoteStatistics();
+        setNotesState({ loading: false, error: '', data: noteStats });
+      } catch (err) {
+        console.error('Chargement statistiques des notes impossible:', err);
+        setNotesState({
+          loading: false,
+          error: err.message || 'Impossible de charger les statistiques des notes.',
+          data: EMPTY_NOTE_STATS,
+        });
+      }
+    };
+
+    const loadDashboard = async () => {
       try {
         setLoading(true);
+        setError('');
+        const dashboardResponse = await apiTableauDeBordProfesseur.obtenirTableauDeBord();
+        setDashboard(dashboardResponse);
 
-        // Dashboard principal
-        const dashboard = await apiTableauDeBordProfesseur.obtenirTableauDeBord();
-        setData(dashboard);
+        const [nextSessionResult] = await Promise.allSettled([
+          apiTableauDeBordProfesseur.obtenirProchaineSeance(),
+        ]);
 
-        // Prochaine séance (emploi du temps)
-        try {
-          const ps = await apiTableauDeBordProfesseur.obtenirProchaineSeance();
-          setProchaineSeance(ps?.prochaineSeance || null);
-        } catch {
-          setProchaineSeance(null);
-        }
-
-        // Annonces reçues (mes classes + dept)
-        try {
-          const ann = await apiAnnoncesProfesseur.listerAnnoncesMesClasses();
-          setAnnonces(Array.isArray(ann) ? ann.slice(0, 3) : []);
-        } catch {
-          setAnnonces([]);
-        }
-
+        setProchaineSeance(nextSessionResult.status === 'fulfilled' ? nextSessionResult.value?.prochaineSeance || null : null);
       } catch (err) {
-        setError(err.message);
+        console.error('Chargement dashboard professeur impossible:', err);
+        setError(err.message || 'Impossible de charger le tableau de bord professeur.');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchAll();
+    loadDashboard();
+    loadNotesStats();
   }, []);
 
-  // ── État de chargement ────────────────────────────────────────────────────
-  if (loading) return (
-      <div className="tdb-prof-container">
-        <div className="tdb-loading">
-          <Loader2 size={32} className="tdb-spin" />
-          <p>Chargement du tableau de bord...</p>
-        </div>
-      </div>
+  const reloadNoteStats = async () => {
+    try {
+      setNotesState((current) => ({ ...current, loading: true, error: '' }));
+      const noteStats = await buildNoteStatistics();
+      setNotesState({ loading: false, error: '', data: noteStats });
+    } catch (err) {
+      setNotesState({
+        loading: false,
+        error: err.message || 'Impossible de charger les statistiques des notes.',
+        data: EMPTY_NOTE_STATS,
+      });
+    }
+  };
+
+  const dashboardData = dashboard || {};
+  const entete = dashboardData.entete || {};
+  const stats = dashboardData.stats || {};
+  const examensAVenir = Array.isArray(dashboardData.examensAVenir) ? dashboardData.examensAVenir.slice(0, 3) : [];
+  const sessionCard = normalizeSession(prochaineSeance);
+  const absenceInsights = buildAbsenceInsights(dashboardData);
+  const noteMeta = notesState.data.meta || EMPTY_NOTE_STATS.meta;
+  const activeNoteItems = useMemo(
+    () => (activeNoteTab === 'classe' ? notesState.data.parClasse : notesState.data.parMatiere),
+    [activeNoteTab, notesState.data.parClasse, notesState.data.parMatiere],
   );
 
-  if (error) return (
-      <div className="tdb-prof-container">
-        <div className="tdb-error">
-          <AlertCircle size={28} />
-          <p>Erreur : {error}</p>
-        </div>
-      </div>
+  const activeSummary = useMemo(() => {
+    const aggregate = activeNoteItems.reduce(
+      (acc, item) => {
+        if (Number.isFinite(item.moyenneGenerale)) {
+          acc.moyenneSomme += item.moyenneGenerale * item.notesSaisies;
+          acc.notesSaisies += item.notesSaisies;
+        }
+        if (Number.isFinite(item.noteMaximale)) acc.noteMaximale = acc.noteMaximale == null ? item.noteMaximale : Math.max(acc.noteMaximale, item.noteMaximale);
+        if (Number.isFinite(item.noteMinimale)) acc.noteMinimale = acc.noteMinimale == null ? item.noteMinimale : Math.min(acc.noteMinimale, item.noteMinimale);
+        acc.successCount += ((item.tauxReussite || 0) / 100) * item.notesSaisies;
+        acc.totalAttendu += item.totalAttendu || 0;
+        return acc;
+      },
+      { moyenneSomme: 0, notesSaisies: 0, noteMaximale: null, noteMinimale: null, successCount: 0, totalAttendu: 0 },
+    );
+
+    return {
+      moyenneGenerale: aggregate.notesSaisies > 0 ? aggregate.moyenneSomme / aggregate.notesSaisies : notesState.data.resumeGlobal.moyenneGenerale,
+      noteMaximale: aggregate.noteMaximale,
+      noteMinimale: aggregate.noteMinimale,
+      tauxReussite: aggregate.notesSaisies > 0 ? (aggregate.successCount / aggregate.notesSaisies) * 100 : notesState.data.resumeGlobal.tauxReussite,
+      notesSaisies: aggregate.notesSaisies,
+      totalAttendu: aggregate.totalAttendu,
+    };
+  }, [activeNoteItems, notesState.data.resumeGlobal]);
+
+  const chartData = useMemo(
+    () => activeNoteItems.slice(0, 5).map((item, index) => ({ ...item, fill: CHART_COLORS[index % CHART_COLORS.length] })),
+    [activeNoteItems],
   );
 
-  const { entete, stats, seancesRecentes, examensAVenir } = data || {};
+  const bestPerformer = activeNoteItems.find((item) => Number.isFinite(item.moyenneGenerale)) || null;
+  const weakPerformer =
+    [...activeNoteItems].filter((item) => Number.isFinite(item.tauxReussite)).sort((a, b) => (a.tauxReussite || 0) - (b.tauxReussite || 0))[0] || null;
 
-  const statCards = [
-    {
-      label: 'ENSEIGNEMENTS',
-      value: stats?.nbEnseignements ?? '—',
-      icon: BookOpen,
-      colorClass: 'bg-blue',
-      iconClass:  'icon-blue',
-      action: () => surNavigation?.('cours'),
-    },
-    {
-      label: 'SÉANCES TOTALES',
-      value: stats?.nbSeancesTotales ?? '—',
-      sub: `${stats?.nbSeancesTerminees ?? 0} terminées`,
-      icon: UserCheck,
-      colorClass: 'bg-green',
-      iconClass:  'icon-green',
-      action: () => surNavigation?.('cours'),
-    },
-    {
-      label: 'EXAMENS PROGRAMMÉS',
-      value: stats?.nbExamensProgrammes ?? '—',
-      sub: `${stats?.nbExamensTotal ?? 0} au total`,
-      icon: ClipboardList,
-      colorClass: 'bg-purple',
-      iconClass:  'icon-purple',
-      action: () => surNavigation?.('examens'),
-    },
-    {
-      label: 'ANNONCES PUBLIÉES',
-      value: stats?.nbAnnoncesPubiiees ?? '—',
-      icon: Megaphone,
-      colorClass: 'bg-orange',
-      iconClass:  'icon-orange',
-      action: () => surNavigation?.('annonces'),
-    },
+  const strategicKpis = [
+    { label: 'Enseignements actifs', value: stats?.nbEnseignements ?? 0, accent: 'indigo', icon: BookOpen },
+    { label: 'Etudiants concernes', value: noteMeta.uniqueStudentCount, accent: 'teal', icon: Users },
+    { label: 'Examens programmes', value: stats?.nbExamensProgrammes ?? 0, accent: 'amber', icon: ClipboardList },
+    { label: 'Copies a corriger', value: noteMeta.copiesACorriger, accent: 'rose', icon: FileWarning },
+    { label: 'Taux de reussite global', value: formatPercent(notesState.data.resumeGlobal?.tauxReussite), accent: 'emerald', icon: Trophy },
   ];
 
-  return (
-      <div className="tdb-prof-container">
+  if (loading) {
+    return (
+      <div className="prof-dashboard">
+        <div className="prof-feedback-block">
+          <Loader2 size={30} className="prof-spin" />
+          <p>Chargement du tableau de bord professeur...</p>
+        </div>
+      </div>
+    );
+  }
 
-        {/* ── Header ──────────────────────────────────────────────────────── */}
-        <div className="tdb-header">
-          <div className="tdb-header-content">
-            <div className="tdb-header-info">
-              <h1>Espace Professeur</h1>
-              <p>
-                {entete?.grade && <span className="tdb-header-grade">{entete.grade}</span>}
-                {entete?.specialite && <> · {entete.specialite}</>}
-                {entete?.departement && <> · {entete.departement}</>}
-              </p>
-            </div>
-            <div className="tdb-session-badge">
-              <div className="tdb-status-dot" />
-              <span>{entete?.statut || 'ACTIF'}</span>
-            </div>
+  if (error) {
+    return (
+      <div className="prof-dashboard">
+        <div className="prof-feedback-block prof-feedback-error">
+          <AlertCircle size={28} />
+          <p>{error}</p>
+          <button type="button" onClick={() => window.location.reload()}>
+            Recharger
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="prof-dashboard">
+      <header className="prof-header-card">
+        <div className="prof-header-main">
+          <div className="prof-header-copy">
+            <h1>Espace Professeur</h1>
+            <p>{[entete?.specialite, entete?.departement].filter(Boolean).join(' | ') || 'Suivi academique et pedagogique en cours.'}</p>
+          </div>
+
+          <div className="prof-session-status">
+            <div className="prof-status-dot"></div>
+            <span>{entete?.statut || 'SESSION ACTIVE'}</span>
           </div>
         </div>
 
-        {/* ── Stat Cards ──────────────────────────────────────────────────── */}
-        <div className="tdb-stats-row">
-          {statCards.map((card, i) => {
-            const Icon = card.icon;
+      </header>
+
+      <section className="prof-kpi-section">
+        <div className="prof-kpi-grid">
+          {strategicKpis.map((item) => {
+            const Icon = item.icon;
             return (
-                <div key={i} className="tdb-stat-card" onClick={card.action} style={{ cursor: 'pointer' }}>
-                  <div className="tdb-stat-info">
-                    <span className="tdb-stat-label">{card.label}</span>
-                    <span className="tdb-stat-number">{card.value}</span>
-                    {card.sub && <span className="tdb-stat-sub">{card.sub}</span>}
-                  </div>
-                  <div className={`tdb-stat-icon-box ${card.colorClass}`}>
-                    <Icon size={24} className={card.iconClass} />
-                  </div>
+              <article key={item.label} className={`prof-kpi-card accent-${item.accent}`}>
+                <div className="prof-kpi-icon">
+                  <Icon size={18} />
                 </div>
+                <div className="prof-kpi-content">
+                  <span className="prof-kpi-label">{item.label}</span>
+                  <strong className="prof-kpi-value">{typeof item.value === 'string' ? item.value : formatCompactNumber(item.value)}</strong>
+                </div>
+              </article>
             );
           })}
         </div>
+      </section>
 
-        {/* ── Grille principale ───────────────────────────────────────────── */}
-        <div className="tdb-main-grid">
-
-          {/* ── Colonne gauche ──────────────────────────────────────────── */}
-          <div className="tdb-left-col">
-
-            {/* Prochaine séance (emploi du temps) */}
-            <div className="tdb-next-seance-card">
-              <div className="tdb-card-header">
-                <div className="tdb-section-label">
-                  <Clock className="tdb-label-icon" size={18} />
-                  <h3>Prochaine Séance</h3>
-                </div>
+      <section className="prof-main-layout">
+        <div className="prof-side-column">
+          <article className="prof-card prof-focus-card">
+            <div className="prof-card-head">
+              <div>
+                <p className="prof-card-eyebrow">Maintenant</p>
+                <h2>Prochaine seance</h2>
               </div>
+            </div>
 
-              {prochaineSeance ? (
-                  <div className="tdb-next-seance-content">
-                    <div className="tdb-next-seance-type">
-                  <span className={`tdb-type-pill pill-${TYPE_COLOR[prochaineSeance.type] || 'grey'}`}>
-                    {prochaineSeance.type || 'COURS'}
-                  </span>
-                      <span className="tdb-next-seance-name">
-                    {prochaineSeance.nomMatiere || prochaineSeance.matiere || 'Matière non précisée'}
-                  </span>
+            {sessionCard ? (
+              <div className="prof-session-body prof-session-body-student">
+                <div className="prof-session-info-main">
+                  <div className="prof-session-time">
+                    {sessionCard.displayStart || '--:--'}
+                    {sessionCard.displayEnd ? ` - ${sessionCard.displayEnd}` : ''}
+                  </div>
+                  <div className="prof-session-details-text">
+                    <div className="prof-session-top">
+                      <span className={`prof-type-pill tone-${TYPE_COLOR[sessionCard.displayType] || 'grey'}`}>{sessionCard.displayType}</span>
+                      <span className="prof-class-pill">{sessionCard.displayClass}</span>
                     </div>
-                    <div className="tdb-next-seance-details">
-                      <div className="tdb-detail-row">
-                        <Calendar size={14} />
-                        <span>{prochaineSeance.dayOfWeek || formatDate(prochaineSeance.date)}</span>
-                      </div>
-                      <div className="tdb-detail-row">
-                        <Clock size={14} />
-                        <span>
-                      {prochaineSeance.start || formatHeure(prochaineSeance.heureDebut)}
-                          {(prochaineSeance.end || prochaineSeance.heureFin) &&
-                              ` → ${prochaineSeance.end || formatHeure(prochaineSeance.heureFin)}`}
-                    </span>
-                      </div>
-                      {(prochaineSeance.salle || prochaineSeance.room) && (
-                          <div className="tdb-detail-row">
-                            <MapPin size={14} />
-                            <span>Salle {prochaineSeance.salle || prochaineSeance.room}</span>
-                          </div>
-                      )}
-                      {prochaineSeance.classe && (
-                          <div className="tdb-detail-row">
-                            <BookOpen size={14} />
-                            <span>{prochaineSeance.classe}</span>
-                          </div>
-                      )}
+                    <h3>{sessionCard.displaySubject}</h3>
+                    <div className="prof-session-grid">
+                      <div className="prof-meta-chip"><MapPin size={14} /><span>{sessionCard.displayRoom}</span></div>
+                      <div className="prof-meta-chip"><Clock size={14} /><span>{sessionCard.displayDay}</span></div>
                     </div>
                   </div>
-              ) : (
-                  <div className="tdb-empty-small">
-                    <Clock size={28} opacity={0.2} />
-                    <p>Aucune séance programmée dans l'emploi du temps.</p>
-                  </div>
-              )}
+                </div>
+                <div className="prof-session-footer">
+                  <div className="prof-meta-chip"><Calendar size={14} /><span>{sessionCard.displayDay}</span></div>
+                  <div className="prof-meta-chip"><BookOpen size={14} /><span>{sessionCard.displaySubject}</span></div>
+                </div>
+              </div>
+            ) : (
+              <div className="prof-empty-state compact">
+                <Clock size={24} />
+                <p>Aucune seance a venir pour le moment.</p>
+              </div>
+            )}
+          </article>
+
+          <article className="prof-card prof-alert-card">
+            <div className="prof-card-head">
+              <div>
+                <p className="prof-card-eyebrow">Suivi</p>
+                <h2>Alertes absences</h2>
+              </div>
+              <Bell size={18} className="prof-alert-icon" />
             </div>
 
-            {/* Annonces reçues */}
-            <div className="tdb-annonces-card">
-              <div className="tdb-card-header">
-                <div className="tdb-section-label">
-                  <Bell className="tdb-label-icon" size={18} />
-                  <h3>Annonces Reçues</h3>
+            <div className="prof-alert-list">
+              <div className="prof-alert-item tone-danger">
+                <div className="prof-alert-item-head">
+                  <span className="prof-alert-dot"></span>
+                  <strong>Absences du jour</strong>
                 </div>
-                <span className="tdb-badge">
-                {annonces.length > 0 ? `${annonces.length} NOUVELLES` : '0'}
-              </span>
+                <span className="prof-alert-value">{formatCompactNumber(absenceInsights.todayCount)}</span>
+                <p>Vue rapide pour verifier les seances a controler aujourd'hui.</p>
               </div>
 
-              {annonces.length > 0 ? (
-                  <div className="tdb-annonces-list">
-                    {annonces.map(ann => (
-                        <div
-                            key={ann.id}
-                            className="tdb-annonce-row"
-                            onClick={() => surNavigation?.('annonces')}
-                        >
-                          <div className="tdb-annonce-indicator" />
-                          <div className="tdb-annonce-body">
-                            <p className="tdb-annonce-titre">{ann.titre}</p>
-                            <div className="tdb-annonce-meta">
-                              <span className="tdb-annonce-cat">{ann.typeAnnonce || 'GÉNÉRAL'}</span>
-                              <span className="tdb-annonce-time">
-                          {tempsDepuis(ann.datePublication)}
-                        </span>
-                            </div>
-                          </div>
-                          <ChevronRight size={16} className="tdb-annonce-arrow" />
-                        </div>
-                    ))}
-                    <button className="tdb-voir-tout" onClick={() => surNavigation?.('annonces')}>
-                      Voir toutes les annonces <ChevronRight size={14} />
-                    </button>
-                  </div>
-              ) : (
-                  <div className="tdb-empty-small">
-                    <Bell size={28} opacity={0.2} />
-                    <p>Aucune annonce disponible.</p>
-                  </div>
-              )}
-            </div>
-          </div>
-
-          {/* ── Colonne droite ───────────────────────────────────────────── */}
-          <div className="tdb-right-col">
-
-            {/* Séances récentes */}
-            <div className="tdb-seances-card">
-              <div className="tdb-card-header">
-                <div className="tdb-section-label">
-                  <UserCheck className="tdb-label-icon" size={18} />
-                  <h3>Séances Récentes</h3>
+              <div className="prof-alert-item tone-warning">
+                <div className="prof-alert-item-head">
+                  <span className="prof-alert-dot"></span>
+                  <strong>Justifications en attente</strong>
                 </div>
-                <button className="tdb-link-btn" onClick={() => surNavigation?.('cours')}>
-                  Voir tout <ChevronRight size={14} />
-                </button>
+                <span className="prof-alert-value">{formatCompactNumber(absenceInsights.pendingCount)}</span>
+                <p>Priorite de traitement avant validation finale des presences.</p>
               </div>
 
-              {seancesRecentes?.length > 0 ? (
-                  <div className="tdb-seances-list">
-                    {seancesRecentes.map(s => {
-                      const couleur   = TYPE_COLOR[s.type] || 'grey';
-                      const etatCfg   = ETAT_CONFIG[s.etat] || {};
-                      return (
-                          <div key={s.id} className="tdb-seance-row">
-                            <div className={`tdb-seance-strip strip-${couleur}`} />
-                            <div className="tdb-seance-body">
-                              <div className="tdb-seance-top">
-                                <span className={`tdb-type-pill-sm pill-${couleur}`}>{s.type}</span>
-                                <span className="tdb-seance-matiere">{s.nomMatiere}</span>
-                                <span className="tdb-seance-classe">{s.codeClasse}</span>
-                              </div>
-                              <div className="tdb-seance-bot">
-                          <span className="tdb-seance-date">
-                            <Calendar size={12} /> {formatDate(s.date)}
-                          </span>
-                                {s.heureDebut && (
-                                    <span className="tdb-seance-heure">
-                              <Clock size={12} /> {formatHeure(s.heureDebut)}
-                                      {s.heureFin && ` → ${formatHeure(s.heureFin)}`}
-                            </span>
-                                )}
-                                {s.salle && (
-                                    <span className="tdb-seance-salle">
-                              <MapPin size={12} /> {s.salle}
-                            </span>
-                                )}
-                              </div>
-                            </div>
-                            {s.etat && (
-                                <span
-                                    className="tdb-etat-pill"
-                                    style={{ color: etatCfg.color, background: etatCfg.bg }}
-                                >
-                          {etatCfg.label || s.etat}
-                        </span>
-                            )}
-                          </div>
-                      );
-                    })}
-                  </div>
-              ) : (
-                  <div className="tdb-empty-small">
-                    <UserCheck size={28} opacity={0.2} />
-                    <p>Aucune séance enregistrée.</p>
-                  </div>
-              )}
-            </div>
-
-            {/* Examens à venir */}
-            <div className="tdb-examens-card">
-              <div className="tdb-card-header">
-                <div className="tdb-section-label">
-                  <ClipboardList className="tdb-label-icon" size={18} />
-                  <h3>Examens à Venir</h3>
+              <div className="prof-alert-item tone-neutral">
+                <div className="prof-alert-item-head">
+                  <span className="prof-alert-dot"></span>
+                  <strong>Etudiants a surveiller</strong>
                 </div>
-                <button className="tdb-link-btn" onClick={() => surNavigation?.('examens')}>
-                  Gérer <ChevronRight size={14} />
-                </button>
+                <span className="prof-alert-value">{formatCompactNumber(absenceInsights.highRiskCount)}</span>
+                <p>
+                  {absenceInsights.attendanceRate != null
+                    ? `Taux de presence global: ${Math.round(absenceInsights.attendanceRate)}%.`
+                    : absenceInsights.hasDetails
+                      ? 'Le detail complet depend des donnees remontees par le backend.'
+                      : 'Le tableau est pret pour afficher les alertes des que les stats absences sont disponibles.'}
+                </p>
               </div>
-
-              {examensAVenir?.length > 0 ? (
-                  <div className="tdb-examens-list">
-                    {examensAVenir.map(ex => {
-                      const cfg     = ETAT_EXAM_CONFIG[ex.etat] || ETAT_EXAM_CONFIG.PROGRAMME;
-                      const ExIcon  = cfg.icon;
-                      return (
-                          <div key={ex.id} className="tdb-examen-row">
-                            <div className="tdb-examen-icon-box" style={{ background: cfg.bg, color: cfg.color }}>
-                              <ExIcon size={18} />
-                            </div>
-                            <div className="tdb-examen-body">
-                              <p className="tdb-examen-matiere">
-                                {ex.nomMatiere}
-                                {ex.typeExamen === 'RATTRAPAGE' && (
-                                    <span className="tdb-rattrapage-badge">Rattrapage</span>
-                                )}
-                              </p>
-                              <div className="tdb-examen-meta">
-                                <span>{ex.nomClasse}</span>
-                                <span>·</span>
-                                <span>n°{ex.numeroExamen}</span>
-                                {ex.dateExamen && (
-                                    <>
-                                      <span>·</span>
-                                      <span>{formatDate(ex.dateExamen)}</span>
-                                    </>
-                                )}
-                                {ex.duree > 0 && (
-                                    <>
-                                      <span>·</span>
-                                      <span>{ex.duree} min</span>
-                                    </>
-                                )}
-                              </div>
-                            </div>
-                            <span
-                                className="tdb-etat-pill"
-                                style={{ color: cfg.color, background: cfg.bg }}
-                            >
-                        {cfg.label}
-                      </span>
-                          </div>
-                      );
-                    })}
-                    <button className="tdb-voir-tout" onClick={() => surNavigation?.('examens')}>
-                      Gérer les examens <ChevronRight size={14} />
-                    </button>
-                  </div>
-              ) : (
-                  <div className="tdb-empty-small">
-                    <GraduationCap size={28} opacity={0.2} />
-                    <p>Aucun examen programmé.</p>
-                    <button className="tdb-action-btn" onClick={() => surNavigation?.('examens')}>
-                      Créer un examen
-                    </button>
-                  </div>
-              )}
             </div>
-          </div>
+          </article>
+
+          <article className="prof-card prof-compact-card">
+            <div className="prof-card-head">
+              <div>
+                <p className="prof-card-eyebrow">A surveiller</p>
+                <h2>Examens a venir</h2>
+              </div>
+            </div>
+
+            {examensAVenir.length > 0 ? (
+              <div className="prof-compact-list">
+                {examensAVenir.map((examen) => (
+                  <div key={examen.id || `${examen.nomMatiere}-${examen.numeroExamen}`} className="prof-compact-row">
+                    <div className="prof-compact-icon warning"><ClipboardList size={16} /></div>
+                    <div className="prof-compact-content">
+                      <strong>{examen.nomMatiere || 'Examen'}</strong>
+                      <span>{examen.nomClasse || examen.codeClasse || 'Classe'} | #{examen.numeroExamen || '--'} | {examen.dateExamen ? formatDate(examen.dateExamen) : 'Date a definir'}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="prof-empty-state compact">
+                <ClipboardList size={24} />
+                <p>Aucun examen programme.</p>
+              </div>
+            )}
+          </article>
+
         </div>
-      </div>
+
+        <div className="prof-analytics-column">
+          <article className="prof-card prof-performance-card">
+            <div className="prof-card-head">
+              <div>
+                <p className="prof-card-eyebrow">Performance academique</p>
+                <h2>Performance academique</h2>
+                <p className="prof-card-description">Vue synthetique des resultats par classe ou par matiere.</p>
+              </div>
+
+              <div className="prof-tab-group" role="tablist" aria-label="Vues statistiques">
+                {NOTE_TABS.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeNoteTab === tab.id;
+                  return (
+                    <button key={tab.id} type="button" className={`prof-tab ${isActive ? 'active' : ''}`} onClick={() => setActiveNoteTab(tab.id)}>
+                      <Icon size={15} />
+                      <span>{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {notesState.loading ? (
+              <div className="prof-performance-state">
+                <Loader2 size={24} className="prof-spin" />
+                <p>Chargement des statistiques des notes...</p>
+              </div>
+            ) : notesState.error ? (
+              <div className="prof-performance-state error">
+                <AlertCircle size={24} />
+                <p>{notesState.error}</p>
+                <button type="button" onClick={reloadNoteStats}>Reessayer</button>
+              </div>
+            ) : activeNoteItems.length === 0 ? (
+              <div className="prof-performance-state">
+                <BarChart3 size={24} />
+                <p>Aucune note exploitable pour afficher une synthese.</p>
+              </div>
+            ) : (
+              <>
+                <div className="prof-performance-metrics">
+                  <div className="prof-metric-card">
+                    <span>Moyenne generale</span>
+                    <strong>{formatFloat(activeSummary.moyenneGenerale)}/20</strong>
+                  </div>
+                  <div className="prof-metric-card">
+                    <span>Meilleure performance</span>
+                    <strong>{bestPerformer?.label || '--'}</strong>
+                    <small>{bestPerformer ? `${formatFloat(bestPerformer.moyenneGenerale)}/20` : 'Aucune donnee'}</small>
+                  </div>
+                  <div className="prof-metric-card">
+                    <span>Plus faible performance</span>
+                    <strong>{weakPerformer?.label || '--'}</strong>
+                    <small>{weakPerformer ? `${formatPercent(weakPerformer.tauxReussite)} de reussite` : 'Aucune donnee'}</small>
+                  </div>
+                  <div className="prof-metric-card">
+                    <span>Taux de reussite</span>
+                    <strong>{formatPercent(activeSummary.tauxReussite)}</strong>
+                    <small>{activeSummary.notesSaisies}/{activeSummary.totalAttendu} notes saisies</small>
+                  </div>
+                </div>
+
+                <div className="prof-performance-body">
+                  <div className="prof-chart-panel">
+                    <div className="prof-chart-shell">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={chartData} layout="vertical" margin={{ top: 4, right: 6, left: 10, bottom: 4 }}>
+                          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(120, 137, 153, 0.16)" />
+                          <XAxis type="number" domain={[0, 20]} axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+                          <YAxis dataKey="label" type="category" width={118} axisLine={false} tickLine={false} tick={{ fill: '#334155', fontSize: 12 }} />
+                          <Tooltip cursor={{ fill: 'rgba(92, 84, 237, 0.06)' }} content={<DashboardTooltip />} />
+                          <Bar dataKey="moyenneGenerale" radius={[0, 12, 12, 0]} barSize={18}>
+                            {chartData.map((entry) => <Cell key={entry.id} fill={entry.fill} />)}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          </article>
+        </div>
+      </section>
+
+    </div>
   );
 };
 
