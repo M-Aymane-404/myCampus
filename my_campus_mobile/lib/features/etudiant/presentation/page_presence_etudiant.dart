@@ -163,7 +163,7 @@ class _PagePresenceEtudiantState extends State<PagePresenceEtudiant> {
                               padding: const EdgeInsets.only(bottom: 10),
                               child: _SessionCard(
                                 presence: p,
-                                onJustifier: p.estAbsent && (p.peutAjouterJustification || p.aJustification)
+                                onJustifier: p.estAbsent && p.peutAjouterJustification
                                     ? () => _openJustification(p)
                                     : null,
                               ),
@@ -414,17 +414,34 @@ class _SessionCard extends StatelessWidget {
           ),
           if (absent) ...[
             const SizedBox(height: 10),
-            SizedBox(
-              height: 34,
-              child: ElevatedButton(
-                onPressed: onJustifier,
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF5B5BEA), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                child: Text(
-                  hasJustification ? 'Modifier' : 'Justifier',
-                  style: const TextStyle(fontWeight: FontWeight.w800),
+            if (onJustifier != null)
+              SizedBox(
+                height: 34,
+                child: ElevatedButton(
+                  onPressed: onJustifier,
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF5B5BEA), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                  child: Text(
+                    hasJustification ? 'Changer la justification' : 'Justifier',
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                ),
+              )
+            else
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF2F2),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Text(
+                  'Delai depasse',
+                  style: TextStyle(
+                    color: Color(0xFFEF4444),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12,
+                  ),
                 ),
               ),
-            ),
           ],
         ]),
       ]),

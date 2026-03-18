@@ -54,10 +54,10 @@ public class GestionDeMotifDePresenceMetierImpl implements GestionDeMotifDePrese
             throw new IllegalArgumentException("Fichier justificatif obligatoire");
         }
         if (!ALLOWED.contains(file.getContentType())) {
-            throw new IllegalArgumentException("Format non supporté (png, jpg, webp, heic, pdf, doc, docx)");
+            throw new IllegalArgumentException("Format non supportÃ© (png, jpg, webp, heic, pdf, doc, docx)");
         }
         if (file.getSize() > 5 * 1024 * 1024) {
-            throw new IllegalArgumentException("La Fichier ne doit pas dépasser 5MB");
+            throw new IllegalArgumentException("La Fichier ne doit pas dÃ©passer 5MB");
         }
 
         String ext = extensionFromContentType(file.getContentType());
@@ -103,7 +103,7 @@ public class GestionDeMotifDePresenceMetierImpl implements GestionDeMotifDePrese
          }
 
          if(idEtudiant == null){
-             throw new UtilisateursException("id d'étudiant est obligatoire");
+             throw new UtilisateursException("id d'Ã©tudiant est obligatoire");
          }
 
          if (dto.getTypeMotif().equals(TypeMotif.AUTRE)
@@ -114,7 +114,7 @@ public class GestionDeMotifDePresenceMetierImpl implements GestionDeMotifDePrese
 
 
          Presence p = presenceRepository.findByIdAndEtudiant_Id(presenceId,idEtudiant)
-                 .orElseThrow(() -> new PresenceException("étudiant ou presence introuvable"));
+                 .orElseThrow(() -> new PresenceException("Ã©tudiant ou presence introuvable"));
 
          LocalDateTime now = LocalDateTime.now();
 
@@ -123,12 +123,12 @@ public class GestionDeMotifDePresenceMetierImpl implements GestionDeMotifDePrese
              Duration duration = Duration.between(p.getDateDeclaration(), now);
 
              if (duration.toHours() >= 48) {
-                 throw new PresenceException("Délai dépassé : vous ne pouvez plus ajouter une justification après 24 heures.");
+                 throw new PresenceException("Delai depasse : vous ne pouvez plus ajouter ou modifier une justification apres 48 heures.");
              }
          }
 
          if(p.getStatus().equals(StatusAbsence.PRESENT)){
-             throw new PresenceException("vous être present ");
+             throw new PresenceException("vous Ãªtre present ");
          }
 
          if(p.getStatutJustificatif() == StatutJustificatif.VALIDE){
@@ -201,3 +201,4 @@ public class GestionDeMotifDePresenceMetierImpl implements GestionDeMotifDePrese
 
 
 }
+

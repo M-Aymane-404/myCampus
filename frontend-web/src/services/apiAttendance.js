@@ -115,7 +115,7 @@ export const apiAttendance = {
  */
 const mapTypeMotifToBackend = (frontendType) => {
     const mapping = {
-        'Certificat Médical': 'CERTIFICAT_MEDICAL',
+        'Certificat Medical': 'CERTIFICAT_MEDICAL',
         'Raisons Familiales': 'RAISON_FAMILIALE',
         'Autre': 'AUTRE'
     };

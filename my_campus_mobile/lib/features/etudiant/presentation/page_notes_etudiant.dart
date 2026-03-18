@@ -1,4 +1,8 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 import '../data/controller/ControleurFichier.dart';
@@ -60,6 +64,133 @@ class _PageNotesEtudiantState extends State<PageNotesEtudiant> {
     }
   }
 
+  Future<void> _telechargerReleveNotes(ReleveNotesDTO releve) async {
+    try {
+      final documentsDir = await getApplicationDocumentsDirectory();
+      final exportDir = Directory('${documentsDir.path}/mycampus/downloads');
+      if (!await exportDir.exists()) {
+        await exportDir.create(recursive: true);
+      }
+
+      final file = File(
+        '${exportDir.path}/releve_notes_${releve.semestre}_${DateTime.now().millisecondsSinceEpoch}.html',
+      );
+
+      await file.writeAsString(_construireHtmlReleve(releve), flush: true);
+      await OpenFilex.open(file.path);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Releve telecharge : ${file.uri.pathSegments.last}')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur export releve: $e')),
+      );
+    }
+  }
+
+  String _construireHtmlReleve(ReleveNotesDTO releve) {
+    final moduleRows =
+        releve.modules.isEmpty
+            ? '<tr><td colspan="4" style="padding:24px;text-align:center;color:#64748b;">Aucun module disponible pour ce semestre.</td></tr>'
+            : releve.modules.map((module) {
+              final subjectRows = module.matieres
+                  .map(
+                    (matiere) => '''
+<tr style="background:#f8fafc;">
+  <td></td>
+  <td style="padding-left:24px;">${_escapeHtml(matiere.nomDuMatiere)}</td>
+  <td style="text-align:center;">${matiere.moyenneDuMatiere.toStringAsFixed(2)}</td>
+  <td></td>
+</tr>''',
+                  )
+                  .join();
+
+              return '''
+<tr>
+  <td>${_escapeHtml(module.codeModule.isEmpty ? 'M' : module.codeModule)}</td>
+  <td>${_escapeHtml(module.nomDuModule)}</td>
+  <td style="text-align:center;">${module.moyenneDuModule.toStringAsFixed(2)}</td>
+  <td style="text-align:right;">${module.moyenneDuModule >= 10 ? 'VALIDE' : 'NON VALIDE'}</td>
+</tr>
+$subjectRows''';
+            }).join();
+
+    return '''<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Releve de notes ${_escapeHtml(releve.semestre)}</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 32px; color: #0f172a; background: #f8fafc; }
+    .sheet { background: #ffffff; border-radius: 20px; padding: 32px; box-shadow: 0 10px 30px rgba(15,23,42,0.08); }
+    .top { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:24px; }
+    .title { font-size: 28px; font-weight: 700; margin: 0 0 8px; }
+    .subtitle { color:#475569; margin:0; }
+    .summary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin:24px 0; }
+    .card { border:1px solid #e2e8f0; border-radius:16px; padding:16px 18px; background:#f8fafc; }
+    .label { font-size:12px; text-transform:uppercase; color:#64748b; letter-spacing:0.08em; margin-bottom:8px; }
+    .value { font-size:26px; font-weight:700; color:#4338ca; }
+    .value small { font-size:15px; color:#64748b; }
+    table { width:100%; border-collapse:collapse; margin-top:8px; }
+    th, td { border-bottom:1px solid #e2e8f0; padding:12px 10px; font-size:14px; }
+    th { text-align:left; color:#64748b; font-size:12px; text-transform:uppercase; letter-spacing:0.06em; }
+  </style>
+</head>
+<body>
+  <div class="sheet">
+    <div class="top">
+      <div>
+        <h1 class="title">Releve de notes</h1>
+        <p class="subtitle">Semestre ${_escapeHtml(releve.semestre)}</p>
+      </div>
+      <div class="subtitle">MyCampus</div>
+    </div>
+
+    <div class="summary">
+      <div class="card">
+        <div class="label">Moyenne session</div>
+        <div class="value">${releve.moyenneSession.toStringAsFixed(2)}<small>/20</small></div>
+      </div>
+      <div class="card">
+        <div class="label">Modules valides</div>
+        <div class="value">${releve.nbModulesValider}<small>/${releve.nbModules}</small></div>
+      </div>
+      <div class="card">
+        <div class="label">Resultat global</div>
+        <div class="value">${releve.moyenneSession >= 10 ? 'VALIDE' : 'AJOURNE'}</div>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width:18%;">Code</th>
+          <th style="width:52%;">Intitule</th>
+          <th style="width:15%; text-align:center;">Note / 20</th>
+          <th style="width:15%; text-align:right;">Resultat</th>
+        </tr>
+      </thead>
+      <tbody>
+        $moduleRows
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>''';
+  }
+
+  String _escapeHtml(String value) {
+    return value
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+  }
+
   @override
   Widget build(BuildContext context) {
     final ctrl = context.watch<ControleurReleveNotesEtudiant>();
@@ -93,18 +224,26 @@ class _PageNotesEtudiantState extends State<PageNotesEtudiant> {
         backgroundColor: Colors.white,
         elevation: 0,
         title: const Text(
-          "Note",
+          "Releve de notes",
           style: TextStyle(
             fontWeight: FontWeight.w900,
             color: Color(0xFF0B1220),
           ),
         ),
+        actions: [
+          IconButton(
+            tooltip: 'Telecharger le releve',
+            onPressed: () => _telechargerReleveNotes(releve),
+            icon: const Icon(Icons.download_rounded),
+          ),
+          const SizedBox(width: 4),
+        ],
         iconTheme: const IconThemeData(color: Color(0xFF0B1220)),
       ),
       body: SafeArea(
         child: Column(
           children: [
-            // âœ… barre tÃ©lÃ©chargement (comme Cours)
+            // barre telechargement (comme Cours)
             if (fichierCtrl.telechargementEnCours)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
@@ -129,7 +268,7 @@ class _PageNotesEtudiantState extends State<PageNotesEtudiant> {
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            "Téléchargement ¦ ${(fichierCtrl.progression * 100).toStringAsFixed(0)}%",
+                            "Telechargement | ${(fichierCtrl.progression * 100).toStringAsFixed(0)}%",
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
@@ -152,6 +291,7 @@ class _PageNotesEtudiantState extends State<PageNotesEtudiant> {
               semestreSelectionne: _semestreSelectionne,
               semestresDisponibles: _semestres,
               onChangerSemestre: _changerSemestre,
+              onTelechargerReleve: () => _telechargerReleveNotes(releve),
             ),
 
             Expanded(
@@ -173,7 +313,7 @@ class _PageNotesEtudiantState extends State<PageNotesEtudiant> {
                         itemBuilder: (_, i) {
                           final module = modulesPublies[i];
 
-                          // âœ… si module 1 matiÃ¨re => afficher juste le nom de la matiÃ¨re
+                          // si module 1 matiere => afficher juste le nom de la matiere
                           if (module.matieres.length == 1) {
                             final mat = module.matieres.first;
 
@@ -234,6 +374,7 @@ class _HeaderNotes extends StatelessWidget {
     required this.semestreSelectionne,
     required this.semestresDisponibles,
     required this.onChangerSemestre,
+    required this.onTelechargerReleve,
   });
 
   final String semestre;
@@ -243,65 +384,163 @@ class _HeaderNotes extends StatelessWidget {
   final String semestreSelectionne;
   final List<String> semestresDisponibles;
   final ValueChanged<String> onChangerSemestre;
+  final VoidCallback onTelechargerReleve;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Expanded(
-            child: Text(
-              '',
-              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 26),
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.black.withOpacity(0.06)),
-            ),
-            child: PopupMenuButton<String>(
-              onSelected: onChangerSemestre,
-              itemBuilder:
-                  (_) =>
-                      semestresDisponibles
-                          .map(
-                            (s) =>
-                                PopupMenuItem<String>(value: s, child: Text(s)),
-                          )
-                          .toList(),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    semestreSelectionne,
-                    style: const TextStyle(fontWeight: FontWeight.w900),
-                  ),
-                  const SizedBox(width: 4),
-                  const Icon(Icons.keyboard_arrow_down_rounded, size: 18),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+          Row(
             children: [
-              Text(
-                moyenneSession.toStringAsFixed(2),
-                style: const TextStyle(fontWeight: FontWeight.w900),
+              Expanded(
+                child: Text(
+                  'Semestre $semestreSelectionne',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 24,
+                    color: Color(0xFF0B1220),
+                  ),
+                ),
               ),
-              Text(
-                '$nbValides/$nbModules',
-                style: TextStyle(
-                  fontWeight: FontWeight.w900,
-                  color: Colors.black.withOpacity(0.6),
+              OutlinedButton.icon(
+                onPressed: onTelechargerReleve,
+                icon: const Icon(Icons.download_rounded, size: 18),
+                label: const Text('Telecharger'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF5B5BEA),
+                  side: BorderSide(color: Colors.black.withOpacity(0.08)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _HeaderStatCard(
+                  label: 'Moyenne session',
+                  value: moyenneSession.toStringAsFixed(2),
+                  suffix: '/20',
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _HeaderStatCard(
+                  label: 'Modules valides',
+                  value: '$nbValides',
+                  suffix: '/$nbModules',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.black.withOpacity(0.06)),
+              ),
+              child: PopupMenuButton<String>(
+                onSelected: onChangerSemestre,
+                itemBuilder: (_) =>
+                    semestresDisponibles
+                        .map(
+                          (s) => PopupMenuItem<String>(value: s, child: Text(s)),
+                        )
+                        .toList(),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      semestreSelectionne,
+                      style: const TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.keyboard_arrow_down_rounded, size: 18),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeaderStatCard extends StatelessWidget {
+  const _HeaderStatCard({
+    required this.label,
+    required this.value,
+    required this.suffix,
+  });
+
+  final String label;
+  final String value;
+  final String suffix;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.black.withOpacity(0.06)),
+        boxShadow: [
+          BoxShadow(
+            blurRadius: 16,
+            offset: const Offset(0, 10),
+            color: Colors.black.withOpacity(0.04),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label.toUpperCase(),
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.6,
+              color: Colors.black.withOpacity(0.52),
+            ),
+          ),
+          const SizedBox(height: 10),
+          RichText(
+            text: TextSpan(
+              style: const TextStyle(
+                color: Color(0xFF0B1220),
+                fontWeight: FontWeight.w900,
+              ),
+              children: [
+                TextSpan(
+                  text: value,
+                  style: const TextStyle(fontSize: 24),
+                ),
+                TextSpan(
+                  text: suffix,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.black.withOpacity(0.50),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -744,3 +983,6 @@ class _CardBase extends StatelessWidget {
     );
   }
 }
+
+
+

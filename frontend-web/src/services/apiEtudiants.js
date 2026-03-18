@@ -20,7 +20,7 @@ export const apiEtudiants = {
 
       return await reponse.json();
     } catch (erreur) {
-      console.error('Erreur lors de la rÃ©cupÃ©ration des Ã©tudiants:', erreur);
+      console.error('Erreur lors de la recuperation des etudiants:', erreur);
       throw erreur;
     }
   },
@@ -43,7 +43,7 @@ export const apiEtudiants = {
 
       return await reponse.json();
     } catch (erreur) {
-      console.error('Erreur lors de la rÃ©cupÃ©ration de l\'Ã©tudiant:', erreur);
+      console.error('Erreur lors de la recuperation de l\'etudiant:', erreur);
       throw erreur;
     }
   },
@@ -65,7 +65,7 @@ export const apiEtudiants = {
         let messageErreur = `Erreur HTTP: ${reponse.status}`;
         try {
           const erreurData = await reponse.json();
-          console.error('RÃ©ponse d\'erreur du serveur:', erreurData);
+          console.error('Reponse d\'erreur du serveur:', erreurData);
           if (erreurData.message) {
             messageErreur = erreurData.message;
           } else if (erreurData.error) {
@@ -73,7 +73,7 @@ export const apiEtudiants = {
           }
         } catch (e) {
           const texteErreur = await reponse.text();
-          console.error('RÃ©ponse d\'erreur (texte):', texteErreur);
+          console.error('Reponse d\'erreur (texte):', texteErreur);
           if (texteErreur) {
             messageErreur += ': ' + texteErreur;
           }
@@ -83,7 +83,7 @@ export const apiEtudiants = {
 
       return await reponse.json();
     } catch (erreur) {
-      console.error('Erreur lors de la crÃ©ation de l\'Ã©tudiant:', erreur);
+      console.error('Erreur lors de la creation de l\'etudiant:', erreur);
       throw erreur;
     }
   },
@@ -105,7 +105,7 @@ export const apiEtudiants = {
         let messageErreur = `Erreur HTTP: ${reponse.status}`;
         try {
           const erreurData = await reponse.json();
-          console.error('RÃ©ponse d\'erreur du serveur:', erreurData);
+          console.error('Reponse d\'erreur du serveur:', erreurData);
           
           // Check for detailed validation errors
           if (erreurData.details && typeof erreurData.details === 'object') {
@@ -120,7 +120,7 @@ export const apiEtudiants = {
           }
         } catch (e) {
           const texteErreur = await reponse.text();
-          console.error('RÃ©ponse d\'erreur (texte):', texteErreur);
+          console.error('Reponse d\'erreur (texte):', texteErreur);
           if (texteErreur) {
             messageErreur += ': ' + texteErreur;
           }
@@ -130,7 +130,7 @@ export const apiEtudiants = {
 
       return await reponse.json();
     } catch (erreur) {
-      console.error('Erreur lors de la modification de l\'Ã©tudiant:', erreur);
+      console.error('Erreur lors de la modification de l\'etudiant:', erreur);
       throw erreur;
     }
   },
@@ -150,7 +150,7 @@ export const apiEtudiants = {
 
       return true;
     } catch (erreur) {
-      console.error('Erreur lors de la suppression de l\'Ã©tudiant:', erreur);
+      console.error('Erreur lors de la suppression de l\'etudiant:', erreur);
       throw erreur;
     }
   },
@@ -173,7 +173,7 @@ export const apiEtudiants = {
 
       return true;
     } catch (erreur) {
-      console.error('Erreur lors de l\'activation de l\'Ã©tudiant:', erreur);
+      console.error('Erreur lors de l\'activation de l\'etudiant:', erreur);
       throw erreur;
     }
   },
@@ -196,7 +196,7 @@ export const apiEtudiants = {
 
       return true;
     } catch (erreur) {
-      console.error('Erreur lors de la dÃ©sactivation de l\'Ã©tudiant:', erreur);
+      console.error('Erreur lors de la desactivation de l\'etudiant:', erreur);
       throw erreur;
     }
   },
@@ -241,7 +241,7 @@ export const apiEtudiants = {
 
       return await reponse.json();
     } catch (erreur) {
-      console.error('Erreur lors de l\'import des Ã©tudiants:', erreur);
+      console.error('Erreur lors de l\'import des etudiants:', erreur);
       throw erreur;
     }
   },

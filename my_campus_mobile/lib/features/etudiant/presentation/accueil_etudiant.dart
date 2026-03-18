@@ -55,7 +55,7 @@ class _PageAccueilEtudiantState extends State<PageAccueilEtudiant> {
     final data = ctrl.dashboard;
     if (data == null) {
       return _EtatErreur(
-        message: "Aucune donnÃ©e dashboard.",
+        message: "Aucune donnee dashboard.",
         onRetry:
             () => context.read<ControleurAccueilEtudiant>().chargerDashboard(),
       );
@@ -352,7 +352,7 @@ class _TitrePage extends StatelessWidget {
 }
 
 /* =========================
-   RÃ©sumÃ©: 2 cartes
+   Resume: 2 cartes
    ========================= */
 
 class _ResumeRow extends StatelessWidget {
@@ -411,7 +411,7 @@ class _ResumeRow extends StatelessWidget {
                 onTap: onTapProchaineSeance,
                 child: _CarteResumeProchaineSeance(
                   titre: seanceTitre,
-                  sousTitre: "$seanceJour â€¢ $seanceHoraire â€¢ $seanceSalle",
+                  sousTitre: "$seanceJour | $seanceHoraire | $seanceSalle",
                 ),
               ),
             ),
@@ -919,7 +919,7 @@ class _FluxTileBase extends StatelessWidget {
 }
 
 /* =========================
-   Ã‰tats
+   Etats
    ========================= */
 
 class _EtatChargement extends StatelessWidget {
@@ -963,7 +963,7 @@ class _EtatErreur extends StatelessWidget {
                 height: 46,
                 child: ElevatedButton(
                   onPressed: onRetry,
-                  child: const Text("RÃ©essayer"),
+                  child: const Text("Reessayer"),
                 ),
               ),
             ],

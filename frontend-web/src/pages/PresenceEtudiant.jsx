@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import {
     ChevronLeft,
     ChevronRight,
@@ -44,10 +44,23 @@ const PresenceEtudiant = () => {
     const [selectedSession, setSelectedSession] = useState(null);
     const [uploadingFile, setUploadingFile] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
-    const [typeMotif, setTypeMotif] = useState('Certificat Médical');
+    const [typeMotif, setTypeMotif] = useState('Certificat Medical');
     const [descriptionAutre, setDescriptionAutre] = useState('');
 
     const months = ['JAN', 'FEV', 'MAR', 'AVR', 'MAI', 'JUIN', 'JUIL', 'AOUT', 'SEPT', 'OCT', 'NOV', 'DEC'];
+
+    const getFrontendTypeMotif = (backendType) => {
+        switch ((backendType || '').toUpperCase()) {
+            case 'CERTIFICAT_MEDICAL':
+                return 'Certificat Medical';
+            case 'RAISON_FAMILIALE':
+                return 'Raisons Familiales';
+            case 'AUTRE':
+                return 'Autre';
+            default:
+                return 'Certificat Medical';
+        }
+    };
 
     // 1. Initialize: Fetch Profile (Year Range) and Attendance Data
     useEffect(() => {
@@ -121,6 +134,30 @@ const PresenceEtudiant = () => {
         const d = parseBackendDate(dateVal);
         if (!d) return false;
         return d.getMonth() === currentDate.getMonth() && d.getFullYear() === currentDate.getFullYear();
+    };
+
+    const hasJustification = (session) => Boolean(
+        (session?.descriptionDeJustification || '').trim() ||
+        (session?.motifNom || '').trim() ||
+        (session?.motifUrl || '').trim()
+    );
+
+    const canChangeJustification = (session) => {
+        if (session?.status?.toUpperCase() !== 'ABSENT') return false;
+        const refDate = parseBackendDate(session?.dateDeclaration);
+        if (!refDate) return true;
+        return (Date.now() - refDate.getTime()) < 48 * 60 * 60 * 1000;
+    };
+
+    const requiresFileForType = (type) =>
+        type === 'Certificat Medical' || type === 'Raisons Familiales';
+
+    const openJustificationModal = (session) => {
+        setSelectedSession(session);
+        setSelectedFile(null);
+        setTypeMotif(getFrontendTypeMotif(session?.typeMotif));
+        setDescriptionAutre(session?.descriptionDeJustification || '');
+        setIsModalOpen(true);
     };
 
     // Derived Data: Calendar Dots
@@ -218,21 +255,26 @@ const PresenceEtudiant = () => {
 
     const getStatusLabel = (status) => {
         switch (status?.toUpperCase()) {
-            case 'PRESENT': return 'Présent';
+            case 'PRESENT': return 'Present';
             case 'ABSENT': return 'Absent';
             default: return status;
         }
     };
 
     const handleFileUpload = async () => {
-        if (!selectedFile || !selectedSession) {
-            alert('Veuillez sélectionner un fichier et une session.');
+        if (!selectedSession) {
+            alert('Veuillez selectionner une session.');
+            return;
+        }
+
+        if (requiresFileForType(typeMotif) && !selectedFile) {
+            alert('Veuillez selectionner un fichier justificatif.');
             return;
         }
 
         // Validation: require description when "Autre" is selected
         if (typeMotif === 'Autre' && (!descriptionAutre || descriptionAutre.trim().length === 0)) {
-            alert('Veuillez décrire la raison de votre absence lorsque vous sélectionnez "Autre".');
+            alert('Veuillez decrire la raison de votre absence lorsque vous selectionnez "Autre".');
             return;
         }
 
@@ -252,16 +294,21 @@ const PresenceEtudiant = () => {
             // Update the local attendance data to show as justified
             const updatedAttendanceData = attendanceData.map(record => {
                 if (record.id === selectedSession.id) {
-                    const motifText = typeMotif === 'Autre' 
-                        ? `Autre: ${descriptionAutre.substring(0, 50)}${descriptionAutre.length > 50 ? '...' : ''} (Fichier: ${selectedFile.name})`
-                        : `Fichier: ${selectedFile.name} (${typeMotif})`;
-                    
+                    const fileName = selectedFile?.name || record.motifNom || '';
+                    const motifText = typeMotif === 'Autre'
+                        ? `Autre: ${descriptionToSend || record.descriptionDeJustification || ''}${fileName ? ` (${fileName})` : ''}`
+                        : fileName ? `${typeMotif} (${fileName})` : typeMotif;
+
                     return {
                         ...record,
                         statutJustificatif: 'EN_ATTENTE',
                         justificationSoumise: true,
                         justificationValidee: false,
                         justifiee: false,
+                        typeMotif,
+                        descriptionDeJustification: descriptionToSend || record.descriptionDeJustification || '',
+                        motifNom: fileName,
+                        motifUrl: selectedFile ? 'uploaded' : (record.motifUrl || ''),
                         motif: motifText
                     };
                 }
@@ -270,10 +317,11 @@ const PresenceEtudiant = () => {
             
             setAttendanceData(updatedAttendanceData);
             
-            alert('Justification soumise avec succès!');
+            alert('Justification soumise avec succes!');
             setIsModalOpen(false);
+            setSelectedSession(null);
             setSelectedFile(null);
-            setTypeMotif('Certificat Médical');
+            setTypeMotif('Certificat Medical');
             setDescriptionAutre('');
             
         } catch (error) {
@@ -288,11 +336,11 @@ const PresenceEtudiant = () => {
         const file = event.target.files[0];
         if (file) {
             if (file.type !== 'application/pdf') {
-                alert('Seuls les fichiers PDF sont autorisés.');
+                alert('Seuls les fichiers PDF sont autorises.');
                 return;
             }
             if (file.size > 5 * 1024 * 1024) {
-                alert('La taille du fichier ne doit pas dépasser 5MB.');
+                alert('La taille du fichier ne doit pas depasser 5MB.');
                 return;
             }
             setSelectedFile(file);
@@ -310,15 +358,15 @@ const PresenceEtudiant = () => {
                                 <Zap size={22} color="white" />
                             </div>
                             <div className="presence-logo-text">
-                                <h2>Calendrier Présences</h2>
+                                <h2>Calendrier Presences</h2>
                                 <span>Suivi Temporel Interactif</span>
                             </div>
                         </div>
 
                         <div className="selection-box">
-                            <span className="selection-title">Sélection Rapide</span>
+                            <span className="selection-title">Selection Rapide</span>
                             <div className="control-row">
-                                <span className="control-label">Année</span>
+                                <span className="control-label">Annee</span>
                                 <select
                                     id="yearSelect"
                                     name="yearSelect"
@@ -351,7 +399,7 @@ const PresenceEtudiant = () => {
                         <div className="calendar-legend">
                             <div className="legend-item">
                                 <div className="legend-dot-box present"></div>
-                                <span className="legend-label">Présent</span>
+                                <span className="legend-label">Present</span>
                             </div>
                             <div className="legend-item">
                                 <div className="legend-dot-box absent"></div>
@@ -406,7 +454,7 @@ const PresenceEtudiant = () => {
                     {loading ? (
                         <div style={{ padding: '2rem', textAlign: 'center' }}>Chargement...</div>
                     ) : currentSessions.length === 0 ? (
-                        <div style={{ padding: '2rem', textAlign: 'center', color: '#aaa' }}>Aucun cours enregistré pour cette date.</div>
+                        <div style={{ padding: '2rem', textAlign: 'center', color: '#aaa' }}>Aucun cours enregistre pour cette date.</div>
                     ) : (
                         currentSessions.map((session, idx) => {
                             const eventDateRaw = session.seance?.date || session.dateDeclaration;
@@ -452,43 +500,51 @@ const PresenceEtudiant = () => {
                                                         <span>Validee</span>
                                                     </div>
                                                 ) : getJustificationStatus(session) === 'EN_ATTENTE' ? (
-                                                    <div className="justification-status-badge pending">
-                                                        <span>En attente</span>
+                                                    <div className="action-box-stack">
+                                                        <div className="justification-status-badge pending">
+                                                            <span>En attente</span>
+                                                        </div>
+                                                        {canChangeJustification(session) ? (
+                                                            <button
+                                                                className="justifier-btn retry"
+                                                                onClick={() => openJustificationModal(session)}
+                                                            >
+                                                                CHANGER LA JUSTIFICATION
+                                                            </button>
+                                                        ) : (
+                                                            <div className="justification-expired-badge">
+                                                                <span>Delai depasse</span>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 ) : getJustificationStatus(session) === 'REFUSEE' ? (
                                                     <div className="action-box-stack">
                                                         <div className="justification-status-badge rejected">
                                                             <span>Refusee</span>
                                                         </div>
-                                                        {session.justificationAllowed !== false ? (
+                                                        {canChangeJustification(session) ? (
                                                             <button
                                                                 className="justifier-btn retry"
-                                                                onClick={() => {
-                                                                    setSelectedSession(session);
-                                                                    setIsModalOpen(true);
-                                                                }}
+                                                                onClick={() => openJustificationModal(session)}
                                                             >
                                                                 Renvoyer
                                                             </button>
                                                         ) : (
                                                             <div className="justification-expired-badge">
-                                                                <span>DÃ©lai dÃ©passÃ©</span>
+                                                                <span>Delai depasse</span>
                                                             </div>
                                                         )}
                                                     </div>
-                                                ) : session.justificationAllowed !== false ? (
+                                                ) : canChangeJustification(session) ? (
                                                     <button
                                                         className="justifier-btn"
-                                                        onClick={() => {
-                                                            setSelectedSession(session);
-                                                            setIsModalOpen(true);
-                                                        }}
+                                                        onClick={() => openJustificationModal(session)}
                                                     >
-                                                        JUSTIFIER
+                                                        {hasJustification(session) ? 'CHANGER LA JUSTIFICATION' : 'JUSTIFIER'}
                                                     </button>
                                                 ) : (
                                                     <div className="justification-expired-badge">
-                                                        <span>Délai dépassé</span>
+                                                        <span>Delai depasse</span>
                                                     </div>
                                                 )}
                                             </>
@@ -505,11 +561,12 @@ const PresenceEtudiant = () => {
                 <div className="presence-modal-overlay">
                     <div className="presence-modal-content">
                         <header className="modal-header">
-                            <h2>Justification</h2>
+                            <h2>{hasJustification(selectedSession) ? 'Changer la justification' : 'Justification'}</h2>
                             <button className="modal-close-btn" onClick={() => {
                                 setIsModalOpen(false);
+                                setSelectedSession(null);
                                 setSelectedFile(null);
-                                setTypeMotif('Certificat Médical');
+                                setTypeMotif('Certificat Medical');
                                 setDescriptionAutre('');
                             }}>
                                 <X size={20} />
@@ -533,7 +590,7 @@ const PresenceEtudiant = () => {
                                     value={typeMotif}
                                     onChange={(e) => setTypeMotif(e.target.value)}
                                 >
-                                    <option>Certificat Médical</option>
+                                    <option>Certificat Medical</option>
                                     <option>Raisons Familiales</option>
                                     <option>Autre</option>
                                 </select>
@@ -546,7 +603,7 @@ const PresenceEtudiant = () => {
                                         id="descriptionAutre"
                                         name="descriptionAutre"
                                         className="modal-textarea"
-                                        placeholder="Veuillez décrire la raison de votre absence..."
+                                        placeholder="Veuillez decrire la raison de votre absence..."
                                         value={descriptionAutre}
                                         onChange={(e) => setDescriptionAutre(e.target.value)}
                                         rows={3}
@@ -572,7 +629,7 @@ const PresenceEtudiant = () => {
                             <button 
                                 className="submit-justif-btn" 
                                 onClick={handleFileUpload}
-                                disabled={uploadingFile || !selectedFile}
+                                disabled={uploadingFile || (requiresFileForType(typeMotif) && !selectedFile)}
                             >
                                 {uploadingFile ? 'SOUMISSION EN COURS...' : 'SOUMETTRE LE DOCUMENT'}
                             </button>
@@ -585,3 +642,4 @@ const PresenceEtudiant = () => {
 };
 
 export default PresenceEtudiant;
+
