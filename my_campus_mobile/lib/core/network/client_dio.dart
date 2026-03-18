@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../features/authentification/data/service_authentification_api.dart';
 import '../config/configuration_app.dart';
@@ -23,6 +25,86 @@ class ClientDio {
   String? _accessToken;
   bool _refreshEnCours = false;
   final List<Future<void> Function(String)> _attenteRefresh = [];
+
+  void _logRequest(RequestOptions options) {
+    if (!kDebugMode) return;
+    final uri = options.uri;
+    debugPrint('DIO REQUEST ${options.method} $uri');
+    debugPrint('Headers: ${_safeHeaders(options.headers)}');
+    debugPrint('Body: ${_stringifyData(options.data)}');
+  }
+
+  void _logError(DioException error) {
+    if (!kDebugMode) return;
+    final response = error.response;
+    final uri = error.requestOptions.uri;
+    debugPrint(
+      'DIO ERROR ${error.requestOptions.method} $uri → status ${response?.statusCode}',
+    );
+    debugPrint('Response body: ${_stringifyData(response?.data)}');
+    final fieldErrors = _extractFieldErrors(response?.data);
+    if (fieldErrors.isNotEmpty) {
+      for (final field in fieldErrors) {
+        final fieldName = field['field'] ?? field['name'] ?? 'field';
+        final message = field['defaultMessage'] ?? field['message'] ?? 'Validation failed';
+        debugPrint('Validation: $fieldName → $message');
+      }
+    }
+  }
+
+  Map<String, dynamic> _safeHeaders(Map<String, dynamic> headers) {
+    final safe = <String, dynamic>{};
+    headers.forEach((key, value) {
+      final lower = key.toLowerCase();
+      if (lower == 'authorization' && value is String) {
+        safe[key] = _redactToken(value);
+      } else if (lower == 'cookie') {
+        safe[key] = '<redacted>';
+      } else {
+        safe[key] = value;
+      }
+    });
+    return safe;
+  }
+
+  String _redactToken(String value) {
+    final trimmed = value.trim();
+    if (trimmed.length <= 24) return '<redacted>';
+    return '${trimmed.substring(0, 16)}…${trimmed.substring(trimmed.length - 8)}';
+  }
+
+  List<Map<String, dynamic>> _extractFieldErrors(dynamic data) {
+    if (data is Map && data['fieldErrors'] is List) {
+      return (data['fieldErrors'] as List)
+          .whereType<Map>()
+          .map((item) => item.cast<String, dynamic>())
+          .toList();
+    }
+    if (data is Map && data['errors'] is List) {
+      final errors = data['errors'] as List;
+      final mapped =
+          errors
+              .whereType<Map>()
+              .map((item) => item.cast<String, dynamic>())
+              .toList();
+      if (mapped.isNotEmpty) return mapped;
+    }
+    return [];
+  }
+
+  String _stringifyData(dynamic data) {
+    if (data == null) return 'null';
+    if (data is String) return data;
+    if (data is FormData) {
+      final parts = data.fields.map((f) => '${f.key}=${f.value}').join(', ');
+      return 'FormData(fields: [$parts], files: ${data.files.length})';
+    }
+    try {
+      return const JsonEncoder.withIndent('  ').convert(data);
+    } catch (_) {
+      return data.toString();
+    }
+  }
 
   Dio get dio {
     if (!_initialise) {
@@ -58,25 +140,25 @@ class ClientDio {
               path.contains('/auth/rafraichir-jeton') ||
               path.contains('/auth/deconnexion');
 
-          if (!isAuthEndpoint) {
-            final token = _accessToken;
-            if (token != null && token.isNotEmpty) {
-              options.headers['Authorization'] = 'Bearer $token';
+            if (!isAuthEndpoint) {
+              final token = _accessToken;
+              if (token != null && token.isNotEmpty) {
+                options.headers['Authorization'] = 'Bearer $token';
+              }
             }
-          }
 
-          handler.next(options);
-          print("REQ ${options.method} ${options.uri}");
-          print("Authorization = ${options.headers['Authorization']}");
-        },
+            _logRequest(options);
+            handler.next(options);
+          },
 
-        onError: (e, handler) async {
-          final path = e.requestOptions.path;
+          onError: (e, handler) async {
+            final path = e.requestOptions.path;
 
           final isAuthEndpoint =
               path.contains('/auth/connecter') ||
               path.contains('/auth/rafraichir-jeton') ||
               path.contains('/auth/deconnexion');
+            _logError(e);
 
           if (isAuthEndpoint) {
             return handler.next(e); // pas de refresh ici

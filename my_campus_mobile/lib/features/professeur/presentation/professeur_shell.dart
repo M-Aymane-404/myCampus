@@ -11,6 +11,8 @@ import '../../etudiant/presentation/AnimatedNotchBottomBar.dart';
 import '../data/controller/controleur_espace_professeur.dart';
 import '../data/dto/professeur_mobile_dto.dart';
 import 'accueil_professeur.dart';
+import 'page_cours_professeur.dart';
+import 'page_presence_professeur.dart';
 
 class ProfesseurShell extends StatefulWidget {
   const ProfesseurShell({super.key});
@@ -43,7 +45,7 @@ class _ProfesseurShellState extends State<ProfesseurShell> {
         icon: Icons.calendar_month_rounded,
         label: 'Calendrier',
       ),
-      const NotchBarItem(icon: Icons.workspace_premium_rounded, label: 'Notes'),
+      const NotchBarItem(icon: Icons.how_to_reg_rounded, label: 'Presences'),
       NotchBarItem(customIcon: avatar, label: 'Profil'),
     ];
 
@@ -52,10 +54,10 @@ class _ProfesseurShellState extends State<ProfesseurShell> {
       body: IndexedStack(
         index: _index,
         children: [
-          const AccueilProfesseur(),
-          const _PageCoursProfesseur(),
+        const AccueilProfesseur(),
+        const PageCoursProfesseur(),
           const _PageCalendrierProfesseur(),
-          const _PageNotesProfesseur(),
+          const PagePresenceProfesseur(),
           _PageProfilProfesseur(
             onLogout: () async {
               await context.read<ControleurAuthentification>().seDeconnecter();
@@ -73,43 +75,6 @@ class _ProfesseurShellState extends State<ProfesseurShell> {
         height: 82,
         notchSize: 58,
         notchRadius: 32,
-      ),
-    );
-  }
-}
-
-class _PageCoursProfesseur extends StatelessWidget {
-  const _PageCoursProfesseur();
-
-  @override
-  Widget build(BuildContext context) {
-    final ctrl = context.watch<ControleurEspaceProfesseur>();
-    return _SectionScaffold(
-      icon: Icons.menu_book_rounded,
-      titreTopBar: 'Mes cours',
-      titre: 'Mes cours',
-      sousTitre: 'Modules et classes assignes a votre espace professeur',
-      child: _EtatContenuProfesseur(
-        chargement: ctrl.chargement,
-        erreur: ctrl.erreur,
-        estVide: ctrl.enseignements.isEmpty,
-        messageVide: 'Aucun enseignement assigne pour le moment.',
-        onRetry: () => context.read<ControleurEspaceProfesseur>().chargerEspace(),
-        child: Column(
-          children: ctrl.enseignements
-              .map(
-                (item) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: _InfoCard(
-                    icon: Icons.library_books_rounded,
-                    titre: item.matiereNom,
-                    sousTitre: '${item.classeNom} - ${item.codeClasse}',
-                    badge: item.codeMatiere,
-                  ),
-                ),
-              )
-              .toList(),
-        ),
       ),
     );
   }
@@ -183,7 +148,10 @@ class _PageCalendrierProfesseurState extends State<_PageCalendrierProfesseur> {
                 message: ctrl.erreur!,
                 actionLabel: 'Reessayer',
                 onTap:
-                    () => context.read<ControleurEspaceProfesseur>().chargerEspace(),
+                    () =>
+                        context
+                            .read<ControleurEspaceProfesseur>()
+                            .chargerEspace(),
               ),
             ),
           ),
@@ -198,10 +166,11 @@ class _PageCalendrierProfesseurState extends State<_PageCalendrierProfesseur> {
       );
     }
 
-    final daysWithSlots = emploi
-        .map((s) => _simpleDayKeyProf(s.jour))
-        .where((d) => d.isNotEmpty)
-        .toSet();
+    final daysWithSlots =
+        emploi
+            .map((s) => _simpleDayKeyProf(s.jour))
+            .where((d) => d.isNotEmpty)
+            .toSet();
     final selectedKey = _simpleDayKeyProf(_jourSelectionne);
 
     if (daysWithSlots.isNotEmpty && !daysWithSlots.contains(selectedKey)) {
@@ -212,10 +181,15 @@ class _PageCalendrierProfesseurState extends State<_PageCalendrierProfesseur> {
       });
     }
 
-    final slotsJour = emploi
-        .where((s) => _simpleDayKeyProf(s.jour) == _simpleDayKeyProf(_jourSelectionne))
-        .toList()
-      ..sort((a, b) => a.heureDebut.compareTo(b.heureDebut));
+    final slotsJour =
+        emploi
+            .where(
+              (s) =>
+                  _simpleDayKeyProf(s.jour) ==
+                  _simpleDayKeyProf(_jourSelectionne),
+            )
+            .toList()
+          ..sort((a, b) => a.heureDebut.compareTo(b.heureDebut));
 
     final dateLabel = _formatDateFrProf(DateTime.now());
 
@@ -248,19 +222,23 @@ class _PageCalendrierProfesseurState extends State<_PageCalendrierProfesseur> {
             Expanded(
               child: RefreshIndicator(
                 onRefresh:
-                    () => context.read<ControleurEspaceProfesseur>().chargerEspace(),
-                child: slotsJour.isEmpty
-                    ? ListView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        children: const [
-                          SizedBox(height: 120),
-                          _EmptyJourProf(),
-                        ],
-                      )
-                    : _TimelineListProf(
-                        slots: slotsJour,
-                        couleur: const Color(0xFF5B5BEA),
-                      ),
+                    () =>
+                        context
+                            .read<ControleurEspaceProfesseur>()
+                            .chargerEspace(),
+                child:
+                    slotsJour.isEmpty
+                        ? ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          children: const [
+                            SizedBox(height: 120),
+                            _EmptyJourProf(),
+                          ],
+                        )
+                        : _TimelineListProf(
+                          slots: slotsJour,
+                          couleur: const Color(0xFF5B5BEA),
+                        ),
               ),
             ),
           ],
@@ -293,48 +271,57 @@ class _PageNotesProfesseur extends StatelessWidget {
         erreur: ctrl.erreur,
         estVide: classes.isEmpty,
         messageVide: 'Aucun filtre examen disponible.',
-        onRetry: () => context.read<ControleurEspaceProfesseur>().chargerEspace(),
+        onRetry:
+            () => context.read<ControleurEspaceProfesseur>().chargerEspace(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _SelectCard(
               label: 'Classe',
               value: ctrl.codeClasseSelectionnee,
-              items: classes
-                  .map(
-                    (c) => DropdownMenuItem<String>(
-                      value: c.codeClasse,
-                      child: Text(c.nomClasse),
-                    ),
-                  )
-                  .toList(),
+              items:
+                  classes
+                      .map(
+                        (c) => DropdownMenuItem<String>(
+                          value: c.codeClasse,
+                          child: Text(c.nomClasse),
+                        ),
+                      )
+                      .toList(),
               onChanged: (value) {
                 if (value == null) return;
-                context.read<ControleurEspaceProfesseur>().selectionnerClasse(value);
+                context.read<ControleurEspaceProfesseur>().selectionnerClasse(
+                  value,
+                );
               },
             ),
             const SizedBox(height: 10),
             _SelectCard(
               label: 'Matiere',
               value: ctrl.codeMatiereSelectionnee,
-              items: matieres
-                  .map(
-                    (m) => DropdownMenuItem<String>(
-                      value: m.codeMatiere,
-                      child: Text(m.nomMatiere),
-                    ),
-                  )
-                  .toList(),
+              items:
+                  matieres
+                      .map(
+                        (m) => DropdownMenuItem<String>(
+                          value: m.codeMatiere,
+                          child: Text(m.nomMatiere),
+                        ),
+                      )
+                      .toList(),
               onChanged: (value) {
                 if (value == null) return;
-                context.read<ControleurEspaceProfesseur>().selectionnerMatiere(value);
+                context.read<ControleurEspaceProfesseur>().selectionnerMatiere(
+                  value,
+                );
               },
             ),
             const SizedBox(height: 14),
             if (ctrl.chargement && ctrl.examens.isEmpty)
               const Center(child: CircularProgressIndicator())
             else if (ctrl.examens.isEmpty)
-              const _EmptyInline(message: 'Aucun examen trouve pour cette matiere.')
+              const _EmptyInline(
+                message: 'Aucun examen trouve pour cette matiere.',
+              )
             else
               ...ctrl.examens.map(
                 (examen) => Padding(
@@ -359,7 +346,9 @@ class _PageNotesProfesseur extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          examen.corrigeDisponible ? 'Corrige disponible' : 'Sans corrige',
+                          examen.corrigeDisponible
+                              ? 'Corrige disponible'
+                              : 'Sans corrige',
                           style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
@@ -424,7 +413,10 @@ class _PageProfilProfesseurState extends State<_PageProfilProfesseur> {
                 message: ctrl.erreur!,
                 actionLabel: 'Reessayer',
                 onTap:
-                    () => context.read<ControleurEspaceProfesseur>().chargerEspace(),
+                    () =>
+                        context
+                            .read<ControleurEspaceProfesseur>()
+                            .chargerEspace(),
               ),
             ),
           ),
@@ -447,7 +439,8 @@ class _PageProfilProfesseurState extends State<_PageProfilProfesseur> {
       backgroundColor: const Color(0xFFF5F7FB),
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: () => context.read<ControleurEspaceProfesseur>().chargerEspace(),
+          onRefresh:
+              () => context.read<ControleurEspaceProfesseur>().chargerEspace(),
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(18, 18, 18, 24),
@@ -478,7 +471,9 @@ class _PageProfilProfesseurState extends State<_PageProfilProfesseur> {
                               ? 'Grade non renseigne'
                               : profil.grade,
                       sousTitre:
-                          profil.ppr.isEmpty ? 'PPR non renseigne' : 'PPR ${profil.ppr}',
+                          profil.ppr.isEmpty
+                              ? 'PPR non renseigne'
+                              : 'PPR ${profil.ppr}',
                     ),
                     const SizedBox(height: 10),
                     _ProfileAction(
@@ -564,7 +559,9 @@ class _PageProfilProfesseurState extends State<_PageProfilProfesseur> {
                           final value = (v ?? '').trim();
                           final hasOld = _ancienMdp.text.trim().isNotEmpty;
                           if (value.isEmpty) {
-                            return hasOld ? 'Nouveau mot de passe requis' : null;
+                            return hasOld
+                                ? 'Nouveau mot de passe requis'
+                                : null;
                           }
                           if (value.length < 8) return 'Minimum 8 caracteres';
                           return null;
@@ -575,7 +572,9 @@ class _PageProfilProfesseurState extends State<_PageProfilProfesseur> {
                         width: double.infinity,
                         child: ElevatedButton(
                           onPressed:
-                              ctrl.chargement ? null : () => _enregistrer(context),
+                              ctrl.chargement
+                                  ? null
+                                  : () => _enregistrer(context),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF5B5BEA),
                             foregroundColor: Colors.white,
@@ -596,7 +595,9 @@ class _PageProfilProfesseurState extends State<_PageProfilProfesseur> {
                                   )
                                   : const Text(
                                     'Enregistrer',
-                                    style: TextStyle(fontWeight: FontWeight.w800),
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                    ),
                                   ),
                         ),
                       ),
@@ -696,7 +697,9 @@ class _PageProfilProfesseurState extends State<_PageProfilProfesseur> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Erreur lors de la selection de la photo')),
+        const SnackBar(
+          content: Text('Erreur lors de la selection de la photo'),
+        ),
       );
     }
   }
@@ -784,11 +787,7 @@ class _EtatContenuProfesseur extends StatelessWidget {
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState({
-    required this.message,
-    this.actionLabel,
-    this.onTap,
-  });
+  const _EmptyState({required this.message, this.actionLabel, this.onTap});
 
   final String message;
   final String? actionLabel;
@@ -1003,15 +1002,16 @@ class _DayPickerProf extends StatelessWidget {
                 color: isSelected ? couleurSelection : Colors.white,
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(color: Colors.black.withOpacity(0.06)),
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          blurRadius: 18,
-                          offset: const Offset(0, 10),
-                          color: Colors.black.withOpacity(0.10),
-                        ),
-                      ]
-                    : null,
+                boxShadow:
+                    isSelected
+                        ? [
+                          BoxShadow(
+                            blurRadius: 18,
+                            offset: const Offset(0, 10),
+                            color: Colors.black.withOpacity(0.10),
+                          ),
+                        ]
+                        : null,
               ),
               padding: const EdgeInsets.symmetric(vertical: 10),
               child: Column(
@@ -1021,9 +1021,10 @@ class _DayPickerProf extends StatelessWidget {
                     j.labelTop,
                     style: TextStyle(
                       fontWeight: FontWeight.w800,
-                      color: isSelected
-                          ? Colors.white
-                          : Colors.black.withOpacity(0.55),
+                      color:
+                          isSelected
+                              ? Colors.white
+                              : Colors.black.withOpacity(0.55),
                       fontSize: 12,
                     ),
                   ),
@@ -1066,9 +1067,10 @@ class _TimelineListProf extends StatelessWidget {
         return _TimelineRowProf(
           heure: s.heureDebut,
           couleur: couleur,
-          card: isHero
-              ? _CarteSeanceHeroProf(slot: s, couleur: couleur)
-              : _CarteSeanceSimpleProf(slot: s),
+          card:
+              isHero
+                  ? _CarteSeanceHeroProf(slot: s, couleur: couleur)
+                  : _CarteSeanceSimpleProf(slot: s),
           isLast: i == slots.length - 1,
         );
       },
@@ -1281,9 +1283,12 @@ class _SeanceTextsProf extends StatelessWidget {
     final titre = slot.matiereNom.isEmpty ? 'Seance' : slot.matiereNom;
     final salle = slot.salle.isEmpty ? 'Salle ?' : slot.salle;
     final heureFin = slot.heureFin.isEmpty ? '--:--' : slot.heureFin;
-    final classe = slot.classeNom.isNotEmpty
-        ? slot.classeNom
-        : (slot.codeClasse.isNotEmpty ? slot.codeClasse : 'Classe non renseignee');
+    final classe =
+        slot.classeNom.isNotEmpty
+            ? slot.classeNom
+            : (slot.codeClasse.isNotEmpty
+                ? slot.codeClasse
+                : 'Classe non renseignee');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1462,7 +1467,10 @@ class _InfoCard extends StatelessWidget {
           const SizedBox(width: 10),
           trailing ??
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFEEF2FF),
                   borderRadius: BorderRadius.circular(999),

@@ -1,5 +1,5 @@
-import 'dart:io';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:dio/dio.dart';
 
@@ -10,7 +10,7 @@ class ProfesseurApi {
 
   Future<Map<String, dynamic>> recupererMoi() async {
     final response = await _dio.get('/api/professeur/moi');
-    return (response.data as Map).cast<String, dynamic>();
+    return _decodeMap(response.data);
   }
 
   Future<void> modifierMoi(Map<String, dynamic> body) async {
@@ -26,20 +26,13 @@ class ProfesseurApi {
 
   Future<List<dynamic>> listerEnseignements() async {
     final response = await _dio.get('/api/professeur/enseignements');
-    return response.data as List<dynamic>;
+    final data = _decodeData(response.data);
+    return data is List ? data : const [];
   }
 
   Future<List<dynamic>> obtenirEmploi() async {
     final response = await _dio.get('/api/professeur/emploi');
-    final data = response.data;
-
-    if (data is String) {
-      final parsed = jsonDecode(data);
-      if (parsed is List) return parsed;
-      if (parsed is Map && parsed['slots'] is List) return parsed['slots'] as List;
-      if (parsed is Map && parsed['seances'] is List) return parsed['seances'] as List;
-      return const [];
-    }
+    final data = _decodeData(response.data);
 
     if (data is List) return data;
     if (data is Map && data['slots'] is List) return data['slots'] as List;
@@ -49,12 +42,12 @@ class ProfesseurApi {
 
   Future<Map<String, dynamic>> obtenirProchaineSeance() async {
     final response = await _dio.get('/api/professeur/prochaine');
-    return (response.data as Map).cast<String, dynamic>();
+    return _decodeMap(response.data);
   }
 
   Future<Map<String, dynamic>> chargerFiltresExamens() async {
     final response = await _dio.get('/api/professeur/examens/filtres');
-    return (response.data as Map).cast<String, dynamic>();
+    return _decodeMap(response.data);
   }
 
   Future<List<dynamic>> listerExamens(
@@ -64,6 +57,86 @@ class ProfesseurApi {
     final response = await _dio.get(
       '/api/professeur/examens/classes/$codeClasse/matieres/$codeMatiere',
     );
-    return response.data as List<dynamic>;
+    final data = _decodeData(response.data);
+    return data is List ? data : const [];
+  }
+
+  Future<List<dynamic>> rechercherSeances(Map<String, dynamic> body) async {
+    final response = await _dio.post(
+      '/api/professeur/seances/recherche',
+      data: body,
+    );
+    final data = _decodeData(response.data);
+    return data is List ? data : const [];
+  }
+
+  Future<Map<String, dynamic>> chargerFeuillePresence(int seanceId) async {
+    final response = await _dio.get(
+      '/api/professeur/seances/$seanceId/presences',
+    );
+    return _decodeMap(response.data);
+  }
+
+  Future<Map<String, dynamic>> saisirPresence(
+    int seanceId,
+    Map<String, dynamic> body,
+  ) async {
+    final response = await _dio.put(
+      '/api/professeur/seances/$seanceId/presences',
+      data: body,
+    );
+    return _decodeMap(response.data);
+  }
+
+  Future<Map<String, dynamic>> validerJustificatif(
+    int seanceId,
+    int presenceId,
+  ) async {
+    final response = await _dio.patch(
+      '/api/professeur/seances/$seanceId/presences/$presenceId/valider-justificatif',
+    );
+    return _decodeMap(response.data);
+  }
+
+  Future<Map<String, dynamic>> refuserJustificatif(
+    int seanceId,
+    int presenceId,
+  ) async {
+    final response = await _dio.patch(
+      '/api/professeur/seances/$seanceId/presences/$presenceId/refuser-justificatif',
+    );
+    return _decodeMap(response.data);
+  }
+
+  Future<void> creerSeance(Map<String, dynamic> body) async {
+    await _dio.post('/api/professeur/seances', data: body);
+  }
+
+  Future<void> creerExamen({
+    required String codeClasse,
+    required String codeMatiere,
+    required Map<String, dynamic> body,
+  }) async {
+    final encodedClasse = Uri.encodeComponent(codeClasse);
+    final encodedMatiere = Uri.encodeComponent(codeMatiere);
+    await _dio.post(
+      '/api/professeur/examens/classes/$encodedClasse/matieres/$encodedMatiere',
+      data: body,
+    );
+  }
+
+  dynamic _decodeData(Object? data) {
+    if (data is String) {
+      return jsonDecode(data);
+    }
+    return data;
+  }
+
+  Map<String, dynamic> _decodeMap(Object? data) {
+    final decoded = _decodeData(data);
+    if (decoded is Map) {
+      return decoded.cast<String, dynamic>();
+    }
+    return <String, dynamic>{};
   }
 }

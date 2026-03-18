@@ -1,4 +1,4 @@
-:root {
+﻿:root {
     --presence-dark-bg: #111827;
     --presence-card-dark: #1f2937;
     --presence-accent: #6366f1;
@@ -400,6 +400,19 @@
     color: #0f172a;
 }
 
+.course-code {
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 0.45rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    background: #eef2ff;
+    color: #4338ca;
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
 .prof-room {
     display: flex;
     align-items: center;
@@ -781,3 +794,5 @@
         opacity: 1;
     }
 }
+
+

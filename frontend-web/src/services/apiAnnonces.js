@@ -53,6 +53,32 @@ const declencherTelechargement = async (response, fallbackName) => {
   window.URL.revokeObjectURL(url);
 };
 
+const ouvrirRessourceDansNouvelOnglet = async (response) => {
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  window.open(url, '_blank', 'noopener,noreferrer');
+  window.setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+};
+
+const recupererRessourceAnnonceEtudiant = async (ressourceId) => {
+  const response = await fetch(
+    `${BASE_URL}/etudiant/annonces/ressources/${ressourceId}/telecharger`,
+    {
+      method: 'GET',
+      headers: await getHeaders(),
+      credentials: 'include',
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await lireErreur(response, 'Erreur lors du telechargement de la ressource.')
+    );
+  }
+
+  return response;
+};
+
 export const apiAnnonces = {
   etudiant: {
     async obtenirToutes() {
@@ -104,22 +130,14 @@ export const apiAnnonces = {
     },
 
     async telechargerRessource(ressourceId) {
-      const response = await fetch(
-        `${BASE_URL}/etudiant/annonces/ressources/${ressourceId}/telecharger`,
-        {
-          method: 'GET',
-          headers: await getHeaders(),
-          credentials: 'include',
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(
-          await lireErreur(response, 'Erreur lors du telechargement de la ressource.')
-        );
-      }
-
+      const response = await recupererRessourceAnnonceEtudiant(ressourceId);
       await declencherTelechargement(response, 'ressource-annonce');
+      return true;
+    },
+
+    async consulterRessource(ressourceId) {
+      const response = await recupererRessourceAnnonceEtudiant(ressourceId);
+      await ouvrirRessourceDansNouvelOnglet(response);
       return true;
     },
   },
@@ -296,5 +314,3 @@ export const apiAnnonces = {
 };
 
 export default apiAnnonces;
-
-

@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
 import '../dto/professeur_mobile_dto.dart';
+import '../dto/professeur_presence_dto.dart';
 import '../repository/professeur_repository.dart';
 
 class ControleurEspaceProfesseur extends ChangeNotifier {
@@ -21,6 +22,17 @@ class ControleurEspaceProfesseur extends ChangeNotifier {
   List<ExamenProfesseurMobileDTO> _examens = const [];
   String? _codeClasseSelectionnee;
   String? _codeMatiereSelectionnee;
+  List<SeanceProfesseurMobileDTO> _seancesSelectionnees = const [];
+  bool _chargementSeancesSelection = false;
+
+  String? _enseignementPresenceSelectionne;
+  List<SeanceRechercheProfesseurDTO> _seancesPresence = const [];
+  int? _seancePresenceSelectionnee;
+  FeuillePresenceProfesseurDTO? _feuillePresence;
+  bool _chargementSeancesPresence = false;
+  bool _chargementFeuillePresence = false;
+  final Map<String, bool> _sauvegardePresenceParApogee = {};
+  final Map<int, bool> _traitementJustificatifParPresence = {};
 
   bool get chargement => _chargement;
   String? get erreur => _erreur;
@@ -32,6 +44,34 @@ class ControleurEspaceProfesseur extends ChangeNotifier {
   List<ExamenProfesseurMobileDTO> get examens => _examens;
   String? get codeClasseSelectionnee => _codeClasseSelectionnee;
   String? get codeMatiereSelectionnee => _codeMatiereSelectionnee;
+  List<SeanceProfesseurMobileDTO> get seancesSelectionnees =>
+      _seancesSelectionnees.isEmpty ? _emploi : _seancesSelectionnees;
+  bool get chargementSeancesSelection => _chargementSeancesSelection;
+
+  String? get enseignementPresenceSelectionne =>
+      _enseignementPresenceSelectionne;
+  List<SeanceRechercheProfesseurDTO> get seancesPresence => _seancesPresence;
+  int? get seancePresenceSelectionnee => _seancePresenceSelectionnee;
+  FeuillePresenceProfesseurDTO? get feuillePresence => _feuillePresence;
+  bool get chargementSeancesPresence => _chargementSeancesPresence;
+  bool get chargementFeuillePresence => _chargementFeuillePresence;
+
+  EnseignementProfesseurMobileDTO? get enseignementPresenceSelectionneItem {
+    final key = _enseignementPresenceSelectionne;
+    if (key == null) return null;
+    for (final enseignement in _enseignements) {
+      if (_enseignementKey(enseignement) == key) return enseignement;
+    }
+    return null;
+  }
+
+  bool sauvegardePresenceEnCours(String apogee) =>
+      _sauvegardePresenceParApogee[apogee] == true;
+
+  bool traitementJustificatifEnCours(int? presenceId) {
+    if (presenceId == null) return false;
+    return _traitementJustificatifParPresence[presenceId] == true;
+  }
 
   Future<void> chargerEspace() async {
     _chargement = true;
@@ -56,20 +96,27 @@ class ControleurEspaceProfesseur extends ChangeNotifier {
       if (_classesExamens.isNotEmpty) {
         _codeClasseSelectionnee = _classesExamens.first.codeClasse;
         final matieres = _classesExamens.first.matieres;
-        if (matieres.isNotEmpty) {
-          _codeMatiereSelectionnee = matieres.first.codeMatiere;
+        _codeMatiereSelectionnee =
+            matieres.isNotEmpty ? matieres.first.codeMatiere : null;
+        if (_codeMatiereSelectionnee != null) {
           _examens = await _repository.chargerExamens(
             _codeClasseSelectionnee!,
             _codeMatiereSelectionnee!,
           );
         } else {
-          _codeMatiereSelectionnee = null;
           _examens = const [];
         }
       } else {
         _codeClasseSelectionnee = null;
         _codeMatiereSelectionnee = null;
         _examens = const [];
+      }
+
+      if (_enseignementPresenceSelectionne == null &&
+          _enseignements.isNotEmpty) {
+        _enseignementPresenceSelectionne = _enseignementKey(
+          _enseignements.first,
+        );
       }
     } catch (e) {
       _erreur = _extraireMessageErreur(e);
@@ -81,7 +128,8 @@ class ControleurEspaceProfesseur extends ChangeNotifier {
 
   Future<void> selectionnerClasse(String codeClasse) async {
     _codeClasseSelectionnee = codeClasse;
-    final classe = _classesExamens.where((e) => e.codeClasse == codeClasse).first;
+    final classe =
+        _classesExamens.where((e) => e.codeClasse == codeClasse).first;
     _codeMatiereSelectionnee =
         classe.matieres.isNotEmpty ? classe.matieres.first.codeMatiere : null;
     notifyListeners();
@@ -92,6 +140,34 @@ class ControleurEspaceProfesseur extends ChangeNotifier {
     _codeMatiereSelectionnee = codeMatiere;
     notifyListeners();
     await _rechargerExamensSelection();
+  }
+
+  Future<void> rechercherSeancesPourEnseignement({
+    required String codeClasse,
+    required String codeMatiere,
+  }) async {
+    if (codeClasse.isEmpty || codeMatiere.isEmpty) {
+      _seancesSelectionnees = const [];
+      notifyListeners();
+      return;
+    }
+
+    _chargementSeancesSelection = true;
+    _erreur = null;
+    notifyListeners();
+
+    try {
+      _seancesSelectionnees = await _repository.rechercherSeances(
+        codeClasse: codeClasse,
+        codeMatiere: codeMatiere,
+      );
+    } catch (e) {
+      _erreur = _extraireMessageErreur(e);
+      _seancesSelectionnees = const [];
+    } finally {
+      _chargementSeancesSelection = false;
+      notifyListeners();
+    }
   }
 
   Future<void> _rechargerExamensSelection() async {
@@ -115,6 +191,214 @@ class ControleurEspaceProfesseur extends ChangeNotifier {
       _chargement = false;
       notifyListeners();
     }
+  }
+
+  Future<void> initialiserPresence() async {
+    if (_enseignements.isEmpty && !_chargement) {
+      await chargerEspace();
+    }
+
+    if (_enseignements.isEmpty) return;
+
+    if (_enseignementPresenceSelectionne == null) {
+      _enseignementPresenceSelectionne = _enseignementKey(_enseignements.first);
+    }
+
+    if (_seancesPresence.isNotEmpty || _chargementSeancesPresence) return;
+    await _chargerSeancesPresence(resetSelection: true);
+  }
+
+  Future<void> selectionnerEnseignementPresence(String value) async {
+    if (_enseignementPresenceSelectionne == value &&
+        _seancesPresence.isNotEmpty) {
+      return;
+    }
+    _enseignementPresenceSelectionne = value;
+    _seancePresenceSelectionnee = null;
+    _feuillePresence = null;
+    notifyListeners();
+    await _chargerSeancesPresence(resetSelection: true);
+  }
+
+  Future<void> selectionnerSeancePresence(int seanceId) async {
+    if (_seancePresenceSelectionnee == seanceId && _feuillePresence != null) {
+      return;
+    }
+    _seancePresenceSelectionnee = seanceId;
+    notifyListeners();
+    await chargerFeuillePresence();
+  }
+
+  Future<void> rafraichirPresence() async {
+    if (_enseignementPresenceSelectionne == null) {
+      await initialiserPresence();
+      return;
+    }
+    await _chargerSeancesPresence(resetSelection: false);
+  }
+
+  Future<void> chargerFeuillePresence({bool silencieux = false}) async {
+    final seanceId = _seancePresenceSelectionnee;
+    if (seanceId == null) return;
+
+    _chargementFeuillePresence = !silencieux;
+    _erreur = null;
+    if (!silencieux) {
+      _feuillePresence = null;
+    }
+    notifyListeners();
+
+    try {
+      _feuillePresence = await _repository.chargerFeuillePresence(seanceId);
+    } catch (e) {
+      _erreur = _extraireMessageErreur(e);
+    } finally {
+      _chargementFeuillePresence = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> saisirPresence({
+    required String apogee,
+    required String status,
+  }) async {
+    final seanceId = _seancePresenceSelectionnee;
+    final feuille = _feuillePresence;
+    if (seanceId == null || feuille == null) return;
+
+    final index = feuille.lignes.indexWhere((ligne) => ligne.apogee == apogee);
+    if (index < 0) return;
+
+    final precedente = feuille.lignes[index];
+    final nouvellesLignes = [...feuille.lignes];
+    nouvellesLignes[index] = precedente.copyWith(status: status);
+    _feuillePresence = feuille.copyWith(lignes: nouvellesLignes);
+    _sauvegardePresenceParApogee[apogee] = true;
+    _erreur = null;
+    notifyListeners();
+
+    try {
+      final updated = await _repository.saisirPresence(
+        seanceId: seanceId,
+        apogee: apogee,
+        status: status,
+      );
+      _remplacerLignePresence((ligne) => ligne.apogee == apogee, updated);
+    } catch (e) {
+      _remplacerLignePresence((ligne) => ligne.apogee == apogee, precedente);
+      _erreur = _extraireMessageErreur(e);
+    } finally {
+      _sauvegardePresenceParApogee[apogee] = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> validerJustificatif(int presenceId) async {
+    await _traiterJustificatif(presenceId, approuver: true);
+  }
+
+  Future<void> refuserJustificatif(int presenceId) async {
+    await _traiterJustificatif(presenceId, approuver: false);
+  }
+
+  Future<void> _chargerSeancesPresence({required bool resetSelection}) async {
+    final enseignement = enseignementPresenceSelectionneItem;
+    if (enseignement == null) return;
+
+    _chargementSeancesPresence = true;
+    _chargementFeuillePresence = false;
+    _erreur = null;
+    _seancesPresence = const [];
+    _feuillePresence = null;
+    _sauvegardePresenceParApogee.clear();
+    _traitementJustificatifParPresence.clear();
+    if (resetSelection) {
+      _seancePresenceSelectionnee = null;
+    }
+    notifyListeners();
+
+    try {
+      final seances = await _repository.rechercherSeancesPresence(
+        codeClasse: enseignement.codeClasse,
+        codeMatiere: enseignement.codeMatiere,
+      );
+      seances.sort((a, b) {
+        final aDate = a.heureDebut ?? a.date ?? DateTime(1900);
+        final bDate = b.heureDebut ?? b.date ?? DateTime(1900);
+        return bDate.compareTo(aDate);
+      });
+      _seancesPresence = seances;
+
+      final preserveSelection =
+          !resetSelection &&
+          _seancePresenceSelectionnee != null &&
+          seances.any((item) => item.id == _seancePresenceSelectionnee);
+
+      if (!preserveSelection) {
+        _seancePresenceSelectionnee =
+            seances.isNotEmpty ? seances.first.id : null;
+      }
+    } catch (e) {
+      _erreur = _extraireMessageErreur(e);
+    } finally {
+      _chargementSeancesPresence = false;
+      notifyListeners();
+    }
+
+    if (_seancePresenceSelectionnee != null) {
+      await chargerFeuillePresence();
+    }
+  }
+
+  Future<void> _traiterJustificatif(
+    int presenceId, {
+    required bool approuver,
+  }) async {
+    final seanceId = _seancePresenceSelectionnee;
+    if (seanceId == null) return;
+
+    _traitementJustificatifParPresence[presenceId] = true;
+    _erreur = null;
+    notifyListeners();
+
+    try {
+      final updated =
+          approuver
+              ? await _repository.validerJustificatif(
+                seanceId: seanceId,
+                presenceId: presenceId,
+              )
+              : await _repository.refuserJustificatif(
+                seanceId: seanceId,
+                presenceId: presenceId,
+              );
+      _remplacerLignePresence(
+        (ligne) => ligne.idPresence == presenceId,
+        updated,
+      );
+    } catch (e) {
+      _erreur = _extraireMessageErreur(e);
+    } finally {
+      _traitementJustificatifParPresence[presenceId] = false;
+      notifyListeners();
+    }
+  }
+
+  void _remplacerLignePresence(
+    bool Function(LignePresenceProfesseurDTO ligne) predicate,
+    LignePresenceProfesseurDTO updated,
+  ) {
+    final feuille = _feuillePresence;
+    if (feuille == null) return;
+    final lignes = [...feuille.lignes];
+    final index = lignes.indexWhere(predicate);
+    if (index < 0) return;
+    lignes[index] = updated;
+    _feuillePresence = feuille.copyWith(lignes: lignes);
+  }
+
+  String _enseignementKey(EnseignementProfesseurMobileDTO enseignement) {
+    return '${enseignement.codeClasse}|${enseignement.codeMatiere}';
   }
 
   Future<void> modifierProfil(ModifierProfilProfesseurDTO dto) async {
@@ -169,7 +453,8 @@ class ControleurEspaceProfesseur extends ChangeNotifier {
             return first.trim();
           }
           if (first is Map) {
-            final msg = first['message'] ?? first['defaultMessage'] ?? first['error'];
+            final msg =
+                first['message'] ?? first['defaultMessage'] ?? first['error'];
             if (msg is String && msg.trim().isNotEmpty) {
               return msg.trim();
             }

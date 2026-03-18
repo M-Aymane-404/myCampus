@@ -395,6 +395,8 @@ public class StructureMapper {
             affectationSortieDTO.setMatiereNom(affectation.getMatiere().getNom());
         }
 
+        affectationSortieDTO.setAnneeUniversitaire(affectation.getAnneeUniversitaire());
+
         return affectationSortieDTO;
     }
 

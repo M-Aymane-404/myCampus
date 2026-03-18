@@ -29,6 +29,22 @@ const normaliserNotifications = (payload) => {
   return [];
 };
 
+const construireDestinationNotification = (currentRole, notification) => {
+  const destinationParDefaut = ROUTES_PAR_ROLE[currentRole] || ROUTES_PAR_ROLE.student;
+  const referenceType = String(notification?.referenceType || '').toUpperCase();
+
+  if (referenceType === 'ANNONCE' && notification?.referenceId != null) {
+    return {
+      id: destinationParDefaut,
+      params: {
+        annonceSelectionneeId: notification.referenceId,
+      },
+    };
+  }
+
+  return destinationParDefaut;
+};
+
 const NotificationHeart = ({ currentRole, surChangementElement }) => {
   const [ouvert, setOuvert] = useState(false);
   const [chargement, setChargement] = useState(false);
@@ -124,7 +140,7 @@ const NotificationHeart = ({ currentRole, surChangementElement }) => {
       }
     }
 
-    const destination = ROUTES_PAR_ROLE[currentRole] || ROUTES_PAR_ROLE.student;
+    const destination = construireDestinationNotification(currentRole, notification);
     if (surChangementElement && destination) {
       surChangementElement(destination);
     }

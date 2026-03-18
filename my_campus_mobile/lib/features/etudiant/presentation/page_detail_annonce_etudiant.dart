@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../data/controller/controleur_annonce_etudiant.dart';
+import '../data/controller/ControleurFichier.dart';
+import '../data/dto/ressource_annonce_dto.dart';
 
 class PageDetailAnnonceEtudiant extends StatefulWidget {
   const PageDetailAnnonceEtudiant({
@@ -27,9 +29,11 @@ class _PageDetailAnnonceEtudiantState extends State<PageDetailAnnonceEtudiant> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      context
-          .read<ControleurAnnonceEtudiant>()
-          .chargerAnnonceParId(widget.annonceId);
+      final ctrl = context.read<ControleurAnnonceEtudiant>();
+      ctrl.chargerAnnonceParId(widget.annonceId).then((_) {
+        if (!mounted) return;
+        ctrl.chargerRessources(widget.annonceId);
+      });
     });
   }
 
@@ -144,13 +148,168 @@ class _PageDetailAnnonceEtudiantState extends State<PageDetailAnnonceEtudiant> {
                         color: Color(0xFF0B1220),
                       ),
                     ),
-                  ],
-                ),
+                ],
               ),
+            ),
+              const SizedBox(height: 20),
+              _buildRessourcesSection(context, ctrl),
             ],
           );
         },
       ),
     );
+  }
+
+  Widget _buildRessourcesSection(BuildContext context, ControleurAnnonceEtudiant ctrl) {
+    final ressources = ctrl.ressourcesAnnonceSelectionnee;
+
+    if (!ctrl.ressourcesChargees) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 12),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (ressources.isEmpty) {
+      return Container(
+        margin: const EdgeInsets.only(top: 8),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Colors.black.withOpacity(0.05)),
+        ),
+        child: Row(
+          children: const [
+            Icon(Icons.folder_open_rounded, color: Color(0xFF5B5BEA)),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Aucune ressource attachee',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                  color: Color(0xFF61708A),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: Colors.black.withOpacity(0.05)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(top: 16, left: 16, right: 16),
+            child: Text(
+              'Ressources jointes',
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+                fontSize: 16,
+                color: Color(0xFF0B1220),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          for (var i = 0; i < ressources.length; i++) ...[
+            _buildRessourceRow(context, ressources[i]),
+            if (i < ressources.length - 1) const Divider(height: 1),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRessourceRow(BuildContext context, RessourceAnnonceDTO ressource) {
+    final fichierCtrl = context.watch<ControleurFichier>();
+    final tailleFormatee = _formatTaille(ressource.taille);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        leading: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: const Color(0xFFEEF2FF),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Icon(Icons.picture_as_pdf_rounded, color: Color(0xFF5B5BEA)),
+        ),
+        title: Text(
+          ressource.nomOriginal,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontWeight: FontWeight.w900, color: Color(0xFF0B1220)),
+        ),
+        subtitle: Text(
+          tailleFormatee,
+          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF61708A)),
+        ),
+        trailing: fichierCtrl.telechargementEnCours
+            ? SizedBox(
+                width: 34,
+                height: 34,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.4,
+                  value: fichierCtrl.progression > 0 ? fichierCtrl.progression : null,
+                  color: const Color(0xFF5B5BEA),
+                  backgroundColor: Colors.black.withOpacity(0.08),
+                ),
+              )
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.open_in_new_rounded, color: Color(0xFF5B5BEA)),
+                    onPressed: () => _telechargerEtOuvrir(context, ressource),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.download_rounded, color: Color(0xFF5B5BEA)),
+                    onPressed: () => _telechargerEtOuvrir(context, ressource),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+
+  Future<void> _telechargerEtOuvrir(BuildContext context, RessourceAnnonceDTO ressource) async {
+    try {
+      await context.read<ControleurFichier>().telechargerEtOuvrir(
+            urlDownload: '/api/etudiant/annonces/ressources/${ressource.id}/telecharger',
+            nomFichier: ressource.nomOriginal,
+          );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Impossible d'ouvrir ${ressource.nomOriginal}")),
+      );
+    }
+  }
+
+  String _formatTaille(int? bytes) {
+    if (bytes == null || bytes <= 0) return 'Taille inconnue';
+    const units = ['o', 'Ko', 'Mo', 'Go'];
+    var valeur = bytes.toDouble();
+    var index = 0;
+    while (valeur >= 1024 && index < units.length - 1) {
+      valeur /= 1024;
+      index++;
+    }
+    final precision = index == 0 ? 0 : 1;
+    return "${valeur.toStringAsFixed(precision)} ${units[index]}";
   }
 }
