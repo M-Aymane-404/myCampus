@@ -11,8 +11,7 @@ import {
 import { apiAuth } from '../../services/apiAuth';
 import './ChatBot.css';
 
-const CHAT_WEBHOOK_URL =
-  import.meta.env.VITE_N8N_CHAT_WEBHOOK_URL || 'http://localhost:5679/webhook/chat';
+const CHAT_WEBHOOK_URL = 'http://localhost:5679/webhook-test/chat';
 
 const DEFAULT_MESSAGE =
   "Je suis votre assistant MyCampus. Posez-moi une question sur votre contexte académique ou vos documents.";
@@ -43,22 +42,6 @@ function normalizeRole(userRole, scope) {
   }
 
   return 'ETUDIANT';
-}
-
-function extractReply(data) {
-  if (!data) return '';
-  if (typeof data === 'string') {
-    try {
-      const parsed = JSON.parse(data);
-      return parsed.reply || '';
-    } catch {
-      return data;
-    }
-  }
-  if (typeof data.reply === 'string') return data.reply;
-  if (typeof data.response === 'string') return data.response;
-  if (typeof data.message === 'string') return data.message;
-  return '';
 }
 
 function cleanupMarkdownAndOrganize(text) {
@@ -190,7 +173,7 @@ export default function ChatBot() {
     setIsSending(true);
 
     try {
-      const messageWithFormatHint = `${trimmedMessage}\n\nConsigne de format: réponds en texte brut sans markdown, avec des sections courtes et claires.`;
+      console.log('ChatBot request URL:', CHAT_WEBHOOK_URL);
 
       const response = await fetch(CHAT_WEBHOOK_URL, {
         method: 'POST',
@@ -198,25 +181,28 @@ export default function ChatBot() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          message: messageWithFormatHint,
+          message: trimmedMessage,
           userId: userContext.userId,
           role: userContext.role,
         }),
       });
 
       const raw = await response.text();
-      let parsed;
+      let data;
       try {
-        parsed = raw ? JSON.parse(raw) : {};
+        data = raw ? JSON.parse(raw) : {};
       } catch {
-        parsed = raw;
+        data = {};
       }
 
-      const reply = extractReply(parsed);
-      if (!response.ok || !reply) {
+      console.log('ChatBot response status:', response.status);
+      console.log('ChatBot response body:', data);
+
+      if (!response.ok || data?.ok === false) {
         throw new Error("Le chatbot n'a pas pu répondre.");
       }
 
+      const reply = typeof data?.reply === 'string' ? data.reply : '';
       const normalizedReply = cleanupMarkdownAndOrganize(reply);
 
       setMessages((prev) => [

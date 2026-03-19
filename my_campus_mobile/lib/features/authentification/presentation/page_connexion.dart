@@ -313,18 +313,6 @@ class _PageConnexionState extends State<PageConnexion> {
                                     ),
                           ),
 
-                          const SizedBox(height: 18),
-
-                          Text(
-                            "Besoin d'aide ? Accéder au support informatique",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              color: Colors.black.withOpacity(0.55),
-                              decoration: TextDecoration.underline,
-                            ),
-                          ),
-
                           const SizedBox(height: 26),
 
                           Text(

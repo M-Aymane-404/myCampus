@@ -553,11 +553,26 @@ class CreateExamenModal extends StatefulWidget {
 }
 
 class _CreateExamenModalState extends State<CreateExamenModal> {
+  static const List<String> _semestres = [
+    'S1',
+    'S2',
+    'S3',
+    'S4',
+    'S5',
+    'S6',
+    'S7',
+    'S8',
+    'S9',
+  ];
+  static const List<String> _typesExamen = [
+    'NORMAL',
+    'RATTRAPAGE',
+  ];
   late final TextEditingController _dateCtrl;
-  late final TextEditingController _typeCtrl;
-  late final TextEditingController _semestreCtrl;
   late final TextEditingController _dureeCtrl;
   late final TextEditingController _numeroCtrl;
+  String _selectedSemestre = 'S1';
+  String _selectedType = 'NORMAL';
   final _formKey = GlobalKey<FormState>();
   bool _envoiEnCours = false;
 
@@ -565,8 +580,6 @@ class _CreateExamenModalState extends State<CreateExamenModal> {
   void initState() {
     super.initState();
     _dateCtrl = TextEditingController();
-    _typeCtrl = TextEditingController(text: 'NORMAL');
-    _semestreCtrl = TextEditingController(text: 'S1');
     _dureeCtrl = TextEditingController(text: '90');
     _numeroCtrl = TextEditingController(text: '1');
   }
@@ -574,8 +587,6 @@ class _CreateExamenModalState extends State<CreateExamenModal> {
   @override
   void dispose() {
     _dateCtrl.dispose();
-    _typeCtrl.dispose();
-    _semestreCtrl.dispose();
     _dureeCtrl.dispose();
     _numeroCtrl.dispose();
     super.dispose();
@@ -608,22 +619,50 @@ class _CreateExamenModalState extends State<CreateExamenModal> {
                   onTap: () => _pickDate(_dateCtrl),
                 ),
                 const SizedBox(height: 12),
-                TextFormField(
-                  controller: _typeCtrl,
+                DropdownButtonFormField<String>(
+                  value: _selectedType,
                   decoration: const InputDecoration(
                     labelText: 'Type d\'examen',
                     border: OutlineInputBorder(),
                   ),
-                  validator: (value) =>
-                      (value ?? '').trim().isEmpty ? 'Type requis' : null,
+                  items: _typesExamen
+                      .map(
+                        (type) => DropdownMenuItem(
+                          value: type,
+                          child: Text(type == 'NORMAL' ? 'Normal' : 'Rattrapage'),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        _selectedType = value;
+                      });
+                    }
+                  },
                 ),
                 const SizedBox(height: 12),
-                TextFormField(
-                  controller: _semestreCtrl,
+                DropdownButtonFormField<String>(
+                  value: _selectedSemestre,
                   decoration: const InputDecoration(
                     labelText: 'Semestre',
                     border: OutlineInputBorder(),
                   ),
+                  items: _semestres
+                      .map(
+                        (sem) => DropdownMenuItem(
+                          value: sem,
+                          child: Text(sem),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        _selectedSemestre = value;
+                      });
+                    }
+                  },
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
@@ -677,8 +716,8 @@ class _CreateExamenModalState extends State<CreateExamenModal> {
     }
 
     final dto = CreationExamenProfesseurDTO(
-      typeExamen: _typeCtrl.text.trim().toUpperCase(),
-      semestre: _semestreCtrl.text.trim().toUpperCase(),
+      typeExamen: _selectedType,
+      semestre: _selectedSemestre,
       dateExamen: _toIsoInstantDateOnly(_dateCtrl.text),
       duree: duree,
       numeroExamen: numero,
