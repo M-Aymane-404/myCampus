@@ -41,22 +41,22 @@ const detecterTypeMessage = (message) => {
     || texte.includes('impossible')
     || texte.includes('introuvable')
     || texte.includes('echec')
-    || texte.includes('Ã©chou')
+    || texte.includes('échou')
   ) {
     return 'error';
   }
 
   if (
     texte.includes('succes')
-    || texte.includes('succÃ¨s')
+    || texte.includes('succès')
     || texte.includes('reussi')
-    || texte.includes('rÃ©ussi')
-    || texte.includes('mise Ã  jour')
-    || texte.includes('mis Ã  jour')
-    || texte.includes('supprimÃ©')
-    || texte.includes('crÃ©Ã©')
+    || texte.includes('réussi')
+    || texte.includes('mise à jour')
+    || texte.includes('mis à jour')
+    || texte.includes('supprimé')
+    || texte.includes('créé')
     || texte.includes('termine')
-    || texte.includes('terminÃ©')
+    || texte.includes('terminé')
   ) {
     return 'success';
   }

@@ -12,6 +12,7 @@ import com.mycampus.backend.enumerations.TypeSeance;
 import com.mycampus.backend.exceptions.EtudiantException;
 import com.mycampus.backend.exceptions.SeancesProfesseurException;
 import com.mycampus.backend.exceptions.UtilisateursException;
+import org.springframework.core.io.Resource;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -35,9 +36,13 @@ public interface GestionStructureEtudiantMetier {
 
     ReleveDeNoteEtudiantParSessionDTO trouverLeReleverDeNoteParSessionDuEtudiant(Long idEtudiant, Semestre semestre)
             throws EtudiantException;
-      TelechargementFichierSeanceSortieDTO preparerTelechargementFichierSeance(
+    TelechargementFichierSeanceSortieDTO preparerTelechargementFichierSeance(
             Long idEtudiant,
             Long fichierSeanceId
     ) throws SeancesProfesseurException;
+
+    Resource telechargerCopieExamen(Long idEtudiant, Long examenId) throws EtudiantException;
+
+    Resource telechargerCorrigeExamen(Long idEtudiant, Long examenId) throws EtudiantException;
 
 }

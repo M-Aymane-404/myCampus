@@ -227,33 +227,18 @@ const buildDateTime = (date, time) => {
   return `${date}T${time}:00`;
 };
 
-const getStoredCourseFilePath = (fichier) =>
-    fichier?.chemin || fichier?.path || fichier?.fichierPath || '';
-
 const openCourseFile = async (fichier) => {
-  const path = getStoredCourseFilePath(fichier);
-  if (!path) {
-    throw new Error('Aucun fichier n est depose.');
+  if (!fichier?.id) {
+    throw new Error('Aucun fichier lié à cette séance.');
   }
 
-  const url = path.startsWith('http')
-      ? path
-      : `http://localhost:8080/api/public/fichiers/voir?chemin=${encodeURIComponent(path)}`;
-
-  const response = await fetch(url, { credentials: 'include' });
-  if (!response.ok) {
-    throw new Error('Aucun fichier n est depose.');
+  const { blob } = await apiSeancesProfesseur.telechargerFichierBlob(fichier.id);
+  const mimeType = blob.type || '';
+  if (!mimeType.toLowerCase().includes('pdf')) {
+    throw new Error('Le fichier déposé n est pas un PDF valide.');
   }
 
-  const contentType = response.headers.get('content-type') || '';
-  if (!contentType.toLowerCase().includes('pdf')) {
-    throw new Error('Le fichier depose est introuvable ou invalide.');
-  }
-
-  const blob = await response.blob();
-  const objectUrl = window.URL.createObjectURL(blob);
-  window.open(objectUrl, '_blank', 'noopener,noreferrer');
-  window.setTimeout(() => window.URL.revokeObjectURL(objectUrl), 60000);
+  openBlobInNewTab(blob);
 };
 
 const GestionCoursProfesseur = () => {

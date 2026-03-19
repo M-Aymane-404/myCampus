@@ -18,11 +18,14 @@ import com.mycampus.backend.exceptions.SeancesProfesseurException;
 import com.mycampus.backend.exceptions.UtilisateursException;
 import com.mycampus.backend.mappers.administrateur.UtilisateursMapper;
 import com.mycampus.backend.mappers.etudiant.StructureEtudiantMapper;
+import com.mycampus.backend.metier.professeur.StockageFichiersService;
 import com.mycampus.backend.repositorys.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.core.io.Resource;
+import org.springframework.util.StringUtils;
 
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -58,6 +61,7 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
     private final UtilisateursMapper utilisateursMapper;
     private final PasswordEncoder passwordEncoder;
     private final ClasseRepository classRepository;
+    private final StockageFichiersService stockage;
 
     @Override
     public EtudiantSortieEtudiantDTO trouverEtudiantConnecter(Long id) throws EtudiantException {
@@ -68,7 +72,7 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
         }
 
         Etudiant etudiant = etudiantRepository.findById(id)
-                .orElseThrow(() -> new EtudiantException("Ã‰tudiant introuvable"));
+                .orElseThrow(() -> new EtudiantException("Étudiant introuvable"));
 
         String codeClasse = null;
         Integer dureeFormation = null;
@@ -107,15 +111,15 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
     @Override
     public EtudiantSortieEtudiantDTO modifierEtudiant(String email, EtudiantModificationEtudiantDTO etudiantModificationDTO) throws UtilisateursException {
         if (email == null || email.trim().isEmpty()) {
-            throw new UtilisateursException("L'email de l'Ã©tudiant ne peut pas Ãªtre nulle");
+            throw new UtilisateursException("L'email de l'étudiant ne peut pas être nulle");
         }
 
         if (etudiantModificationDTO == null) {
-            throw new UtilisateursException("L'Ã©tudiant ne peut pas Ãªtre nul");
+            throw new UtilisateursException("L'étudiant ne peut pas être nul");
         }
 
         Etudiant etudiantAModifier = etudiantRepository.findByEmail(email).orElseThrow(() ->
-                new UtilisateursException("Ã‰tudiant introuvable avec l'apogÃ©e: " + email));
+                new UtilisateursException("Étudiant introuvable avec l'apogée: " + email));
 
 
 
@@ -126,7 +130,7 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
 
         if(etudiantModificationDTO.getTel() != null && !etudiantModificationDTO.getTel().trim().isEmpty()) {
             if(!etudiantAModifier.getTel().equals(etudiantModificationDTO.getTel()) && utilisateurRepository.existsByTel(etudiantModificationDTO.getTel())){
-                throw new UtilisateursException("Un utilisateur avec cet numero existe dÃ©jÃ ");
+                throw new UtilisateursException("Un utilisateur avec cet numero existe déjà");
 
             }
             etudiantAModifier.setTel(etudiantModificationDTO.getTel());
@@ -191,13 +195,13 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
             throw  new EtudiantException("code Module  est obligatoire");
         }
         if (etudiantId == null){
-            throw  new EtudiantException("id Ã©tudiant est obligatoire");
+            throw  new EtudiantException("id etudiant est obligatoire");
         }
 
         List<Matiere> matieres = matiereRepository.findByModule_CodeModule(codeModule);
         Classe classe = classeRepository.findByEtudiant_idEtudiant(etudiantId);
         if(classe == null){
-            throw new EtudiantException("Classe introuvable pour l'Ã©tudiant " + etudiantId);
+            throw new EtudiantException("Classe introuvable pour l'etudiant " + etudiantId);
         }
 
         if(matieres == null){
@@ -223,11 +227,11 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
     @Transactional(readOnly = true)
     public List<SeanceSortieEtudiantDTO> trouverSeanceParCodeMatiereEtFiltrerParTypeSeanceSiExist(Long etudiantId, String codeMatiere, TypeSeance typeSeance) throws EtudiantException {
         if(codeMatiere == null){
-            throw  new EtudiantException("code matiÃ¨re est obligatoire");
+            throw  new EtudiantException("code matière est obligatoire");
         }
 
         if (etudiantId == null){
-            throw  new EtudiantException("id d'Ã©tudiant est obligatoire");
+            throw  new EtudiantException("id d'étudiant est obligatoire");
         }
         Classe classe = classeRepository.findByEtudiant_idEtudiant(etudiantId);
 
@@ -369,7 +373,7 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
                 .collect(Collectors.toMap(
                         r -> r.getExamen().getId(),
                         r -> r,
-                        (a, b) -> { throw new IllegalStateException("Doublon rÃ©sultat pour examen_id=" + a.getExamen().getId()); }
+                        (a, b) -> { throw new IllegalStateException("Doublon résultat pour examen_id=" + a.getExamen().getId()); }
                 ));
 
 
@@ -400,8 +404,8 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
 
                 matiereDto.setExamens(examensPasses);
 
-                // 2) Calcul moyenne (rÃ¨gle: si rattrapage existe et notÃ© => moyenne = rattrapage,
-                // sinon moyenne = average des NORMAL notÃ©s, sinon null)
+                // 2) Calcul moyenne (règle: si rattrapage existe et noté => moyenne = rattrapage,
+                // sinon moyenne = average des NORMAL notés, sinon null)
                 Double noteRattrapage = examensPasses.stream()
                         .filter(e -> e.getTypeExamen() == TypeExamen.RATTRAPAGE)
                         .map(ExamenDeReleveEtudiantDTO::getNote)
@@ -543,11 +547,11 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
         }
 
        Classe classe =  classeRepository.findByEtudiant_EmailEtudiant(etudiantEmail)
-               .orElseThrow(() -> new UtilisateursException("Ã‰tudiant ne Assigne a accan classe introuvable ou non autorisÃ©."));
+               .orElseThrow(() -> new UtilisateursException("Étudiant ne Assigne a accan classe introuvable ou non autorisé."));
 
         return fichierSeanceRepository
                 .findByIdAndSeance_AffectationEnseignement_Classe_CodeClasse(fichierSeanceId, classe.getCodeClasse())
-                .orElseThrow(() -> new SeancesProfesseurException("Fichier introuvable ou non autorisÃ©."));
+                .orElseThrow(() -> new SeancesProfesseurException("Fichier introuvable ou non autorisé."));
     }
 
     private FichierSeance requireFichierSeancePourProfesseur(Long idEtudiant, Long fichierSeanceId)
@@ -561,19 +565,48 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
 
         Classe classe =  classeRepository.findByEtudiant_idEtudiant(idEtudiant);
         if  (classe == null) {
-            throw new UtilisateursException("Ã‰tudiant ne Assigne a accan classe introuvable ou non autorisÃ©.");
+            throw new UtilisateursException("Étudiant ne Assigne a accan classe introuvable ou non autorisé.");
         }
 
 
         return fichierSeanceRepository
                 .findByIdAndSeance_AffectationEnseignement_Classe_CodeClasse(fichierSeanceId, classe.getCodeClasse())
-                .orElseThrow(() -> new SeancesProfesseurException("Fichier introuvable ou non autorisÃ©."));
+                .orElseThrow(() -> new SeancesProfesseurException("Fichier introuvable ou non autorisé."));
     }
 
 
 
 
 
+    private Resultat requireResultat(Long etudiantId, Long examenId) throws EtudiantException {
+        if (etudiantId == null || examenId == null) {
+            throw new EtudiantException("Identifiants examen/étudiant obligatoires.");
+        }
+        return resultatRepository.findByExamen_IdAndEtudiant_Id(examenId, etudiantId)
+                .orElseThrow(() -> new EtudiantException("Résultat introuvable."));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Resource telechargerCopieExamen(Long etudiantId, Long examenId) throws EtudiantException {
+        Resultat resultat = requireResultat(etudiantId, examenId);
+        String chemin = resultat.getCopieEtudiantPath();
+        if (!StringUtils.hasText(chemin)) {
+            throw new EtudiantException("Aucune copie disponible.");
+        }
+        return stockage.chargerCommeResource(chemin);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Resource telechargerCorrigeExamen(Long etudiantId, Long examenId) throws EtudiantException {
+        Resultat resultat = requireResultat(etudiantId, examenId);
+        Examen examen = resultat.getExamen();
+        if (examen == null || !StringUtils.hasText(examen.getCorrigePath())) {
+            throw new EtudiantException("Aucun corrigé disponible pour cet examen.");
+        }
+        return stockage.chargerCommeResource(examen.getCorrigePath());
+    }
 }
 
 

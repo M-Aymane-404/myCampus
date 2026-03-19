@@ -37,6 +37,8 @@
     import javax.crypto.spec.SecretKeySpec;
     import java.util.List;
 
+    import static org.springframework.security.config.Customizer.withDefaults;
+
    @Configuration
    @EnableWebSecurity
    @EnableMethodSecurity
@@ -60,20 +62,37 @@
            var customConverter = new JwtToCustomPrincipalConverter(grantedAuthoritiesConverter);
 
            return http
+                   .headers(headers -> headers
+                           .frameOptions(frame -> frame.deny())
+                   )
+                   .headers(headers -> headers
+                           .frameOptions(frame -> frame.deny())
+                   )
+                   .headers(headers -> headers
+                           .contentTypeOptions(withDefaults())
+                   )
+//                   .headers(headers -> headers
+//                           .contentSecurityPolicy("default-src 'self'; img-src 'self' data:; script-src 'self'")
+//                   )
                    .headers(header -> header.frameOptions(frame -> frame.disable()))
-                   /* .exceptionHandling(ex -> ex
+                    .exceptionHandling(ex -> ex
                            .authenticationEntryPoint(new JsonAuthenticationEntryPoint())
                            .accessDeniedHandler(new JsonAccessDeniedHandler())
-                   )*/
+                   )
+                   .headers(headers -> headers
+                           .cacheControl(cache -> {})
+                   )
                  //  .httpBasic(httpBasic -> httpBasic.disable())
                  //  .formLogin(form -> form.disable())
                   // .logout(logout -> logout.disable())
 
 
 
+
+
                    .csrf(csrf -> csrf.disable())
-                   .cors(Customizer.withDefaults())
-                   .httpBasic(Customizer.withDefaults())
+                   .cors(withDefaults())
+                   .httpBasic(withDefaults())
                     .authorizeHttpRequests(auth -> auth
                          .requestMatchers("/auth/connecter", "/auth/rafraichir-jeton", "/auth/deconnexion").permitAll()
                            .requestMatchers("/files/**").permitAll()

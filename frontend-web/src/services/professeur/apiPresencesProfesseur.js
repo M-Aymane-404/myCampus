@@ -29,6 +29,12 @@ export const apiPresencesProfesseur = {
             method: 'PATCH',
         });
     },
+
+    async telechargerJustificatif(seanceId, presenceId) {
+        return apiProfesseur.fetchBlob(`/seances/${seanceId}/presences/${presenceId}/justificatif`, {
+            method: 'GET',
+        });
+    },
 };
 
 export default apiPresencesProfesseur;

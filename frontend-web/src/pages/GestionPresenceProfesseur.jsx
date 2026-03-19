@@ -4,7 +4,7 @@ import { apiEnseignementsProfesseur } from '../services/professeur/apiEnseigneme
 import apiSeancesProfesseur from '../services/professeur/apiSeancesProfesseur';
 import { apiPresencesProfesseur } from '../services/professeur/apiPresencesProfesseur';
 import './GestionPresenceProfesseur.css';
-import { fetchAuthenticatedBlob, normalizeStoredFileUrl, openBlobInNewTab } from '../utils/fileAccess';
+import { openBlobInNewTab } from '../utils/fileAccess';
 
 const TYPE_COLOR = { COURS: 'blue', TD: 'green', TP: 'purple' };
 
@@ -102,14 +102,12 @@ const getJustificationStatus = (ligne) => {
   return { key: 'empty', label: 'Aucun justificatif' };
 };
 
-const openJustificationFile = async (motifUrl) => {
-  if (!motifUrl) {
-    throw new Error('Aucun justificatif depose pour cette absence.');
+const openJustificationFile = async (seanceId, presenceId) => {
+  if (!seanceId || !presenceId) {
+    throw new Error('Impossible de localiser la présence ciblée.');
   }
 
-  const fullUrl = normalizeStoredFileUrl(motifUrl);
-  const response = await fetchAuthenticatedBlob(fullUrl);
-  const blob = await response.blob();
+  const { blob } = await apiPresencesProfesseur.telechargerJustificatif(seanceId, presenceId);
   openBlobInNewTab(blob);
 };
 
@@ -558,7 +556,7 @@ const GestionPresenceProfesseur = () => {
                                   type="button"
                                   className="btn-justification btn-view"
                                   onClick={() =>
-                                    openJustificationFile(ligne.motifUrl).catch((err) =>
+                                    openJustificationFile(selectedSeance?.id, ligne.idPresence).catch((err) =>
                                       setError(err.message || 'Impossible de consulter le justificatif.')
                                     )
                                   }

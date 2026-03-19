@@ -1,3 +1,4 @@
+import apiProfesseur from './apiProfesseur';
 import { apiAuth } from '../apiAuth';
 
 const BASE_URL = 'http://localhost:8080/api/professeur';
@@ -19,18 +20,6 @@ const lireErreur = async (response, fallback) => {
 const getHeaders = async (json = false) => {
     const headers = await apiAuth.getAuthHeadersWithRefresh();
     return json ? { ...headers, 'Content-Type': 'application/json' } : headers;
-};
-
-const telechargerBlob = async (response, nomParDefaut) => {
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = nomParDefaut || 'fichier';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    window.URL.revokeObjectURL(url);
 };
 
 const apiSeancesProfesseur = {
@@ -176,18 +165,22 @@ const apiSeancesProfesseur = {
         return this.supprimerFichierDeSeance(fichierId);
     },
 
-    async telechargerFichierDeSeance(fichierId) {
-        const response = await fetch(`${BASE_URL}/fichiers-seance/${fichierId}/telecharger`, {
+    async telechargerFichierBlob(fichierId) {
+        return apiProfesseur.fetchBlob(`/fichiers-seance/${fichierId}/telecharger`, {
             method: 'GET',
-            headers: await getHeaders(),
-            credentials: 'include',
         });
+    },
 
-        if (!response.ok) {
-            throw new Error(await lireErreur(response, 'Impossible de télécharger le fichier.'));
-        }
-
-        await telechargerBlob(response, `fichier_seance_${fichierId}`);
+    async telechargerFichierDeSeance(fichierId) {
+        const { blob, filename } = await this.telechargerFichierBlob(fichierId);
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename || `fichier_seance_${fichierId}`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
         return true;
     },
 

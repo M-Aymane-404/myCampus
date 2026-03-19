@@ -10,10 +10,12 @@ import com.mycampus.backend.entites.Presence;
 import com.mycampus.backend.entites.Professeur;
 import com.mycampus.backend.entites.Seance;
 import com.mycampus.backend.exceptions.ClasseException;
+import com.mycampus.backend.exceptions.PresenceException;
 import com.mycampus.backend.exceptions.SeancesProfesseurException;
 import com.mycampus.backend.exceptions.UtilisateursException;
 import com.mycampus.backend.enumerations.StatutJustificatif;
 import com.mycampus.backend.enumerations.StatusAbsence;
+import com.mycampus.backend.metier.etudiant.motifDePresence.GestionDeMotifDePresenceMetier;
 import com.mycampus.backend.repositorys.AffectationEnseignementRepository;
 import com.mycampus.backend.repositorys.ClasseRepository;
 import com.mycampus.backend.repositorys.EtudiantRepository;
@@ -21,6 +23,7 @@ import com.mycampus.backend.repositorys.PresenceRepository;
 import com.mycampus.backend.repositorys.ProfesseurRepository;
 import com.mycampus.backend.repositorys.SeanceRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -43,6 +46,7 @@ public class GestionPresencesProfesseurMetierImpl implements GestionPresencesPro
     private final ProfesseurRepository professeurRepository;
     private final ClasseRepository classeRepository;
     private final AffectationEnseignementRepository affectationEnseignementRepository;
+    private final GestionDeMotifDePresenceMetier gestionDeMotifDePresenceMetier;
 
     private Professeur requireProfesseurPpr(String professeurPpr) throws SeancesProfesseurException {
         if (!StringUtils.hasText(professeurPpr)) {
@@ -288,5 +292,21 @@ public class GestionPresencesProfesseurMetierImpl implements GestionPresencesPro
 
         Presence saved = presenceRepository.save(presence);
         return toLignePresenceSortieDTO(saved, saved.getEtudiant());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Resource telechargerJustificatif(String professeurPpr, Long seanceId, Long presenceId) throws SeancesProfesseurException {
+        Presence presence = requirePresencePourSeance(professeurPpr, seanceId, presenceId);
+        String motifNom = presence.getMotifNom();
+        if (!StringUtils.hasText(motifNom)) {
+            throw new SeancesProfesseurException("Aucun justificatif enregistré pour cette présence.");
+        }
+
+        try {
+            return gestionDeMotifDePresenceMetier.chargerMotifDePresence(motifNom);
+        } catch (PresenceException ex) {
+            throw new SeancesProfesseurException(ex.getMessage(), ex);
+        }
     }
 }

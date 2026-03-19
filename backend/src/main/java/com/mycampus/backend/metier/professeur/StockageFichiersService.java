@@ -88,10 +88,9 @@ public class StockageFichiersService {
             throw new NotesProfesseurException("Aucun fichier disponible.");
         }
         try {
-            Path candidate = Paths.get(chemin);
-            Path resolved = candidate.isAbsolute()
-                    ? candidate.normalize()
-                    : basePath.resolve(candidate).normalize();
+            String normalized = chemin.replace("\\", "/").replaceAll("^/+", "");
+            Path candidate = normalized.isEmpty() ? Paths.get("") : Paths.get(normalized);
+            Path resolved = basePath.resolve(candidate).normalize();
 
             ensureInsideBase(resolved);
             return resolved;
@@ -129,6 +128,6 @@ public class StockageFichiersService {
     private String relativize(Path cible) {
         Path relative = basePath.relativize(cible);
         String normalized = relative.toString().replace("\\", "/").replaceAll("^/+", "");
-        return "/" + normalized;
+        return normalized;
     }
 }

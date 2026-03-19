@@ -6,6 +6,7 @@ import com.mycampus.backend.dto.professeur.DonneeSortie.presences.FeuilleAppelPr
 import com.mycampus.backend.dto.professeur.DonneeSortie.presences.LignePresenceSortieDTO;
 import com.mycampus.backend.exceptions.SeancesProfesseurException;
 import com.mycampus.backend.exceptions.UtilisateursException;
+import org.springframework.core.io.Resource;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -37,6 +38,9 @@ public interface GestionPresencesProfesseurMetier {
             throws SeancesProfesseurException;
 
     LignePresenceSortieDTO refuserJustificatif(String professeurPpr, Long seanceId, Long presenceId)
+            throws SeancesProfesseurException;
+
+    Resource telechargerJustificatif(String professeurPpr, Long seanceId, Long presenceId)
             throws SeancesProfesseurException;
 
    // String TrouverProfesseurPprParemail(String email) throws UtilisateursException;

@@ -11,11 +11,18 @@ import com.mycampus.backend.metier.security.CustomUserDetails;
 import com.mycampus.backend.metier.security.GestionUtilisateurConnecteMetier;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 @RestController
 @RequestMapping("/api/professeur/seances")
@@ -71,5 +78,33 @@ public class PresencesProfesseurController {
     ) throws SeancesProfesseurException {
         String professeurPpr = UtilisateurMetier.trouverProfesseurPprParId(user.getId());
         return ResponseEntity.ok(presenceMetier.refuserJustificatif(professeurPpr, seanceId, presenceId));
+    }
+
+    @GetMapping("/{seanceId}/presences/{presenceId}/justificatif")
+    @PreAuthorize("hasAuthority('PROFESSEUR_PRESENCES_LIRE')")
+    public ResponseEntity<Resource> telechargerJustificatif(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long seanceId,
+            @PathVariable Long presenceId
+    ) throws SeancesProfesseurException {
+        String professeurPpr = UtilisateurMetier.trouverProfesseurPprParId(user.getId());
+        Resource resource = presenceMetier.telechargerJustificatif(professeurPpr, seanceId, presenceId);
+
+        String filename = StringUtils.hasText(resource.getFilename()) ? resource.getFilename() : "justificatif";
+        String contentType = MediaType.APPLICATION_OCTET_STREAM_VALUE;
+        try {
+            Path filePath = resource.getFile().toPath();
+            String probe = Files.probeContentType(filePath);
+            if (StringUtils.hasText(probe)) {
+                contentType = probe;
+            }
+        } catch (IOException ignored) {
+            // fallback to default
+        }
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .body(resource);
     }
 }

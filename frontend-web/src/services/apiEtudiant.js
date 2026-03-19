@@ -1,6 +1,23 @@
 import { authenticatedFetch } from '../utils/apiInterceptor';
+import { readFilenameFromResponse } from '../utils/fileAccess';
 
 const BASE_URL = 'http://localhost:8080/api/etudiant';
+
+const fetchDocumentBlob = async (url, fallbackName) => {
+    const response = await authenticatedFetch(url, {
+        method: 'GET',
+        credentials: 'include'
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text().catch(() => '');
+        throw new Error(errorText || 'Impossible de récupérer le document.');
+    }
+
+    const blob = await response.blob();
+    const filename = readFilenameFromResponse(response, fallbackName);
+    return { blob, filename };
+};
 
 export const apiEtudiant = {
     /**
@@ -177,5 +194,19 @@ export const apiEtudiant = {
             console.error('API Error (getNextSession):', error);
             throw error;
         }
+    },
+
+    async telechargerCopieExamen(examenId) {
+        if (!examenId) {
+            throw new Error('Identifiant d examen requis.');
+        }
+        return fetchDocumentBlob(`${BASE_URL}/examens/${examenId}/copie`, `copie_examen_${examenId}.pdf`);
+    },
+
+    async telechargerCorrigeExamen(examenId) {
+        if (!examenId) {
+            throw new Error('Identifiant d examen requis.');
+        }
+        return fetchDocumentBlob(`${BASE_URL}/examens/${examenId}/corrige`, `corrige_examen_${examenId}.pdf`);
     },
 };

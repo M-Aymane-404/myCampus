@@ -19,10 +19,9 @@ import {
 } from 'lucide-react';
 import './NotesEtudiant.css';
 import { apiGrades } from '../services/apiGrades';
+import { apiEtudiant } from '../services/apiEtudiant';
 import { parseExams } from '../utils/academicUtils';
 import {
-    fetchAuthenticatedBlob,
-    normalizeStoredFileUrl,
     openBlobInNewTab
 } from '../utils/fileAccess';
 
@@ -230,40 +229,25 @@ const NotesEtudiant = () => {
         return 'AJOURNE';
     };
 
-    const openPdf = async (path) => {
-        if (!path) return;
+const openExamDocument = async (examenId, type) => {
+    if (!examenId) return;
 
-        const previewTab = window.open('', '_blank', 'noopener,noreferrer');
-
-        try {
-            setDocumentError('');
-            const fullUrl = normalizeStoredFileUrl(path);
-            if (!fullUrl) {
-                throw new Error('Aucun document PDF n est disponible.');
-            }
-
-            const response = await fetchAuthenticatedBlob(fullUrl);
-            const contentType = response.headers.get('content-type') || '';
-            if (!contentType.toLowerCase().includes('pdf')) {
-                throw new Error('Le fichier PDF est introuvable ou invalide.');
-            }
-
-            const blob = await response.blob();
-            if (previewTab && !previewTab.closed) {
-                const objectUrl = window.URL.createObjectURL(blob);
-                previewTab.location.href = objectUrl;
-                window.setTimeout(() => window.URL.revokeObjectURL(objectUrl), 60000);
-            } else {
-                openBlobInNewTab(blob);
-            }
-        } catch (err) {
-            if (previewTab && !previewTab.closed) {
-                previewTab.close();
-            }
-            console.error('Erreur ouverture PDF:', err);
-            setDocumentError(err.message || 'Impossible d ouvrir le document.');
+    try {
+        setDocumentError('');
+        const fetchMethod =
+            type === 'corrige' ? apiEtudiant.telechargerCorrigeExamen : apiEtudiant.telechargerCopieExamen;
+        const { blob } = await fetchMethod(examenId);
+        const contentType = blob.type || '';
+        if (!contentType.toLowerCase().includes('pdf')) {
+            throw new Error('Le fichier PDF est introuvable ou invalide.');
         }
-    };
+
+        openBlobInNewTab(blob);
+    } catch (err) {
+        console.error('Erreur ouverture PDF:', err);
+        setDocumentError(err.message || 'Impossible d ouvrir le document.');
+    }
+};
 
     const handlePrint = () => {
         window.print();
@@ -320,13 +304,13 @@ const NotesEtudiant = () => {
                                     <div className="exam-compact-grade">{formatNote(exam.note)}</div>
                                     <div className="exam-compact-actions">
                                         {exam.copieEtudiantPath && (
-                                            <button type="button" className="btn-grade-copy" onClick={() => openPdf(exam.copieEtudiantPath)}>
+                                            <button type="button" className="btn-grade-copy" onClick={() => openExamDocument(exam.id, 'copie')}>
                                                 <Eye size={12} />
                                                 Copie etudiant
                                             </button>
                                         )}
                                         {exam.corrigePath && (
-                                            <button type="button" className="btn-grade-copy secondary" onClick={() => openPdf(exam.corrigePath)}>
+                                            <button type="button" className="btn-grade-copy secondary" onClick={() => openExamDocument(exam.id, 'corrige')}>
                                                 <FileText size={12} />
                                                 Correction
                                             </button>

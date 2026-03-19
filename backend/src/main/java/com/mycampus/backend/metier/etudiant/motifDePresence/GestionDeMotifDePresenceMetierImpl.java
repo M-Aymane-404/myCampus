@@ -12,12 +12,15 @@ import com.mycampus.backend.repositorys.EtudiantRepository;
 import com.mycampus.backend.repositorys.PresenceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -54,10 +57,10 @@ public class GestionDeMotifDePresenceMetierImpl implements GestionDeMotifDePrese
             throw new IllegalArgumentException("Fichier justificatif obligatoire");
         }
         if (!ALLOWED.contains(file.getContentType())) {
-            throw new IllegalArgumentException("Format non supportÃ© (png, jpg, webp, heic, pdf, doc, docx)");
+            throw new IllegalArgumentException("Format non supporté (png, jpg, webp, heic, pdf, doc, docx)");
         }
         if (file.getSize() > 5 * 1024 * 1024) {
-            throw new IllegalArgumentException("La Fichier ne doit pas dÃ©passer 5MB");
+            throw new IllegalArgumentException("La Fichier ne doit pas dépasser 5MB");
         }
 
         String ext = extensionFromContentType(file.getContentType());
@@ -103,7 +106,7 @@ public class GestionDeMotifDePresenceMetierImpl implements GestionDeMotifDePrese
          }
 
          if(idEtudiant == null){
-             throw new UtilisateursException("id d'Ã©tudiant est obligatoire");
+             throw new UtilisateursException("id d'étudiant est obligatoire");
          }
 
          if (dto.getTypeMotif().equals(TypeMotif.AUTRE)
@@ -114,7 +117,7 @@ public class GestionDeMotifDePresenceMetierImpl implements GestionDeMotifDePrese
 
 
          Presence p = presenceRepository.findByIdAndEtudiant_Id(presenceId,idEtudiant)
-                 .orElseThrow(() -> new PresenceException("Ã©tudiant ou presence introuvable"));
+                 .orElseThrow(() -> new PresenceException("étudiant ou presence introuvable"));
 
          LocalDateTime now = LocalDateTime.now();
 
@@ -128,7 +131,7 @@ public class GestionDeMotifDePresenceMetierImpl implements GestionDeMotifDePrese
          }
 
          if(p.getStatus().equals(StatusAbsence.PRESENT)){
-             throw new PresenceException("vous Ãªtre present ");
+             throw new PresenceException("vous être present ");
          }
 
          if(p.getStatutJustificatif() == StatutJustificatif.VALIDE){
@@ -199,6 +202,29 @@ public class GestionDeMotifDePresenceMetierImpl implements GestionDeMotifDePrese
         };
     }
 
+    @Override
+    public Resource chargerMotifDePresence(String motifNom) {
+        if (!StringUtils.hasText(motifNom)) {
+            throw new PresenceException("Nom du justificatif absent ou invalide.");
+        }
 
+        Path basePath = Paths.get(baseDir).toAbsolutePath().normalize();
+        Path motifDir = basePath.resolve("motifsPresence").normalize();
+        Path motifPath = motifDir.resolve(motifNom).normalize();
+
+        if (!motifPath.startsWith(motifDir)) {
+            throw new PresenceException("Chemin du justificatif invalide.");
+        }
+
+        if (!Files.exists(motifPath) || Files.isDirectory(motifPath)) {
+            throw new PresenceException("Justificatif introuvable.");
+        }
+
+        try {
+            return new UrlResource(motifPath.toUri());
+        } catch (MalformedURLException e) {
+            throw new PresenceException("Impossible de charger le justificatif.", e);
+        }
+    }
 }
 

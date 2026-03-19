@@ -19,7 +19,6 @@ import {
   Download,
   LoaderCircle,
 } from 'lucide-react';
-import { apiAuth } from '../services/apiAuth';
 import apiExamensProfesseur from '../services/professeur/apiExamensProfesseur';
 import apiNotesProfesseur from '../services/professeur/apiNotesProfesseur';
 import './GestionNotesProfesseur.css';
@@ -98,11 +97,18 @@ const getEtatClass = (etat) => {
 };
 
 const getCopyFileLabel = (ligne) =>
-    ligne?.nomCopie ||
-    ligne?.nomFichierCopie ||
-    ligne?.copieNom ||
-    ligne?.copieFilename ||
-    '';
+  ligne?.nomCopie ||
+  ligne?.nomFichierCopie ||
+  ligne?.copieNom ||
+  ligne?.copieFilename ||
+  '';
+
+const getFileNameFromPath = (path) => {
+  if (!path) return '';
+  const normalized = path.split('?')[0].split('#')[0].replace(/\\/g, '/');
+  const segments = normalized.split('/');
+  return segments[segments.length - 1] || '';
+};
 
 const getCorrigeFileLabel = (examen) =>
     examen?.nomCorrige ||
@@ -120,96 +126,10 @@ const getStoredPdfPath = (item, fallbackKeys = []) => {
   return '';
 };
 
-const getFileNameFromPath = (path) => {
-  if (!path) return '';
-  const normalized = path.split('?')[0].split('#')[0];
-  const segments = normalized.split('/');
-  return segments[segments.length - 1] || '';
-};
-
-const buildBackendFileUrl = (path) => {
-  if (!path) return '';
-  if (path.startsWith('http')) return path;
-  const normalized = path.replace(/\\/g, '/').trim();
-
-  if (normalized.startsWith('/api/') || normalized.startsWith('api/')) {
-    const cleanPath = normalized.startsWith('/') ? normalized : `/${normalized}`;
-    return `http://localhost:8080${cleanPath}`;
-  }
-
-  if (
-      normalized.startsWith('/uploads/') ||
-      normalized.startsWith('uploads/') ||
-      normalized.includes(':/') ||
-      normalized.startsWith('/') ||
-      normalized.includes('/corriges/') ||
-      normalized.includes('/copies/')
-  ) {
-    return `http://localhost:8080/api/public/fichiers/voir?chemin=${encodeURIComponent(path)}`;
-  }
-
-  return `http://localhost:8080/${normalized}`;
-};
-
 const openBlobInNewTab = (blob) => {
   const objectUrl = window.URL.createObjectURL(blob);
   window.open(objectUrl, '_blank', 'noopener,noreferrer');
   window.setTimeout(() => window.URL.revokeObjectURL(objectUrl), 60000);
-};
-
-const openStoredPdf = async (path) => {
-  const url = buildBackendFileUrl(path);
-  if (!url) {
-    throw new Error('Aucun fichier PDF n est depose.');
-  }
-
-  const headers = await apiAuth.getAuthHeadersWithRefresh();
-  const response = await fetch(url, {
-    headers,
-    credentials: 'include'
-  });
-  if (!response.ok) {
-    throw new Error('Aucun fichier PDF n est depose.');
-  }
-
-  const contentType = response.headers.get('content-type') || '';
-  if (!contentType.toLowerCase().includes('pdf')) {
-    throw new Error('Le fichier PDF est introuvable ou invalide.');
-  }
-
-  const blob = await response.blob();
-  openBlobInNewTab(blob);
-};
-
-const downloadStoredPdf = async (path, fallbackName) => {
-  const url = buildBackendFileUrl(path);
-  if (!url) {
-    throw new Error('Aucun fichier PDF n est depose.');
-  }
-
-  const headers = await apiAuth.getAuthHeadersWithRefresh();
-  const response = await fetch(url, {
-    headers,
-    credentials: 'include'
-  });
-  if (!response.ok) {
-    throw new Error('Aucun fichier PDF n est depose.');
-  }
-
-  const contentType = response.headers.get('content-type') || '';
-  if (!contentType.toLowerCase().includes('pdf')) {
-    throw new Error('Le fichier PDF est introuvable ou invalide.');
-  }
-
-  const blob = await response.blob();
-  const objectUrl = window.URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = objectUrl;
-  link.download = getFileNameFromPath(path) || fallbackName || 'document.pdf';
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  window.URL.revokeObjectURL(objectUrl);
 };
 
 const GestionNotesProfesseur = () => {
@@ -928,25 +848,22 @@ const GestionNotesProfesseur = () => {
                                           type="button"
                                           className="copy-file-indicator"
                                           title={ligneCopyLabel}
-                                          onClick={() =>
-                                            ligneCopyPath
-                                              ? openStoredPdf(ligneCopyPath).catch((err) =>
-                                                  setError(err.message || 'Aucun fichier PDF n est depose.')
-                                                )
-                                              : apiNotesProfesseur
-                                                  .obtenirCopieEtudiantBlob(
-                                                    selectedClasseCode,
-                                                    selectedExamenId,
-                                                    ligne.idEtudiant
-                                                  )
-                                                  .then(({ blob, filename }) => {
-                                                    setCopyFileNames((prev) => ({ ...prev, [ligne.idEtudiant]: filename }));
-                                                    openBlobInNewTab(blob);
-                                                  })
-                                                  .catch((err) =>
-                                                    setError(err.message || 'Erreur lors de la consultation du fichier.')
-                                                  )
-                                          }
+                                          onClick={() => {
+                                            setError('');
+                                            apiNotesProfesseur
+                                              .obtenirCopieEtudiantBlob(
+                                                selectedClasseCode,
+                                                selectedExamenId,
+                                                ligne.idEtudiant
+                                              )
+                                              .then(({ blob, filename }) => {
+                                                setCopyFileNames((prev) => ({ ...prev, [ligne.idEtudiant]: filename }));
+                                                openBlobInNewTab(blob);
+                                              })
+                                              .catch((err) =>
+                                                setError(err.message || 'Erreur lors de la consultation du fichier.')
+                                              );
+                                          }}
                                         >
                                           <FileText size={14} />
                                           <div className="copy-file-indicator-text">
@@ -996,24 +913,21 @@ const GestionNotesProfesseur = () => {
                                           className="copy-download-btn"
                                           type="button"
                                           disabled={!hasStoredCopy}
-                                          onClick={() =>
-                                              ligneCopyPath
-                                                  ? downloadStoredPdf(ligneCopyPath, ligneCopyLabel).catch((err) =>
-                                                      setError(err.message || 'Erreur lors du telechargement.')
+                                          onClick={() => {
+                                              setError('');
+                                              apiNotesProfesseur
+                                                  .telechargerCopieEtudiant(
+                                                      selectedClasseCode,
+                                                      selectedExamenId,
+                                                      ligne.idEtudiant
                                                   )
-                                                  : apiNotesProfesseur
-                                                      .telechargerCopieEtudiant(
-                                                          selectedClasseCode,
-                                                          selectedExamenId,
-                                                          ligne.idEtudiant
-                                                      )
-                                                      .then(({ filename }) =>
-                                                          setCopyFileNames((prev) => ({ ...prev, [ligne.idEtudiant]: filename }))
-                                                      )
-                                                      .catch((err) =>
-                                                          setError(err.message || 'Erreur lors du telechargement.')
-                                                      )
-                                          }
+                                                  .then(({ filename }) =>
+                                                      setCopyFileNames((prev) => ({ ...prev, [ligne.idEtudiant]: filename }))
+                                                  )
+                                                  .catch((err) =>
+                                                      setError(err.message || 'Erreur lors du telechargement.')
+                                                  );
+                                          }}
                                       >
                                         <Download size={14} />
                                         Telecharger
@@ -1085,22 +999,19 @@ const GestionNotesProfesseur = () => {
                           <button
                               type="button"
                               className="corrige-file-link"
-                              onClick={() =>
-                                  selectedCorrigePath
-                                      ? openStoredPdf(selectedCorrigePath).catch((err) =>
-                                          setError(err.message || 'Aucun fichier PDF n est depose.')
-                                        )
-                                      : apiExamensProfesseur
-                                          .obtenirCorrigeBlob(selectedExamenId)
-                                          .then(({ blob, filename }) => {
-                                            setCorrigeFileNames((prev) => ({ ...prev, [selectedExamenId]: filename }));
-                                            openBlobInNewTab(blob);
-                                          })
-                                          .catch((err) =>
-                                              setError(err.message || 'Erreur lors de la consultation du corrige.')
-                                          )
-                              }
-                          >
+                          onClick={() => {
+                              setError('');
+                              apiExamensProfesseur
+                                  .obtenirCorrigeBlob(selectedExamenId)
+                                  .then(({ blob, filename }) => {
+                                    setCorrigeFileNames((prev) => ({ ...prev, [selectedExamenId]: filename }));
+                                    openBlobInNewTab(blob);
+                                  })
+                                  .catch((err) =>
+                                      setError(err.message || 'Erreur lors de la consultation du corrige.')
+                                  );
+                          }}
+                      >
                             <FileText size={16} />
                             <div>
                               <span>PDF du corrige depose</span>
@@ -1141,20 +1052,17 @@ const GestionNotesProfesseur = () => {
                           className="btn-draft corrige-btn"
                           type="button"
                           disabled={!selectedExamHasCorrige}
-                          onClick={() =>
-                              selectedCorrigePath
-                                  ? downloadStoredPdf(selectedCorrigePath, selectedCorrigeLabel).catch((err) =>
-                                      setError(err.message || 'Erreur lors du telechargement du corrige.')
+                          onClick={() => {
+                              setError('');
+                              apiExamensProfesseur
+                                  .telechargerCorrige(selectedExamenId)
+                                  .then(({ filename }) =>
+                                      setCorrigeFileNames((prev) => ({ ...prev, [selectedExamenId]: filename }))
                                   )
-                                  : apiExamensProfesseur
-                                      .telechargerCorrige(selectedExamenId)
-                                      .then(({ filename }) =>
-                                          setCorrigeFileNames((prev) => ({ ...prev, [selectedExamenId]: filename }))
-                                      )
-                                      .catch((err) =>
-                                          setError(err.message || 'Erreur lors du telechargement du corrige.')
-                                      )
-                          }
+                                  .catch((err) =>
+                                      setError(err.message || 'Erreur lors du telechargement du corrige.')
+                                  );
+                          }}
                       >
                         <Download size={18} />
                         Telecharger corrige

@@ -11,6 +11,7 @@ import com.mycampus.backend.entites.Utilisateur;
 import com.mycampus.backend.enumerations.Semestre;
 import com.mycampus.backend.enumerations.StatusAbsence;
 import com.mycampus.backend.enumerations.TypeSeance;
+import com.mycampus.backend.exceptions.EtudiantException;
 import com.mycampus.backend.exceptions.SeancesProfesseurException;
 import com.mycampus.backend.metier.administrateur.utilisateurs.GestionUtilisateursMetier;
 import com.mycampus.backend.metier.etudiant.StructureEtudiant.GestionStructureEtudiantMetier;
@@ -34,10 +35,13 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.net.MalformedURLException;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.Files;
 import java.time.LocalDate;
 import java.util.List;
+import org.springframework.util.StringUtils;
 
 @RestController
 @RequestMapping("/api/etudiant")
@@ -218,4 +222,43 @@ public class StructureAcademiqueEtudiantController {
             throw new SeancesProfesseurException("Chemin du fichier invalide.");
         }
         }
+
+    @GetMapping("/examens/{examenId}/copie")
+    @PreAuthorize("hasAuthority('ETUDIANT_RELEVE_LIRE')")
+    public ResponseEntity<Resource> telechargerCopieExamen(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long examenId
+    ) throws EtudiantException {
+        Resource resource = metier.telechargerCopieExamen(user.getId(), examenId);
+        return buildResourceResponse(resource, "copie_examen_" + examenId + ".pdf");
+    }
+
+    @GetMapping("/examens/{examenId}/corrige")
+    @PreAuthorize("hasAuthority('ETUDIANT_RELEVE_LIRE')")
+    public ResponseEntity<Resource> telechargerCorrigeExamen(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long examenId
+    ) throws EtudiantException {
+        Resource resource = metier.telechargerCorrigeExamen(user.getId(), examenId);
+        return buildResourceResponse(resource, "corrige_examen_" + examenId + ".pdf");
+    }
+
+    private ResponseEntity<Resource> buildResourceResponse(Resource resource, String fallbackName) {
+        String filename = StringUtils.hasText(resource.getFilename()) ? resource.getFilename() : fallbackName;
+        String contentType = MediaType.APPLICATION_OCTET_STREAM_VALUE;
+        try {
+            Path actualPath = resource.getFile().toPath();
+            String probed = Files.probeContentType(actualPath);
+            if (StringUtils.hasText(probed)) {
+                contentType = probed;
+            }
+        } catch (IOException ignored) {
+            // fallback to default
+        }
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .body(resource);
+    }
 }
