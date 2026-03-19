@@ -168,15 +168,20 @@ class MyApp extends StatelessWidget {
               ),
           update: (ctx, repo, ctrl) => ctrl ?? ControleurProfilEtudiant(repo),
         ),
-        ChangeNotifierProxyProvider<
+        ChangeNotifierProxyProvider2<
           ProfesseurRepository,
+          RessourceSeanceProfesseurRepository,
           ControleurEspaceProfesseur
         >(
           create:
               (ctx) =>
-                  ControleurEspaceProfesseur(ctx.read<ProfesseurRepository>()),
+                  ControleurEspaceProfesseur(
+                    ctx.read<ProfesseurRepository>(),
+                    ctx.read<RessourceSeanceProfesseurRepository>(),
+                  ),
           update:
-              (ctx, repo, ctrl) => ctrl ?? ControleurEspaceProfesseur(repo),
+              (ctx, repo, resRepo, ctrl) =>
+                  ctrl ?? ControleurEspaceProfesseur(repo, resRepo),
         ),
         ChangeNotifierProxyProvider2<
           ProfesseurRepository,

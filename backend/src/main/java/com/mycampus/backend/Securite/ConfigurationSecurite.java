@@ -45,13 +45,10 @@
    @RequiredArgsConstructor
    public class ConfigurationSecurite {
 
-       private final  UserDetailsServiceImpl userDetailsServiceImpl;
-
+       private final UserDetailsServiceImpl userDetailsServiceImpl;
 
        @Value("${jwt.secretKey}")
        private String secretKey;
-
-
 
        @Bean
        public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -62,90 +59,73 @@
            var customConverter = new JwtToCustomPrincipalConverter(grantedAuthoritiesConverter);
 
            return http
-                   .headers(headers -> headers
-                           .frameOptions(frame -> frame.deny())
-                   )
-                   .headers(headers -> headers
-                           .frameOptions(frame -> frame.deny())
-                   )
-                   .headers(headers -> headers
-                           .contentTypeOptions(withDefaults())
-                   )
-//                   .headers(headers -> headers
-//                           .contentSecurityPolicy("default-src 'self'; img-src 'self' data:; script-src 'self'")
-//                   )
-                   .headers(header -> header.frameOptions(frame -> frame.disable()))
-                    .exceptionHandling(ex -> ex
+                   .exceptionHandling(ex -> ex
                            .authenticationEntryPoint(new JsonAuthenticationEntryPoint())
                            .accessDeniedHandler(new JsonAccessDeniedHandler())
                    )
                    .headers(headers -> headers
-                           .cacheControl(cache -> {})
+                           .frameOptions(frame -> frame.deny())
+                           .contentTypeOptions(withDefaults())
+                           .referrerPolicy(referrer -> referrer.policy(org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                           .cacheControl(withDefaults())
+                           // à activer en prod HTTPS
+                           //.httpStrictTransportSecurity(hsts -> hsts
+                           //        .includeSubDomains(true)
+                           //        .maxAgeInSeconds(31536000))
+                           .contentSecurityPolicy(csp -> csp
+                                   .policyDirectives("default-src 'self'; img-src 'self' data:; object-src 'none'; frame-ancestors 'none';"))
                    )
-                 //  .httpBasic(httpBasic -> httpBasic.disable())
-                 //  .formLogin(form -> form.disable())
-                  // .logout(logout -> logout.disable())
-
-
-
-
-
                    .csrf(csrf -> csrf.disable())
-                   .cors(withDefaults())
-                   .httpBasic(withDefaults())
-                    .authorizeHttpRequests(auth -> auth
-                         .requestMatchers("/auth/connecter", "/auth/rafraichir-jeton", "/auth/deconnexion").permitAll()
-                           .requestMatchers("/files/**").permitAll()
+                   .cors(Customizer.withDefaults())
+                   .httpBasic(httpBasic -> httpBasic.disable())
+                   .authorizeHttpRequests(auth -> auth
+                           .requestMatchers("/auth/connecter", "/auth/rafraichir-jeton", "/auth/deconnexion").permitAll()
                            .requestMatchers("/auth/**").permitAll()
-                           .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").authenticated()
                            .requestMatchers("/ws/**", "/ws-sockjs/**").permitAll()
+                           .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").authenticated()
                            .anyRequest().authenticated()
                    )
                    .oauth2ResourceServer(oa -> oa.jwt(jwt -> jwt.jwtAuthenticationConverter(customConverter)))
                    .userDetailsService(userDetailsServiceImpl)
                    .build();
        }
+
        @Bean
        public JwtEncoder jwtEncoder() {
-
            return new NimbusJwtEncoder(new ImmutableSecret<>(secretKey.getBytes()));
        }
 
        @Bean
        public JwtDecoder jwtDecoder() {
-
            SecretKeySpec secretKeySpec = new SecretKeySpec(secretKey.getBytes(), "HmacSHA512");
-           return NimbusJwtDecoder.withSecretKey(secretKeySpec).macAlgorithm(MacAlgorithm.HS512).build();
+           return NimbusJwtDecoder.withSecretKey(secretKeySpec)
+                   .macAlgorithm(MacAlgorithm.HS512)
+                   .build();
        }
 
        @Bean
-       public AuthenticationManager authenticationManager(PasswordEncoder passwordEncoder, UserDetailsServiceImpl userDetailsServiceImpl) {
+       public AuthenticationManager authenticationManager(
+               PasswordEncoder passwordEncoder,
+               UserDetailsServiceImpl userDetailsServiceImpl
+       ) {
            DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider(userDetailsServiceImpl);
            daoAuthenticationProvider.setPasswordEncoder(passwordEncoder);
            return new ProviderManager(daoAuthenticationProvider);
-
        }
 
        @Bean
        public CorsConfigurationSource corsConfigurationSource() {
            CorsConfiguration config = new CorsConfiguration();
            config.setAllowCredentials(true);
-
-          /* config.setAllowedOrigins(List.of(
+           config.setAllowedOrigins(List.of(
                    "http://localhost:5173",
-                   "http://127.0.0.1:5500",
-                   "http://localhost:5500"
-           ));*/
-
-           config.setAllowedOriginPatterns(List.of("*"));
-           config.addAllowedHeader("*");
-           config.addAllowedMethod("*");
+                   "http://127.0.0.1:5173"
+           ));
+           config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+           config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
 
            UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
            source.registerCorsConfiguration("/**", config);
            return source;
        }
-
-
    }
-    

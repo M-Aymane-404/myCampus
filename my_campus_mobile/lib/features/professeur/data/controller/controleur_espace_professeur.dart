@@ -6,11 +6,13 @@ import 'package:flutter/material.dart';
 import '../dto/professeur_mobile_dto.dart';
 import '../dto/professeur_presence_dto.dart';
 import '../repository/professeur_repository.dart';
+import '../repository/ressource_seance_professeur_repository.dart';
 
 class ControleurEspaceProfesseur extends ChangeNotifier {
-  ControleurEspaceProfesseur(this._repository);
+  ControleurEspaceProfesseur(this._repository, this._ressourceRepository);
 
   final ProfesseurRepository _repository;
+  final RessourceSeanceProfesseurRepository _ressourceRepository;
 
   bool _chargement = false;
   String? _erreur;
@@ -24,6 +26,9 @@ class ControleurEspaceProfesseur extends ChangeNotifier {
   String? _codeMatiereSelectionnee;
   List<SeanceProfesseurMobileDTO> _seancesSelectionnees = const [];
   bool _chargementSeancesSelection = false;
+  int _copiesACorriger = 0;
+  int _coursSansSupport = 0;
+  bool _chargementIndicateursDashboard = false;
 
   String? _enseignementPresenceSelectionne;
   List<SeanceRechercheProfesseurDTO> _seancesPresence = const [];
@@ -47,6 +52,9 @@ class ControleurEspaceProfesseur extends ChangeNotifier {
   List<SeanceProfesseurMobileDTO> get seancesSelectionnees =>
       _seancesSelectionnees.isEmpty ? _emploi : _seancesSelectionnees;
   bool get chargementSeancesSelection => _chargementSeancesSelection;
+  int get copiesACorriger => _copiesACorriger;
+  int get coursSansSupport => _coursSansSupport;
+  bool get chargementIndicateursDashboard => _chargementIndicateursDashboard;
 
   String? get enseignementPresenceSelectionne =>
       _enseignementPresenceSelectionne;
@@ -118,6 +126,11 @@ class ControleurEspaceProfesseur extends ChangeNotifier {
           _enseignements.first,
         );
       }
+
+      _copiesACorriger =
+          _examens.where((item) => !item.corrigeDisponible).length;
+      _coursSansSupport = 0;
+      _chargerIndicateursDashboard();
     } catch (e) {
       _erreur = _extraireMessageErreur(e);
     } finally {
@@ -185,6 +198,8 @@ class ControleurEspaceProfesseur extends ChangeNotifier {
 
     try {
       _examens = await _repository.chargerExamens(codeClasse, codeMatiere);
+      _copiesACorriger =
+          _examens.where((item) => !item.corrigeDisponible).length;
     } catch (e) {
       _erreur = _extraireMessageErreur(e);
     } finally {
@@ -428,6 +443,135 @@ class ControleurEspaceProfesseur extends ChangeNotifier {
     } finally {
       _chargement = false;
       notifyListeners();
+    }
+  }
+
+  Future<void> _chargerIndicateursDashboard() async {
+    _chargementIndicateursDashboard = true;
+    notifyListeners();
+
+    try {
+      _copiesACorriger = await _compterCopiesACorriger();
+      _coursSansSupport = await _compterCoursSansSupportAujourdHui();
+    } catch (_) {
+      // Conserver les valeurs de secours deja disponibles si une requete echoue.
+    } finally {
+      _chargementIndicateursDashboard = false;
+      notifyListeners();
+    }
+  }
+
+  Future<int> _compterCopiesACorriger() async {
+    final requetes = <Future<List<ExamenProfesseurMobileDTO>>>[];
+    for (final classe in _classesExamens) {
+      for (final matiere in classe.matieres) {
+        requetes.add(
+          _repository.chargerExamens(classe.codeClasse, matiere.codeMatiere),
+        );
+      }
+    }
+
+    if (requetes.isEmpty) {
+      return _examens.where((item) => !item.corrigeDisponible).length;
+    }
+
+    final lots = await Future.wait(requetes);
+    return lots
+        .expand((items) => items)
+        .where((item) => !item.corrigeDisponible)
+        .length;
+  }
+
+  Future<int> _compterCoursSansSupportAujourdHui() async {
+    final seancesDuJour =
+        _emploi.where((item) => _jourCorrespond(DateTime.now(), item.jour)).where(
+          _estUnCours,
+        );
+
+    if (seancesDuJour.isEmpty) return 0;
+
+    var total = 0;
+    for (final seance in seancesDuJour) {
+      if (seance.supportDisponible == true) {
+        continue;
+      }
+      if ((seance.ressourcesCount ?? 0) > 0) {
+        continue;
+      }
+      if (seance.supportDisponible == false || seance.id == null) {
+        total += 1;
+        continue;
+      }
+
+      final ressources = await _ressourceRepository.recupererRessources(
+        seance.id!,
+      );
+      if (ressources.isEmpty) {
+        total += 1;
+      }
+    }
+
+    return total;
+  }
+
+  bool _estUnCours(SeanceProfesseurMobileDTO seance) =>
+      seance.typeSeance.trim().toUpperCase().contains('COURS');
+
+  bool _jourCorrespond(DateTime now, String jour) {
+    final normalise = _normaliserJour(jour);
+    if (normalise.isEmpty) return false;
+    return switch (now.weekday) {
+      DateTime.monday => normalise == 'LUNDI',
+      DateTime.tuesday => normalise == 'MARDI',
+      DateTime.wednesday => normalise == 'MERCREDI',
+      DateTime.thursday => normalise == 'JEUDI',
+      DateTime.friday => normalise == 'VENDREDI',
+      DateTime.saturday => normalise == 'SAMEDI',
+      DateTime.sunday => normalise == 'DIMANCHE',
+      _ => false,
+    };
+  }
+
+  String _normaliserJour(String value) {
+    final upper = value.trim().toUpperCase();
+    switch (upper) {
+      case 'MONDAY':
+      case 'MON':
+      case 'LUN':
+      case 'LUNDI':
+        return 'LUNDI';
+      case 'TUESDAY':
+      case 'TUE':
+      case 'MAR':
+      case 'MARDI':
+        return 'MARDI';
+      case 'WEDNESDAY':
+      case 'WED':
+      case 'MER':
+      case 'MERCREDI':
+        return 'MERCREDI';
+      case 'THURSDAY':
+      case 'THU':
+      case 'JEU':
+      case 'JEUDI':
+        return 'JEUDI';
+      case 'FRIDAY':
+      case 'FRI':
+      case 'VEN':
+      case 'VENDREDI':
+        return 'VENDREDI';
+      case 'SATURDAY':
+      case 'SAT':
+      case 'SAM':
+      case 'SAMEDI':
+        return 'SAMEDI';
+      case 'SUNDAY':
+      case 'SUN':
+      case 'DIM':
+      case 'DIMANCHE':
+        return 'DIMANCHE';
+      default:
+        return upper;
     }
   }
 

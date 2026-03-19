@@ -111,6 +111,8 @@ class SeanceProfesseurMobileDTO {
     required this.codeClasse,
     required this.classeNom,
     required this.codeMatiere,
+    required this.supportDisponible,
+    required this.ressourcesCount,
   });
 
   final int? id;
@@ -123,6 +125,8 @@ class SeanceProfesseurMobileDTO {
   final String codeClasse;
   final String classeNom;
   final String codeMatiere;
+  final bool? supportDisponible;
+  final int? ressourcesCount;
 
   factory SeanceProfesseurMobileDTO.fromJson(Map<String, dynamic> json) {
     return SeanceProfesseurMobileDTO(
@@ -156,6 +160,22 @@ class SeanceProfesseurMobileDTO {
       classeNom:
           (json['classeNom'] ?? json['nomClasse'] ?? json['codeClasse'] ?? '')
               .toString(),
+      supportDisponible:
+          json['supportDisponible'] is bool
+              ? json['supportDisponible'] as bool
+              : json['hasSupport'] is bool
+              ? json['hasSupport'] as bool
+              : json['supportExists'] is bool
+              ? json['supportExists'] as bool
+              : null,
+      ressourcesCount:
+          json['ressourcesCount'] is num
+              ? (json['ressourcesCount'] as num).toInt()
+              : json['resourcesCount'] is num
+              ? (json['resourcesCount'] as num).toInt()
+              : json['nombreRessources'] is num
+              ? (json['nombreRessources'] as num).toInt()
+              : null,
     );
   }
 }

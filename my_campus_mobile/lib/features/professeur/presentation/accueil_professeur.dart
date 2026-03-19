@@ -37,15 +37,20 @@ class _AccueilProfesseurState extends State<AccueilProfesseur> {
   Widget build(BuildContext context) {
     final ctrl = context.watch<ControleurEspaceProfesseur>();
     final profil = ctrl.profil;
-    final distinctMatieres =
-        ctrl.enseignements.map((item) => item.codeMatiere).toSet().length;
-    final distinctClasses =
-        ctrl.enseignements.map((item) => item.codeClasse).toSet().length;
+    final emploi = ctrl.emploi;
+    final enseignements = ctrl.enseignements;
+    final maintenant = _DashboardSchedule.findCurrent(emploi);
+    final prochaine = ctrl.prochaineSeance ?? _DashboardSchedule.findNext(emploi);
+    final seancesDuJour = _DashboardSchedule.todaySessions(emploi);
+    final classesDistinctes =
+        enseignements.map((item) => item.codeClasse).toSet().length;
+    final matieresDistinctes =
+        enseignements.map((item) => item.codeMatiere).toSet().length;
 
     if (ctrl.chargement &&
         profil == null &&
-        ctrl.enseignements.isEmpty &&
-        ctrl.emploi.isEmpty) {
+        enseignements.isEmpty &&
+        emploi.isEmpty) {
       return const Scaffold(
         backgroundColor: AccueilProfesseur.bg,
         body: Center(child: CircularProgressIndicator()),
@@ -54,8 +59,8 @@ class _AccueilProfesseurState extends State<AccueilProfesseur> {
 
     if (ctrl.erreur != null &&
         profil == null &&
-        ctrl.enseignements.isEmpty &&
-        ctrl.emploi.isEmpty) {
+        enseignements.isEmpty &&
+        emploi.isEmpty) {
       return Scaffold(
         backgroundColor: AccueilProfesseur.bg,
         body: SafeArea(
@@ -117,11 +122,11 @@ class _AccueilProfesseurState extends State<AccueilProfesseur> {
                     _TitreSection(
                       titre:
                           profil == null
-                              ? 'Espace Professeur'
+                              ? 'Dashboard Professeur'
                               : 'Bonjour ${profil.prenom.isEmpty ? 'Professeur' : profil.prenom}',
                       sousTitre:
                           profil == null
-                              ? 'Vue generale de vos modules et activites'
+                              ? 'Vue de votre journee pedagogique'
                               : _buildSousTitreProfil(profil),
                     ),
                     const SizedBox(height: 14),
@@ -129,23 +134,89 @@ class _AccueilProfesseurState extends State<AccueilProfesseur> {
                       _InfoBanner(message: ctrl.erreur!),
                       const SizedBox(height: 14),
                     ],
-                    _ResumeProfesseur(
-                      modulesCount: distinctMatieres,
-                      classesCount: distinctClasses,
-                      seancesCount: ctrl.emploi.length,
+                    _NowCard(
+                      seance: maintenant,
+                      totalSeancesDuJour: seancesDuJour.length,
                     ),
                     const SizedBox(height: 14),
-                    _BlocActionsProfesseur(
-                      enseignements: ctrl.enseignements,
-                      examensCount: ctrl.examens.length,
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: _SummaryCard(
+                            titre: 'Prochaine seance',
+                            accent: const Color(0xFFEEF2FF),
+                            iconColor: AccueilProfesseur.accent,
+                            icon: Icons.schedule_rounded,
+                            primary:
+                                prochaine?.matiereNom.isNotEmpty == true
+                                    ? prochaine!.matiereNom
+                                    : 'Aucune seance',
+                            secondary:
+                                prochaine == null
+                                    ? 'Rien de planifie pour le moment'
+                                    : _buildSeanceMeta(prochaine),
+                            chip:
+                                prochaine == null
+                                    ? 'A venir'
+                                    : _buildTimeRange(prochaine),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _TrackingCard(
+                            classesCount: classesDistinctes,
+                            matieresCount: matieresDistinctes,
+                            seancesDuJour: seancesDuJour.length,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+                    const _SectionHeader(
+                      titre: 'Priorites du jour',
+                      sousTitre:
+                          'Les actions qui demandent votre attention maintenant',
+                    ),
+                    const SizedBox(height: 12),
+                    _PrioritiesOverview(
+                      copiesACorriger: ctrl.copiesACorriger,
+                      coursSansSupport: ctrl.coursSansSupport,
+                      seancesDuJour: seancesDuJour.length,
+                      chargement: ctrl.chargementIndicateursDashboard,
                     ),
                     const SizedBox(height: 14),
-                    _BlocActiviteProfesseur(
-                      prochaineSeance: ctrl.prochaineSeance,
-                      emploi: ctrl.emploi,
+                    _PriorityMetricCard(
+                      titre: 'Copies a corriger',
+                      valeur:
+                          ctrl.chargementIndicateursDashboard
+                              ? '...'
+                              : ctrl.copiesACorriger.toString().padLeft(2, '0'),
+                      aide:
+                          ctrl.copiesACorriger == 0
+                              ? 'Aucune copie en attente de correction.'
+                              : '${ctrl.copiesACorriger} evaluation(s) sans corrige disponible.',
+                      icon: Icons.fact_check_rounded,
+                      iconBg: const Color(0xFFFDECEC),
+                      iconColor: const Color(0xFFDC2626),
+                    ),
+                    const SizedBox(height: 12),
+                    _PriorityMetricCard(
+                      titre: 'Cours sans support',
+                      valeur:
+                          ctrl.chargementIndicateursDashboard
+                              ? '...'
+                              : ctrl.coursSansSupport.toString().padLeft(2, '0'),
+                      aide:
+                          ctrl.coursSansSupport == 0
+                              ? 'Tous les cours du jour ont deja un support.'
+                              : '${ctrl.coursSansSupport} cours du jour restent sans support partage.',
+                      icon: Icons.menu_book_outlined,
+                      iconBg: const Color(0xFFFFF5E8),
+                      iconColor: const Color(0xFFEA580C),
                     ),
                     const SizedBox(height: 14),
-                    _BlocPlanningProfesseur(emploi: ctrl.emploi),
+                    _TodaySessionsCard(seances: seancesDuJour),
                   ]),
                 ),
               ),
@@ -311,171 +382,118 @@ class _TitreSection extends StatelessWidget {
   }
 }
 
-class _ResumeProfesseur extends StatelessWidget {
-  const _ResumeProfesseur({
-    required this.modulesCount,
-    required this.classesCount,
-    required this.seancesCount,
-  });
+class _NowCard extends StatelessWidget {
+  const _NowCard({required this.seance, required this.totalSeancesDuJour});
 
-  final int modulesCount;
-  final int classesCount;
-  final int seancesCount;
+  final SeanceProfesseurMobileDTO? seance;
+  final int totalSeancesDuJour;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: _MiniStatCard(
-                icon: Icons.menu_book_rounded,
-                label: 'Matieres',
-                value: modulesCount.toString().padLeft(2, '0'),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _MiniStatCard(
-                icon: Icons.groups_rounded,
-                label: 'Classes',
-                value: classesCount.toString().padLeft(2, '0'),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        _WideStatCard(
-          icon: Icons.event_available_rounded,
-          label: 'Seances dans le planning',
-          value: seancesCount.toString().padLeft(2, '0'),
-        ),
-      ],
-    );
-  }
-}
+    final titre =
+        seance == null
+            ? 'Aucune seance en cours'
+            : (seance!.matiereNom.isEmpty ? 'Seance en cours' : seance!.matiereNom);
+    final details =
+        seance == null
+            ? 'Vous n avez pas de cours en ce moment.'
+            : _buildSeanceMeta(seance!);
 
-class _MiniStatCard extends StatelessWidget {
-  const _MiniStatCard({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  final IconData icon;
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF5B5BEA), Color(0xFF7777F5)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
+            color: AccueilProfesseur.accent.withOpacity(0.28),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: AccueilProfesseur.accent.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(icon, color: AccueilProfesseur.accent),
-          ),
-          const SizedBox(height: 18),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w900,
-              color: Color(0xFF101828),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF667085),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _WideStatCard extends StatelessWidget {
-  const _WideStatCard({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  final IconData icon;
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: const Color(0xFFEEF2FF),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(icon, color: AccueilProfesseur.accent),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF667085),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.16),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(color: Colors.white.withOpacity(0.18)),
+                ),
+                child: const Text(
+                  'Maintenant',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFF101828),
+              ),
+              const Spacer(),
+              Text(
+                '$totalSeancesDuJour seance(s) aujourd hui',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white70,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            titre,
+            style: const TextStyle(
+              fontSize: 26,
+              height: 1.2,
+              fontWeight: FontWeight.w900,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            details,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: Colors.white.withOpacity(0.12)),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.auto_awesome_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    seance == null
+                        ? 'Le prochain bloc utile apparaitra ici des qu un cours commencera.'
+                        : 'Salle ${seance!.salle.isEmpty ? '-' : seance!.salle} - ${_buildTimeRange(seance!)}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ],
@@ -487,110 +505,364 @@ class _WideStatCard extends StatelessWidget {
   }
 }
 
-class _BlocActionsProfesseur extends StatelessWidget {
-  const _BlocActionsProfesseur({
-    required this.enseignements,
-    required this.examensCount,
+class _SummaryCard extends StatelessWidget {
+  const _SummaryCard({
+    required this.titre,
+    required this.icon,
+    required this.primary,
+    required this.secondary,
+    required this.chip,
+    required this.accent,
+    required this.iconColor,
   });
 
-  final List<EnseignementProfesseurMobileDTO> enseignements;
-  final int examensCount;
+  final String titre;
+  final IconData icon;
+  final String primary;
+  final String secondary;
+  final String chip;
+  final Color accent;
+  final Color iconColor;
 
   @override
   Widget build(BuildContext context) {
-    final apercu = enseignements.take(3).toList();
-
     return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
+      padding: const EdgeInsets.all(16),
+      decoration: _panelDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Affectations',
-            style: TextStyle(
+          Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: accent,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(icon, color: iconColor),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3F5FA),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  chip,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF667085),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            titre,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF667085),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            primary,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
               fontSize: 18,
+              height: 1.2,
               fontWeight: FontWeight.w900,
               color: Color(0xFF101828),
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           Text(
-            examensCount == 0
-                ? 'Aucun examen charge pour la selection actuelle'
-                : '$examensCount examens disponibles pour votre selection',
+            secondary,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
               color: Color(0xFF667085),
             ),
           ),
-          const SizedBox(height: 12),
-          if (apercu.isEmpty)
-            const _InlineEmpty(
-              message: 'Aucun enseignement assigne pour le moment.',
-            )
-          else
-            ...apercu.map(
-              (item) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _ActionTile(
-                  icon: Icons.library_books_rounded,
-                  titre: item.matiereNom,
-                  sousTitre: '${item.classeNom} - ${item.codeClasse}',
-                  trailing: item.codeMatiere,
-                ),
-              ),
-            ),
         ],
       ),
     );
   }
 }
 
-class _ActionTile extends StatelessWidget {
-  const _ActionTile({
-    required this.icon,
-    required this.titre,
-    required this.sousTitre,
-    required this.trailing,
+class _TrackingCard extends StatelessWidget {
+  const _TrackingCard({
+    required this.classesCount,
+    required this.matieresCount,
+    required this.seancesDuJour,
   });
 
-  final IconData icon;
-  final String titre;
-  final String sousTitre;
-  final String trailing;
+  final int classesCount;
+  final int matieresCount;
+  final int seancesDuJour;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF7F8FC),
-        borderRadius: BorderRadius.circular(20),
+      padding: const EdgeInsets.all(16),
+      decoration: _panelDecoration(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEEF8FF),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.insights_rounded,
+                  color: Color(0xFF0284C7),
+                ),
+              ),
+              const Spacer(),
+              const Text(
+                'Suivi',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF667085),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          _TrackingLine(
+            label: 'Classes',
+            value: classesCount.toString().padLeft(2, '0'),
+          ),
+          const SizedBox(height: 8),
+          _TrackingLine(
+            label: 'Matieres',
+            value: matieresCount.toString().padLeft(2, '0'),
+          ),
+          const SizedBox(height: 8),
+          _TrackingLine(
+            label: 'Aujourd hui',
+            value: seancesDuJour.toString().padLeft(2, '0'),
+          ),
+        ],
       ),
+    );
+  }
+}
+
+class _TrackingLine extends StatelessWidget {
+  const _TrackingLine({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF667085),
+            ),
+          ),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF101828),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.titre, required this.sousTitre});
+
+  final String titre;
+  final String sousTitre;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          titre,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF101828),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          sousTitre,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF667085),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PrioritiesOverview extends StatelessWidget {
+  const _PrioritiesOverview({
+    required this.copiesACorriger,
+    required this.coursSansSupport,
+    required this.seancesDuJour,
+    required this.chargement,
+  });
+
+  final int copiesACorriger;
+  final int coursSansSupport;
+  final int seancesDuJour;
+  final bool chargement;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: _panelDecoration(),
+      child: Row(
+        children: [
+          Expanded(
+            child: _PriorityPill(
+              label: 'Copies',
+              value: chargement ? '...' : copiesACorriger.toString(),
+              color: const Color(0xFFDC2626),
+              background: const Color(0xFFFDECEC),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _PriorityPill(
+              label: 'Sans support',
+              value: chargement ? '...' : coursSansSupport.toString(),
+              color: const Color(0xFFEA580C),
+              background: const Color(0xFFFFF2E6),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _PriorityPill(
+              label: 'Journee',
+              value: seancesDuJour.toString(),
+              color: const Color(0xFF5B5BEA),
+              background: const Color(0xFFEEF2FF),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PriorityPill extends StatelessWidget {
+  const _PriorityPill({
+    required this.label,
+    required this.value,
+    required this.color,
+    required this.background,
+  });
+
+  final String label;
+  final String value;
+  final Color color;
+  final Color background;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF667085),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PriorityMetricCard extends StatelessWidget {
+  const _PriorityMetricCard({
+    required this.titre,
+    required this.valeur,
+    required this.aide,
+    required this.icon,
+    required this.iconBg,
+    required this.iconColor,
+  });
+
+  final String titre;
+  final String valeur;
+  final String aide;
+  final IconData icon;
+  final Color iconBg;
+  final Color iconColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: _panelDecoration(),
       child: Row(
         children: [
           Container(
-            width: 44,
-            height: 44,
+            width: 54,
+            height: 54,
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
+              color: iconBg,
+              borderRadius: BorderRadius.circular(18),
             ),
-            child: Icon(icon, color: AccueilProfesseur.accent),
+            child: Icon(icon, color: iconColor),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -598,14 +870,14 @@ class _ActionTile extends StatelessWidget {
                 Text(
                   titre,
                   style: const TextStyle(
-                    fontSize: 15,
+                    fontSize: 14,
                     fontWeight: FontWeight.w800,
                     color: Color(0xFF101828),
                   ),
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 4),
                 Text(
-                  sousTitre,
+                  aide,
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -615,102 +887,13 @@ class _ActionTile extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 10),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Text(
-              trailing,
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF5B5BEA),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _BlocActiviteProfesseur extends StatelessWidget {
-  const _BlocActiviteProfesseur({
-    required this.prochaineSeance,
-    required this.emploi,
-  });
-
-  final SeanceProfesseurMobileDTO? prochaineSeance;
-  final List<SeanceProfesseurMobileDTO> emploi;
-
-  @override
-  Widget build(BuildContext context) {
-    final seance = prochaineSeance;
-    final titre =
-        seance == null
-            ? 'Aucune prochaine seance'
-            : (seance.matiereNom.isEmpty
-                ? 'Seance a venir'
-                : seance.matiereNom);
-    final details =
-        seance == null
-            ? 'Votre planning sera affiche ici des qu une seance est planifiee.'
-            : '${seance.jour} - ${seance.heureDebut} - ${seance.salle}';
-    final resume =
-        emploi.isEmpty
-            ? 'Aucun element dans le planning pour le moment.'
-            : '${emploi.length} seances chargees dans votre calendrier mobile.';
-
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF5B5BEA), Color(0xFF7474F3)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(28),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Prochaine activite',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: Colors.white70,
-            ),
-          ),
-          const SizedBox(height: 8),
+          const SizedBox(width: 12),
           Text(
-            titre,
+            valeur,
             style: const TextStyle(
-              fontSize: 22,
-              height: 1.25,
+              fontSize: 26,
               fontWeight: FontWeight.w900,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            details,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            resume,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: Colors.white70,
+              color: Color(0xFF101828),
             ),
           ),
         ],
@@ -719,33 +902,27 @@ class _BlocActiviteProfesseur extends StatelessWidget {
   }
 }
 
-class _BlocPlanningProfesseur extends StatelessWidget {
-  const _BlocPlanningProfesseur({required this.emploi});
+class _TodaySessionsCard extends StatelessWidget {
+  const _TodaySessionsCard({required this.seances});
 
-  final List<SeanceProfesseurMobileDTO> emploi;
+  final List<SeanceProfesseurMobileDTO> seances;
 
   @override
   Widget build(BuildContext context) {
-    final apercu = emploi.take(3).toList();
+    final apercu = [...seances]..sort((a, b) {
+      final aMinutes = _DashboardSchedule.startMinutes(a) ?? 0;
+      final bMinutes = _DashboardSchedule.startMinutes(b) ?? 0;
+      return aMinutes.compareTo(bMinutes);
+    });
 
     return Container(
       padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
+      decoration: _panelDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Planning',
+            'Planning du jour',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w900,
@@ -754,7 +931,7 @@ class _BlocPlanningProfesseur extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           const Text(
-            'Apercu rapide de votre emploi du temps',
+            'Apercu rapide de vos seances de la journee',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
@@ -764,7 +941,7 @@ class _BlocPlanningProfesseur extends StatelessWidget {
           const SizedBox(height: 12),
           if (apercu.isEmpty)
             const _InlineEmpty(
-              message: 'Aucune seance disponible dans le planning.',
+              message: 'Aucune seance planifiee pour aujourd hui.',
             )
           else
             ...apercu.map(
@@ -821,7 +998,7 @@ class _PlanningTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  '${item.jour} - ${item.heureDebut}',
+                  '${_buildTimeRange(item)} - ${item.classeNom.isEmpty ? item.codeClasse : item.classeNom}',
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -948,13 +1125,196 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
+class _DashboardSchedule {
+  static SeanceProfesseurMobileDTO? findCurrent(
+    List<SeanceProfesseurMobileDTO> seances,
+  ) {
+    final now = DateTime.now();
+    final currentMinutes = now.hour * 60 + now.minute;
+
+    for (final seance in seances) {
+      if (!matchesToday(now, seance.jour)) continue;
+      final start = startMinutes(seance);
+      final end = endMinutes(seance);
+      if (start == null || end == null) continue;
+      if (currentMinutes >= start && currentMinutes < end) {
+        return seance;
+      }
+    }
+    return null;
+  }
+
+  static SeanceProfesseurMobileDTO? findNext(
+    List<SeanceProfesseurMobileDTO> seances,
+  ) {
+    final now = DateTime.now();
+    final currentMinutes = now.hour * 60 + now.minute;
+    SeanceProfesseurMobileDTO? candidate;
+    var candidateWeight = 1 << 30;
+
+    for (final seance in seances) {
+      final dayDistance = _dayDistance(now, seance.jour);
+      if (dayDistance == null) continue;
+      final start = startMinutes(seance);
+      if (start == null) continue;
+
+      final adjustedDayDistance =
+          dayDistance == 0 && start <= currentMinutes ? 7 : dayDistance;
+      final weight = adjustedDayDistance * 1440 + start;
+      if (weight < candidateWeight) {
+        candidateWeight = weight;
+        candidate = seance;
+      }
+    }
+
+    return candidate;
+  }
+
+  static List<SeanceProfesseurMobileDTO> todaySessions(
+    List<SeanceProfesseurMobileDTO> seances,
+  ) {
+    final now = DateTime.now();
+    return seances.where((item) => matchesToday(now, item.jour)).toList();
+  }
+
+  static bool matchesToday(DateTime now, String jour) {
+    final normalized = _normalizeDay(jour);
+    if (normalized.isEmpty) return false;
+    return normalized == _weekdayKey(now.weekday);
+  }
+
+  static int? startMinutes(SeanceProfesseurMobileDTO seance) =>
+      _parseMinutes(seance.heureDebut);
+
+  static int? endMinutes(SeanceProfesseurMobileDTO seance) =>
+      _parseMinutes(seance.heureFin);
+
+  static int? _dayDistance(DateTime now, String jour) {
+    final target = _dayNumber(_normalizeDay(jour));
+    if (target == null) return null;
+    return (target - now.weekday + 7) % 7;
+  }
+
+  static int? _parseMinutes(String raw) {
+    final value = raw.trim();
+    if (value.isEmpty) return null;
+    final parts = value.split(':');
+    if (parts.length < 2) return null;
+    final hours = int.tryParse(parts[0]);
+    final minutes = int.tryParse(parts[1]);
+    if (hours == null || minutes == null) return null;
+    return (hours * 60) + minutes;
+  }
+
+  static String _normalizeDay(String value) {
+    switch (value.trim().toUpperCase()) {
+      case 'MONDAY':
+      case 'MON':
+      case 'LUN':
+      case 'LUNDI':
+        return 'LUNDI';
+      case 'TUESDAY':
+      case 'TUE':
+      case 'MAR':
+      case 'MARDI':
+        return 'MARDI';
+      case 'WEDNESDAY':
+      case 'WED':
+      case 'MER':
+      case 'MERCREDI':
+        return 'MERCREDI';
+      case 'THURSDAY':
+      case 'THU':
+      case 'JEU':
+      case 'JEUDI':
+        return 'JEUDI';
+      case 'FRIDAY':
+      case 'FRI':
+      case 'VEN':
+        return 'VENDREDI';
+      case 'VENDREDI':
+        return 'VENDREDI';
+      case 'SATURDAY':
+      case 'SAT':
+      case 'SAM':
+      case 'SAMEDI':
+        return 'SAMEDI';
+      case 'SUNDAY':
+      case 'SUN':
+      case 'DIM':
+      case 'DIMANCHE':
+        return 'DIMANCHE';
+      default:
+        return value.trim().toUpperCase();
+    }
+  }
+
+  static String _weekdayKey(int weekday) {
+    return switch (weekday) {
+      DateTime.monday => 'LUNDI',
+      DateTime.tuesday => 'MARDI',
+      DateTime.wednesday => 'MERCREDI',
+      DateTime.thursday => 'JEUDI',
+      DateTime.friday => 'VENDREDI',
+      DateTime.saturday => 'SAMEDI',
+      DateTime.sunday => 'DIMANCHE',
+      _ => '',
+    };
+  }
+
+  static int? _dayNumber(String normalized) {
+    return switch (normalized) {
+      'LUNDI' => DateTime.monday,
+      'MARDI' => DateTime.tuesday,
+      'MERCREDI' => DateTime.wednesday,
+      'JEUDI' => DateTime.thursday,
+      'VENDREDI' => DateTime.friday,
+      'SAMEDI' => DateTime.saturday,
+      'DIMANCHE' => DateTime.sunday,
+      _ => null,
+    };
+  }
+}
+
+BoxDecoration _panelDecoration() {
+  return BoxDecoration(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(28),
+    boxShadow: [
+      BoxShadow(
+        color: Colors.black.withOpacity(0.05),
+        blurRadius: 20,
+        offset: const Offset(0, 10),
+      ),
+    ],
+  );
+}
+
 String _buildSousTitreProfil(ProfesseurProfilMobileDTO profil) {
   final values = <String>[
     if (profil.grade.isNotEmpty) profil.grade,
     if (profil.specialite.isNotEmpty) profil.specialite,
   ];
   if (values.isEmpty) {
-    return 'Vue generale de vos modules et activites';
+    return 'Vue de votre journee pedagogique';
   }
   return values.join(' - ');
+}
+
+String _buildSeanceMeta(SeanceProfesseurMobileDTO seance) {
+  final values = <String>[
+    if (seance.classeNom.isNotEmpty) seance.classeNom else seance.codeClasse,
+    if (seance.salle.isNotEmpty) 'Salle ${seance.salle}',
+    _buildTimeRange(seance),
+  ];
+  return values.where((item) => item.trim().isNotEmpty).join(' - ');
+}
+
+String _buildTimeRange(SeanceProfesseurMobileDTO seance) {
+  final debut = seance.heureDebut.trim();
+  final fin = seance.heureFin.trim();
+  if (debut.isEmpty && fin.isEmpty) return seance.jour;
+  if (fin.isEmpty) return debut;
+  if (debut.isEmpty) return fin;
+  return '$debut - $fin';
 }

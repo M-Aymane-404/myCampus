@@ -42,9 +42,15 @@ class _PageNotesEtudiantState extends State<PageNotesEtudiant> {
     await context.read<ControleurReleveNotesEtudiant>().charger(semestre);
   }
 
+  Future<void> _rafraichirPage() async {
+    await context.read<ControleurReleveNotesEtudiant>().charger(
+      _semestreSelectionne,
+    );
+  }
+
   Future<void> _telechargerEtOuvrirPdf({
     required BuildContext context,
-    required String pathRelatif, // ex: "/copies/xxx.pdf"
+    required String pathRelatif,
     required String nomFichier,
   }) async {
     try {
@@ -217,7 +223,6 @@ $subjectRows''';
             });
           });
         }).toList();
-
     return Scaffold(
       backgroundColor: _bg,
       appBar: AppBar(
@@ -241,124 +246,137 @@ $subjectRows''';
         iconTheme: const IconThemeData(color: Color(0xFF0B1220)),
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            // barre telechargement (comme Cours)
-            if (fichierCtrl.telechargementEnCours)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-                child: _CardBase(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.3,
-                            value:
-                                fichierCtrl.progression > 0
-                                    ? fichierCtrl.progression
-                                    : null,
-                            color: _primaire,
-                            backgroundColor: Colors.black.withOpacity(0.08),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            "Telechargement | ${(fichierCtrl.progression * 100).toStringAsFixed(0)}%",
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w900,
-                              color: Color(0xFF0B1220),
+        child: RefreshIndicator(
+          onRefresh: _rafraichirPage,
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(
+                child: Column(
+                  children: [
+                    // barre telechargement (comme Cours)
+                    if (fichierCtrl.telechargementEnCours)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                        child: _CardBase(
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Row(
+                              children: [
+                                SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.3,
+                                    value:
+                                        fichierCtrl.progression > 0
+                                            ? fichierCtrl.progression
+                                            : null,
+                                    color: _primaire,
+                                    backgroundColor: Colors.black.withOpacity(0.08),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    "Telechargement | ${(fichierCtrl.progression * 100).toStringAsFixed(0)}%",
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w900,
+                                      color: Color(0xFF0B1220),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
-                      ],
+                      ),
+                    _HeaderNotes(
+                      semestre: releve.semestre,
+                      moyenneSession: releve.moyenneSession,
+                      nbValides: releve.nbModulesValider,
+                      nbModules: releve.nbModules,
+                      semestreSelectionne: _semestreSelectionne,
+                      semestresDisponibles: _semestres,
+                      onChangerSemestre: _changerSemestre,
+                      onTelechargerReleve: () => _telechargerReleveNotes(releve),
                     ),
-                  ),
+                  ],
                 ),
               ),
+              if (modulesPublies.isEmpty)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
+                    child: Text(
+                      'Aucune note publiee',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        color: Colors.black.withOpacity(0.55),
+                      ),
+                    ),
+                  ),
+                )
+              else
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                  sliver: SliverList.separated(
+                    itemCount: modulesPublies.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    itemBuilder: (_, i) {
+                      final module = modulesPublies[i];
 
-            _HeaderNotes(
-              semestre: releve.semestre,
-              moyenneSession: releve.moyenneSession,
-              nbValides: releve.nbModulesValider,
-              nbModules: releve.nbModules,
-              semestreSelectionne: _semestreSelectionne,
-              semestresDisponibles: _semestres,
-              onChangerSemestre: _changerSemestre,
-              onTelechargerReleve: () => _telechargerReleveNotes(releve),
-            ),
+                      // si module 1 matiere => afficher juste le nom de la matiere
+                      if (module.matieres.length == 1) {
+                        final mat = module.matieres.first;
 
-            Expanded(
-              child:
-                  modulesPublies.isEmpty
-                      ? Center(
-                        child: Text(
-                          'Aucune note publiee',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w800,
-                            color: Colors.black.withOpacity(0.55),
-                          ),
-                        ),
-                      )
-                      : ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                        itemCount: modulesPublies.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 10),
-                        itemBuilder: (_, i) {
-                          final module = modulesPublies[i];
-
-                          // si module 1 matiere => afficher juste le nom de la matiere
-                          if (module.matieres.length == 1) {
-                            final mat = module.matieres.first;
-
-                            return _LigneMatiere(
-                              titre: mat.nomDuMatiere,
-                              moyenne: mat.moyenneDuMatiere,
-                              validee: mat.validee,
-                              examens: mat.examens,
-                              primaire: _primaire,
-                              isChild: false,
+                        return _LigneMatiere(
+                          titre: mat.nomDuMatiere,
+                          moyenne: mat.moyenneDuMatiere,
+                          validee: mat.validee,
+                          examens: mat.examens,
+                          primaire: _primaire,
+                          isChild: false,
                               onOuvrirCopie:
                                   (ex) => _telechargerEtOuvrirPdf(
                                     context: context,
-                                    pathRelatif: ex.copieEtudiantPath!,
+                                    pathRelatif:
+                                        '/api/etudiant/examens/${ex.id}/copie',
                                     nomFichier:
                                         "copie_${mat.codeMatiere}_N${ex.numeroExamen}.pdf",
                                   ),
                               onOuvrirCorrige:
                                   (ex) => _telechargerEtOuvrirPdf(
                                     context: context,
-                                    pathRelatif: ex.corrigePath!,
+                                    pathRelatif:
+                                        '/api/etudiant/examens/${ex.id}/corrige',
                                     nomFichier:
                                         "corrige_${mat.codeMatiere}_N${ex.numeroExamen}.pdf",
                                   ),
-                            );
-                          }
+                        );
+                      }
 
-                          // âœ… sinon expandable par module
-                          return _CarteModuleExpandable(
-                            module: module,
-                            primaire: _primaire,
-                            onOuvrirPdf:
-                                ({
-                                  required String pathRelatif,
-                                  required String nomFichier,
-                                }) => _telechargerEtOuvrirPdf(
-                                  context: context,
-                                  pathRelatif: pathRelatif,
-                                  nomFichier: nomFichier,
-                                ),
-                          );
-                        },
-                      ),
-            ),
-          ],
+                      // sinon expandable par module
+                      return _CarteModuleExpandable(
+                        module: module,
+                        primaire: _primaire,
+                        onOuvrirPdf:
+                            ({
+                              required String pathRelatif,
+                              required String nomFichier,
+                            }) => _telechargerEtOuvrirPdf(
+                              context: context,
+                              pathRelatif: pathRelatif,
+                              nomFichier: nomFichier,
+                            ),
+                      );
+                    },
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -641,13 +659,15 @@ class _CarteModuleExpandableState extends State<_CarteModuleExpandable> {
                           isChild: true,
                           onOuvrirCopie:
                               (ex) => widget.onOuvrirPdf(
-                                pathRelatif: ex.copieEtudiantPath!,
+                                pathRelatif:
+                                    '/api/etudiant/examens/${ex.id}/copie',
                                 nomFichier:
                                     "copie_${mat.codeMatiere}_N${ex.numeroExamen}.pdf",
                               ),
                           onOuvrirCorrige:
                               (ex) => widget.onOuvrirPdf(
-                                pathRelatif: ex.corrigePath!,
+                                pathRelatif:
+                                    '/api/etudiant/examens/${ex.id}/corrige',
                                 nomFichier:
                                     "corrige_${mat.codeMatiere}_N${ex.numeroExamen}.pdf",
                               ),

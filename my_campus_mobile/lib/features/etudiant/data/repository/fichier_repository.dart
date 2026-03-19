@@ -15,8 +15,9 @@ class FichierRepository {
     required String nomFichier,
     void Function(int received, int total)? onProgress,
   }) async {
+    final normalizedUrl = _normaliserUrl(urlDownload);
     final resp = await dio.get<List<int>>(
-      urlDownload,
+      normalizedUrl,
       options: Options(
         responseType: ResponseType.bytes,
         followRedirects: true,
@@ -42,5 +43,19 @@ class FichierRepository {
     );
 
     return file.path;
+  }
+
+  String _normaliserUrl(String urlDownload) {
+    final trimmed = urlDownload.trim();
+    if (trimmed.isEmpty) {
+      throw Exception('URL de téléchargement vide');
+    }
+    if (trimmed.startsWith(RegExp(r'https?://'))) {
+      return trimmed;
+    }
+    if (trimmed.startsWith('/')) {
+      return trimmed;
+    }
+    return '/$trimmed';
   }
 }
