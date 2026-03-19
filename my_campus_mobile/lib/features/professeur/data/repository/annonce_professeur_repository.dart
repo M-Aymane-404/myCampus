@@ -57,4 +57,11 @@ class AnnonceProfesseurRepository {
         )
         .toList();
   }
+
+  Future<AnnonceProfesseurDTO> recupererAnnonceParId(int annonceId) async {
+    final data = await _api.recupererAnnonceParId(annonceId);
+    return AnnonceProfesseurDTO.fromJson(
+      data.cast<String, dynamic>(),
+    );
+  }
 }

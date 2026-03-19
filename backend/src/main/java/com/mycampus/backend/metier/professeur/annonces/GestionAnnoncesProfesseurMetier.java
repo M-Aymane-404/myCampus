@@ -11,10 +11,12 @@ public interface GestionAnnoncesProfesseurMetier {
     AnnonceSortieDTO creerAnnonce(AnnonceEntrerDTO annonceDTO, String emailAuteur) throws UtilisateursException;
     
     List<AnnonceSortieDTO> listerAnnoncesDeSesClasses(String emailProfesseur) throws UtilisateursException;
-    
+
     List<AnnonceSortieDTO> listerMesAnnonces(String emailProfesseur) throws UtilisateursException;
 
     List<AnnonceSortieDTO> listerLesAnnoncesDeMonDepEtGlobal(String emailProfesseur) throws  UtilisateursException;
+
+    AnnonceSortieDTO recupererAnnonceParId(Long annonceId, String emailProfesseur) throws UtilisateursException;
 
     void supprimerMonAnnonce(Long annonceId, String emailProfesseur) throws UtilisateursException;
     

@@ -42,6 +42,7 @@ import 'features/professeur/data/controller/controleur_cours_professeur.dart';
 import 'features/professeur/data/controller/controleur_espace_professeur.dart';
 import 'features/professeur/data/controller/controleur_notification_professeur.dart';
 import 'features/professeur/data/repository/annonce_professeur_repository.dart';
+import 'features/professeur/data/realtime/notification_realtime_service_prof.dart';
 import 'features/professeur/data/repository/notification_professeur_repository.dart';
 import 'features/professeur/data/repository/professeur_repository.dart';
 import 'features/professeur/data/repository/ressource_seance_professeur_repository.dart';
@@ -157,6 +158,10 @@ class MyApp extends StatelessWidget {
         ),
         Provider<NotificationRealtimeService>(
           create: (_) => NotificationRealtimeService(),
+          dispose: (_, service) => service.disconnect(),
+        ),
+        Provider<NotificationRealtimeServiceProf>(
+          create: (_) => NotificationRealtimeServiceProf(),
           dispose: (_, service) => service.disconnect(),
         ),
 
@@ -347,6 +352,7 @@ class _RouteurAuthentificationState extends State<RouteurAuthentification> {
   bool _initEtudiantFait = false;
   bool _initProfesseurFait = false;
   bool _wsEtudiantConnecte = false;
+  bool _wsProfesseurConnecte = false;
 
   @override
   Widget build(BuildContext context) {
@@ -361,11 +367,12 @@ class _RouteurAuthentificationState extends State<RouteurAuthentification> {
         if (!controleur.estAuthentifie) {
           _initEtudiantFait = false;
           _initProfesseurFait = false;
-          if (_wsEtudiantConnecte) {
+          if (_wsEtudiantConnecte || _wsProfesseurConnecte) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (!mounted) return;
               context.read<NotificationRealtimeService>().disconnect();
               _wsEtudiantConnecte = false;
+              _wsProfesseurConnecte = false;
             });
           }
           return const PageConnexion();
@@ -411,16 +418,33 @@ class _RouteurAuthentificationState extends State<RouteurAuthentification> {
                 _wsEtudiantConnecte = false;
               });
             }
+            if (!_wsProfesseurConnecte) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!mounted) return;
+                final ctrlNotification =
+                    context.read<ControleurNotificationProfesseur>();
+                context
+                    .read<NotificationRealtimeServiceProf>()
+                    .connect(
+                      onNotification: ctrlNotification.ajouterNotificationRealtime,
+                    );
+                _wsProfesseurConnecte = true;
+              });
+            }
             return const ProfesseurShell();
 
           default:
             _initEtudiantFait = false;
             _initProfesseurFait = false;
-            if (_wsEtudiantConnecte) {
+            if (_wsEtudiantConnecte || _wsProfesseurConnecte) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (!mounted) return;
                 context.read<NotificationRealtimeService>().disconnect();
+                context
+                    .read<NotificationRealtimeServiceProf>()
+                    .disconnect();
                 _wsEtudiantConnecte = false;
+                _wsProfesseurConnecte = false;
               });
             }
             return const PageConnexion();

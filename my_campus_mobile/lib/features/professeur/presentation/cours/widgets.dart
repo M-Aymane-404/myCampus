@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -7,12 +8,36 @@ import '../../data/dto/creation_examen_professeur_dto.dart';
 import '../../data/dto/creation_seance_professeur_dto.dart';
 import '../../data/dto/professeur_mobile_dto.dart';
 
+const Color _kAccent = Color(0xFF5B5BEA);
+
+ButtonStyle _primaryCtaButtonStyle({bool compact = false}) {
+  final height = compact ? 40.0 : 46.0;
+  return ElevatedButton.styleFrom(
+    backgroundColor: _kAccent,
+    foregroundColor: Colors.white,
+    elevation: 0,
+    minimumSize: Size(0, height),
+    padding: const EdgeInsets.symmetric(horizontal: 14),
+    textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+  );
+}
+
+Widget _ctaLabel(String text) {
+  return Center(
+    child: FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Text(
+        text,
+        maxLines: 1,
+        textAlign: TextAlign.center,
+      ),
+    ),
+  );
+}
+
 class ActionRow extends StatelessWidget {
-  const ActionRow({
-    required this.title,
-    required this.buttonLabel,
-    this.onTap,
-  });
+  const ActionRow({required this.title, required this.buttonLabel, this.onTap});
 
   final String title;
   final String buttonLabel;
@@ -39,7 +64,8 @@ class ActionRow extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: onTap,
-            child: Text(buttonLabel),
+            style: _primaryCtaButtonStyle(compact: true),
+            child: _ctaLabel(buttonLabel),
           ),
         ],
       ),
@@ -48,10 +74,7 @@ class ActionRow extends StatelessWidget {
 }
 
 class SummaryChip extends StatelessWidget {
-  const SummaryChip({
-    required this.label,
-    required this.value,
-  });
+  const SummaryChip({required this.label, required this.value});
 
   final String label;
   final int value;
@@ -110,8 +133,8 @@ class FieldWithPicker extends StatelessWidget {
         border: const OutlineInputBorder(),
         suffixIcon: const Icon(Icons.calendar_today_rounded),
       ),
-      validator: (value) =>
-          (value ?? '').trim().isEmpty ? 'Champ requis' : null,
+      validator:
+          (value) => (value ?? '').trim().isEmpty ? 'Champ requis' : null,
     );
   }
 }
@@ -121,16 +144,26 @@ class SessionCard extends StatelessWidget {
     required this.seance,
     this.onVoirRessources,
     this.onUploaderSupport,
+    this.showActions = true,
     this.isUploading = false,
   });
 
   final SeanceProfesseurMobileDTO seance;
   final VoidCallback? onVoirRessources;
   final VoidCallback? onUploaderSupport;
+  final bool showActions;
   final bool isUploading;
 
   @override
   Widget build(BuildContext context) {
+    final dateLabel = _formatDateJourMoisAnnee(seance.jour);
+    final timeLabel = _formatTimeRange(seance.heureDebut, seance.heureFin);
+    final metaParts = <String>[
+      if (dateLabel.isNotEmpty) dateLabel,
+      if (timeLabel.isNotEmpty) timeLabel,
+      if (seance.classeNom.isNotEmpty) seance.classeNom,
+    ];
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -167,7 +200,7 @@ class SessionCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '${seance.heureDebut} → ${seance.heureFin} · ${seance.classeNom}',
+            metaParts.join(' · '),
             style: const TextStyle(color: Color(0xFF667085)),
           ),
           const SizedBox(height: 4),
@@ -175,28 +208,30 @@ class SessionCard extends StatelessWidget {
             seance.salle.isEmpty ? 'Salle non renseignée' : seance.salle,
             style: const TextStyle(color: Color(0xFF94A3B8)),
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              TextButton.icon(
-                onPressed: onVoirRessources,
-                icon: const Icon(Icons.folder_open_rounded),
-                label: const Text('Ressources'),
-              ),
-              const SizedBox(width: 8),
-              isUploading
-                  ? const SizedBox(
+          if (showActions) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                TextButton.icon(
+                  onPressed: onVoirRessources,
+                  icon: const Icon(Icons.folder_open_rounded),
+                  label: const Text('Ressources'),
+                ),
+                const SizedBox(width: 8),
+                isUploading
+                    ? const SizedBox(
                       width: 24,
                       height: 24,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : TextButton.icon(
+                    : TextButton.icon(
                       onPressed: onUploaderSupport,
                       icon: const Icon(Icons.upload_file_rounded),
                       label: const Text('Uploader'),
                     ),
-            ],
-          ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -210,6 +245,11 @@ class ExamCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final dateLabel =
+        examen.dateExamen.trim().isEmpty
+            ? 'Date non renseignée'
+            : _formatDateJourMoisAnnee(examen.dateExamen);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -233,7 +273,7 @@ class ExamCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                examen.dateExamen.isEmpty ? 'Date non renseignée' : examen.dateExamen,
+                dateLabel,
                 style: const TextStyle(color: Color(0xFF667085)),
               ),
               Text(
@@ -257,10 +297,7 @@ class ExamCard extends StatelessWidget {
 }
 
 class RessourceSheet extends StatelessWidget {
-  const RessourceSheet({
-    required this.seanceId,
-    required this.fichierCtrl,
-  });
+  const RessourceSheet({required this.seanceId, required this.fichierCtrl});
 
   final int seanceId;
   final ControleurFichier fichierCtrl;
@@ -312,24 +349,25 @@ class RessourceSheet extends StatelessWidget {
                     subtitle: Text(
                       '${ressource.typeMime} · ${_formatTaille(ressource.taille)}',
                     ),
-                    trailing: fichierCtrl.telechargementEnCours
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : IconButton(
-                            icon: const Icon(Icons.download_rounded),
-                            onPressed: () async {
-                              try {
-                                await fichierCtrl.telechargerEtOuvrir(
-                                  urlDownload:
-                                      '/api/professeur/seances/$seanceId/ressources/${ressource.id}/telecharger',
-                                  nomFichier: ressource.nomOriginal,
-                                );
-                              } catch (_) {}
-                            },
-                          ),
+                    trailing:
+                        fichierCtrl.telechargementEnCours
+                            ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                            : IconButton(
+                              icon: const Icon(Icons.download_rounded),
+                              onPressed: () async {
+                                try {
+                                  await fichierCtrl.telechargerEtOuvrir(
+                                    urlDownload:
+                                        '/api/professeur/seances/$seanceId/ressources/${ressource.id}/telecharger',
+                                    nomFichier: ressource.nomOriginal,
+                                  );
+                                } catch (_) {}
+                              },
+                            ),
                   );
                 },
               ),
@@ -437,8 +475,9 @@ class _CreateSeanceModalState extends State<CreateSeanceModal> {
                     labelText: 'Type de séance',
                     border: OutlineInputBorder(),
                   ),
-                  validator: (value) =>
-                      (value ?? '').trim().isEmpty ? 'Type requis' : null,
+                  validator:
+                      (value) =>
+                          (value ?? '').trim().isEmpty ? 'Type requis' : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
@@ -447,13 +486,19 @@ class _CreateSeanceModalState extends State<CreateSeanceModal> {
                     labelText: 'Salle',
                     border: OutlineInputBorder(),
                   ),
-                  validator: (value) =>
-                      (value ?? '').trim().isEmpty ? 'Salle requise' : null,
+                  validator:
+                      (value) =>
+                          (value ?? '').trim().isEmpty ? 'Salle requise' : null,
                 ),
                 const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: _envoiEnCours ? null : _soumettre,
-                  child: const Text('Créer'),
+                SizedBox(
+                  width: double.infinity,
+                  height: 46,
+                  child: ElevatedButton(
+                    onPressed: _envoiEnCours ? null : _soumettre,
+                    style: _primaryCtaButtonStyle(),
+                    child: _ctaLabel('Créer'),
+                  ),
                 ),
                 const SizedBox(height: 24),
               ],
@@ -495,8 +540,7 @@ class _CreateSeanceModalState extends State<CreateSeanceModal> {
     try {
       await ctrlCours.creerSeance(dto);
       if (!mounted) return;
-      Navigator.of(context).pop();
-      _showSnack('Séance créée ; pensez à recharger la page.');
+      Navigator.of(context).pop(true);
     } catch (e) {
       _showSnack(e.toString(), isError: true);
     } finally {
@@ -543,6 +587,64 @@ class _CreateSeanceModalState extends State<CreateSeanceModal> {
   }
 }
 
+String _formatTimeRange(String start, String end) {
+  final debut = start.trim();
+  final fin = end.trim();
+  if (debut.isEmpty && fin.isEmpty) return '';
+  if (fin.isEmpty) return debut;
+  if (debut.isEmpty) return fin;
+  return '$debut - $fin';
+}
+
+String _formatDateJourMoisAnnee(String raw) {
+  final parsed = _tryParseDate(raw);
+  if (parsed == null) return raw.trim();
+  final dd = parsed.day.toString().padLeft(2, '0');
+  final mm = parsed.month.toString().padLeft(2, '0');
+  final yyyy = parsed.year.toString();
+  return '$dd/$mm/$yyyy';
+}
+
+DateTime? _tryParseDate(String raw) {
+  final value = raw.trim();
+  if (value.isEmpty) return null;
+
+  final embeddedIso = RegExp(r'(\d{4}-\d{2}-\d{2})').firstMatch(value);
+  if (embeddedIso != null) {
+    final parsed = DateTime.tryParse(embeddedIso.group(1)!);
+    if (parsed != null) return parsed;
+  }
+
+  final direct = DateTime.tryParse(value);
+  if (direct != null) return direct;
+
+  final fr = RegExp(r'^(\d{2})/(\d{2})/(\d{4})$').firstMatch(value);
+  if (fr != null) {
+    final day = int.parse(fr.group(1)!);
+    final month = int.parse(fr.group(2)!);
+    final year = int.parse(fr.group(3)!);
+    return DateTime(year, month, day);
+  }
+
+  final dash = RegExp(r'^(\d{2})-(\d{2})-(\d{4})$').firstMatch(value);
+  if (dash != null) {
+    final day = int.parse(dash.group(1)!);
+    final month = int.parse(dash.group(2)!);
+    final year = int.parse(dash.group(3)!);
+    return DateTime(year, month, day);
+  }
+
+  final ymdSlash = RegExp(r'^(\d{4})/(\d{2})/(\d{2})$').firstMatch(value);
+  if (ymdSlash != null) {
+    final year = int.parse(ymdSlash.group(1)!);
+    final month = int.parse(ymdSlash.group(2)!);
+    final day = int.parse(ymdSlash.group(3)!);
+    return DateTime(year, month, day);
+  }
+
+  return null;
+}
+
 class CreateExamenModal extends StatefulWidget {
   const CreateExamenModal({required this.enseignement});
 
@@ -553,16 +655,8 @@ class CreateExamenModal extends StatefulWidget {
 }
 
 class _CreateExamenModalState extends State<CreateExamenModal> {
-  static const List<String> _semestres = [
-    'S1',
-    'S2',
-    'S3',
-    'S4',
-  ];
-  static const List<String> _typesExamen = [
-    'NORMAL',
-    'RATTRAPAGE',
-  ];
+  static const List<String> _semestres = ['S1', 'S2', 'S3', 'S4'];
+  static const List<String> _typesExamen = ['NORMAL', 'RATTRAPAGE'];
   late final TextEditingController _dateCtrl;
   late final TextEditingController _dureeCtrl;
   late final TextEditingController _numeroCtrl;
@@ -620,14 +714,17 @@ class _CreateExamenModalState extends State<CreateExamenModal> {
                     labelText: 'Type d\'examen',
                     border: OutlineInputBorder(),
                   ),
-                  items: _typesExamen
-                      .map(
-                        (type) => DropdownMenuItem(
-                          value: type,
-                          child: Text(type == 'NORMAL' ? 'Normal' : 'Rattrapage'),
-                        ),
-                      )
-                      .toList(),
+                  items:
+                      _typesExamen
+                          .map(
+                            (type) => DropdownMenuItem(
+                              value: type,
+                              child: Text(
+                                type == 'NORMAL' ? 'Normal' : 'Rattrapage',
+                              ),
+                            ),
+                          )
+                          .toList(),
                   onChanged: (value) {
                     if (value != null) {
                       setState(() {
@@ -643,14 +740,13 @@ class _CreateExamenModalState extends State<CreateExamenModal> {
                     labelText: 'Semestre',
                     border: OutlineInputBorder(),
                   ),
-                  items: _semestres
-                      .map(
-                        (sem) => DropdownMenuItem(
-                          value: sem,
-                          child: Text(sem),
-                        ),
-                      )
-                      .toList(),
+                  items:
+                      _semestres
+                          .map(
+                            (sem) =>
+                                DropdownMenuItem(value: sem, child: Text(sem)),
+                          )
+                          .toList(),
                   onChanged: (value) {
                     if (value != null) {
                       setState(() {
@@ -678,9 +774,14 @@ class _CreateExamenModalState extends State<CreateExamenModal> {
                   keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: _envoiEnCours ? null : _soumettre,
-                  child: const Text('Créer'),
+                SizedBox(
+                  width: double.infinity,
+                  height: 46,
+                  child: ElevatedButton(
+                    onPressed: _envoiEnCours ? null : _soumettre,
+                    style: _primaryCtaButtonStyle(),
+                    child: _ctaLabel('Créer'),
+                  ),
                 ),
                 const SizedBox(height: 24),
               ],
@@ -713,7 +814,8 @@ class _CreateExamenModalState extends State<CreateExamenModal> {
     final dto = CreationExamenProfesseurDTO(
       typeExamen: _selectedType,
       semestre: _selectedSemestre,
-      dateExamen: _toIsoInstantDateOnly(_dateCtrl.text),
+      // Backend expects a date-only value (same convention as seance creation).
+      dateExamen: _dateCtrl.text.trim(),
       duree: duree,
       numeroExamen: numero,
     );
@@ -726,10 +828,9 @@ class _CreateExamenModalState extends State<CreateExamenModal> {
         codeMatiere: widget.enseignement.codeMatiere,
       );
       if (!mounted) return;
-      Navigator.of(context).pop();
-      _showSnack('Examen créé ; pensez à recharger la page.');
+      Navigator.of(context).pop(true);
     } catch (e) {
-      _showSnack(e.toString(), isError: true);
+      _showSnack(_formatApiError(e), isError: true);
     } finally {
       if (mounted) setState(() => _envoiEnCours = false);
     }
@@ -748,14 +849,49 @@ class _CreateExamenModalState extends State<CreateExamenModal> {
         '${selected.year}-${selected.month.toString().padLeft(2, '0')}-${selected.day.toString().padLeft(2, '0')}';
   }
 
-  String _toIsoInstantDateOnly(String date) {
-    final parts = date.split('-');
-    if (parts.length != 3) return date;
-    final year = int.tryParse(parts[0]);
-    final month = int.tryParse(parts[1]);
-    final day = int.tryParse(parts[2]);
-    if (year == null || month == null || day == null) return date;
-    return DateTime.utc(year, month, day).toIso8601String();
+  String _formatApiError(Object error) {
+    if (error is DioException) {
+      final message = _extractMessageFromErrorBody(error.response?.data);
+      if (message != null) return message;
+
+      final fallback = (error.message ?? '').trim();
+      if (fallback.isNotEmpty) return fallback;
+    }
+
+    return error.toString();
+  }
+
+  String? _extractMessageFromErrorBody(dynamic data) {
+    if (data == null) return null;
+
+    if (data is Map) {
+      final rawMessage =
+          data['message'] ?? data['error'] ?? data['detail'] ?? data['title'];
+      final msg = (rawMessage ?? '').toString().trim();
+      if (msg.isNotEmpty) return _truncate(msg);
+
+      final fieldErrors = data['fieldErrors'];
+      if (fieldErrors is List && fieldErrors.isNotEmpty) {
+        final first = fieldErrors.first;
+        if (first is Map) {
+          final raw = first['defaultMessage'] ?? first['message'];
+          final fe = (raw ?? '').toString().trim();
+          if (fe.isNotEmpty) return _truncate(fe);
+        }
+      }
+    }
+
+    if (data is String) {
+      final msg = data.trim();
+      if (msg.isNotEmpty) return _truncate(msg);
+    }
+
+    return null;
+  }
+
+  String _truncate(String value, {int max = 220}) {
+    if (value.length <= max) return value;
+    return '${value.substring(0, max)}...';
   }
 
   void _showSnack(String message, {bool isError = false}) {

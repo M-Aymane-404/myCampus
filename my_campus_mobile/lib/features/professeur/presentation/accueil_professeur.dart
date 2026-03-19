@@ -5,7 +5,6 @@ import '../data/controller/controleur_annonce_professeur.dart';
 import '../data/controller/controleur_espace_professeur.dart';
 import '../data/controller/controleur_notification_professeur.dart';
 import '../data/dto/professeur_mobile_dto.dart';
-import 'page_detail_annonce_professeur.dart';
 import 'page_gestion_annonces_professeur.dart';
 import 'page_mes_annonces_professeur.dart';
 import 'page_notifications_professeur.dart';
@@ -74,7 +73,7 @@ class _AccueilProfesseurState extends State<AccueilProfesseur> {
               padding: const EdgeInsets.all(18),
               child: _EmptyState(
                 message: ctrl.erreur!,
-                actionLabel: 'Reessayer',
+                actionLabel: 'Réessayer',
                 onTap:
                     () =>
                         context
@@ -131,40 +130,43 @@ class _AccueilProfesseurState extends State<AccueilProfesseur> {
                               : 'Bonjour ${profil.prenom.isEmpty ? 'Professeur' : profil.prenom}',
                       sousTitre:
                           profil == null
-                              ? 'Vue de votre journee pedagogique'
+                              ? 'Vue de votre journée pédagogique'
                               : _buildSousTitreProfil(profil),
                     ),
                     const SizedBox(height: 14),
                     const _AnnonceActionCard(),
+                    const SizedBox(height: 16),
                     if (ctrl.erreur != null) ...[
                       _InfoBanner(message: ctrl.erreur!),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 16),
                     ],
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
+                          flex: 3,
                           child: _SummaryCard(
-                            titre: 'Prochaine seance',
+                            titre: 'Prochaine séance',
                             accent: const Color(0xFFEEF2FF),
                             iconColor: AccueilProfesseur.accent,
                             icon: Icons.schedule_rounded,
                             primary:
                                 prochaine?.matiereNom.isNotEmpty == true
                                     ? prochaine!.matiereNom
-                                    : 'Aucune seance',
+                                    : 'Aucune séance',
                             secondary:
                                 prochaine == null
-                                    ? 'Rien de planifie pour le moment'
+                                    ? 'Rien de planifié pour le moment'
                                     : _buildSeanceMeta(prochaine),
                             chip:
                                 prochaine == null
-                                    ? 'A venir'
+                                    ? 'À venir'
                                     : _buildTimeRange(prochaine),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
+                          flex: 2,
                           child: _TrackingCard(
                             classesCount: classesDistinctes,
                             matieresCount: matieresDistinctes,
@@ -173,30 +175,25 @@ class _AccueilProfesseurState extends State<AccueilProfesseur> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 25),
                     const _SectionHeader(
-                      titre: 'Priorites du jour',
+                      titre: 'Priorités du jour',
                       sousTitre:
                           'Les actions qui demandent votre attention maintenant',
                     ),
                     const SizedBox(height: 12),
-                    _PrioritiesOverview(
-                      copiesACorriger: ctrl.copiesACorriger,
-                      coursSansSupport: ctrl.coursSansSupport,
-                      seancesDuJour: seancesDuJour.length,
-                      chargement: ctrl.chargementIndicateursDashboard,
-                    ),
+
                     const SizedBox(height: 14),
                     _PriorityMetricCard(
-                      titre: 'Copies a corriger',
+                      titre: 'Copies à corriger',
                       valeur:
                           ctrl.chargementIndicateursDashboard
                               ? '...'
                               : ctrl.copiesACorriger.toString().padLeft(2, '0'),
                       aide:
                           ctrl.copiesACorriger == 0
-                              ? 'Aucune copie en attente de correction.'
-                              : '${ctrl.copiesACorriger} evaluation(s) sans corrige disponible.',
+                              ? 'Aucune copie à corriger aujourd’hui.'
+                              : '${ctrl.copiesACorriger} évaluation(s) en attente de correction.',
                       icon: Icons.fact_check_rounded,
                       iconBg: const Color(0xFFFDECEC),
                       iconColor: const Color(0xFFDC2626),
@@ -213,11 +210,26 @@ class _AccueilProfesseurState extends State<AccueilProfesseur> {
                               ),
                       aide:
                           ctrl.coursSansSupport == 0
-                              ? 'Tous les cours du jour ont deja un support.'
-                              : '${ctrl.coursSansSupport} cours du jour restent sans support partage.',
+                              ? 'Tous les cours du jour ont déjà un support.'
+                              : '${ctrl.coursSansSupport} cours aujourd’hui sans support partagé.',
                       icon: Icons.menu_book_outlined,
                       iconBg: const Color(0xFFFFF5E8),
                       iconColor: const Color(0xFFEA580C),
+                    ),
+                    const SizedBox(height: 12),
+                    _PriorityMetricCard(
+                      titre: 'Séances aujourd’hui',
+                      valeur:
+                          seancesDuJour.isEmpty
+                              ? '00'
+                              : seancesDuJour.length.toString().padLeft(2, '0'),
+                      aide:
+                          seancesDuJour.isEmpty
+                              ? 'Aucune séance prévue aujourd’hui.'
+                              : '${seancesDuJour.length} séance(s) programmée(s) aujourd’hui.',
+                      icon: Icons.event_available_rounded,
+                      iconBg: const Color(0xFFEEF2FF),
+                      iconColor: AccueilProfesseur.accent,
                     ),
                     const SizedBox(height: 14),
                   ]),
@@ -232,9 +244,7 @@ class _AccueilProfesseurState extends State<AccueilProfesseur> {
 }
 
 class _TopBarProfesseur extends StatelessWidget {
-  const _TopBarProfesseur({
-    required this.onTapNotifications,
-  });
+  const _TopBarProfesseur({required this.onTapNotifications});
 
   final VoidCallback onTapNotifications;
 
@@ -343,100 +353,178 @@ class _AnnonceActionCard extends StatelessWidget {
   const _AnnonceActionCard({super.key});
 
   static const _description =
-      'Prévenez vos étudiants d’un évènement, examen ou absence importante.';
+      'Prévenez vos étudiants d’un événement, examen ou absence importante.';
 
   @override
   Widget build(BuildContext context) {
-    const borderRadius = 26.0;
+    const borderRadius = 28.0;
+    const buttonHeight = 46.0;
     return Container(
-      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF5B5BEA), Color(0xFF8A8BFF)],
+        gradient: LinearGradient(
+          colors: [AccueilProfesseur.accent.withOpacity(0.10), Colors.white],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(borderRadius),
+        border: Border.all(color: AccueilProfesseur.accent.withOpacity(0.14)),
         boxShadow: [
           BoxShadow(
-            color: AccueilProfesseur.accent.withOpacity(0.4),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 18,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(
-                  Icons.campaign_rounded,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(width: 10),
-              const Expanded(
-                child: Text(
-                  'Créer une annonce',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF5B5BEA), Color(0xFF8A8BFF)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AccueilProfesseur.accent.withOpacity(0.22),
+                        blurRadius: 14,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.campaign_rounded,
                     color: Colors.white,
+                    size: 22,
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            _description,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFFE2E7FF),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Annonces',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF667085),
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Créer une annonce',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 18,
+                          height: 1.2,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF101828),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () => _ouvrirCreation(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: AccueilProfesseur.accent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+            const SizedBox(height: 10),
+            const Text(
+              _description,
+              style: TextStyle(
+                fontSize: 13,
+                height: 1.35,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF667085),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: buttonHeight,
+                    child: ElevatedButton(
+                      onPressed: () => _ouvrirCreation(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AccueilProfesseur.accent,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        minimumSize: const Size.fromHeight(buttonHeight),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        textStyle: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: const Center(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'Créer une annonce',
+                            maxLines: 1,
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                  child: const Text('Créer une annonce'),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => _ouvrirMesAnnonces(context),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Colors.white54),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: SizedBox(
+                    height: buttonHeight,
+                    child: OutlinedButton(
+                      onPressed: () => _ouvrirMesAnnonces(context),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(
+                          color: AccueilProfesseur.accent.withOpacity(0.32),
+                        ),
+                        foregroundColor: AccueilProfesseur.accent,
+                        backgroundColor: AccueilProfesseur.accent.withOpacity(
+                          0.06,
+                        ),
+                        minimumSize: const Size.fromHeight(buttonHeight),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        textStyle: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: const Center(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'Voir mes annonces',
+                            maxLines: 1,
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                  child: const Text('Voir mes annonces'),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -445,9 +533,7 @@ class _AnnonceActionCard extends StatelessWidget {
     if (!context.mounted) return;
     await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => const PageGestionAnnoncesProfesseur(),
-      ),
+      MaterialPageRoute(builder: (_) => const PageGestionAnnoncesProfesseur()),
     );
   }
 
@@ -459,9 +545,7 @@ class _AnnonceActionCard extends StatelessWidget {
     if (!context.mounted) return;
     await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => const PageMesAnnoncesProfesseur(),
-      ),
+      MaterialPageRoute(builder: (_) => const PageMesAnnoncesProfesseur()),
     );
   }
 }
@@ -479,6 +563,8 @@ class _TitreSection extends StatelessWidget {
       children: [
         Text(
           titre,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.w900,
@@ -488,6 +574,8 @@ class _TitreSection extends StatelessWidget {
         const SizedBox(height: 6),
         Text(
           sousTitre,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
@@ -521,7 +609,7 @@ class _SummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: _panelDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -529,30 +617,35 @@ class _SummaryCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 42,
-                height: 42,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
                   color: accent,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                child: Icon(icon, color: iconColor),
+                child: Icon(icon, color: iconColor, size: 22),
               ),
               const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 7,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF3F5FA),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  chip,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF667085),
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: iconColor.withOpacity(0.10),
+                    border: Border.all(color: iconColor.withOpacity(0.18)),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    chip,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: iconColor,
+                    ),
                   ),
                 ),
               ),
@@ -562,8 +655,8 @@ class _SummaryCard extends StatelessWidget {
           Text(
             titre,
             style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
               color: Color(0xFF667085),
             ),
           ),
@@ -586,7 +679,8 @@ class _SummaryCard extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               fontSize: 12,
-              fontWeight: FontWeight.w700,
+              height: 1.35,
+              fontWeight: FontWeight.w600,
               color: Color(0xFF667085),
             ),
           ),
@@ -610,7 +704,7 @@ class _TrackingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: _panelDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -618,25 +712,21 @@ class _TrackingCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 42,
-                height: 42,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
                   color: const Color(0xFFEEF8FF),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Icon(
                   Icons.insights_rounded,
                   color: Color(0xFF0284C7),
+                  size: 22,
                 ),
               ),
               const Spacer(),
-              const Text(
-                'Suivi',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF667085),
-                ),
+              const Flexible(
+                child: _StatistiquesBadge(),
               ),
             ],
           ),
@@ -645,17 +735,45 @@ class _TrackingCard extends StatelessWidget {
             label: 'Classes',
             value: classesCount.toString().padLeft(2, '0'),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           _TrackingLine(
-            label: 'Matieres',
+            label: 'Matières',
             value: matieresCount.toString().padLeft(2, '0'),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           _TrackingLine(
-            label: 'Aujourd hui',
+            label: 'Séances du jour',
             value: seancesDuJour.toString().padLeft(2, '0'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _StatistiquesBadge extends StatelessWidget {
+  const _StatistiquesBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 6,
+      ),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF3F5FA),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: const Text(
+        'Statistiques',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+          color: Color(0xFF344054),
+        ),
       ),
     );
   }
@@ -670,10 +788,14 @@ class _TrackingLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
       children: [
         Expanded(
           child: Text(
             label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
@@ -727,100 +849,80 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-class _PrioritiesOverview extends StatelessWidget {
-  const _PrioritiesOverview({
-    required this.copiesACorriger,
-    required this.coursSansSupport,
-    required this.seancesDuJour,
-    required this.chargement,
-  });
-
-  final int copiesACorriger;
-  final int coursSansSupport;
-  final int seancesDuJour;
-  final bool chargement;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: _panelDecoration(),
-      child: Row(
-        children: [
-          Expanded(
-            child: _PriorityPill(
-              label: 'Copies',
-              value: chargement ? '...' : copiesACorriger.toString(),
-              color: const Color(0xFFDC2626),
-              background: const Color(0xFFFDECEC),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: _PriorityPill(
-              label: 'Sans support',
-              value: chargement ? '...' : coursSansSupport.toString(),
-              color: const Color(0xFFEA580C),
-              background: const Color(0xFFFFF2E6),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: _PriorityPill(
-              label: 'Journee',
-              value: seancesDuJour.toString(),
-              color: const Color(0xFF5B5BEA),
-              background: const Color(0xFFEEF2FF),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _PriorityPill extends StatelessWidget {
   const _PriorityPill({
     required this.label,
+    required this.subtitle,
     required this.value,
+    required this.icon,
+    required this.tooltip,
     required this.color,
     required this.background,
   });
 
   final String label;
+  final String subtitle;
   final String value;
+  final IconData icon;
+  final String tooltip;
   final Color color;
   final Color background;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-              color: color,
+    return Tooltip(
+      message: tooltip,
+      waitDuration: const Duration(milliseconds: 450),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: background,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: color.withOpacity(0.16)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: color, size: 18),
+                const Spacer(),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: color,
+                  ),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF667085),
+            const SizedBox(height: 10),
+            Text(
+              label,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 12,
+                height: 1.2,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF101828),
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 10.5,
+                height: 1.2,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF667085),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1129,11 +1231,12 @@ BoxDecoration _panelDecoration() {
   return BoxDecoration(
     color: Colors.white,
     borderRadius: BorderRadius.circular(28),
+    border: Border.all(color: Colors.black.withOpacity(0.05)),
     boxShadow: [
       BoxShadow(
-        color: Colors.black.withOpacity(0.05),
-        blurRadius: 20,
-        offset: const Offset(0, 10),
+        color: Colors.black.withOpacity(0.04),
+        blurRadius: 16,
+        offset: const Offset(0, 8),
       ),
     ],
   );
@@ -1145,7 +1248,7 @@ String _buildSousTitreProfil(ProfesseurProfilMobileDTO profil) {
     if (profil.specialite.isNotEmpty) profil.specialite,
   ];
   if (values.isEmpty) {
-    return 'Vue de votre journee pedagogique';
+    return 'Vue de votre journée pédagogique';
   }
   return values.join(' - ');
 }
@@ -1167,5 +1270,3 @@ String _buildTimeRange(SeanceProfesseurMobileDTO seance) {
   if (debut.isEmpty) return fin;
   return '$debut - $fin';
 }
-
-

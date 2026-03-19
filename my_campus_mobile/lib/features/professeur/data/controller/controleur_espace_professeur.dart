@@ -155,6 +155,10 @@ class ControleurEspaceProfesseur extends ChangeNotifier {
     await _rechargerExamensSelection();
   }
 
+  Future<void> rechargerExamensSelection() async {
+    await _rechargerExamensSelection();
+  }
+
   Future<void> rechercherSeancesPourEnseignement({
     required String codeClasse,
     required String codeMatiere,
@@ -483,10 +487,9 @@ class ControleurEspaceProfesseur extends ChangeNotifier {
   }
 
   Future<int> _compterCoursSansSupportAujourdHui() async {
-    final seancesDuJour =
-        _emploi.where((item) => _jourCorrespond(DateTime.now(), item.jour)).where(
-          _estUnCours,
-        );
+    final seancesDuJour = _emploi
+        .where((item) => _jourCorrespond(DateTime.now(), item.jour))
+        .where(_estUnCours);
 
     if (seancesDuJour.isEmpty) return 0;
 

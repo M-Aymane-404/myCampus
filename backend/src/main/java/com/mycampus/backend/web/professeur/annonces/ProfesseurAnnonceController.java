@@ -75,6 +75,17 @@ public class ProfesseurAnnonceController {
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping("/{annonceId}")
+    @Operation(summary = "Recuperer une annonce", description = "Recupere une annonce accessible par le professeur par son ID.")
+    public ResponseEntity<AnnonceSortieDTO> recupererAnnonce(
+            @PathVariable Long annonceId,
+            Authentication authentication) {
+
+        String emailProfesseur = authentication.getName();
+        AnnonceSortieDTO result = gestionAnnoncesProfesseurMetier.recupererAnnonceParId(annonceId, emailProfesseur);
+        return ResponseEntity.ok(result);
+    }
+
     @GetMapping("/mes-prof-annonces")
     @Operation(summary = "Lister mes departement/global annonces", description = "Recupere les annonces de mon departement et les globales.")
     public ResponseEntity<List<AnnonceSortieDTO>> listerMesDepEtGlobalAnnonces(Authentication authentication) {

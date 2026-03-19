@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../data/controller/controleur_annonce_professeur.dart';
 import '../data/controller/controleur_notification_professeur.dart';
 import '../data/dto/notification_professeur_dto.dart';
+import 'page_detail_annonce_professeur.dart';
 
 class PageNotificationsProfesseur extends StatefulWidget {
   const PageNotificationsProfesseur({super.key});
@@ -85,6 +87,27 @@ class _PageNotificationsProfesseurState
                   onTap: () async {
                     if (!notif.lu) {
                       await ctrl.marquerCommeLue(notif.id);
+                    }
+
+                    final referenceType =
+                        notif.referenceType?.toUpperCase() ?? '';
+                    if (referenceType == 'ANNONCE' && notif.referenceId != null) {
+                      final annonceCtrl =
+                          context.read<ControleurAnnonceProfesseur>();
+                      if (!annonceCtrl.chargement &&
+                          annonceCtrl.annoncesPubliques.isEmpty) {
+                        await annonceCtrl.chargerAnnoncesPubliques();
+                      }
+                      await annonceCtrl.chargerAnnonceParId(notif.referenceId!);
+                      if (!context.mounted) return;
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PageDetailAnnonceProfesseur(
+                            annonceId: notif.referenceId!,
+                          ),
+                        ),
+                      );
                     }
                   },
                 );

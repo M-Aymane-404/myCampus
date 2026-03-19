@@ -55,12 +55,26 @@ class ControleurAnnonceProfesseur extends ChangeNotifier {
       _ressourcesChargees = false;
       _ressourceAnnonceId = null;
 
-      final source = [..._annonces, ..._annoncesPubliques];
-      final annoncesTrouvees = source.where((annonce) => annonce.id == id);
-      if (annoncesTrouvees.isEmpty) {
+      AnnonceProfesseurDTO? selectionnee;
+      final all = [..._annonces, ..._annoncesPubliques];
+      for (final annonce in all) {
+        if (annonce.id == id) {
+          selectionnee = annonce;
+          break;
+        }
+      }
+      if (selectionnee == null) {
+        final annonce = await _repo.recupererAnnonceParId(id);
+        selectionnee = annonce;
+        if (!_annoncesPubliques.any((a) => a.id == annonce.id)) {
+          _annoncesPubliques = [..._annoncesPubliques, annonce];
+        }
+      }
+
+      if (selectionnee == null) {
         _erreur = 'Annonce introuvable.';
       } else {
-        _annonceSelectionnee = annoncesTrouvees.first;
+        _annonceSelectionnee = selectionnee;
         _annonces = _annonces.map((a) {
           if (a.id == id) return a.copyWith(estLue: true);
           return a;

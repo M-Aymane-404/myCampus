@@ -26,6 +26,11 @@ class AnnonceProfesseurApi {
     return data is List ? data : const [];
   }
 
+  Future<Map<String, dynamic>> recupererAnnonceParId(int annonceId) async {
+    final resp = await _dio.get('/api/professeur/annonces/$annonceId');
+    return _decodeMap(resp.data);
+  }
+
   Future<Map<String, dynamic>> creerAnnonce(Map<String, dynamic> body) async {
     final resp = await _dio.post(
       '/api/professeur/annonces',

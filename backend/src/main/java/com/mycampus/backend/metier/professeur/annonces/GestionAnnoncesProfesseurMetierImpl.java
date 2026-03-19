@@ -5,6 +5,7 @@ import com.mycampus.backend.dto.annonces.AnnonceEntrerDTO;
 import com.mycampus.backend.dto.annonces.AnnonceSortieDTO;
 import com.mycampus.backend.entites.Annonce;
 import com.mycampus.backend.entites.Classe;
+import com.mycampus.backend.entites.Departement;
 import com.mycampus.backend.entites.Professeur;
 import com.mycampus.backend.enumerations.AnnonceCibleType;
 import com.mycampus.backend.enumerations.ReferenceType;
@@ -120,6 +121,41 @@ public class GestionAnnoncesProfesseurMetierImpl implements GestionAnnoncesProfe
         return annonceRepository.findByAuteur_Id(professeur.getId()).stream()
                 .map(annonceMapper::changerVersSortieDTO)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AnnonceSortieDTO recupererAnnonceParId(Long annonceId, String emailProfesseur) throws UtilisateursException {
+        log.info("Récupération de l'annonce {} pour le professeur {}", annonceId, emailProfesseur);
+
+        Professeur professeur = professeurRepository.findByEmail(emailProfesseur)
+                .orElseThrow(() -> new UtilisateursException("Professeur non trouvé"));
+
+        Annonce annonce = annonceRepository.findByAnnonce_Id(annonceId)
+                .orElseThrow(() -> new UtilisateursException("Annonce non trouvée"));
+
+        if (annonce.getAuteur() != null && professeur.getId().equals(annonce.getAuteur().getId())) {
+            return annonceMapper.changerVersSortieDTO(annonce);
+        }
+
+        if (annonce.getCibleType() == AnnonceCibleType.PROFESSEURS_GLOBAL) {
+            return annonceMapper.changerVersSortieDTO(annonce);
+        }
+
+        Departement departementProf = professeur.getDepartementOuTravail();
+        if (annonce.getCibleType() == AnnonceCibleType.PROFESSEURS_DEPARTEMENT
+                && annonce.getDepartement() != null
+                && departementProf != null
+                && annonce.getDepartement().getCodeDepartement().equals(departementProf.getCodeDepartement())) {
+            return annonceMapper.changerVersSortieDTO(annonce);
+        }
+
+        if (annonce.getCibleType() == AnnonceCibleType.ETUDIANTS_GLOBAL
+                || annonce.getCibleType() == AnnonceCibleType.ETUDIANTS_CLASSE) {
+            return annonceMapper.changerVersSortieDTO(annonce);
+        }
+
+        throw new UtilisateursException("Vous n'êtes pas autorisé à consulter cette annonce");
     }
 
 

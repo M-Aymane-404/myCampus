@@ -222,7 +222,7 @@ public class SecurityController {
         Instant instant = Instant.now();
         JwtClaimsSet jwtClaimsSet = JwtClaimsSet.builder()
                 .issuedAt(instant)
-                .expiresAt(instant.plus(10, ChronoUnit.MINUTES))
+                .expiresAt(instant.plus(2, ChronoUnit.MINUTES))
                 .subject(sujet)
                 .claim("scope", scope)
                 .claim("userId", userId)
