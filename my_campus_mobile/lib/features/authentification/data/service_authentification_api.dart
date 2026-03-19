@@ -9,29 +9,17 @@ class ServiceAuthentificationApi {
     String email,
     String motDePasse,
   ) async {
-    try {
-      final response = await _dio.post(
-        '/auth/connecter-mobile',
-        data: {'email': email, 'motDePasse': motDePasse},
-        options: Options(
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-        ),
-      );
-      print('POST URL = ${_dio.options.baseUrl}/auth/connecter-mobile');
-      print('BODY = ${{'email': email, 'motDePasse': motDePasse}}');
-      return Map<String, dynamic>.from(response.data);
-    } on DioException catch (e) {
-      // Diagnostic complet
-      print('DioException.type = ${e.type}');
-      print('DioException.message = ${e.message}');
-      print('DioException.error = ${e.error}');
-      print('DioException.response = ${e.response?.statusCode}');
-      print('DioException.data = ${e.response?.data}');
-      rethrow;
-    }
+    final response = await _dio.post(
+      '/auth/connecter-mobile',
+      data: {'email': email, 'motDePasse': motDePasse},
+      options: Options(
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      ),
+    );
+    return Map<String, dynamic>.from(response.data);
   }
 
   Future<String> rafraichirJeton() async {
@@ -39,7 +27,7 @@ class ServiceAuthentificationApi {
 
     final accessToken = response.data['access_token']?.toString();
     if (accessToken == null || accessToken.isEmpty) {
-      throw Exception("Réponse refresh invalide: access_token manquant");
+      throw Exception("Reponse refresh invalide: access_token manquant");
     }
     return accessToken;
   }

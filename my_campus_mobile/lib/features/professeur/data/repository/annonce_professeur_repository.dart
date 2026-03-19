@@ -45,4 +45,16 @@ class AnnonceProfesseurRepository {
       estLue: _idsLus.contains((data['id'] as num?)?.toInt() ?? 0),
     );
   }
+
+  Future<List<AnnonceProfesseurDTO>> recupererAnnoncesPubliques() async {
+    final data = await _api.recupererAnnoncesPubliques();
+
+    return data
+        .map(
+          (e) => AnnonceProfesseurDTO.fromJson(
+            (e as Map).cast<String, dynamic>(),
+          ),
+        )
+        .toList();
+  }
 }

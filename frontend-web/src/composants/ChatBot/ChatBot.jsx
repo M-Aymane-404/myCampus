@@ -4,17 +4,16 @@ import {
   Maximize2,
   MessageCircle,
   Minimize2,
-  Paperclip,
   SendHorizontal,
   X,
 } from 'lucide-react';
 import { apiAuth } from '../../services/apiAuth';
 import './ChatBot.css';
 
-const CHAT_WEBHOOK_URL = 'http://localhost:5679/webhook-test/chat';
+const CHAT_WEBHOOK_URL = import.meta.env.VITE_CHAT_WEBHOOK_URL || '';
 
 const DEFAULT_MESSAGE =
-  "Je suis votre assistant MyCampus. Posez-moi une question sur votre contexte académique ou vos documents.";
+  "Je suis votre assistant MyCampus. Posez-moi une question sur votre contexte academique ou vos documents.";
 
 function decodeJwtPayload(token) {
   if (!token || typeof token !== 'string') return {};
@@ -64,7 +63,7 @@ function cleanupMarkdownAndOrganize(text) {
     .replace(/^\s{0,3}#{1,6}\s*/gm, '')
     .replace(/^\s*([-*_]\s*){3,}$/gm, '')
     .replace(/^\s*>\s?/gm, '')
-    .replace(/^\s*[-*]\s+/gm, '• ')
+    .replace(/^\s*[-*]\s+/gm, '- ')
     .replace(/^\s*\d+\.\s+/gm, (value) => value.trimStart())
     .replace(/\n{3,}/g, '\n\n')
     .trim();
@@ -130,7 +129,7 @@ export default function ChatBot() {
     if (messages.length > 0) {
       scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages]);
+  }, [messages.length]);
 
   useEffect(() => {
     if (!isOpen || messages.length > 0) return;
@@ -154,7 +153,20 @@ export default function ChatBot() {
         {
           id: crypto.randomUUID(),
           sender: 'bot',
-          text: "Je ne peux pas vous identifier pour le moment. Reconnectez-vous puis réessayez.",
+          text: "Je ne peux pas vous identifier pour le moment. Reconnectez-vous puis reessayez.",
+          time: formatTime(new Date()),
+        },
+      ]);
+      return;
+    }
+
+    if (!CHAT_WEBHOOK_URL) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          sender: 'bot',
+          text: "Le service de chat n'est pas configure dans cet environnement.",
           time: formatTime(new Date()),
         },
       ]);
@@ -173,8 +185,6 @@ export default function ChatBot() {
     setIsSending(true);
 
     try {
-      console.log('ChatBot request URL:', CHAT_WEBHOOK_URL);
-
       const response = await fetch(CHAT_WEBHOOK_URL, {
         method: 'POST',
         headers: {
@@ -195,11 +205,8 @@ export default function ChatBot() {
         data = {};
       }
 
-      console.log('ChatBot response status:', response.status);
-      console.log('ChatBot response body:', data);
-
       if (!response.ok || data?.ok === false) {
-        throw new Error("Le chatbot n'a pas pu répondre.");
+        throw new Error("Le chatbot n'a pas pu repondre.");
       }
 
       const reply = typeof data?.reply === 'string' ? data.reply : '';
@@ -214,17 +221,16 @@ export default function ChatBot() {
           time: formatTime(new Date()),
         },
       ]);
-    } catch (error) {
+    } catch {
       setMessages((prev) => [
         ...prev,
         {
           id: crypto.randomUUID(),
           sender: 'bot',
-          text: "Le service de chat est indisponible pour le moment. Vérifiez que n8n est bien démarré.",
+          text: "Le service de chat est indisponible pour le moment. Verifiez que n8n est bien demarre.",
           time: formatTime(new Date()),
         },
       ]);
-      console.error('ChatBot error:', error);
     } finally {
       setIsSending(false);
     }
@@ -255,7 +261,7 @@ export default function ChatBot() {
               <button
                 type="button"
                 onClick={() => setIsExpanded((prev) => !prev)}
-                aria-label={isExpanded ? 'Réduire la fenêtre' : 'Agrandir la fenêtre'}
+                aria-label={isExpanded ? 'Reduire la fenetre' : 'Agrandir la fenetre'}
               >
                 {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
               </button>
@@ -274,7 +280,7 @@ export default function ChatBot() {
             ))}
             {isSending && (
               <article className="mc-chatbot-message bot">
-                <p>Assistant MyCampus réfléchit...</p>
+                <p>Assistant MyCampus reflechit...</p>
                 <time>{formatTime(new Date())}</time>
               </article>
             )}

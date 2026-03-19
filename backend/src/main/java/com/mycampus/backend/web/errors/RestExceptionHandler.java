@@ -208,6 +208,20 @@ public class RestExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
     }
 
+    @ExceptionHandler(TropDeTentativesException.class)
+    public ResponseEntity<Object> handleTropDeTentatives(TropDeTentativesException ex, HttpServletRequest request) {
+        log.warn("Rate limit connexion: {}", ex.getMessage());
+
+        Map<String, Object> body = construireBody(
+                HttpStatus.TOO_MANY_REQUESTS,
+                "Trop de requetes",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(body);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleGenericException(Exception ex, HttpServletRequest  request) {
         log.error("Generic exception: {}", ex.getMessage(), ex);

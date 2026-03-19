@@ -20,6 +20,7 @@ import com.mycampus.backend.mappers.professeur.SeancesProfesseurMapper;
 import com.mycampus.backend.repositorys.AffectationEnseignementRepository;
 import com.mycampus.backend.repositorys.FichierSeanceRepository;
 import com.mycampus.backend.repositorys.SeanceRepository;
+import com.mycampus.backend.metier.professeur.StockageFichiersService;
 import com.mycampus.backend.metier.security.ValidationFichierSecuriseService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -27,13 +28,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 /*
@@ -55,6 +51,7 @@ public class GestionSeancesProfesseurMetierImpl implements GestionSeancesProfess
     private final FichiersSeanceProfesseurMapper fichiersSeanceProfesseurMapper;
     private final StructureMapper structureMapper;
     private final ValidationFichierSecuriseService validationFichierSecuriseService;
+    private final StockageFichiersService stockageFichiersService;
     /*
      This function checks that the professor PPR is provided.
      It prevents empty or null PPR from reaching database queries.
@@ -152,10 +149,11 @@ public class GestionSeancesProfesseurMetierImpl implements GestionSeancesProfess
      This function stores an uploaded file in a local folder and returns the saved path.
      Security: prevents writing outside the target folder.
     */
-    private String sauvegarderFichierSurDisque(MultipartFile fichier) throws SeancesProfesseurException {
+    private StockageFichiersService.FichierStocke sauvegarderFichierSurDisque(MultipartFile fichier) throws SeancesProfesseurException {
         try {
-            ValidationFichierSecuriseService.FichierValide fichierValide = validationFichierSecuriseService.valider(
+            return stockageFichiersService.sauvegarderFichier(
                     fichier,
+                    "seances",
                     java.util.Set.of(
                             ValidationFichierSecuriseService.FormatFichierAutorise.PDF,
                             ValidationFichierSecuriseService.FormatFichierAutorise.JPEG,
@@ -163,17 +161,6 @@ public class GestionSeancesProfesseurMetierImpl implements GestionSeancesProfess
                     ),
                     10 * 1024 * 1024L
             );
-
-            Path dossierBase = Paths.get("uploads", "seances").toAbsolutePath().normalize();
-            Files.createDirectories(dossierBase);
-            String nomUnique = UUID.randomUUID() + fichierValide.extension();
-            Path destination = dossierBase.resolve(nomUnique).normalize();
-            if (!destination.startsWith(dossierBase)) {
-                throw new SeancesProfesseurException("Nom de fichier invalide.");
-            }
-            fichier.transferTo(destination.toFile());
-
-            return destination.toString();
         } catch (SeancesProfesseurException e) {
             throw e;
         } catch (Exception e) {
@@ -189,15 +176,7 @@ public class GestionSeancesProfesseurMetierImpl implements GestionSeancesProfess
         if (!StringUtils.hasText(chemin)) {
             return;
         }
-        try {
-            Path dossierBase = Paths.get("uploads", "seances").toAbsolutePath().normalize();
-            Path cheminNormalise = Path.of(chemin).toAbsolutePath().normalize();
-            if (cheminNormalise.startsWith(dossierBase)) {
-                Files.deleteIfExists(cheminNormalise);
-            }
-        } catch (Exception ignored) {
-            /* ignore disk deletion errors to avoid breaking business transaction */
-        }
+        stockageFichiersService.supprimerSilencieusement(chemin);
     }
 
     @Override
@@ -393,15 +372,14 @@ public class GestionSeancesProfesseurMetierImpl implements GestionSeancesProfess
         */
         Seance seance = requireSeancePourProfesseur(professeurPpr, depotFichierSeanceEntrerDTO.getSeanceId());
 
-        String chemin = sauvegarderFichierSurDisque(fichier);
-
+        StockageFichiersService.FichierStocke fichierStocke = sauvegarderFichierSurDisque(fichier);
         FichierSeance fichierSeance = new FichierSeance();
 
         fichierSeance.setSeance(seance);
-        fichierSeance.setNomOriginal(fichier.getOriginalFilename());
-        fichierSeance.setChemin(chemin);
-        fichierSeance.setTypeMime(fichier.getContentType() != null ? fichier.getContentType() : "application/octet-stream");
-        fichierSeance.setTaille(fichier.getSize());
+        fichierSeance.setNomOriginal(fichierStocke.nomOriginal());
+        fichierSeance.setChemin(fichierStocke.cheminRelatif());
+        fichierSeance.setTypeMime(fichierStocke.typeMime());
+        fichierSeance.setTaille(fichierStocke.taille());
         fichierSeance.setDateUpload(LocalDateTime.now());
 
         FichierSeance fichierSauvegarde = fichierSeanceRepository.save(fichierSeance);
@@ -460,21 +438,17 @@ public class GestionSeancesProfesseurMetierImpl implements GestionSeancesProfess
         }
 
         try {
-            Path cheminNormalise = Paths.get(chemin).toAbsolutePath().normalize();
-
-            if (!Files.exists(cheminNormalise) || !Files.isReadable(cheminNormalise)) {
-                throw new SeancesProfesseurException("Fichier introuvable sur le disque.");
-            }
+            stockageFichiersService.chargerCommeResource(chemin);
 
             return TelechargementFichierSeanceSortieDTO.builder()
                     .id(fichier.getId())
                     .nomOriginal(fichier.getNomOriginal())
                     .typeMime(fichier.getTypeMime())
                     .taille(fichier.getTaille())
-                    .chemin(cheminNormalise.toString())
+                    .chemin(chemin)
                     .build();
 
-        } catch (InvalidPathException e) {
+        } catch (Exception e) {
             throw new SeancesProfesseurException("Chemin du fichier invalide.");
         }
     }

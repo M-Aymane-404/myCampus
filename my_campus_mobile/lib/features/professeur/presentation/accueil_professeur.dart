@@ -4,12 +4,11 @@ import 'package:provider/provider.dart';
 import '../data/controller/controleur_annonce_professeur.dart';
 import '../data/controller/controleur_espace_professeur.dart';
 import '../data/controller/controleur_notification_professeur.dart';
-import '../data/dto/annonce_professeur_dto.dart';
 import '../data/dto/professeur_mobile_dto.dart';
 import 'page_detail_annonce_professeur.dart';
 import 'page_gestion_annonces_professeur.dart';
+import 'page_mes_annonces_professeur.dart';
 import 'page_notifications_professeur.dart';
-import 'widgets/annonce_list_tile.dart';
 
 class AccueilProfesseur extends StatefulWidget {
   const AccueilProfesseur({super.key});
@@ -99,21 +98,6 @@ class _AccueilProfesseurState extends State<AccueilProfesseur> {
             slivers: [
               SliverToBoxAdapter(
                 child: _TopBarProfesseur(
-                  onTapAnnonces: () async {
-                    final ctrlAnnonce =
-                        context.read<ControleurAnnonceProfesseur>();
-                    if (ctrlAnnonce.annonces.isEmpty) {
-                      await ctrlAnnonce.chargerAnnonces();
-                    }
-
-                    if (!context.mounted) return;
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const PageGestionAnnoncesProfesseur(),
-                    ),
-                  );
-                  },
                   onTapNotifications: () async {
                     final ctrlNotif =
                         context.read<ControleurNotificationProfesseur>();
@@ -151,7 +135,7 @@ class _AccueilProfesseurState extends State<AccueilProfesseur> {
                               : _buildSousTitreProfil(profil),
                     ),
                     const SizedBox(height: 14),
-                    _AnnoncesProfesseurCard(),
+                    const _AnnonceActionCard(),
                     if (ctrl.erreur != null) ...[
                       _InfoBanner(message: ctrl.erreur!),
                       const SizedBox(height: 14),
@@ -249,11 +233,9 @@ class _AccueilProfesseurState extends State<AccueilProfesseur> {
 
 class _TopBarProfesseur extends StatelessWidget {
   const _TopBarProfesseur({
-    required this.onTapAnnonces,
     required this.onTapNotifications,
   });
 
-  final VoidCallback onTapAnnonces;
   final VoidCallback onTapNotifications;
 
   @override
@@ -294,39 +276,12 @@ class _TopBarProfesseur extends StatelessWidget {
               style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
             ),
           ),
-          _TopActionButton(icon: Icons.campaign_outlined, onTap: onTapAnnonces),
-          const SizedBox(width: 10),
           _BoutonNotificationsProfesseur(
             hasUnread: ctrlNotif.aDesNotificationsNonLues,
             onTap: onTapNotifications,
           ),
           const SizedBox(width: 10),
         ],
-      ),
-    );
-  }
-}
-
-class _TopActionButton extends StatelessWidget {
-  const _TopActionButton({required this.icon, required this.onTap});
-
-  final IconData icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(999),
-      onTap: onTap,
-      child: Container(
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-          color: const Color(0xFFF7F9FF),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.black.withOpacity(0.06)),
-        ),
-        child: Icon(icon, color: const Color(0xFF0B1220), size: 22),
       ),
     );
   }
@@ -379,6 +334,133 @@ class _BoutonNotificationsProfesseur extends StatelessWidget {
               ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _AnnonceActionCard extends StatelessWidget {
+  const _AnnonceActionCard({super.key});
+
+  static const _description =
+      'Prévenez vos étudiants d’un évènement, examen ou absence importante.';
+
+  @override
+  Widget build(BuildContext context) {
+    const borderRadius = 26.0;
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF5B5BEA), Color(0xFF8A8BFF)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(borderRadius),
+        boxShadow: [
+          BoxShadow(
+            color: AccueilProfesseur.accent.withOpacity(0.4),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.campaign_rounded,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'Créer une annonce',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            _description,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFFE2E7FF),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () => _ouvrirCreation(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: AccueilProfesseur.accent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: const Text('Créer une annonce'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => _ouvrirMesAnnonces(context),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Colors.white54),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: const Text('Voir mes annonces'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _ouvrirCreation(BuildContext context) async {
+    if (!context.mounted) return;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const PageGestionAnnoncesProfesseur(),
+      ),
+    );
+  }
+
+  Future<void> _ouvrirMesAnnonces(BuildContext context) async {
+    final ctrl = context.read<ControleurAnnonceProfesseur>();
+    if (!ctrl.chargement && ctrl.annoncesPubliques.isEmpty) {
+      await ctrl.chargerAnnoncesPubliques();
+    }
+    if (!context.mounted) return;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const PageMesAnnoncesProfesseur(),
       ),
     );
   }
@@ -817,189 +899,6 @@ class _PriorityMetricCard extends StatelessWidget {
   }
 }
 
-class _AnnoncesProfesseurCard extends StatefulWidget {
-  const _AnnoncesProfesseurCard({super.key});
-
-  @override
-  State<_AnnoncesProfesseurCard> createState() =>
-      _AnnoncesProfesseurCardState();
-}
-
-class _AnnoncesProfesseurCardState extends State<_AnnoncesProfesseurCard> {
-  bool _aChargementInitial = false;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_aChargementInitial) return;
-    _aChargementInitial = true;
-    final ctrl = context.read<ControleurAnnonceProfesseur>();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      if (!ctrl.chargement && ctrl.annonces.isEmpty) {
-        ctrl.chargerAnnonces();
-      }
-    });
-  }
-
-  Future<void> _ouvrirGestion() async {
-    if (!context.mounted) return;
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const PageGestionAnnoncesProfesseur(),
-      ),
-    );
-  }
-
-  Future<void> _ouvrirDetail(AnnonceProfesseurDTO annonce) async {
-    final ctrl = context.read<ControleurAnnonceProfesseur>();
-    await ctrl.chargerAnnonceParId(annonce.id);
-    if (!context.mounted) return;
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => PageDetailAnnonceProfesseur(
-          annonceId: annonce.id,
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final ctrl = context.watch<ControleurAnnonceProfesseur>();
-    final preview = ctrl.annonces.take(3).toList();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF5B5BEA), Color(0xFF8A8BFF)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(26),
-            boxShadow: [
-              BoxShadow(
-                color: AccueilProfesseur.accent.withOpacity(0.35),
-                blurRadius: 24,
-                offset: const Offset(0, 12),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: const [
-                  Icon(Icons.campaign_rounded, color: Colors.white),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'Envoyer une annonce',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'Prévenez vos étudiants d’un évènement, examen ou absence importante.',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFFE2E7FF),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _ouvrirGestion,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: AccueilProfesseur.accent,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      child: const Text('Créer une annonce'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: _ouvrirGestion,
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Colors.white54),
-                        foregroundColor: Colors.white,
-                      ),
-                      child: const Text('Voir mes notifications'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        if (ctrl.chargement && ctrl.annonces.isEmpty)
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: _panelDecoration(),
-            child: const Center(
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-          )
-        else if (preview.isEmpty)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: _panelDecoration(),
-            child: const Text(
-              'Vous n’avez pas encore publié d’annonce.',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF475569),
-              ),
-            ),
-          )
-        else
-          Column(
-            children: [
-              for (final annonce in preview)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: AnnonceListTileProfesseur(
-                    annonce: annonce,
-                    onTap: () => _ouvrirDetail(annonce),
-                  ),
-                ),
-            ],
-          ),
-        if (ctrl.annonces.length > preview.length)
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: _ouvrirGestion,
-              child: const Text('Voir toutes mes annonces'),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
 class _InfoBanner extends StatelessWidget {
   const _InfoBanner({required this.message});
 
@@ -1268,3 +1167,5 @@ String _buildTimeRange(SeanceProfesseurMobileDTO seance) {
   if (debut.isEmpty) return fin;
   return '$debut - $fin';
 }
+
+

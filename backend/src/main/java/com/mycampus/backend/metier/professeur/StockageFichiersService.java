@@ -21,13 +21,18 @@ import java.util.UUID;
 @Service
 public class StockageFichiersService {
     private final Path basePath;
+    private final Path legacyBasePath;
     private final ValidationFichierSecuriseService validationFichierSecuriseService;
+
+    public record FichierStocke(String cheminRelatif, String nomOriginal, String typeMime, long taille) {
+    }
 
     public StockageFichiersService(
             @Value("${app.files.base-dir:uploads}") String baseDir,
             ValidationFichierSecuriseService validationFichierSecuriseService
     ) {
         this.basePath = Paths.get(baseDir).toAbsolutePath().normalize();
+        this.legacyBasePath = Paths.get("uploads").toAbsolutePath().normalize();
         this.validationFichierSecuriseService = validationFichierSecuriseService;
         try {
             Files.createDirectories(this.basePath);
@@ -37,15 +42,28 @@ public class StockageFichiersService {
     }
 
     public String sauvegarderPdf(MultipartFile fichier, String sousDossier) {
+        return sauvegarderFichier(
+                fichier,
+                sousDossier,
+                Set.of(ValidationFichierSecuriseService.FormatFichierAutorise.PDF),
+                10 * 1024 * 1024L
+        ).cheminRelatif();
+    }
+
+    public FichierStocke sauvegarderFichier(
+            MultipartFile fichier,
+            String sousDossier,
+            Set<ValidationFichierSecuriseService.FormatFichierAutorise> formatsAutorises,
+            long tailleMaxOctets
+    ) {
         if (fichier == null || fichier.isEmpty()) {
             throw new NotesProfesseurException("Fichier obligatoire.");
         }
-
         try {
             ValidationFichierSecuriseService.FichierValide fichierValide = validationFichierSecuriseService.valider(
                     fichier,
-                    Set.of(ValidationFichierSecuriseService.FormatFichierAutorise.PDF),
-                    10 * 1024 * 1024L
+                    formatsAutorises,
+                    tailleMaxOctets
             );
             Path dir = resolveSubdirectory(sousDossier);
             Files.createDirectories(dir);
@@ -56,7 +74,12 @@ public class StockageFichiersService {
             ensureInsideBase(cible);
             Files.copy(fichier.getInputStream(), cible, StandardCopyOption.REPLACE_EXISTING);
 
-            return relativize(cible);
+            return new FichierStocke(
+                    relativize(cible),
+                    fichierValide.nomOriginalSecurise(),
+                    fichierValide.typeMime(),
+                    fichier.getSize()
+            );
         } catch (IOException e) {
             throw new NotesProfesseurException("Erreur lors de la sauvegarde du fichier.");
         }
@@ -110,11 +133,18 @@ public class StockageFichiersService {
             throw new NotesProfesseurException("Aucun fichier disponible.");
         }
         try {
+            Path brut = Paths.get(chemin);
+            if (brut.isAbsolute()) {
+                Path absolu = brut.toAbsolutePath().normalize();
+                ensureInsideAllowedRoots(absolu);
+                return absolu;
+            }
+
             String normalized = chemin.replace("\\", "/").replaceAll("^/+", "");
             Path candidate = normalized.isEmpty() ? Paths.get("") : Paths.get(normalized);
             Path resolved = basePath.resolve(candidate).normalize();
 
-            ensureInsideBase(resolved);
+            ensureInsideAllowedRoots(resolved);
             return resolved;
         } catch (InvalidPathException ex) {
             throw new NotesProfesseurException("Chemin de fichier invalide.");
@@ -145,6 +175,13 @@ public class StockageFichiersService {
         if (!path.startsWith(basePath)) {
             throw new NotesProfesseurException("Chemin de fichier invalide.");
         }
+    }
+
+    private void ensureInsideAllowedRoots(Path path) {
+        if (path.startsWith(basePath) || path.startsWith(legacyBasePath)) {
+            return;
+        }
+        throw new NotesProfesseurException("Chemin de fichier invalide.");
     }
 
     private String relativize(Path cible) {

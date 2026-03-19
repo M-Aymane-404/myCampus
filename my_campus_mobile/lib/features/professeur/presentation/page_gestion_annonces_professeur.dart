@@ -5,6 +5,7 @@ import '../data/controller/controleur_annonce_professeur.dart';
 import '../data/controller/controleur_espace_professeur.dart';
 import '../data/dto/professeur_mobile_dto.dart';
 import 'page_detail_annonce_professeur.dart';
+import 'page_mes_annonces_professeur.dart';
 import 'page_notifications_professeur.dart';
 import 'widgets/annonce_list_tile.dart';
 
@@ -280,15 +281,21 @@ class _PageGestionAnnoncesProfesseurState
                       const SizedBox(width: 12),
                       TextButton(
                         onPressed: () async {
+                          final ctrlAnnonce =
+                              context.read<ControleurAnnonceProfesseur>();
+                          if (!ctrlAnnonce.chargement &&
+                              ctrlAnnonce.annoncesPubliques.isEmpty) {
+                            await ctrlAnnonce.chargerAnnoncesPubliques();
+                          }
                           if (!context.mounted) return;
                           await Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const PageNotificationsProfesseur(),
+                              builder: (_) => const PageMesAnnoncesProfesseur(),
                             ),
                           );
                         },
-                        child: const Text('Voir mes notifications'),
+                        child: const Text('Voir mes annonces'),
                       ),
                     ],
                   ),

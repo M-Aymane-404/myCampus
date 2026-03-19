@@ -15,6 +15,7 @@ import com.mycampus.backend.exceptions.EtudiantException;
 import com.mycampus.backend.exceptions.SeancesProfesseurException;
 import com.mycampus.backend.metier.administrateur.utilisateurs.GestionUtilisateursMetier;
 import com.mycampus.backend.metier.etudiant.StructureEtudiant.GestionStructureEtudiantMetier;
+import com.mycampus.backend.metier.professeur.StockageFichiersService;
 import com.mycampus.backend.metier.security.CustomUserDetails;
 import com.mycampus.backend.metier.security.GestionUtilisateurConnecteMetier;
 import io.swagger.v3.oas.annotations.Operation;
@@ -23,7 +24,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -34,10 +34,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.net.MalformedURLException;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.Files;
 import java.time.LocalDate;
 import java.util.List;
@@ -51,6 +49,7 @@ public class StructureAcademiqueEtudiantController {
     private final GestionStructureEtudiantMetier metier;
     private final GestionUtilisateurConnecteMetier utilisateurMetier;
     private final GestionUtilisateursMetier gestionUtilisateursMetier;
+    private final StockageFichiersService stockageFichiersService;
 
 
 
@@ -200,27 +199,20 @@ public class StructureAcademiqueEtudiantController {
 
         TelechargementFichierSeanceSortieDTO telechargement =
                 metier.preparerTelechargementFichierSeance(user.getId(), fichierId);
+        Resource ressource = stockageFichiersService.chargerCommeResource(telechargement.getChemin());
 
-        try {
-            Path chemin = Paths.get(telechargement.getChemin()).toAbsolutePath().normalize();
-            Resource ressource = new UrlResource(chemin.toUri());
-
-            MediaType type = MediaType.APPLICATION_OCTET_STREAM;
-            if (telechargement.getTypeMime() != null && !telechargement.getTypeMime().isBlank()) {
-                type = MediaType.parseMediaType(telechargement.getTypeMime());
-            }
-
-            String nomFichier = telechargement.getNomOriginal() != null ? telechargement.getNomOriginal() : "fichier";
-            nomFichier = nomFichier.replace("\"", "");
-
-            return ResponseEntity.ok()
-                    .contentType(type)
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + nomFichier + "\"")
-                    .body(ressource);
-
-        } catch (MalformedURLException e) {
-            throw new SeancesProfesseurException("Chemin du fichier invalide.");
+        MediaType type = MediaType.APPLICATION_OCTET_STREAM;
+        if (telechargement.getTypeMime() != null && !telechargement.getTypeMime().isBlank()) {
+            type = MediaType.parseMediaType(telechargement.getTypeMime());
         }
+
+        String nomFichier = telechargement.getNomOriginal() != null ? telechargement.getNomOriginal() : "fichier";
+        nomFichier = nomFichier.replace("\"", "");
+
+        return ResponseEntity.ok()
+                .contentType(type)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + nomFichier + "\"")
+                .body(ressource);
         }
 
     @GetMapping("/examens/{examenId}/copie")

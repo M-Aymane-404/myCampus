@@ -13,6 +13,7 @@ class ControleurAnnonceProfesseur extends ChangeNotifier {
   bool _chargement = false;
   String? _erreur;
   List<AnnonceProfesseurDTO> _annonces = <AnnonceProfesseurDTO>[];
+  List<AnnonceProfesseurDTO> _annoncesPubliques = <AnnonceProfesseurDTO>[];
   AnnonceProfesseurDTO? _annonceSelectionnee;
   List<RessourceAnnonceProfesseurDTO> _ressources =
       <RessourceAnnonceProfesseurDTO>[];
@@ -22,6 +23,7 @@ class ControleurAnnonceProfesseur extends ChangeNotifier {
   bool get chargement => _chargement;
   String? get erreur => _erreur;
   List<AnnonceProfesseurDTO> get annonces => _annonces;
+  List<AnnonceProfesseurDTO> get annoncesPubliques => _annoncesPubliques;
   AnnonceProfesseurDTO? get annonceSelectionnee => _annonceSelectionnee;
   List<RessourceAnnonceProfesseurDTO> get ressourcesAnnonceSelectionnee =>
       _ressources;
@@ -53,8 +55,8 @@ class ControleurAnnonceProfesseur extends ChangeNotifier {
       _ressourcesChargees = false;
       _ressourceAnnonceId = null;
 
-      final annoncesTrouvees =
-          _annonces.where((annonce) => annonce.id == id);
+      final source = [..._annonces, ..._annoncesPubliques];
+      final annoncesTrouvees = source.where((annonce) => annonce.id == id);
       if (annoncesTrouvees.isEmpty) {
         _erreur = 'Annonce introuvable.';
       } else {
@@ -110,6 +112,21 @@ class ControleurAnnonceProfesseur extends ChangeNotifier {
     } catch (e) {
       _erreur = e.toString();
       rethrow;
+    } finally {
+      _chargement = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> chargerAnnoncesPubliques() async {
+    _chargement = true;
+    _erreur = null;
+    notifyListeners();
+
+    try {
+      _annoncesPubliques = await _repo.recupererAnnoncesPubliques();
+    } catch (e) {
+      _erreur = e.toString();
     } finally {
       _chargement = false;
       notifyListeners();

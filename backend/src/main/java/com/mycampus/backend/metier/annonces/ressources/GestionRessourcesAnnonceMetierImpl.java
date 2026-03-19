@@ -8,6 +8,8 @@ import com.mycampus.backend.entites.Professeur;
 import com.mycampus.backend.entites.RessourceAnnonce;
 import com.mycampus.backend.enumerations.AnnonceCibleType;
 import com.mycampus.backend.exceptions.UtilisateursException;
+import com.mycampus.backend.metier.professeur.StockageFichiersService;
+import com.mycampus.backend.metier.security.ValidationFichierSecuriseService;
 import com.mycampus.backend.repositorys.AnnonceRepository;
 import com.mycampus.backend.repositorys.EtudiantRepository;
 import com.mycampus.backend.repositorys.ProfesseurRepository;
@@ -19,14 +21,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -38,6 +36,7 @@ public class GestionRessourcesAnnonceMetierImpl implements GestionRessourcesAnno
     private final RessourceAnnonceRepository ressourceAnnonceRepository;
     private final ProfesseurRepository professeurRepository;
     private final EtudiantRepository etudiantRepository;
+    private final StockageFichiersService stockageFichiersService;
 
     @Override
     public List<RessourceAnnonceSortieDTO> ajouterRessourcesAdmin(Long annonceId, List<MultipartFile> fichiers) {
@@ -187,14 +186,23 @@ public class GestionRessourcesAnnonceMetierImpl implements GestionRessourcesAnno
     }
 
     private RessourceAnnonceSortieDTO sauvegarderRessource(Annonce annonce, MultipartFile fichier) {
-        String chemin = sauvegarderFichierSurDisque(fichier);
+        StockageFichiersService.FichierStocke fichierStocke = stockageFichiersService.sauvegarderFichier(
+                fichier,
+                "annonces",
+                Set.of(
+                        ValidationFichierSecuriseService.FormatFichierAutorise.PDF,
+                        ValidationFichierSecuriseService.FormatFichierAutorise.JPEG,
+                        ValidationFichierSecuriseService.FormatFichierAutorise.PNG
+                ),
+                10 * 1024 * 1024L
+        );
 
         RessourceAnnonce ressource = RessourceAnnonce.builder()
                 .annonce(annonce)
-                .nomOriginal(StringUtils.hasText(fichier.getOriginalFilename()) ? fichier.getOriginalFilename() : "fichier")
-                .chemin(chemin)
-                .typeMime(StringUtils.hasText(fichier.getContentType()) ? fichier.getContentType() : "application/octet-stream")
-                .taille(fichier.getSize())
+                .nomOriginal(fichierStocke.nomOriginal())
+                .chemin(fichierStocke.cheminRelatif())
+                .typeMime(fichierStocke.typeMime())
+                .taille(fichierStocke.taille())
                 .dateUpload(LocalDateTime.now())
                 .build();
 
@@ -202,48 +210,11 @@ public class GestionRessourcesAnnonceMetierImpl implements GestionRessourcesAnno
         return versSortieDTO(sauvegardee);
     }
 
-    private String sauvegarderFichierSurDisque(MultipartFile fichier) {
-        if (fichier == null || fichier.isEmpty()) {
-            throw new UtilisateursException("Le fichier est obligatoire");
-        }
-
-        try {
-            Path dossierBase = Paths.get("uploads", "annonces").toAbsolutePath().normalize();
-            Files.createDirectories(dossierBase);
-
-            String nomOriginal = fichier.getOriginalFilename() != null ? fichier.getOriginalFilename() : "fichier";
-            nomOriginal = StringUtils.cleanPath(nomOriginal);
-
-            String extension = "";
-            int index = nomOriginal.lastIndexOf('.');
-            if (index > 0 && index < nomOriginal.length() - 1) {
-                extension = nomOriginal.substring(index);
-            }
-
-            Path destination = dossierBase.resolve(UUID.randomUUID() + extension).normalize();
-            if (!destination.startsWith(dossierBase)) {
-                throw new UtilisateursException("Nom de fichier invalide");
-            }
-
-            fichier.transferTo(destination.toFile());
-            return destination.toString();
-        } catch (UtilisateursException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new UtilisateursException("Erreur lors du stockage de la ressource: " + e.getMessage());
-        }
-    }
-
     private void supprimerFichierSurDisqueSilencieusement(String chemin) {
         if (!StringUtils.hasText(chemin)) {
             return;
         }
-
-        try {
-            Files.deleteIfExists(Path.of(chemin));
-        } catch (Exception e) {
-            log.warn("Suppression disque ignoree pour la ressource annonce: {}", chemin);
-        }
+        stockageFichiersService.supprimerSilencieusement(chemin);
     }
 
     private TelechargementRessourceAnnonceSortieDTO versTelechargementDTO(RessourceAnnonce ressource) {
@@ -252,22 +223,15 @@ public class GestionRessourcesAnnonceMetierImpl implements GestionRessourcesAnno
             throw new UtilisateursException("Chemin de la ressource introuvable");
         }
 
-        try {
-            Path cheminNormalise = Paths.get(chemin).toAbsolutePath().normalize();
-            if (!Files.exists(cheminNormalise) || !Files.isReadable(cheminNormalise)) {
-                throw new UtilisateursException("Fichier introuvable sur le disque");
-            }
+        stockageFichiersService.chargerCommeResource(chemin);
 
-            return TelechargementRessourceAnnonceSortieDTO.builder()
-                    .id(ressource.getId())
-                    .nomOriginal(ressource.getNomOriginal())
-                    .typeMime(ressource.getTypeMime())
-                    .taille(ressource.getTaille())
-                    .chemin(cheminNormalise.toString())
-                    .build();
-        } catch (InvalidPathException e) {
-            throw new UtilisateursException("Chemin de la ressource invalide");
-        }
+        return TelechargementRessourceAnnonceSortieDTO.builder()
+                .id(ressource.getId())
+                .nomOriginal(ressource.getNomOriginal())
+                .typeMime(ressource.getTypeMime())
+                .taille(ressource.getTaille())
+                .chemin(chemin)
+                .build();
     }
 
     private List<RessourceAnnonceSortieDTO> mapperListe(List<RessourceAnnonce> ressources) {

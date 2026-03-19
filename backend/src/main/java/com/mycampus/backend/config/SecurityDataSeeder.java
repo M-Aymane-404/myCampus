@@ -30,6 +30,7 @@ public class SecurityDataSeeder {
     private final EtudiantsSeeder etudiantsSeeder;
     private final PedagogiqueDataSeeder pedagogiqueDataSeeder;
 
+
     @Bean
     public ApplicationRunner securityDataSeederRunner() {
         return args -> {

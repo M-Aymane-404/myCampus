@@ -75,21 +75,6 @@ class _PageAccueilEtudiantState extends State<PageAccueilEtudiant> {
             slivers: [
               SliverToBoxAdapter(
                 child: _AppBarCompacte(
-                  onTapAnnonces: () async {
-                    final ctrlAnnonce =
-                        context.read<ControleurAnnonceEtudiant>();
-                    if (ctrlAnnonce.annonces.isEmpty) {
-                      await ctrlAnnonce.chargerAnnonces();
-                    }
-
-                    if (!context.mounted) return;
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const PageListeAnnoncesEtudiant(),
-                      ),
-                    );
-                  },
                   onTapNotifications: () async {
                     final ctrlNotif =
                         context.read<ControleurNotificationEtudiant>();
@@ -192,11 +177,9 @@ class _PageAccueilEtudiantState extends State<PageAccueilEtudiant> {
 
 class _AppBarCompacte extends StatelessWidget {
   const _AppBarCompacte({
-    required this.onTapAnnonces,
     required this.onTapNotifications,
   });
 
-  final VoidCallback onTapAnnonces;
   final VoidCallback onTapNotifications;
 
   @override
@@ -234,39 +217,9 @@ class _AppBarCompacte extends StatelessWidget {
               style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
             ),
           ),
-          _TopActionButton(
-            icon: Icons.campaign_outlined,
-            onTap: onTapAnnonces,
-          ),
-          const SizedBox(width: 10),
           _BoutonAnnonce(hasUnread: hasUnread, onTap: onTapNotifications),
           const SizedBox(width: 10),
         ],
-      ),
-    );
-  }
-}
-
-class _TopActionButton extends StatelessWidget {
-  const _TopActionButton({required this.icon, required this.onTap});
-
-  final IconData icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(999),
-      onTap: onTap,
-      child: Container(
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-          color: const Color(0xFFF7F9FF),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.black.withOpacity(0.06)),
-        ),
-        child: Icon(icon, color: const Color(0xFF0B1220), size: 22),
       ),
     );
   }

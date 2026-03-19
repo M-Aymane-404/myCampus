@@ -5,6 +5,7 @@ import com.mycampus.backend.dto.annonces.AnnonceSortieDTO;
 import com.mycampus.backend.dto.annonces.RessourceAnnonceSortieDTO;
 import com.mycampus.backend.dto.annonces.TelechargementRessourceAnnonceSortieDTO;
 import com.mycampus.backend.metier.annonces.ressources.GestionRessourcesAnnonceMetier;
+import com.mycampus.backend.metier.professeur.StockageFichiersService;
 import com.mycampus.backend.metier.professeur.annonces.GestionAnnoncesProfesseurMetier;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -17,7 +18,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -27,9 +27,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.net.MalformedURLException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
 @RestController
@@ -42,6 +39,7 @@ public class ProfesseurAnnonceController {
 
     private final GestionAnnoncesProfesseurMetier gestionAnnoncesProfesseurMetier;
     private final GestionRessourcesAnnonceMetier gestionRessourcesAnnonceMetier;
+    private final StockageFichiersService stockageFichiersService;
 
     @PostMapping
     @Operation(summary = "Creer une annonce", description = "Cree une nouvelle annonce pour une classe assignee au professeur.")
@@ -156,26 +154,20 @@ public class ProfesseurAnnonceController {
                         ressourceId,
                         authentication.getName()
                 );
+        Resource ressource = stockageFichiersService.chargerCommeResource(telechargement.getChemin());
 
-        try {
-            Path chemin = Paths.get(telechargement.getChemin()).toAbsolutePath().normalize();
-            Resource ressource = new UrlResource(chemin.toUri());
-
-            MediaType type = MediaType.APPLICATION_OCTET_STREAM;
-            if (telechargement.getTypeMime() != null && !telechargement.getTypeMime().isBlank()) {
-                type = MediaType.parseMediaType(telechargement.getTypeMime());
-            }
-
-            String nomFichier = telechargement.getNomOriginal() != null ? telechargement.getNomOriginal() : "fichier";
-            nomFichier = nomFichier.replace("\"", "");
-
-            return ResponseEntity.ok()
-                    .contentType(type)
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + nomFichier + "\"")
-                    .body(ressource);
-        } catch (MalformedURLException e) {
-            throw new IllegalArgumentException("Chemin du fichier invalide.");
+        MediaType type = MediaType.APPLICATION_OCTET_STREAM;
+        if (telechargement.getTypeMime() != null && !telechargement.getTypeMime().isBlank()) {
+            type = MediaType.parseMediaType(telechargement.getTypeMime());
         }
+
+        String nomFichier = telechargement.getNomOriginal() != null ? telechargement.getNomOriginal() : "fichier";
+        nomFichier = nomFichier.replace("\"", "");
+
+        return ResponseEntity.ok()
+                .contentType(type)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + nomFichier + "\"")
+                .body(ressource);
     }
 
     private List<MultipartFile> normaliserFichiers(List<MultipartFile> fichiers, MultipartFile fichier) {

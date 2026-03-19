@@ -8,6 +8,7 @@ import com.mycampus.backend.entites.RefreshToken;
 import com.mycampus.backend.entites.Utilisateur;
 import com.mycampus.backend.exceptions.SecuriteException;
 import com.mycampus.backend.metier.security.CustomUserDetails;
+import com.mycampus.backend.metier.security.LimitationTentativesConnexionService;
 import com.mycampus.backend.metier.security.RefreshTokenMetier;
 import com.mycampus.backend.metier.security.UserDetailsServiceImpl;
 import com.mycampus.backend.repositorys.UtilisateurRepository;
@@ -23,6 +24,7 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -55,6 +57,7 @@ public class SecurityController {
     private final UserDetailsServiceImpl userDetailsServiceImpl;
     private final UtilisateurRepository utilisateurRepository;
     private final RecaptchaService recaptchaService;
+    private final LimitationTentativesConnexionService limitationTentativesConnexionService;
 
     @Value("${app.security.cookie-secure:false}")
     private boolean cookieSecure;
@@ -95,13 +98,24 @@ public class SecurityController {
     public JetonsSortieDTO connecter(@Valid @RequestBody ConnectionDTO connectionDTO,
                                      HttpServletRequest request,
                                      HttpServletResponse response) {
+        String ip = extraireIp(request);
+        limitationTentativesConnexionService.verifierAutorisation(connectionDTO.getEmail(), ip);
         if (!recaptchaService.validateRecaptcha(connectionDTO.getRecaptchaToken())) {
+            limitationTentativesConnexionService.enregistrerEchec(connectionDTO.getEmail(), ip);
             throw new SecuriteException("Validation reCAPTCHA echouee. Veuillez reessayer.");
         }
 
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(connectionDTO.getEmail(), connectionDTO.getMotDePasse())
-        );
+        Authentication authentication;
+        try {
+            authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(connectionDTO.getEmail(), connectionDTO.getMotDePasse())
+            );
+        } catch (AuthenticationException ex) {
+            limitationTentativesConnexionService.enregistrerEchec(connectionDTO.getEmail(), ip);
+            throw ex;
+        }
+
+        limitationTentativesConnexionService.reinitialiser(connectionDTO.getEmail(), ip);
 
         return creerSession(authentication, request, response);
     }
@@ -110,9 +124,20 @@ public class SecurityController {
     public JetonsSortieDTO connecterMobile(@Valid @RequestBody ConnectionMobileDTO connectionDTO,
                                            HttpServletRequest request,
                                            HttpServletResponse response) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(connectionDTO.getEmail(), connectionDTO.getMotDePasse())
-        );
+        String ip = extraireIp(request);
+        limitationTentativesConnexionService.verifierAutorisation(connectionDTO.getEmail(), ip);
+
+        Authentication authentication;
+        try {
+            authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(connectionDTO.getEmail(), connectionDTO.getMotDePasse())
+            );
+        } catch (AuthenticationException ex) {
+            limitationTentativesConnexionService.enregistrerEchec(connectionDTO.getEmail(), ip);
+            throw ex;
+        }
+
+        limitationTentativesConnexionService.reinitialiser(connectionDTO.getEmail(), ip);
 
         return creerSession(authentication, request, response);
     }
@@ -140,7 +165,7 @@ public class SecurityController {
         ResponseCookie nouveauCookie = ResponseCookie.from("refresh_token", nouveau.getRefreshToken())
                 .httpOnly(true)
                 .secure(cookieSecure)
-                .sameSite("Lax")
+                .sameSite("Strict")
                 .path("/auth")
                 .maxAge(7 * 24 * 60 * 60)
                 .build();
@@ -159,7 +184,7 @@ public class SecurityController {
         ResponseCookie deleteCookie = ResponseCookie.from("refresh_token", "")
                 .httpOnly(true)
                 .secure(cookieSecure)
-                .sameSite("Lax")
+                .sameSite("Strict")
                 .path("/auth")
                 .maxAge(0)
                 .build();
@@ -184,7 +209,7 @@ public class SecurityController {
         ResponseCookie cookie = ResponseCookie.from("refresh_token", refresh.getToken())
                 .httpOnly(true)
                 .secure(cookieSecure)
-                .sameSite("Lax")
+                .sameSite("Strict")
                 .path("/auth")
                 .maxAge(7 * 24 * 60 * 60)
                 .build();

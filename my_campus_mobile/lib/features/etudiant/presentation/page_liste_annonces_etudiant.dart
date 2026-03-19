@@ -174,11 +174,6 @@ class _AnnonceListTile extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(width: 10),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: Colors.black.withOpacity(0.35),
-            ),
           ],
         ),
       ),

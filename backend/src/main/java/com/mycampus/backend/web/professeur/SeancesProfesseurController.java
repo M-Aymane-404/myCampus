@@ -13,6 +13,7 @@ import com.mycampus.backend.dto.professeur.DonneeSortie.seances.SeanceSortieDTO;
 import com.mycampus.backend.entites.Professeur;
 import com.mycampus.backend.exceptions.SeancesProfesseurException;
 import com.mycampus.backend.exceptions.UtilisateursException;
+import com.mycampus.backend.metier.professeur.StockageFichiersService;
 import com.mycampus.backend.metier.professeur.seances.GestionSeancesProfesseurMetier;
 import com.mycampus.backend.metier.security.CustomUserDetails;
 import com.mycampus.backend.metier.security.GestionUtilisateurConnecteMetier;
@@ -21,24 +22,16 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.mycampus.backend.dto.professeur.DonneeSortie.fichiersSeance.TelechargementFichierSeanceSortieDTO;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 
-import java.net.MalformedURLException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
-
-import static org.springframework.data.jpa.domain.AbstractPersistable_.id;
 
 @RestController
 @RequestMapping("/api/professeur")
@@ -48,6 +41,7 @@ public class SeancesProfesseurController {
     private final GestionSeancesProfesseurMetier gestionSeancesProfMetier;
    // private final ProfesseurRepository professeurRepository;
     private final GestionUtilisateurConnecteMetier utilisateurMetier;
+    private final StockageFichiersService stockageFichiersService;
 
 
 
@@ -157,27 +151,20 @@ public class SeancesProfesseurController {
         String ppr = utilisateurMetier.trouverProfesseurPprParId(user.getId());
         TelechargementFichierSeanceSortieDTO telechargement =
                 gestionSeancesProfMetier.preparerTelechargementFichierSeance(ppr, fichierId);
+        Resource ressource = stockageFichiersService.chargerCommeResource(telechargement.getChemin());
 
-        try {
-            Path chemin = Paths.get(telechargement.getChemin()).toAbsolutePath().normalize();
-            Resource ressource = new UrlResource(chemin.toUri());
-
-            MediaType type = MediaType.APPLICATION_OCTET_STREAM;
-            if (telechargement.getTypeMime() != null && !telechargement.getTypeMime().isBlank()) {
-                type = MediaType.parseMediaType(telechargement.getTypeMime());
-            }
-
-            String nomFichier = telechargement.getNomOriginal() != null ? telechargement.getNomOriginal() : "fichier";
-            nomFichier = nomFichier.replace("\"", "");
-
-            return ResponseEntity.ok()
-                    .contentType(type)
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + nomFichier + "\"")
-                    .body(ressource);
-
-        } catch (MalformedURLException e) {
-            throw new SeancesProfesseurException("Chemin du fichier invalide.");
+        MediaType type = MediaType.APPLICATION_OCTET_STREAM;
+        if (telechargement.getTypeMime() != null && !telechargement.getTypeMime().isBlank()) {
+            type = MediaType.parseMediaType(telechargement.getTypeMime());
         }
+
+        String nomFichier = telechargement.getNomOriginal() != null ? telechargement.getNomOriginal() : "fichier";
+        nomFichier = nomFichier.replace("\"", "");
+
+        return ResponseEntity.ok()
+                .contentType(type)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + nomFichier + "\"")
+                .body(ressource);
       }
 
 

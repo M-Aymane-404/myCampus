@@ -28,10 +28,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.core.io.Resource;
 import org.springframework.util.StringUtils;
 
-import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Comparator;
@@ -508,21 +504,17 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
         }
 
         try {
-            Path cheminNormalise = Paths.get(chemin).toAbsolutePath().normalize();
-
-            if (!Files.exists(cheminNormalise) || !Files.isReadable(cheminNormalise)) {
-                throw new SeancesProfesseurException("Fichier introuvable sur le disque.");
-            }
+            stockage.chargerCommeResource(chemin);
 
             return TelechargementFichierSeanceSortieDTO.builder()
                     .id(fichier.getId())
                     .nomOriginal(fichier.getNomOriginal())
                     .typeMime(fichier.getTypeMime())
                     .taille(fichier.getTaille())
-                    .chemin(cheminNormalise.toString())
+                    .chemin(chemin)
                     .build();
 
-        } catch (InvalidPathException e) {
+        } catch (Exception e) {
             throw new SeancesProfesseurException("Chemin du fichier invalide.");
         }
     }
