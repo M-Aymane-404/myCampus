@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../data/controller/controleur_annonce_professeur.dart';
 import '../data/controller/controleur_espace_professeur.dart';
 import '../data/controller/controleur_notification_professeur.dart';
 import '../data/dto/professeur_mobile_dto.dart';
+import 'page_liste_annonces_professeur.dart';
 import 'page_notifications_professeur.dart';
 
 class AccueilProfesseur extends StatefulWidget {
@@ -40,7 +42,8 @@ class _AccueilProfesseurState extends State<AccueilProfesseur> {
     final emploi = ctrl.emploi;
     final enseignements = ctrl.enseignements;
     final maintenant = _DashboardSchedule.findCurrent(emploi);
-    final prochaine = ctrl.prochaineSeance ?? _DashboardSchedule.findNext(emploi);
+    final prochaine =
+        ctrl.prochaineSeance ?? _DashboardSchedule.findNext(emploi);
     final seancesDuJour = _DashboardSchedule.todaySessions(emploi);
     final classesDistinctes =
         enseignements.map((item) => item.codeClasse).toSet().length;
@@ -93,6 +96,21 @@ class _AccueilProfesseurState extends State<AccueilProfesseur> {
             slivers: [
               SliverToBoxAdapter(
                 child: _TopBarProfesseur(
+                  onTapAnnonces: () async {
+                    final ctrlAnnonce =
+                        context.read<ControleurAnnonceProfesseur>();
+                    if (ctrlAnnonce.annonces.isEmpty) {
+                      await ctrlAnnonce.chargerAnnonces();
+                    }
+
+                    if (!context.mounted) return;
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const PageListeAnnoncesProfesseur(),
+                      ),
+                    );
+                  },
                   onTapNotifications: () async {
                     final ctrlNotif =
                         context.read<ControleurNotificationProfesseur>();
@@ -206,7 +224,10 @@ class _AccueilProfesseurState extends State<AccueilProfesseur> {
                       valeur:
                           ctrl.chargementIndicateursDashboard
                               ? '...'
-                              : ctrl.coursSansSupport.toString().padLeft(2, '0'),
+                              : ctrl.coursSansSupport.toString().padLeft(
+                                2,
+                                '0',
+                              ),
                       aide:
                           ctrl.coursSansSupport == 0
                               ? 'Tous les cours du jour ont deja un support.'
@@ -229,8 +250,12 @@ class _AccueilProfesseurState extends State<AccueilProfesseur> {
 }
 
 class _TopBarProfesseur extends StatelessWidget {
-  const _TopBarProfesseur({required this.onTapNotifications});
+  const _TopBarProfesseur({
+    required this.onTapAnnonces,
+    required this.onTapNotifications,
+  });
 
+  final VoidCallback onTapAnnonces;
   final VoidCallback onTapNotifications;
 
   @override
@@ -271,27 +296,39 @@ class _TopBarProfesseur extends StatelessWidget {
               style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
             ),
           ),
+          _TopActionButton(icon: Icons.campaign_outlined, onTap: onTapAnnonces),
+          const SizedBox(width: 10),
           _BoutonNotificationsProfesseur(
             hasUnread: ctrlNotif.aDesNotificationsNonLues,
             onTap: onTapNotifications,
           ),
           const SizedBox(width: 10),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF3F5FA),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Text(
-              profil?.grade.isNotEmpty == true ? profil!.grade : 'Professeur',
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF667085),
-              ),
-            ),
-          ),
         ],
+      ),
+    );
+  }
+}
+
+class _TopActionButton extends StatelessWidget {
+  const _TopActionButton({required this.icon, required this.onTap});
+
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(999),
+      onTap: onTap,
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF7F9FF),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.black.withOpacity(0.06)),
+        ),
+        child: Icon(icon, color: const Color(0xFF0B1220), size: 22),
       ),
     );
   }
@@ -393,7 +430,9 @@ class _NowCard extends StatelessWidget {
     final titre =
         seance == null
             ? 'Aucune seance en cours'
-            : (seance!.matiereNom.isEmpty ? 'Seance en cours' : seance!.matiereNom);
+            : (seance!.matiereNom.isEmpty
+                ? 'Seance en cours'
+                : seance!.matiereNom);
     final details =
         seance == null
             ? 'Vous n avez pas de cours en ce moment.'
@@ -423,7 +462,10 @@ class _NowCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.16),
                   borderRadius: BorderRadius.circular(999),
@@ -545,7 +587,10 @@ class _SummaryCard extends StatelessWidget {
               ),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 7,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF3F5FA),
                   borderRadius: BorderRadius.circular(999),

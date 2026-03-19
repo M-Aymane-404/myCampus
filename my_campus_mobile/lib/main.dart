@@ -34,11 +34,14 @@ import 'features/etudiant/presentation/page_notifications_etudiant.dart';
 import 'features/etudiant/presentation/page_presence_etudiant.dart';
 import 'features/etudiant/presentation/page_profil_etudiant.dart';
 import 'features/professeur/data/api/professeur_api.dart';
+import 'features/professeur/data/api/annonce_professeur_api.dart';
 import 'features/professeur/data/api/notification_professeur_api.dart';
 import 'features/professeur/data/api/ressource_seance_professeur_api.dart';
+import 'features/professeur/data/controller/controleur_annonce_professeur.dart';
 import 'features/professeur/data/controller/controleur_cours_professeur.dart';
 import 'features/professeur/data/controller/controleur_espace_professeur.dart';
 import 'features/professeur/data/controller/controleur_notification_professeur.dart';
+import 'features/professeur/data/repository/annonce_professeur_repository.dart';
 import 'features/professeur/data/repository/notification_professeur_repository.dart';
 import 'features/professeur/data/repository/professeur_repository.dart';
 import 'features/professeur/data/repository/ressource_seance_professeur_repository.dart';
@@ -78,6 +81,9 @@ class MyApp extends StatelessWidget {
         ),
         Provider<NotificationProfesseurApi>(
           create: (_) => NotificationProfesseurApi(ClientDio.dioInstance),
+        ),
+        Provider<AnnonceProfesseurApi>(
+          create: (_) => AnnonceProfesseurApi(ClientDio.dioInstance),
         ),
         ChangeNotifierProvider(
           create:
@@ -130,6 +136,12 @@ class MyApp extends StatelessWidget {
           create:
               (ctx) => NotificationProfesseurRepository(
                 ctx.read<NotificationProfesseurApi>(),
+              ),
+        ),
+        Provider<AnnonceProfesseurRepository>(
+          create:
+              (ctx) => AnnonceProfesseurRepository(
+                ctx.read<AnnonceProfesseurApi>(),
               ),
         ),
         Provider<AnnonceEtudiantRepository>(
@@ -227,6 +239,17 @@ class MyApp extends StatelessWidget {
           update:
               (ctx, repo, ctrl) =>
                   ctrl ?? ControleurNotificationProfesseur(repo),
+        ),
+        ChangeNotifierProxyProvider<
+          AnnonceProfesseurRepository,
+          ControleurAnnonceProfesseur
+        >(
+          create:
+              (ctx) => ControleurAnnonceProfesseur(
+                ctx.read<AnnonceProfesseurRepository>(),
+              ),
+          update:
+              (ctx, repo, ctrl) => ctrl ?? ControleurAnnonceProfesseur(repo),
         ),
 
         ChangeNotifierProxyProvider<

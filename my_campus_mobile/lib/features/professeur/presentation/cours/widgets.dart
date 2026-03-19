@@ -558,11 +558,6 @@ class _CreateExamenModalState extends State<CreateExamenModal> {
     'S2',
     'S3',
     'S4',
-    'S5',
-    'S6',
-    'S7',
-    'S8',
-    'S9',
   ];
   static const List<String> _typesExamen = [
     'NORMAL',
