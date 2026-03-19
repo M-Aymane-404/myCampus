@@ -12,7 +12,7 @@
   --prof-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08);
   width: 100%;
   min-height: 100vh;
-  padding: 2rem 1.5rem;
+  padding: 1.5rem 1.5rem 1rem;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -74,7 +74,7 @@
 }
 
 .prof-header-card {
-  margin-bottom: 8px;
+  margin-bottom: 0;
 }
 
 .prof-header-main {
@@ -130,30 +130,69 @@
 .prof-kpi-section {
   display: flex;
   flex-direction: column;
-  gap: 0;
-}
-
-.prof-kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 16px;
+  gap: 4px;
+  padding: 0 6px;
+  align-items: stretch;
 }
 
 .prof-kpi-card {
-  min-height: 112px;
-  padding: 18px;
-  border-radius: 22px;
+  min-height: 120px;
+  padding: 22px 24px;
+  border-radius: 20px;
   border: 1px solid rgba(226, 232, 240, 0.8);
   background: #ffffff;
   box-shadow: var(--prof-shadow);
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
+  max-width: none;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.prof-kpi-grid {
+  flex: 1;
+  min-width: 360px;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.prof-exam-card {
+  width: 100%;
+  align-self: stretch;
+  margin-top: 4px;
+  border-radius: 20px;
+}
+
+.prof-card-head--tight {
+  gap: 8px;
+}
+
+.prof-exam-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.prof-exam-title strong {
+  display: block;
+  font-size: 16px;
+}
+
+.prof-exam-title span {
+  font-size: 13px;
+  color: var(--prof-text-muted);
+}
+
+.prof-exam-meta-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .prof-kpi-icon {
-  width: 48px;
-  height: 48px;
+  width: 42px;
+  height: 42px;
   flex: 0 0 auto;
   border-radius: 16px;
   display: inline-flex;
@@ -167,8 +206,8 @@
 
 .prof-kpi-label {
   display: block;
-  margin-bottom: 6px;
-  font-size: 11px;
+  margin-bottom: 4px;
+  font-size: 10px;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -177,7 +216,7 @@
 
 .prof-kpi-value {
   display: block;
-  font-size: 28px;
+  font-size: 24px;
   line-height: 1;
   font-weight: 800;
 }
@@ -209,8 +248,8 @@
 
 .prof-main-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(320px, 0.72fr);
-  gap: 20px;
+  grid-template-columns: minmax(0, 2.1fr) minmax(0, 0.7fr);
+  gap: 24px;
   align-items: start;
 }
 
@@ -218,7 +257,7 @@
 .prof-analytics-column {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 20px;
 }
 
 .prof-analytics-column {
@@ -228,20 +267,20 @@
 .prof-side-column {
   order: 2;
   width: 100%;
-  max-width: 400px;
-  justify-self: end;
+  max-width: none;
+  justify-self: stretch;
 }
 
 .prof-card {
-  padding: 14px;
+  padding: 12px;
 }
 
 .prof-card-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 14px;
-  margin-bottom: 14px;
+  gap: 12px;
+  margin-bottom: 10px;
 }
 
 .prof-card-eyebrow {
@@ -255,21 +294,21 @@
 
 .prof-card-head h2 {
   margin: 0;
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
 }
 
 .prof-card-description {
-  margin: 6px 0 0;
+  margin: 4px 0 0;
   color: var(--prof-text-muted);
-  font-size: 13px;
-  line-height: 1.55;
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .prof-focus-card {
   background: var(--prof-dark);
   color: #fff;
-  padding: 16px;
+  padding: 14px;
   border-color: rgba(92, 84, 237, 0.16);
   position: relative;
   overflow: hidden;
@@ -293,16 +332,16 @@
 .prof-session-top {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .prof-type-pill,
 .prof-class-pill {
   display: inline-flex;
   align-items: center;
-  padding: 6px 10px;
+  padding: 5px 9px;
   border-radius: 999px;
   font-size: 11px;
   font-weight: 800;
@@ -335,8 +374,8 @@
 }
 
 .prof-session-body h3 {
-  margin: 0 0 8px;
-  font-size: 17px;
+  margin: 0 0 6px;
+  font-size: 16px;
   line-height: 1.2;
 }
 
@@ -348,7 +387,13 @@
 .prof-session-info-main {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
+}
+
+.prof-session-meta-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .prof-session-time {
@@ -363,14 +408,14 @@
 .prof-session-details-text {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .prof-session-footer {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  margin-top: 10px;
+  gap: 6px;
+  margin-top: 8px;
 }
 
 .prof-session-grid {
@@ -383,11 +428,11 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 10px;
-  border-radius: 14px;
+  padding: 7px 9px;
+  border-radius: 12px;
   background: #f8fafc;
   color: #475569;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
 }
 
@@ -431,14 +476,14 @@
 .prof-priority-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .prof-priority-item {
-  border-radius: 16px;
+  border-radius: 14px;
   border: 1px solid rgba(226, 232, 240, 0.88);
   background: #fff;
-  padding: 12px 14px;
+  padding: 10px 12px;
 }
 
 .prof-priority-main {
@@ -455,8 +500,8 @@
 .prof-priority-title-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 6px;
+  gap: 8px;
+  margin-bottom: 4px;
 }
 
 .prof-priority-title-row strong {
@@ -465,8 +510,8 @@
 
 .prof-priority-copy p {
   margin: 0;
-  font-size: 11px;
-  line-height: 1.45;
+  font-size: 10px;
+  line-height: 1.4;
   color: var(--prof-text-muted);
 }
 
@@ -479,9 +524,9 @@
 }
 
 .prof-priority-value {
-  min-width: 48px;
+  min-width: 42px;
   text-align: right;
-  font-size: 24px;
+  font-size: 22px;
   line-height: 1;
   font-weight: 800;
   color: var(--prof-dark);
@@ -584,8 +629,8 @@
 .prof-compact-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 6px 0;
+  gap: 10px;
+  padding: 4px 0;
   border-bottom: 1px solid #edf2f7;
 }
 
@@ -595,8 +640,8 @@
 }
 
 .prof-compact-icon {
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   border-radius: 12px;
   display: inline-flex;
   align-items: center;
@@ -616,21 +661,22 @@
 
 .prof-compact-content strong {
   display: block;
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .prof-compact-content span {
   display: block;
   margin-top: 2px;
   color: var(--prof-text-muted);
-  font-size: 10px;
+  font-size: 9.5px;
   line-height: 1.4;
 }
 
 .prof-performance-card {
-  padding: 22px;
+  padding: 16px;
   background: #ffffff;
   border-color: rgba(226, 232, 240, 0.72);
+  min-height: 520px;
 }
 
 .prof-tab-group {
@@ -666,18 +712,18 @@
 .prof-performance-metrics {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
 .prof-metric-card {
-  padding: 16px;
-  border-radius: 18px;
+  padding: 14px;
+  border-radius: 16px;
   background: #ffffff;
   border: 1px solid rgba(226, 232, 240, 0.88);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .prof-metric-card span,
@@ -688,7 +734,7 @@
 }
 
 .prof-metric-card strong {
-  font-size: 22px;
+  font-size: 20px;
   line-height: 1.1;
 }
 
@@ -697,14 +743,14 @@
 }
 
 .prof-chart-panel {
-  border-radius: 22px;
+  border-radius: 18px;
   background: #ffffff;
   border: 1px solid rgba(226, 232, 240, 0.88);
-  padding: 14px;
+  padding: 10px;
 }
 
 .prof-chart-shell {
-  height: 280px;
+  height: 320px;
 }
 
 .prof-chart-tooltip {
@@ -721,14 +767,14 @@
 }
 
 .prof-performance-state {
-  min-height: 280px;
+  min-height: 228px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 12px;
-  padding: 24px;
-  border-radius: 22px;
+  padding: 20px;
+  border-radius: 18px;
   border: 1px dashed rgba(226, 232, 240, 0.95);
   background: #f8fafc;
   color: var(--prof-text-muted);
@@ -747,9 +793,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  padding: 28px 20px;
-  border-radius: 18px;
+  gap: 8px;
+  padding: 20px 16px;
+  border-radius: 16px;
   background: #f8fafc;
   border: 1px dashed rgba(148, 163, 184, 0.28);
   color: var(--prof-text-muted);
@@ -764,7 +810,7 @@
 
 @media (max-width: 1260px) {
   .prof-kpi-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .prof-performance-metrics {

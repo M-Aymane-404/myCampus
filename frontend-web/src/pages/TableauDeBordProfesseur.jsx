@@ -5,14 +5,12 @@ import {
   Bell,
   BookOpen,
   Calendar,
-  FileWarning,
   ClipboardList,
   Clock,
+  FileWarning,
   Layers3,
   Loader2,
   MapPin,
-  Trophy,
-  Users,
 } from 'lucide-react';
 import {
   Bar,
@@ -61,6 +59,7 @@ const EMPTY_NOTE_STATS = {
     notesEnAttente: 0,
     examensSansPublication: 0,
     copiesACorriger: 0,
+    feuillesNotesACompleter: 0,
     groupesEnDifficulte: 0,
   },
 };
@@ -194,6 +193,14 @@ const isExamCompleted = (exam) => ['PASSE', 'CORRIGE', 'ANNULE', 'ANNULEE'].incl
 
 const isCancelledSession = (session) => ['ANNULEE', 'ANNULE'].includes(String(session?.etat || '').trim().toUpperCase());
 
+const hasEnteredNote = (value) => {
+  if (value === null || value === undefined) return false;
+  if (typeof value === 'string' && value.trim() === '') return false;
+
+  const numeric = typeof value === 'string' ? Number(value.replace(',', '.')) : Number(value);
+  return Number.isFinite(numeric);
+};
+
 const pickNearestUpcomingSession = (...sessions) => {
   const now = Date.now();
   const validUpcoming = sessions
@@ -233,6 +240,7 @@ const buildNoteStatistics = async () => {
   let notesEnAttente = 0;
   let examensSansPublication = 0;
   let copiesACorriger = 0;
+  let feuillesNotesACompleter = 0;
 
   await Promise.all(
     classes.map(async (classe) => {
@@ -272,11 +280,14 @@ const buildNoteStatistics = async () => {
               const feuille = await apiNotesProfesseur.chargerFeuille(codeClasse, examenId);
               const lignes = Array.isArray(feuille?.lignes) ? feuille.lignes : [];
               const notes = [];
+              const examDate = getExamDate(examen);
+              let notesSaisiesCount = 0;
 
               lignes.forEach((ligne) => {
                 const value = ligne.note;
                 const numeric = typeof value === 'string' ? Number(value.replace(',', '.')) : Number(value);
                 if (Number.isFinite(numeric)) notes.push(numeric);
+                if (hasEnteredNote(value)) notesSaisiesCount += 1;
 
                 const studentId = ligne.idEtudiant || ligne.apogee;
                 if (studentId) studentIds.add(studentId);
@@ -287,6 +298,14 @@ const buildNoteStatistics = async () => {
 
               if (lignes.some((ligne) => !ligne.publiee)) examensSansPublication += 1;
               if (examen.etat === 'PASSE') copiesACorriger += 1;
+              if (
+                lignes.length > 0 &&
+                notesSaisiesCount < lignes.length &&
+                (['PASSE', 'CORRIGE'].includes(String(examen.etat || '').trim().toUpperCase()) ||
+                  (examDate && examDate.getTime() <= now))
+              ) {
+                feuillesNotesACompleter += 1;
+              }
 
               if (!classMap.has(classeLabel)) classMap.set(classeLabel, createAggregate(classeLabel));
               if (!subjectMap.has(matiereLabel)) subjectMap.set(matiereLabel, createAggregate(matiereLabel));
@@ -328,6 +347,7 @@ const buildNoteStatistics = async () => {
       notesEnAttente,
       examensSansPublication,
       copiesACorriger,
+      feuillesNotesACompleter,
       groupesEnDifficulte: parClasse.filter((item) => (item.tauxReussite ?? 100) < 55 || (item.moyenneGenerale ?? 20) < 10).length,
     },
   };
@@ -456,6 +476,18 @@ const normalizePresenceStatus = (status) => {
   return normalized;
 };
 
+const hasJustification = (ligne) =>
+  Boolean(ligne?.justificationSoumise || ligne?.motif || ligne?.motifUrl || ligne?.motifNom || ligne?.typeMotif);
+
+const isPendingJustification = (ligne) => {
+  const normalized = String(ligne?.statutJustificatif || '').trim().toUpperCase();
+
+  if (normalized === 'EN_ATTENTE') return true;
+  if (normalized === 'VALIDE' || normalized === 'REFUSE') return false;
+
+  return hasJustification(ligne) && normalizePresenceStatus(ligne?.status) === 'ABSENT' && !ligne?.justifiee;
+};
+
 const buildPresenceInsightsFromApp = async () => {
   const enseignements = await apiEnseignementsProfesseur.listerEnseignements();
   const items = Array.isArray(enseignements) ? enseignements : [];
@@ -465,6 +497,7 @@ const buildPresenceInsightsFromApp = async () => {
       absencesJour: 0,
       feuillesACompleter: 0,
       etudiantsARisque: 0,
+      justificatifsAConsulter: 0,
       tauxPresence: null,
     };
   }
@@ -508,6 +541,7 @@ const buildPresenceInsightsFromApp = async () => {
   let feuillesACompleter = 0;
   let presents = 0;
   let totalStatuses = 0;
+  let justificatifsAConsulter = 0;
   const absencesParEtudiant = new Map();
 
   await Promise.all(
@@ -532,6 +566,10 @@ const buildPresenceInsightsFromApp = async () => {
                 absencesJour += 1;
               }
             }
+
+            if (isPendingJustification(ligne)) {
+              justificatifsAConsulter += 1;
+            }
           } else {
             seanceComplete = false;
           }
@@ -551,6 +589,7 @@ const buildPresenceInsightsFromApp = async () => {
     absencesJour,
     feuillesACompleter,
     etudiantsARisque: Array.from(absencesParEtudiant.values()).filter((count) => count >= 2).length,
+    justificatifsAConsulter,
     tauxPresence: totalStatuses > 0 ? (presents / totalStatuses) * 100 : null,
   };
 };
@@ -563,6 +602,7 @@ const TableauDeBordProfesseur = () => {
     absencesJour: 0,
     feuillesACompleter: 0,
     etudiantsARisque: 0,
+    justificatifsAConsulter: 0,
     tauxPresence: null,
   });
   const [loading, setLoading] = useState(true);
@@ -608,6 +648,7 @@ const TableauDeBordProfesseur = () => {
                 absencesJour: 0,
                 feuillesACompleter: 0,
                 etudiantsARisque: 0,
+                justificatifsAConsulter: 0,
                 tauxPresence: null,
               };
 
@@ -643,6 +684,7 @@ const TableauDeBordProfesseur = () => {
   const entete = dashboardData.entete || {};
   const stats = dashboardData.stats || {};
   const sessionCard = normalizeSession(prochaineSeance);
+  const dashboardAbsenceInsights = useMemo(() => buildAbsenceInsights(dashboardData), [dashboardData]);
   const prochainExamen = useMemo(() => {
     const dashboardUpcoming = Array.isArray(dashboardData.examensAVenir)
       ? dashboardData.examensAVenir
@@ -656,14 +698,17 @@ const TableauDeBordProfesseur = () => {
     return notesState.data.prochainExamen || dashboardUpcoming[0] || null;
   }, [dashboardData.examensAVenir, notesState.data.prochainExamen]);
   const absenceInsights = {
-    ...buildAbsenceInsights(dashboardData),
+    ...dashboardAbsenceInsights,
     todayCount: presenceInsights.absencesJour,
-    pendingCount: presenceInsights.feuillesACompleter,
+    pendingCount:
+      presenceInsights.justificatifsAConsulter > 0
+        ? presenceInsights.justificatifsAConsulter
+        : dashboardAbsenceInsights.pendingCount,
     highRiskCount: presenceInsights.etudiantsARisque,
     attendanceRate:
       presenceInsights.tauxPresence != null
         ? presenceInsights.tauxPresence
-        : buildAbsenceInsights(dashboardData).attendanceRate,
+        : dashboardAbsenceInsights.attendanceRate,
     hasDetails: true,
   };
   const noteMeta = notesState.data.meta || EMPTY_NOTE_STATS.meta;
@@ -707,12 +752,17 @@ const TableauDeBordProfesseur = () => {
   const weakPerformer =
     [...activeNoteItems].filter((item) => Number.isFinite(item.tauxReussite)).sort((a, b) => (a.tauxReussite || 0) - (b.tauxReussite || 0))[0] || null;
 
+  const coursSansSupport = Math.max(
+    0,
+    (stats?.nbSeancesTotales ?? 0) - (stats?.nbSeancesTerminees ?? 0),
+  );
+
   const strategicKpis = [
     { label: 'Enseignements actifs', value: stats?.nbEnseignements ?? 0, accent: 'indigo', icon: BookOpen },
-    { label: 'Etudiants concernes', value: noteMeta.uniqueStudentCount, accent: 'teal', icon: Users },
     { label: 'Examens programmes', value: stats?.nbExamensProgrammes ?? 0, accent: 'amber', icon: ClipboardList },
     { label: 'Copies a corriger', value: noteMeta.copiesACorriger, accent: 'rose', icon: FileWarning },
-    { label: 'Taux de reussite global', value: formatPercent(notesState.data.resumeGlobal?.tauxReussite), accent: 'emerald', icon: Trophy },
+    { label: 'Feuilles a finaliser', value: noteMeta.feuillesNotesACompleter, accent: 'teal', icon: ClipboardList },
+    { label: 'Cours sans support', value: coursSansSupport, accent: 'emerald', icon: AlertCircle },
   ];
 
   const alertEntries = [
@@ -727,24 +777,24 @@ const TableauDeBordProfesseur = () => {
       tone: absenceInsights.todayCount > 0 ? 'danger' : 'soft',
     },
     {
-      key: 'pending',
-      title: 'Feuilles a completer',
+      key: 'notes',
+      title: 'Feuilles de notes a completer',
+      value: formatCompactNumber(noteMeta.feuillesNotesACompleter),
+      detail:
+        noteMeta.feuillesNotesACompleter > 0
+          ? `${formatCompactNumber(noteMeta.feuillesNotesACompleter)} liste${noteMeta.feuillesNotesACompleter > 1 ? 's' : ''} ont encore des notes manquantes.`
+          : 'Toutes les feuilles de notes sont completes.',
+      tone: noteMeta.feuillesNotesACompleter > 0 ? 'danger' : 'soft',
+    },
+    {
+      key: 'justifications',
+      title: 'Justificatifs a consulter',
       value: formatCompactNumber(absenceInsights.pendingCount),
       detail:
         absenceInsights.pendingCount > 0
-          ? `${formatCompactNumber(absenceInsights.pendingCount)} feuille${absenceInsights.pendingCount > 1 ? 's' : ''} restent a verifier.`
-          : 'Aucune feuille en attente.',
+          ? `${formatCompactNumber(absenceInsights.pendingCount)} justificatif${absenceInsights.pendingCount > 1 ? 's' : ''} restent en attente de consultation.`
+          : 'Aucun justificatif en attente.',
       tone: absenceInsights.pendingCount > 0 ? 'warning' : 'soft',
-    },
-    {
-      key: 'attendance',
-      title: 'Taux de presence global',
-      value: absenceInsights.attendanceRate != null ? `${Math.round(absenceInsights.attendanceRate)}%` : '--',
-      detail:
-        absenceInsights.attendanceRate != null
-          ? `Moyenne calculee sur les feuilles de presence deja renseignees.`
-          : 'Le taux de presence sera visible apres les prochaines feuilles.',
-      tone: absenceInsights.attendanceRate != null ? 'info' : 'soft',
     },
   ];
 
@@ -790,26 +840,112 @@ const TableauDeBordProfesseur = () => {
 
       </header>
 
-      <section className="prof-kpi-section">
-        <div className="prof-kpi-grid">
-          {strategicKpis.map((item) => {
-            const Icon = item.icon;
-            return (
-              <article key={item.label} className={`prof-kpi-card accent-${item.accent}`}>
-                <div className="prof-kpi-icon">
-                  <Icon size={18} />
-                </div>
-                <div className="prof-kpi-content">
-                  <span className="prof-kpi-label">{item.label}</span>
-                  <strong className="prof-kpi-value">{typeof item.value === 'string' ? item.value : formatCompactNumber(item.value)}</strong>
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      </section>
+        <section className="prof-kpi-section">
+      <div className="prof-kpi-grid">
+        {strategicKpis.map((item) => {
+          const Icon = item.icon;
+          return (
+            <article key={item.label} className={`prof-kpi-card accent-${item.accent}`}>
+              <div className="prof-kpi-icon">
+                <Icon size={18} />
+              </div>
+              <div className="prof-kpi-content">
+                <span className="prof-kpi-label">{item.label}</span>
+                <strong className="prof-kpi-value">{typeof item.value === 'string' ? item.value : formatCompactNumber(item.value)}</strong>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+
 
       <section className="prof-main-layout">
+        <div className="prof-analytics-column">
+          <article className="prof-card prof-performance-card">
+            <div className="prof-card-head">
+              <div>
+                <p className="prof-card-eyebrow">Performance academique</p>
+                <h2>Performance academique</h2>
+                <p className="prof-card-description">Vue synthetique des resultats par classe ou par matiere.</p>
+              </div>
+
+              <div className="prof-tab-group" role="tablist" aria-label="Vues statistiques">
+                {NOTE_TABS.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeNoteTab === tab.id;
+                  return (
+                    <button key={tab.id} type="button" className={`prof-tab ${isActive ? 'active' : ''}`} onClick={() => setActiveNoteTab(tab.id)}>
+                      <Icon size={15} />
+                      <span>{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {notesState.loading ? (
+              <div className="prof-performance-state">
+                <Loader2 size={24} className="prof-spin" />
+                <p>Chargement des statistiques des notes...</p>
+              </div>
+            ) : notesState.error ? (
+              <div className="prof-performance-state error">
+                <AlertCircle size={24} />
+                <p>{notesState.error}</p>
+                <button type="button" onClick={reloadNoteStats}>Reessayer</button>
+              </div>
+            ) : activeNoteItems.length === 0 ? (
+              <div className="prof-performance-state">
+                <BarChart3 size={24} />
+                <p>Aucune note exploitable pour afficher une synthese.</p>
+              </div>
+            ) : (
+              <>
+                <div className="prof-performance-metrics">
+                  <div className="prof-metric-card">
+                    <span>Moyenne generale</span>
+                    <strong>{formatFloat(activeSummary.moyenneGenerale)}/20</strong>
+                  </div>
+                  <div className="prof-metric-card">
+                    <span>Meilleure performance</span>
+                    <strong>{bestPerformer?.label || '--'}</strong>
+                    <small>{bestPerformer ? `${formatFloat(bestPerformer.moyenneGenerale)}/20` : 'Aucune donnee'}</small>
+                  </div>
+                  <div className="prof-metric-card">
+                    <span>Plus faible performance</span>
+                    <strong>{weakPerformer?.label || '--'}</strong>
+                    <small>{weakPerformer ? `${formatPercent(weakPerformer.tauxReussite)} de reussite` : 'Aucune donnee'}</small>
+                  </div>
+                  <div className="prof-metric-card">
+                    <span>Taux de reussite</span>
+                    <strong>{formatPercent(activeSummary.tauxReussite)}</strong>
+                    <small>{activeSummary.notesSaisies}/{activeSummary.totalAttendu} notes saisies</small>
+                  </div>
+                </div>
+
+                <div className="prof-performance-body">
+                  <div className="prof-chart-panel">
+                    <div className="prof-chart-shell">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={chartData} layout="vertical" margin={{ top: 2, right: 4, left: 6, bottom: 2 }}>
+                          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(120, 137, 153, 0.16)" />
+                          <XAxis type="number" domain={[0, 20]} axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+                          <YAxis dataKey="label" type="category" width={102} axisLine={false} tickLine={false} tick={{ fill: '#334155', fontSize: 12 }} />
+                          <Tooltip cursor={{ fill: 'rgba(92, 84, 237, 0.06)' }} content={<DashboardTooltip />} />
+                          <Bar dataKey="moyenneGenerale" radius={[0, 12, 12, 0]} barSize={18}>
+                            {chartData.map((entry) => <Cell key={entry.id} fill={entry.fill} />)}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          </article>
+        </div>
+
         <div className="prof-side-column">
           <article className="prof-card prof-focus-card">
             <div className="prof-card-head">
@@ -832,15 +968,17 @@ const TableauDeBordProfesseur = () => {
                       <span className="prof-class-pill">{sessionCard.displayClass}</span>
                     </div>
                     <h3>{sessionCard.displaySubject}</h3>
-                    <div className="prof-session-grid">
-                      <div className="prof-meta-chip"><MapPin size={14} /><span>{sessionCard.displayRoom}</span></div>
-                      <div className="prof-meta-chip"><Clock size={14} /><span>{sessionCard.displayDay}</span></div>
+                    <div className="prof-session-meta-row">
+                      <div className="prof-meta-chip">
+                        <Calendar size={14} />
+                        <span>{sessionCard.displayDay}</span>
+                      </div>
+                      <div className="prof-meta-chip">
+                        <MapPin size={14} />
+                        <span>{sessionCard.displayRoom}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="prof-session-footer">
-                  <div className="prof-meta-chip"><Calendar size={14} /><span>{sessionCard.displayDay}</span></div>
-                  <div className="prof-meta-chip"><BookOpen size={14} /><span>{sessionCard.displaySubject}</span></div>
                 </div>
               </div>
             ) : (
@@ -912,119 +1050,49 @@ const TableauDeBordProfesseur = () => {
           </article>
 
           <article className="prof-card prof-compact-card">
-            <div className="prof-card-head">
+            <div className="prof-card-head prof-card-head--tight">
               <div>
                 <p className="prof-card-eyebrow">A venir</p>
                 <h2>Prochain examen</h2>
               </div>
+              <ClipboardList size={18} />
             </div>
-
             {prochainExamen ? (
-              <div className="prof-compact-list">
-                <div key={prochainExamen.id || `${prochainExamen.nomMatiere}-${prochainExamen.numeroExamen}`} className="prof-compact-row">
-                  <div className="prof-compact-icon warning"><ClipboardList size={16} /></div>
-                  <div className="prof-compact-content">
-                    <strong>{prochainExamen.nomMatiere || 'Examen'}</strong>
+              <div className="prof-exam-body">
+                <div className="prof-exam-title">
+                  <strong>{prochainExamen.nomMatiere || 'Examen'}</strong>
+                  <span>
+                    {prochainExamen.nomClasse || prochainExamen.codeClasse || 'Classe'}
+                    {prochainExamen.numeroExamen ? ` • n°${prochainExamen.numeroExamen}` : ''}
+                  </span>
+                </div>
+                <div className="prof-exam-meta-row">
+                  <div className="prof-meta-chip">
+                    <Calendar size={14} />
                     <span>
-                      {prochainExamen.nomClasse || prochainExamen.codeClasse || 'Classe'} | #{prochainExamen.numeroExamen || '--'} | {prochainExamen.dateExamen ? `${formatDate(prochainExamen.dateExamen)}${formatHour(prochainExamen.dateExamen) ? ` a ${formatHour(prochainExamen.dateExamen)}` : ''}` : 'Date a definir'}
+                      {formatDate(prochainExamen.dateExamen || prochainExamen.date || prochainExamen.heureDebut)}{' '}
+                      {formatHour(prochainExamen.dateExamen || prochainExamen.heureDebut)
+                        ? `• ${formatHour(prochainExamen.dateExamen || prochainExamen.heureDebut)}`
+                        : ''}
+                      {prochainExamen.heureFin ? ` - ${formatHour(prochainExamen.heureFin)}` : ''}
                     </span>
+                  </div>
+                  <div className="prof-meta-chip">
+                    <MapPin size={14} />
+                    <span>{prochainExamen.salle || 'Salle à définir'}</span>
                   </div>
                 </div>
               </div>
             ) : (
               <div className="prof-empty-state compact">
                 <ClipboardList size={24} />
-                <p>Aucun examen a venir.</p>
+                <p>Aucun examen à venir.</p>
               </div>
             )}
           </article>
 
         </div>
 
-        <div className="prof-analytics-column">
-          <article className="prof-card prof-performance-card">
-            <div className="prof-card-head">
-              <div>
-                <p className="prof-card-eyebrow">Performance academique</p>
-                <h2>Performance academique</h2>
-                <p className="prof-card-description">Vue synthetique des resultats par classe ou par matiere.</p>
-              </div>
-
-              <div className="prof-tab-group" role="tablist" aria-label="Vues statistiques">
-                {NOTE_TABS.map((tab) => {
-                  const Icon = tab.icon;
-                  const isActive = activeNoteTab === tab.id;
-                  return (
-                    <button key={tab.id} type="button" className={`prof-tab ${isActive ? 'active' : ''}`} onClick={() => setActiveNoteTab(tab.id)}>
-                      <Icon size={15} />
-                      <span>{tab.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {notesState.loading ? (
-              <div className="prof-performance-state">
-                <Loader2 size={24} className="prof-spin" />
-                <p>Chargement des statistiques des notes...</p>
-              </div>
-            ) : notesState.error ? (
-              <div className="prof-performance-state error">
-                <AlertCircle size={24} />
-                <p>{notesState.error}</p>
-                <button type="button" onClick={reloadNoteStats}>Reessayer</button>
-              </div>
-            ) : activeNoteItems.length === 0 ? (
-              <div className="prof-performance-state">
-                <BarChart3 size={24} />
-                <p>Aucune note exploitable pour afficher une synthese.</p>
-              </div>
-            ) : (
-              <>
-                <div className="prof-performance-metrics">
-                  <div className="prof-metric-card">
-                    <span>Moyenne generale</span>
-                    <strong>{formatFloat(activeSummary.moyenneGenerale)}/20</strong>
-                  </div>
-                  <div className="prof-metric-card">
-                    <span>Meilleure performance</span>
-                    <strong>{bestPerformer?.label || '--'}</strong>
-                    <small>{bestPerformer ? `${formatFloat(bestPerformer.moyenneGenerale)}/20` : 'Aucune donnee'}</small>
-                  </div>
-                  <div className="prof-metric-card">
-                    <span>Plus faible performance</span>
-                    <strong>{weakPerformer?.label || '--'}</strong>
-                    <small>{weakPerformer ? `${formatPercent(weakPerformer.tauxReussite)} de reussite` : 'Aucune donnee'}</small>
-                  </div>
-                  <div className="prof-metric-card">
-                    <span>Taux de reussite</span>
-                    <strong>{formatPercent(activeSummary.tauxReussite)}</strong>
-                    <small>{activeSummary.notesSaisies}/{activeSummary.totalAttendu} notes saisies</small>
-                  </div>
-                </div>
-
-                <div className="prof-performance-body">
-                  <div className="prof-chart-panel">
-                    <div className="prof-chart-shell">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={chartData} layout="vertical" margin={{ top: 4, right: 6, left: 10, bottom: 4 }}>
-                          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(120, 137, 153, 0.16)" />
-                          <XAxis type="number" domain={[0, 20]} axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-                          <YAxis dataKey="label" type="category" width={118} axisLine={false} tickLine={false} tick={{ fill: '#334155', fontSize: 12 }} />
-                          <Tooltip cursor={{ fill: 'rgba(92, 84, 237, 0.06)' }} content={<DashboardTooltip />} />
-                          <Bar dataKey="moyenneGenerale" radius={[0, 12, 12, 0]} barSize={18}>
-                            {chartData.map((entry) => <Cell key={entry.id} fill={entry.fill} />)}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
-          </article>
-        </div>
       </section>
 
     </div>
