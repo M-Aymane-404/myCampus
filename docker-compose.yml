@@ -43,7 +43,14 @@ services:
     ports:
       - "8080:8080"
     environment:
+      DB_URL: jdbc:mysql://mysql:3306/mycampus?useSSL=false&allowPublicKeyRetrieval=true
+      DB_USERNAME: myuser
+      DB_PASSWORD: mypassword
+      JWT_SECRET: bXljYW1wdXNfc2VjdXJlX2p3dF9rZXlfdGhpc19zaG91bGRfYmVfbG9uZ19lbm91Z2hfZm9yX2hzNTEyXzIwMjY=
+      RECAPTCHA_SECRET: 6Lf2-H4sAAAAAOI1d4c35Xf_msfrb1pN6EAcIhFX
       APP_FILES_BASE_DIR: /data/uploads
+      APP_CORS_ALLOWED_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+      APP_SECURITY_COOKIE_SECURE: "false"
     volumes:
       - ./backend/src:/app/src
       - ./backend/pom.xml:/app/pom.xml

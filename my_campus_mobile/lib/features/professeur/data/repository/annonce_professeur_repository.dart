@@ -37,4 +37,12 @@ class AnnonceProfesseurRepository {
         )
         .toList();
   }
+
+  Future<AnnonceProfesseurDTO> creerAnnonce(Map<String, dynamic> body) async {
+    final data = await _api.creerAnnonce(body);
+    return AnnonceProfesseurDTO.fromJson(
+      data,
+      estLue: _idsLus.contains((data['id'] as num?)?.toInt() ?? 0),
+    );
+  }
 }

@@ -4,9 +4,12 @@ import 'package:provider/provider.dart';
 import '../data/controller/controleur_annonce_professeur.dart';
 import '../data/controller/controleur_espace_professeur.dart';
 import '../data/controller/controleur_notification_professeur.dart';
+import '../data/dto/annonce_professeur_dto.dart';
 import '../data/dto/professeur_mobile_dto.dart';
-import 'page_liste_annonces_professeur.dart';
+import 'page_detail_annonce_professeur.dart';
+import 'page_gestion_annonces_professeur.dart';
 import 'page_notifications_professeur.dart';
+import 'widgets/annonce_list_tile.dart';
 
 class AccueilProfesseur extends StatefulWidget {
   const AccueilProfesseur({super.key});
@@ -104,12 +107,12 @@ class _AccueilProfesseurState extends State<AccueilProfesseur> {
                     }
 
                     if (!context.mounted) return;
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const PageListeAnnoncesProfesseur(),
-                      ),
-                    );
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const PageGestionAnnoncesProfesseur(),
+                    ),
+                  );
                   },
                   onTapNotifications: () async {
                     final ctrlNotif =
@@ -148,15 +151,11 @@ class _AccueilProfesseurState extends State<AccueilProfesseur> {
                               : _buildSousTitreProfil(profil),
                     ),
                     const SizedBox(height: 14),
+                    _AnnoncesProfesseurCard(),
                     if (ctrl.erreur != null) ...[
                       _InfoBanner(message: ctrl.erreur!),
                       const SizedBox(height: 14),
                     ],
-                    _NowCard(
-                      seance: maintenant,
-                      totalSeancesDuJour: seancesDuJour.length,
-                    ),
-                    const SizedBox(height: 14),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -237,7 +236,6 @@ class _AccueilProfesseurState extends State<AccueilProfesseur> {
                       iconColor: const Color(0xFFEA580C),
                     ),
                     const SizedBox(height: 14),
-                    _TodaySessionsCard(seances: seancesDuJour),
                   ]),
                 ),
               ),
@@ -415,134 +413,6 @@ class _TitreSection extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _NowCard extends StatelessWidget {
-  const _NowCard({required this.seance, required this.totalSeancesDuJour});
-
-  final SeanceProfesseurMobileDTO? seance;
-  final int totalSeancesDuJour;
-
-  @override
-  Widget build(BuildContext context) {
-    final titre =
-        seance == null
-            ? 'Aucune seance en cours'
-            : (seance!.matiereNom.isEmpty
-                ? 'Seance en cours'
-                : seance!.matiereNom);
-    final details =
-        seance == null
-            ? 'Vous n avez pas de cours en ce moment.'
-            : _buildSeanceMeta(seance!);
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF5B5BEA), Color(0xFF7777F5)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(30),
-        boxShadow: [
-          BoxShadow(
-            color: AccueilProfesseur.accent.withOpacity(0.28),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.16),
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: Colors.white.withOpacity(0.18)),
-                ),
-                child: const Text(
-                  'Maintenant',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-              const Spacer(),
-              Text(
-                '$totalSeancesDuJour seance(s) aujourd hui',
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white70,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            titre,
-            style: const TextStyle(
-              fontSize: 26,
-              height: 1.2,
-              fontWeight: FontWeight.w900,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            details,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: Colors.white.withOpacity(0.12)),
-            ),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.auto_awesome_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    seance == null
-                        ? 'Le prochain bloc utile apparaitra ici des qu un cours commencera.'
-                        : 'Salle ${seance!.salle.isEmpty ? '-' : seance!.salle} - ${_buildTimeRange(seance!)}',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -947,150 +817,185 @@ class _PriorityMetricCard extends StatelessWidget {
   }
 }
 
-class _TodaySessionsCard extends StatelessWidget {
-  const _TodaySessionsCard({required this.seances});
-
-  final List<SeanceProfesseurMobileDTO> seances;
+class _AnnoncesProfesseurCard extends StatefulWidget {
+  const _AnnoncesProfesseurCard({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final apercu = [...seances]..sort((a, b) {
-      final aMinutes = _DashboardSchedule.startMinutes(a) ?? 0;
-      final bMinutes = _DashboardSchedule.startMinutes(b) ?? 0;
-      return aMinutes.compareTo(bMinutes);
+  State<_AnnoncesProfesseurCard> createState() =>
+      _AnnoncesProfesseurCardState();
+}
+
+class _AnnoncesProfesseurCardState extends State<_AnnoncesProfesseurCard> {
+  bool _aChargementInitial = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_aChargementInitial) return;
+    _aChargementInitial = true;
+    final ctrl = context.read<ControleurAnnonceProfesseur>();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (!ctrl.chargement && ctrl.annonces.isEmpty) {
+        ctrl.chargerAnnonces();
+      }
     });
+  }
 
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: _panelDecoration(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Planning du jour',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-              color: Color(0xFF101828),
-            ),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Apercu rapide de vos seances de la journee',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF667085),
-            ),
-          ),
-          const SizedBox(height: 12),
-          if (apercu.isEmpty)
-            const _InlineEmpty(
-              message: 'Aucune seance planifiee pour aujourd hui.',
-            )
-          else
-            ...apercu.map(
-              (item) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _PlanningTile(item: item),
-              ),
-            ),
-        ],
+  Future<void> _ouvrirGestion() async {
+    if (!context.mounted) return;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const PageGestionAnnoncesProfesseur(),
       ),
     );
   }
-}
 
-class _PlanningTile extends StatelessWidget {
-  const _PlanningTile({required this.item});
-
-  final SeanceProfesseurMobileDTO item;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF7F8FC),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: const Icon(
-              Icons.schedule_rounded,
-              color: AccueilProfesseur.accent,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.matiereNom.isEmpty ? 'Seance' : item.matiereNom,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF101828),
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  '${_buildTimeRange(item)} - ${item.classeNom.isEmpty ? item.codeClasse : item.classeNom}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF667085),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 10),
-          Text(
-            item.salle.isEmpty ? item.typeSeance : item.salle,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              color: Color(0xFF5B5BEA),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _InlineEmpty extends StatelessWidget {
-  const _InlineEmpty({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF7F8FC),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        message,
-        textAlign: TextAlign.center,
-        style: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w700,
-          color: Color(0xFF667085),
+  Future<void> _ouvrirDetail(AnnonceProfesseurDTO annonce) async {
+    final ctrl = context.read<ControleurAnnonceProfesseur>();
+    await ctrl.chargerAnnonceParId(annonce.id);
+    if (!context.mounted) return;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PageDetailAnnonceProfesseur(
+          annonceId: annonce.id,
         ),
       ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ctrl = context.watch<ControleurAnnonceProfesseur>();
+    final preview = ctrl.annonces.take(3).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF5B5BEA), Color(0xFF8A8BFF)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(26),
+            boxShadow: [
+              BoxShadow(
+                color: AccueilProfesseur.accent.withOpacity(0.35),
+                blurRadius: 24,
+                offset: const Offset(0, 12),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: const [
+                  Icon(Icons.campaign_rounded, color: Colors.white),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Envoyer une annonce',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Prévenez vos étudiants d’un évènement, examen ou absence importante.',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFFE2E7FF),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _ouvrirGestion,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: AccueilProfesseur.accent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: const Text('Créer une annonce'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: _ouvrirGestion,
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Colors.white54),
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text('Voir mes notifications'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        if (ctrl.chargement && ctrl.annonces.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: _panelDecoration(),
+            child: const Center(
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          )
+        else if (preview.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: _panelDecoration(),
+            child: const Text(
+              'Vous n’avez pas encore publié d’annonce.',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF475569),
+              ),
+            ),
+          )
+        else
+          Column(
+            children: [
+              for (final annonce in preview)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: AnnonceListTileProfesseur(
+                    annonce: annonce,
+                    onTap: () => _ouvrirDetail(annonce),
+                  ),
+                ),
+            ],
+          ),
+        if (ctrl.annonces.length > preview.length)
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: _ouvrirGestion,
+              child: const Text('Voir toutes mes annonces'),
+            ),
+          ),
+      ],
     );
   }
 }

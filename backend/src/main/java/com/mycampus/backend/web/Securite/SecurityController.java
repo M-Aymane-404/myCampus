@@ -2,7 +2,6 @@ package com.mycampus.backend.web.Securite;
 
 import com.mycampus.backend.dto.securite.entree.ConnectionDTO;
 import com.mycampus.backend.dto.securite.entree.ConnectionMobileDTO;
-import com.mycampus.backend.dto.securite.entree.RafraichirTokenDTO;
 import com.mycampus.backend.dto.securite.sortie.JetonsSortieDTO;
 import com.mycampus.backend.dto.securite.sortie.RotationResult;
 import com.mycampus.backend.entites.RefreshToken;
@@ -10,33 +9,33 @@ import com.mycampus.backend.entites.Utilisateur;
 import com.mycampus.backend.exceptions.SecuriteException;
 import com.mycampus.backend.metier.security.CustomUserDetails;
 import com.mycampus.backend.metier.security.RefreshTokenMetier;
-import com.mycampus.backend.metier.security.RefreshTokenMetierImpl;
 import com.mycampus.backend.metier.security.UserDetailsServiceImpl;
 import com.mycampus.backend.repositorys.UtilisateurRepository;
-import com.mycampus.backend.services.RecaptchaService;
+import com.mycampus.backend.metier.security.RecaptchaService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.Value;
-import lombok.extern.log4j.Log4j2;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.WebUtils;
 
 import java.time.Instant;
@@ -50,34 +49,40 @@ import java.util.stream.Collectors;
 @Slf4j
 public class SecurityController {
 
-     private final AuthenticationManager authenticationManager;
-     private final JwtEncoder jwtEncoder;
-     private final RefreshTokenMetier refreshTokenMetier;
-     private final UserDetailsServiceImpl userDetailsServiceImpl;
-    private final SimpMessagingTemplate messagingTemplate;
+    private final AuthenticationManager authenticationManager;
+    private final JwtEncoder jwtEncoder;
+    private final RefreshTokenMetier refreshTokenMetier;
+    private final UserDetailsServiceImpl userDetailsServiceImpl;
     private final UtilisateurRepository utilisateurRepository;
     private final RecaptchaService recaptchaService;
 
-
-
-    private final boolean cookieSecure =  false;
+    @Value("${app.security.cookie-secure:false}")
+    private boolean cookieSecure;
 
     @GetMapping("/me")
-    public Map<String,Object> me(@AuthenticationPrincipal CustomUserDetails user) {
+    public Map<String, Object> me(@AuthenticationPrincipal CustomUserDetails user) {
+        Utilisateur utilisateur = utilisateurRepository.findByEmail(user.getUsername())
+                .orElseThrow(() -> new SecuriteException("Utilisateur introuvable"));
+
+        String role = user.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .filter(authority -> authority.startsWith("ROLE_"))
+                .findFirst()
+                .orElse("ROLE_ETUDIANT");
+
         return Map.of(
-                "id", user.getId(),
-                "email", user.getUsername(),
-                "cin", user.getCin(),
-                "active", user.isEnabled(),
-                "authorities", user.getAuthorities().stream().map(a -> a.getAuthority()).toList()
+                "id", utilisateur.getId(),
+                "email", utilisateur.getEmail(),
+                "nom", utilisateur.getNom(),
+                "prenom", utilisateur.getPrenom(),
+                "active", utilisateur.getActive(),
+                "role", role,
+                "authorities", user.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList()
         );
     }
 
-
-
     @GetMapping("/profile")
     public Map<String, Object> profile(Authentication authentication) {
-
         return Map.of(
                 "email", authentication.getName(),
                 "authorities", authentication.getAuthorities().stream()
@@ -85,124 +90,35 @@ public class SecurityController {
                         .toList()
         );
     }
+
     @PostMapping("/connecter")
     public JetonsSortieDTO connecter(@Valid @RequestBody ConnectionDTO connectionDTO,
                                      HttpServletRequest request,
                                      HttpServletResponse response) {
-        
-        // Valider le token reCAPTCHA
-        log.info("reCAPTCHA token received: {}", connectionDTO.getRecaptchaToken());
         if (!recaptchaService.validateRecaptcha(connectionDTO.getRecaptchaToken())) {
-            log.error("reCAPTCHA validation failed for token: {}", connectionDTO.getRecaptchaToken());
-            throw new SecuriteException("Validation reCAPTCHA échouée. Veuillez réessayer.");
+            throw new SecuriteException("Validation reCAPTCHA echouee. Veuillez reessayer.");
         }
 
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(connectionDTO.getEmail(),connectionDTO.getMotDePasse())
+                new UsernamePasswordAuthenticationToken(connectionDTO.getEmail(), connectionDTO.getMotDePasse())
         );
-        Utilisateur u = utilisateurRepository.findByEmail(authentication.getName())
-                .orElseThrow(() -> new SecuriteException("Utilisateur introuvable"));
 
-        Instant instant = Instant.now();
-        String scope  = authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority).collect(Collectors.joining(" "));
-        JwtClaimsSet jwtClaimsSet = JwtClaimsSet.builder()
-                .issuedAt(instant)
-                .expiresAt(instant.plus(20, ChronoUnit.MINUTES))
-
-                .subject(authentication.getName())
-                .claim("scope", scope)
-                .claim("userId", u.getId())
-                .claim("cin", u.getCin())
-                .claim("active", u.getActive())
-                .claim("nom", u.getNom())
-                .claim("prenom", u.getPrenom())
-
-                .build();
-        JwtEncoderParameters jwtEncoderParameters = JwtEncoderParameters.from(
-                JwsHeader.with(MacAlgorithm.HS512).build(),jwtClaimsSet);
-        String jwt = jwtEncoder.encode(jwtEncoderParameters).getTokenValue();
-        String userAgent = request.getHeader("User-Agent");
-        String ip = extraireIp(request);
-
-
-        RefreshToken refresh = refreshTokenMetier.creerRefreshTokenPourlaPremierFois(authentication.getName(), userAgent, ip);
-
-        ResponseCookie cookie = ResponseCookie.from("refresh_token", refresh.getToken())
-                .httpOnly(true)
-                .secure(cookieSecure)              // en prod (https). en local: false
-                .sameSite("Lax")           // ou "None" si front/back domaines différents
-                .path("/auth")             // limite l’envoi du cookie aux endpoints auth
-                .maxAge(7 * 24 * 60 * 60)  // 7 jours
-                .build();
-
-        response.addHeader("Set-Cookie", cookie.toString());
-        log.info("cokokie in  connect " + cookie);
-
-        return JetonsSortieDTO.builder()
-                .access_token(jwt)
-                 .build();
-
-
+        return creerSession(authentication, request, response);
     }
-
-
 
     @PostMapping("/connecter-mobile")
     public JetonsSortieDTO connecterMobile(@Valid @RequestBody ConnectionMobileDTO connectionDTO,
-                                     HttpServletRequest request,
-                                     HttpServletResponse response) {
-
-
+                                           HttpServletRequest request,
+                                           HttpServletResponse response) {
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(connectionDTO.getEmail(),connectionDTO.getMotDePasse())
+                new UsernamePasswordAuthenticationToken(connectionDTO.getEmail(), connectionDTO.getMotDePasse())
         );
-        Utilisateur u = utilisateurRepository.findByEmail(authentication.getName())
-                .orElseThrow(() -> new SecuriteException("Utilisateur introuvable"));
 
-        Instant instant = Instant.now();
-        String scope  = authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority).collect(Collectors.joining(" "));
-        JwtClaimsSet jwtClaimsSet = JwtClaimsSet.builder()
-                .issuedAt(instant)
-                .expiresAt(instant.plus(20, ChronoUnit.MINUTES))
-
-                .subject(authentication.getName())
-                .claim("scope", scope)
-                .claim("userId", u.getId())
-                .claim("cin", u.getCin())
-                .claim("active", u.getActive())
-
-                .build();
-        JwtEncoderParameters jwtEncoderParameters = JwtEncoderParameters.from(
-                JwsHeader.with(MacAlgorithm.HS512).build(),jwtClaimsSet);
-        String jwt = jwtEncoder.encode(jwtEncoderParameters).getTokenValue();
-        String userAgent = request.getHeader("User-Agent");
-        String ip = extraireIp(request);
-
-
-        RefreshToken refresh = refreshTokenMetier.creerRefreshTokenPourlaPremierFois(authentication.getName(), userAgent, ip);
-
-        ResponseCookie cookie = ResponseCookie.from("refresh_token", refresh.getToken())
-                .httpOnly(true)
-                .secure(cookieSecure)              // en prod (https). en local: false
-                .sameSite("Lax")           // ou "None" si front/back domaines différents
-                .path("/auth")             // limite l’envoi du cookie aux endpoints auth
-                .maxAge(7 * 24 * 60 * 60)  // 7 jours
-                .build();
-
-        response.addHeader("Set-Cookie", cookie.toString());
-        log.info("cokokie in  connect " + cookie);
-
-        return JetonsSortieDTO.builder()
-                .access_token(jwt)
-                .build();
-
-
+        return creerSession(authentication, request, response);
     }
-    @PostMapping("/rafraichir-jeton")
-    public JetonsSortieDTO rafraichir(HttpServletRequest request,HttpServletResponse response) {
 
+    @PostMapping("/rafraichir-jeton")
+    public JetonsSortieDTO rafraichir(HttpServletRequest request, HttpServletResponse response) {
         Cookie cookie = WebUtils.getCookie(request, "refresh_token");
         if (cookie == null || cookie.getValue().isBlank()) {
             throw new SecuriteException("Refresh token manquant");
@@ -212,51 +128,29 @@ public class SecurityController {
         String userAgent = request.getHeader("User-Agent");
         String ip = extraireIp(request);
 
-
         RotationResult nouveau = refreshTokenMetier.rotationRefreshToken(refreshToken, userAgent, ip);
-
         UserDetails userDetails = userDetailsServiceImpl.loadUserByUsername(nouveau.getEmail());
-
-        Utilisateur u = utilisateurRepository.findByEmail(nouveau.getEmail())
+        Utilisateur utilisateur = utilisateurRepository.findByEmail(nouveau.getEmail())
                 .orElseThrow(() -> new SecuriteException("Utilisateur introuvable"));
 
-        Instant instant = Instant.now();
-        String scope  = userDetails.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority).collect(Collectors.joining(" "));
-        JwtClaimsSet jwtClaimsSet = JwtClaimsSet.builder()
-                .issuedAt(instant)
-                .expiresAt(instant.plus(20, ChronoUnit.MINUTES))
+        String accessToken = genererAccessToken(userDetails.getUsername(), utilisateur.getId(), utilisateur.getActive(), userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.joining(" ")));
 
-                .subject(userDetails.getUsername())
-                .claim("scope", scope)
-                .claim("userId", u.getId())
-                .claim("cin", u.getCin())
-                .claim("active", u.getActive())
-                .claim("nom", u.getNom())
-                .claim("prenom", u.getPrenom())
-
-                .build();
-        JwtEncoderParameters jwtEncoderParameters = JwtEncoderParameters.from(
-                JwsHeader.with(MacAlgorithm.HS512).build(),jwtClaimsSet);
-        String accessToken = jwtEncoder.encode(jwtEncoderParameters).getTokenValue();
-
-        ResponseCookie nouveauCookieARemplacer = ResponseCookie.from("refresh_token", nouveau.getRefreshToken())
+        ResponseCookie nouveauCookie = ResponseCookie.from("refresh_token", nouveau.getRefreshToken())
                 .httpOnly(true)
-                .secure(cookieSecure)              // en prod (https). en local: false
-                .sameSite("Lax")           // ou "None" si front/back domaines différents
-                .path("/auth")             // limite l’envoi du cookie aux endpoints auth
-                .maxAge(7 * 24 * 60 * 60)  // 7 jours
+                .secure(cookieSecure)
+                .sameSite("Lax")
+                .path("/auth")
+                .maxAge(7 * 24 * 60 * 60)
                 .build();
 
-        response.addHeader("Set-Cookie", nouveauCookieARemplacer.toString());
-        log.info("cokokie in  refresh  " + cookie);
-
+        response.addHeader("Set-Cookie", nouveauCookie.toString());
         return new JetonsSortieDTO(accessToken);
     }
 
     @PostMapping("/deconnexion")
     public Map<String, String> deconnexion(HttpServletRequest request, HttpServletResponse response) {
-
         Cookie cookie = WebUtils.getCookie(request, "refresh_token");
         if (cookie != null && !cookie.getValue().isBlank()) {
             refreshTokenMetier.revoquerFamille(cookie.getValue());
@@ -271,15 +165,50 @@ public class SecurityController {
                 .build();
         response.addHeader("Set-Cookie", deleteCookie.toString());
 
-        return Map.of("message", "Déconnexion réussie");
+        return Map.of("message", "Deconnexion reussie");
     }
 
+    private JetonsSortieDTO creerSession(Authentication authentication, HttpServletRequest request, HttpServletResponse response) {
+        Utilisateur utilisateur = utilisateurRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new SecuriteException("Utilisateur introuvable"));
 
+        String scope = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.joining(" "));
+        String accessToken = genererAccessToken(authentication.getName(), utilisateur.getId(), utilisateur.getActive(), scope);
 
+        String userAgent = request.getHeader("User-Agent");
+        String ip = extraireIp(request);
+        RefreshToken refresh = refreshTokenMetier.creerRefreshTokenPourlaPremierFois(authentication.getName(), userAgent, ip);
 
+        ResponseCookie cookie = ResponseCookie.from("refresh_token", refresh.getToken())
+                .httpOnly(true)
+                .secure(cookieSecure)
+                .sameSite("Lax")
+                .path("/auth")
+                .maxAge(7 * 24 * 60 * 60)
+                .build();
 
+        response.addHeader("Set-Cookie", cookie.toString());
+        return JetonsSortieDTO.builder().access_token(accessToken).build();
+    }
 
-
+    private String genererAccessToken(String sujet, Long userId, Boolean actif, String scope) {
+        Instant instant = Instant.now();
+        JwtClaimsSet jwtClaimsSet = JwtClaimsSet.builder()
+                .issuedAt(instant)
+                .expiresAt(instant.plus(10, ChronoUnit.MINUTES))
+                .subject(sujet)
+                .claim("scope", scope)
+                .claim("userId", userId)
+                .claim("active", actif)
+                .build();
+        JwtEncoderParameters jwtEncoderParameters = JwtEncoderParameters.from(
+                JwsHeader.with(MacAlgorithm.HS512).build(),
+                jwtClaimsSet
+        );
+        return jwtEncoder.encode(jwtEncoderParameters).getTokenValue();
+    }
 
     private String extraireIp(HttpServletRequest request) {
         String forwarded = request.getHeader("X-Forwarded-For");
@@ -292,7 +221,4 @@ public class SecurityController {
         }
         return request.getRemoteAddr();
     }
-
-
-
 }

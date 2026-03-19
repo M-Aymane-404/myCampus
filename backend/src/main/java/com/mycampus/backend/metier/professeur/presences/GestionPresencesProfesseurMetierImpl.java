@@ -22,6 +22,7 @@ import com.mycampus.backend.repositorys.EtudiantRepository;
 import com.mycampus.backend.repositorys.PresenceRepository;
 import com.mycampus.backend.repositorys.ProfesseurRepository;
 import com.mycampus.backend.repositorys.SeanceRepository;
+import com.mycampus.backend.metier.security.LienFichierSecuriseService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -47,6 +48,7 @@ public class GestionPresencesProfesseurMetierImpl implements GestionPresencesPro
     private final ClasseRepository classeRepository;
     private final AffectationEnseignementRepository affectationEnseignementRepository;
     private final GestionDeMotifDePresenceMetier gestionDeMotifDePresenceMetier;
+    private final LienFichierSecuriseService lienFichierSecuriseService;
 
     private Professeur requireProfesseurPpr(String professeurPpr) throws SeancesProfesseurException {
         if (!StringUtils.hasText(professeurPpr)) {
@@ -139,7 +141,7 @@ public class GestionPresencesProfesseurMetierImpl implements GestionPresencesPro
                 .justificationSoumise(justificationSoumise)
                 .motif(presence != null ? presence.getDescriptionDeJustification() : null)
                 .typeMotif(presence != null ? presence.getTypeMotif() : null)
-                .motifUrl(presence != null ? presence.getMotifUrl() : null)
+                .motifUrl(presence != null ? lienFichierSecuriseService.construireUrlJustificatif(presence.getId(), presence.getMotifNom()) : null)
                 .motifNom(presence != null ? presence.getMotifNom() : null)
                 .dateDeclaration(presence != null ? presence.getDateDeclaration() : null)
                 .build();

@@ -22,16 +22,16 @@ public class JwtToCustomPrincipalConverter implements Converter<Jwt, UsernamePas
 
         Long userId = jwt.getClaim("userId");
         String email = jwt.getSubject();
+        Boolean active = jwt.getClaim("active");
 
-        CustomUserDetails principal =   CustomUserDetails.builder()
+        CustomUserDetails principal = CustomUserDetails.builder()
                 .id(userId)
                 .email(email)
-                .cin(jwt.getClaim("cin"))          // optionnel si tu l’ajoutes dans le token
-                .active(true)                     // ✅ important
-                .password("")                     // ✅ éviter null
+                .cin(null)
+                .active(Boolean.TRUE.equals(active))
+                .password("")
                 .authorities(authorities)
                 .build();
         return new UsernamePasswordAuthenticationToken(principal, "N/A", authorities);
     }
 }
-

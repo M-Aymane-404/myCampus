@@ -31,6 +31,17 @@ public interface PresenceRepository extends JpaRepository<Presence, Long> {
 
     Optional<Presence> findByIdAndEtudiant_Id(Long id, Long etudiantId);
 
+    @Query("""
+        select p
+        from Presence p
+        join fetch p.etudiant e
+        join fetch p.seance s
+        join fetch s.affectationEnseignement ae
+        join fetch ae.professeur prof
+        where p.id = :presenceId
+    """)
+    Optional<Presence> findAvecRelationsPourAccesFichier(@Param("presenceId") Long presenceId);
+
    /* @Query("""
         select new com.mycampus.backend.dto.professeur.DonneeSortie.presences.LignePresenceSortieDTO(
             p.id,

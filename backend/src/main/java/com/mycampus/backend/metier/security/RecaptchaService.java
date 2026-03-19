@@ -1,11 +1,14 @@
-package com.mycampus.backend.services;
+package com.mycampus.backend.metier.security;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.util.StringUtils;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.HashMap;
 import java.util.Map;
 
 @Service
@@ -23,25 +26,30 @@ public class RecaptchaService {
     }
 
     public boolean validateRecaptcha(String token) {
+        if (!StringUtils.hasText(token)) {
+            return false;
+        }
+
         try {
-            String url = RECAPTCHA_VERIFY_URL + "?secret=" + recaptchaSecret + "&response=" + token;
-            
+            MultiValueMap<String, String> corps = new LinkedMultiValueMap<>();
+            corps.add("secret", recaptchaSecret);
+            corps.add("response", token);
+
             Map<String, Object> response = restTemplate.postForObject(
-                    url,
-                    null,
+                    RECAPTCHA_VERIFY_URL,
+                    corps,
                     Map.class
             );
 
             if (response != null) {
                 Boolean success = (Boolean) response.get("success");
-                log.info("reCAPTCHA validation result: {}", success);
                 if (success != null && !success) {
-                    log.warn("reCAPTCHA validation failed. Error codes: {}", response.get("error-codes"));
+                    log.warn("Echec de validation reCAPTCHA.");
                 }
                 return success != null && success;
             }
-        } catch (Exception e) {
-            log.error("Error validating reCAPTCHA token", e);
+        } catch (RestClientException e) {
+            log.error("Erreur lors de la validation reCAPTCHA", e);
         }
         return false;
     }

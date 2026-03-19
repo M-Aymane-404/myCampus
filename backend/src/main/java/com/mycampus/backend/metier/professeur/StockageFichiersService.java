@@ -1,6 +1,7 @@
 package com.mycampus.backend.metier.professeur;
 
 import com.mycampus.backend.exceptions.NotesProfesseurException;
+import com.mycampus.backend.metier.security.ValidationFichierSecuriseService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -14,14 +15,20 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
 public class StockageFichiersService {
     private final Path basePath;
+    private final ValidationFichierSecuriseService validationFichierSecuriseService;
 
-    public StockageFichiersService(@Value("${app.files.base-dir:uploads}") String baseDir) {
+    public StockageFichiersService(
+            @Value("${app.files.base-dir:uploads}") String baseDir,
+            ValidationFichierSecuriseService validationFichierSecuriseService
+    ) {
         this.basePath = Paths.get(baseDir).toAbsolutePath().normalize();
+        this.validationFichierSecuriseService = validationFichierSecuriseService;
         try {
             Files.createDirectories(this.basePath);
         } catch (IOException ex) {
@@ -33,19 +40,17 @@ public class StockageFichiersService {
         if (fichier == null || fichier.isEmpty()) {
             throw new NotesProfesseurException("Fichier obligatoire.");
         }
-        String ct = fichier.getContentType();
-        if (ct == null || !ct.toLowerCase().contains("pdf")) {
-            throw new NotesProfesseurException("Seul le format PDF est autorise.");
-        }
 
         try {
+            ValidationFichierSecuriseService.FichierValide fichierValide = validationFichierSecuriseService.valider(
+                    fichier,
+                    Set.of(ValidationFichierSecuriseService.FormatFichierAutorise.PDF),
+                    10 * 1024 * 1024L
+            );
             Path dir = resolveSubdirectory(sousDossier);
             Files.createDirectories(dir);
 
-            String original = fichier.getOriginalFilename() == null ? "fichier.pdf" : fichier.getOriginalFilename();
-            original = original.replaceAll("[^a-zA-Z0-9._-]", "_");
-
-            String nom = UUID.randomUUID() + "_" + original;
+            String nom = UUID.randomUUID() + "_" + fichierValide.nomOriginalSecurise();
             Path cible = dir.resolve(nom).normalize();
 
             ensureInsideBase(cible);
@@ -54,6 +59,23 @@ public class StockageFichiersService {
             return relativize(cible);
         } catch (IOException e) {
             throw new NotesProfesseurException("Erreur lors de la sauvegarde du fichier.");
+        }
+    }
+
+    public Resource chargerDepuisSousDossier(String sousDossier, String nomFichier) {
+        if (!StringUtils.hasText(nomFichier)) {
+            throw new NotesProfesseurException("Nom de fichier invalide.");
+        }
+        try {
+            Path dir = resolveSubdirectory(sousDossier);
+            Path fichier = dir.resolve(nomFichier).normalize();
+            ensureInsideBase(fichier);
+            if (!Files.exists(fichier) || Files.isDirectory(fichier)) {
+                throw new NotesProfesseurException("Fichier introuvable.");
+            }
+            return new UrlResource(fichier.toUri());
+        } catch (IOException ex) {
+            throw new NotesProfesseurException("Erreur lors de la lecture du fichier.");
         }
     }
 

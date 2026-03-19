@@ -21,8 +21,6 @@ public class UtilisateurSortieDto {
 
     private String email;
 
-    private String password;
-
     private String cin;
 
     private String tel;

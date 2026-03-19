@@ -1,6 +1,6 @@
 import { authenticatedFetch } from './apiInterceptor';
 
-const API_HOST = 'http://localhost:8080';
+const API_HOST = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
 export const readFilenameFromResponse = (response, fallback = 'document.pdf') => {
   const disposition = response.headers.get('content-disposition') || '';
@@ -37,10 +37,6 @@ export const normalizeStoredFileUrl = (path) => {
     return `${API_HOST}${cleanPath}`;
   }
 
-  if (normalizedPath.startsWith('/files/')) {
-    return `${API_HOST}${normalizedPath}`;
-  }
-
   if (
     normalizedPath.startsWith('/uploads/') ||
     normalizedPath.startsWith('uploads/') ||
@@ -50,10 +46,10 @@ export const normalizeStoredFileUrl = (path) => {
     normalizedPath.startsWith('/corriges/') ||
     normalizedPath.startsWith('/examens/')
   ) {
-    return `${API_HOST}/api/public/fichiers/voir?chemin=${encodeURIComponent(rawPath)}`;
+    return null;
   }
 
-  return `${API_HOST}/files/${normalizedPath.replace(/^\/+/, '')}`;
+  return normalizedPath.startsWith('/') ? `${API_HOST}${normalizedPath}` : `${API_HOST}/${normalizedPath.replace(/^\/+/, '')}`;
 };
 
 export const fetchAuthenticatedBlob = async (url) => {

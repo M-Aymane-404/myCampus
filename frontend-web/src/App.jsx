@@ -173,35 +173,35 @@ function App() {
   // Check for existing session on mount
   useEffect(() => {
     apiAuditLogs.initClientCapture();
-    if (apiAuth.isAuthenticated()) {
-      const userData = apiAuth.getUser();
-      if (userData) {
-        // Normalize role
-        let role = userData.role?.toLowerCase();
-        if (role === 'administrateur' || role === 'administrator' || role === 'admin') {
-          role = 'admin';
-        } else if (role === 'professeur' || role === 'professor' || role === 'prof') {
-          role = 'professor';
-        } else if (role === 'etudiant' || role === 'student' || role === 'etud') {
-          role = 'student';
-        }
+    let actif = true;
 
-        setUtilisateurConnecte({
-          email: userData.email,
-          role: role,
-          user: userData
-        });
-
-        // Set default active element based on role
-        if (role === 'professor') {
-          setElementActif('tableau-de-bord-professeur');
-        } else if (role === 'admin') {
-          setElementActif('tableau-de-bord');
-        } else if (role === 'student') {
-          setElementActif('tableau-de-bord-etudiant');
-        }
+    const initialiserSession = async () => {
+      const userData = await apiAuth.initializeSession();
+      if (!actif || !userData) {
+        return;
       }
-    }
+
+      const role = (userData.role || '').toLowerCase();
+      setUtilisateurConnecte({
+        email: userData.email,
+        role,
+        user: userData
+      });
+
+      if (role === 'professor') {
+        setElementActif('tableau-de-bord-professeur');
+      } else if (role === 'admin') {
+        setElementActif('tableau-de-bord');
+      } else if (role === 'student') {
+        setElementActif('tableau-de-bord-etudiant');
+      }
+    };
+
+    initialiserSession();
+
+    return () => {
+      actif = false;
+    };
   }, []);
 
   useEffect(() => {

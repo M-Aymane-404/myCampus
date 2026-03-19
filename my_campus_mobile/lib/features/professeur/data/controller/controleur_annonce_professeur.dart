@@ -87,4 +87,32 @@ class ControleurAnnonceProfesseur extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<void> creerAnnonce({
+    required String titre,
+    required String contenu,
+    required String typeAnnonce,
+    required String codeClasse,
+  }) async {
+    _chargement = true;
+    _erreur = null;
+    notifyListeners();
+
+    try {
+      final annonce = await _repo.creerAnnonce({
+        'titre': titre,
+        'contenu': contenu,
+        'typeAnnonce': typeAnnonce,
+        'cibleType': 'ETUDIANTS_CLASSE',
+        'codeClasse': codeClasse,
+      });
+      _annonces = [annonce, ..._annonces];
+    } catch (e) {
+      _erreur = e.toString();
+      rethrow;
+    } finally {
+      _chargement = false;
+      notifyListeners();
+    }
+  }
 }

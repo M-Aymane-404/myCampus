@@ -20,13 +20,13 @@ import com.mycampus.backend.mappers.professeur.SeancesProfesseurMapper;
 import com.mycampus.backend.repositorys.AffectationEnseignementRepository;
 import com.mycampus.backend.repositorys.FichierSeanceRepository;
 import com.mycampus.backend.repositorys.SeanceRepository;
+import com.mycampus.backend.metier.security.ValidationFichierSecuriseService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -54,6 +54,7 @@ public class GestionSeancesProfesseurMetierImpl implements GestionSeancesProfess
     private final SeancesProfesseurMapper seancesProfesseurMapper;
     private final FichiersSeanceProfesseurMapper fichiersSeanceProfesseurMapper;
     private final StructureMapper structureMapper;
+    private final ValidationFichierSecuriseService validationFichierSecuriseService;
     /*
      This function checks that the professor PPR is provided.
      It prevents empty or null PPR from reaching database queries.
@@ -152,36 +153,24 @@ public class GestionSeancesProfesseurMetierImpl implements GestionSeancesProfess
      Security: prevents writing outside the target folder.
     */
     private String sauvegarderFichierSurDisque(MultipartFile fichier) throws SeancesProfesseurException {
-        if (fichier == null || fichier.isEmpty()) {
-            throw new SeancesProfesseurException("Le fichier est obligatoire.");
-        }
-
         try {
-            /* 1) Define a stable storage folder */
+            ValidationFichierSecuriseService.FichierValide fichierValide = validationFichierSecuriseService.valider(
+                    fichier,
+                    java.util.Set.of(
+                            ValidationFichierSecuriseService.FormatFichierAutorise.PDF,
+                            ValidationFichierSecuriseService.FormatFichierAutorise.JPEG,
+                            ValidationFichierSecuriseService.FormatFichierAutorise.PNG
+                    ),
+                    10 * 1024 * 1024L
+            );
+
             Path dossierBase = Paths.get("uploads", "seances").toAbsolutePath().normalize();
             Files.createDirectories(dossierBase);
-
-            /* 2) Build a safe file name (UUID + extension) */
-            String nomOriginal = fichier.getOriginalFilename() != null ? fichier.getOriginalFilename() : "fichier";
-            nomOriginal = StringUtils.cleanPath(nomOriginal);
-
-            String extension = "";
-            int index = nomOriginal.lastIndexOf('.');
-            if (index > 0 && index < nomOriginal.length() - 1) {
-                extension = nomOriginal.substring(index);
-            }
-
-            String nomUnique = UUID.randomUUID() + extension;
-
-            /* 3) Build destination path and normalize it */
+            String nomUnique = UUID.randomUUID() + fichierValide.extension();
             Path destination = dossierBase.resolve(nomUnique).normalize();
-
-            /* 4) Safety check: destination must stay inside dossierBase */
             if (!destination.startsWith(dossierBase)) {
                 throw new SeancesProfesseurException("Nom de fichier invalide.");
             }
-
-            /* 5) Store using Spring method (more reliable than Files.copy for MultipartFile) */
             fichier.transferTo(destination.toFile());
 
             return destination.toString();
@@ -201,7 +190,11 @@ public class GestionSeancesProfesseurMetierImpl implements GestionSeancesProfess
             return;
         }
         try {
-            Files.deleteIfExists(Path.of(chemin));
+            Path dossierBase = Paths.get("uploads", "seances").toAbsolutePath().normalize();
+            Path cheminNormalise = Path.of(chemin).toAbsolutePath().normalize();
+            if (cheminNormalise.startsWith(dossierBase)) {
+                Files.deleteIfExists(cheminNormalise);
+            }
         } catch (Exception ignored) {
             /* ignore disk deletion errors to avoid breaking business transaction */
         }

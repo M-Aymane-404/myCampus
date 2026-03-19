@@ -1,6 +1,5 @@
 package com.mycampus.backend.mappers.etudiant;
 
- import com.mycampus.backend.dto.administrateur.DonneSortie.EtudiantSortieDTO;
  import com.mycampus.backend.dto.etudiant.DonneeSortie.*;
 import com.mycampus.backend.dto.etudiant.DonneeSortie.ReleveDeNote.ExamenDeReleveEtudiantDTO;
 import com.mycampus.backend.dto.etudiant.DonneeSortie.ReleveDeNote.MatiereDeReleveEtudiantDTO;
@@ -8,6 +7,7 @@ import com.mycampus.backend.dto.etudiant.DonneeSortie.ReleveDeNote.ModuleDeRelev
  import com.mycampus.backend.entites.*;
 import com.mycampus.backend.entites.Module;
 import com.mycampus.backend.enumerations.StatutJustificatif;
+import com.mycampus.backend.metier.security.LienFichierSecuriseService;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 
 public class StructureEtudiantMapper {
 
+    private final LienFichierSecuriseService lienFichierSecuriseService;
 
 
 
@@ -100,6 +101,7 @@ public class StructureEtudiantMapper {
         presenceSortieEtudiantDTO.setStatutJustificatif(statutJustificatif);
         presenceSortieEtudiantDTO.setJustificationSoumise(justificationSoumise);
         presenceSortieEtudiantDTO.setJustificationValidee(statutJustificatif == StatutJustificatif.VALIDE);
+        presenceSortieEtudiantDTO.setMotifUrl(lienFichierSecuriseService.construireUrlJustificatif(presence.getId(), presence.getMotifNom()));
 
 
          return presenceSortieEtudiantDTO;
@@ -166,6 +168,7 @@ public class StructureEtudiantMapper {
 
         // Mapping manuel de l'ID de la classe
         etudiantSortieDTO.setCodeClasse(etudiant.getClasse() != null ? etudiant.getClasse().getCodeClasse() : null);
+        etudiantSortieDTO.setPhotoUrl(lienFichierSecuriseService.construireUrlPhoto(etudiant.getPhotoNom()));
 
         return etudiantSortieDTO;
     }

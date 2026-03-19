@@ -4,8 +4,8 @@ import com.mycampus.backend.dto.professeur.DonneeSortie.presences.LignePresenceS
 import com.mycampus.backend.entites.Etudiant;
 import com.mycampus.backend.entites.Presence;
 import com.mycampus.backend.enumerations.StatutJustificatif;
+import com.mycampus.backend.metier.security.LienFichierSecuriseService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 
 
@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 
 public class PresenceMapper {
 
+    private final LienFichierSecuriseService lienFichierSecuriseService;
 
 
     public LignePresenceSortieDTO FromPresencetoPresencceSortieDTO(Presence presence ) {
@@ -45,7 +46,7 @@ public class PresenceMapper {
                 .justificationSoumise(justificationSoumise)
                 .motif(presence.getDescriptionDeJustification())
                 .typeMotif(presence.getTypeMotif())
-                .motifUrl(presence.getMotifUrl())
+                .motifUrl(lienFichierSecuriseService.construireUrlJustificatif(presence.getId(), presence.getMotifNom()))
                 .motifNom(presence.getMotifNom())
                 .dateDeclaration(presence.getDateDeclaration())
                 .build();

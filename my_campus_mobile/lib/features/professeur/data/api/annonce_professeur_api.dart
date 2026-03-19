@@ -14,10 +14,18 @@ class AnnonceProfesseurApi {
 
   Future<List<dynamic>> recupererRessources(int annonceId) async {
     final resp = await _dio.get(
-      '/api/professeur/annonces/$annonceId/ressources',
+     '/api/professeur/annonces/$annonceId/ressources',
     );
     final data = _decodeData(resp.data);
     return data is List ? data : const [];
+  }
+
+  Future<Map<String, dynamic>> creerAnnonce(Map<String, dynamic> body) async {
+    final resp = await _dio.post(
+      '/api/professeur/annonces',
+      data: body,
+    );
+    return _decodeMap(resp.data);
   }
 
   dynamic _decodeData(Object? data) {
@@ -25,5 +33,13 @@ class AnnonceProfesseurApi {
       return jsonDecode(data);
     }
     return data;
+  }
+
+  Map<String, dynamic> _decodeMap(Object? data) {
+    final decoded = _decodeData(data);
+    if (decoded is Map) {
+      return decoded.cast<String, dynamic>();
+    }
+    return <String, dynamic>{};
   }
 }

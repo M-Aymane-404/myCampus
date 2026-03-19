@@ -12,6 +12,7 @@ import com.mycampus.backend.entites.Administrateur;
 import com.mycampus.backend.dto.administrateur.DonneSortie.AdministrateurSortieDTO;
 import com.mycampus.backend.entites.Professeur;
 import com.mycampus.backend.entites.Etudiant;
+import com.mycampus.backend.metier.security.LienFichierSecuriseService;
 import org.springframework.beans.BeanUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -23,6 +24,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UtilisateursMapper {
 
+    private final LienFichierSecuriseService lienFichierSecuriseService;
+
     public AdministrateurSortieDTO FromAdministrateurVersAdministrateurSortieDTO(Administrateur administrateur) {
         if (administrateur == null) {
             return null;
@@ -30,6 +33,7 @@ public class UtilisateursMapper {
         
         AdministrateurSortieDTO administrateurSortieDTO = new AdministrateurSortieDTO();
         BeanUtils.copyProperties(administrateur, administrateurSortieDTO);
+        administrateurSortieDTO.setPhotoUrl(lienFichierSecuriseService.construireUrlPhoto(administrateur.getPhotoNom()));
         return administrateurSortieDTO;
     }
 
@@ -76,6 +80,7 @@ public class UtilisateursMapper {
 
         ProfesseurSortieDTO professeurSortieDTO = new ProfesseurSortieDTO();
         BeanUtils.copyProperties(professeur, professeurSortieDTO);
+        professeurSortieDTO.setPhotoUrl(lienFichierSecuriseService.construireUrlPhoto(professeur.getPhotoNom()));
         
         // Mapping manuel des IDs de relations
         professeurSortieDTO.setCodeDepartementDirigee(professeur.getDepartementDirigee() != null ? professeur.getDepartementDirigee().getCodeDepartement() : null);
@@ -147,6 +152,7 @@ public class UtilisateursMapper {
 
         EtudiantSortieDTO etudiantSortieDTO = new EtudiantSortieDTO();
         BeanUtils.copyProperties(etudiant, etudiantSortieDTO);
+        etudiantSortieDTO.setPhotoUrl(lienFichierSecuriseService.construireUrlPhoto(etudiant.getPhotoNom()));
         
         // Mapping manuel de l'ID de la classe
         etudiantSortieDTO.setCodeClasse(etudiant.getClasse() != null ? etudiant.getClasse().getCodeClasse() : null);

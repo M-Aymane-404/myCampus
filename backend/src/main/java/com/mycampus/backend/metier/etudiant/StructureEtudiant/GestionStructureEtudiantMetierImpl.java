@@ -20,6 +20,7 @@ import com.mycampus.backend.mappers.administrateur.UtilisateursMapper;
 import com.mycampus.backend.mappers.etudiant.StructureEtudiantMapper;
 import com.mycampus.backend.metier.professeur.StockageFichiersService;
 import com.mycampus.backend.repositorys.*;
+import com.mycampus.backend.metier.security.LienFichierSecuriseService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -62,6 +63,7 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
     private final PasswordEncoder passwordEncoder;
     private final ClasseRepository classRepository;
     private final StockageFichiersService stockage;
+    private final LienFichierSecuriseService lienFichierSecuriseService;
 
     @Override
     public EtudiantSortieEtudiantDTO trouverEtudiantConnecter(Long id) throws EtudiantException {
@@ -91,7 +93,7 @@ public class GestionStructureEtudiantMetierImpl implements GestionStructureEtudi
                 .cin(etudiant.getCin())
                 .tel(etudiant.getTel())
                 .photoNom(etudiant.getPhotoNom())
-                .photoUrl(etudiant.getPhotoUrl())
+                .photoUrl(lienFichierSecuriseService.construireUrlPhoto(etudiant.getPhotoNom()))
                 .active(etudiant.getActive())
                 .apogee(etudiant.getApogee())
                 .niveau(etudiant.getNiveau())
