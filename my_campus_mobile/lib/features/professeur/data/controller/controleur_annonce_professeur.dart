@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:dio/dio.dart';
 
 import '../dto/annonce_professeur_dto.dart';
 import '../dto/ressource_annonce_professeur_dto.dart';
@@ -19,6 +21,8 @@ class ControleurAnnonceProfesseur extends ChangeNotifier {
       <RessourceAnnonceProfesseurDTO>[];
   bool _ressourcesChargees = false;
   int? _ressourceAnnonceId;
+  String? _erreurRessources;
+  bool _uploadRessourcesEnCours = false;
 
   bool get chargement => _chargement;
   String? get erreur => _erreur;
@@ -28,6 +32,8 @@ class ControleurAnnonceProfesseur extends ChangeNotifier {
   List<RessourceAnnonceProfesseurDTO> get ressourcesAnnonceSelectionnee =>
       _ressources;
   bool get ressourcesChargees => _ressourcesChargees;
+  String? get erreurRessources => _erreurRessources;
+  bool get uploadRessourcesEnCours => _uploadRessourcesEnCours;
 
   Future<void> chargerAnnonces() async {
     _chargement = true;
@@ -54,6 +60,7 @@ class ControleurAnnonceProfesseur extends ChangeNotifier {
       _ressources = [];
       _ressourcesChargees = false;
       _ressourceAnnonceId = null;
+      _erreurRessources = null;
 
       AnnonceProfesseurDTO? selectionnee;
       final all = [..._annonces, ..._annoncesPubliques];
@@ -93,10 +100,15 @@ class ControleurAnnonceProfesseur extends ChangeNotifier {
       return;
     }
 
+    _ressourcesChargees = false;
+    _erreurRessources = null;
+    notifyListeners();
+
     try {
       _ressources = await _repo.recupererRessources(annonceId);
     } catch (e) {
       _ressources = [];
+      _erreurRessources = e.toString();
     } finally {
       _ressourcesChargees = true;
       _ressourceAnnonceId = annonceId;
@@ -104,7 +116,7 @@ class ControleurAnnonceProfesseur extends ChangeNotifier {
     }
   }
 
-  Future<void> creerAnnonce({
+  Future<AnnonceProfesseurDTO> creerAnnonce({
     required String titre,
     required String contenu,
     required String typeAnnonce,
@@ -123,11 +135,40 @@ class ControleurAnnonceProfesseur extends ChangeNotifier {
         'codeClasse': codeClasse,
       });
       _annonces = [annonce, ..._annonces];
+      return annonce;
     } catch (e) {
       _erreur = e.toString();
       rethrow;
     } finally {
       _chargement = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> ajouterRessourcesAnnonce({
+    required int annonceId,
+    required List<PlatformFile> fichiers,
+  }) async {
+    if (fichiers.isEmpty) return;
+
+    _uploadRessourcesEnCours = true;
+    notifyListeners();
+
+    try {
+      final multiparts = <MultipartFile>[];
+      for (final file in fichiers) {
+        final path = file.path;
+        if (path == null || path.trim().isEmpty) {
+          throw Exception('Impossible d’identifier le chemin du fichier "${file.name}"');
+        }
+        multiparts.add(await MultipartFile.fromFile(path, filename: file.name));
+      }
+
+      await _repo.ajouterRessourcesAnnonce(annonceId, multiparts);
+    } catch (e) {
+      rethrow;
+    } finally {
+      _uploadRessourcesEnCours = false;
       notifyListeners();
     }
   }

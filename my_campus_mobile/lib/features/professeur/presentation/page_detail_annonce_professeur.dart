@@ -163,7 +163,7 @@ class _PageDetailAnnonceProfesseurState
                 ),
               ),
               const SizedBox(height: 20),
-              _buildRessourcesSection(context, ctrl),
+              _buildRessourcesSection(context, ctrl, widget.annonceId),
             ],
           );
         },
@@ -174,6 +174,7 @@ class _PageDetailAnnonceProfesseurState
   Widget _buildRessourcesSection(
     BuildContext context,
     ControleurAnnonceProfesseur ctrl,
+    int annonceId,
   ) {
     final ressources = ctrl.ressourcesAnnonceSelectionnee;
 
@@ -182,6 +183,45 @@ class _PageDetailAnnonceProfesseurState
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: 12),
           child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (ctrl.erreurRessources != null) {
+      final raw = ctrl.erreurRessources ?? '';
+      final message =
+          raw.contains('Vous ne pouvez')
+              ? 'Les ressources ne sont visibles que pour les annonces que vous avez créées.'
+              : 'Impossible de charger les ressources pour le moment.';
+
+      return Container(
+        margin: const EdgeInsets.only(top: 8),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Colors.black.withOpacity(0.05)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.info_outline_rounded, color: Color(0xFF5B5BEA)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14.5,
+                  color: Color(0xFF61708A),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            OutlinedButton(
+              onPressed: () => ctrl.chargerRessources(annonceId),
+              child: const Text('Réessayer'),
+            ),
+          ],
         ),
       );
     }
@@ -201,7 +241,7 @@ class _PageDetailAnnonceProfesseurState
             SizedBox(width: 12),
             Expanded(
               child: Text(
-                'Aucune ressource attachee',
+                'Aucune ressource attachée',
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
                   fontSize: 15,

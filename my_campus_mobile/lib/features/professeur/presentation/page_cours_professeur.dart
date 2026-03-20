@@ -16,6 +16,27 @@ class _PageCoursProfesseurState extends State<PageCoursProfesseur> {
   String? _selectedEnseignementKey;
   bool _selectionScheduled = false;
 
+  Future<void> _refreshCours(EnseignementProfesseurMobileDTO? enseignement) async {
+    final ctrl = context.read<ControleurEspaceProfesseur>();
+    try {
+      if (enseignement == null) {
+        await ctrl.chargerEspace();
+        return;
+      }
+
+      await Future.wait([
+        ctrl.rechercherSeancesPourEnseignement(
+          codeClasse: enseignement.codeClasse,
+          codeMatiere: enseignement.codeMatiere,
+        ),
+        ctrl.rechargerExamensSelection(),
+      ]);
+    } catch (e) {
+      if (!mounted) return;
+      _showSnack(e.toString(), isError: true);
+    }
+  }
+
   List<SeanceProfesseurMobileDTO> _sortedSeances(
     List<SeanceProfesseurMobileDTO> seances,
   ) {
@@ -189,13 +210,25 @@ class _PageCoursProfesseurState extends State<PageCoursProfesseur> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 18),
-                const Text(
-                  'Cours simplifiés',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFF0B1220),
-                  ),
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Cours simplifiés',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF0B1220),
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Rafraîchir',
+                      onPressed: () => _refreshCours(enseignement),
+                      icon: const Icon(Icons.refresh_rounded),
+                      color: const Color(0xFF5B5BEA),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -226,18 +259,21 @@ class _PageCoursProfesseurState extends State<PageCoursProfesseur> {
                 ),
                 const SizedBox(height: 12),
                 Expanded(
-                  child: TabBarView(
-                    children: [
-                      _buildSeancesTab(
-                        seances,
-                        teaching: enseignement,
-                        isLoading: seancesLoading,
-                      ),
-                      _buildExamensTab(
-                        examens,
-                        teaching: enseignement,
-                      ),
-                    ],
+                  child: RefreshIndicator(
+                    onRefresh: () => _refreshCours(enseignement),
+                    child: TabBarView(
+                      children: [
+                        _buildSeancesTab(
+                          seances,
+                          teaching: enseignement,
+                          isLoading: seancesLoading,
+                        ),
+                        _buildExamensTab(
+                          examens,
+                          teaching: enseignement,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -310,6 +346,7 @@ class _PageCoursProfesseurState extends State<PageCoursProfesseur> {
     final hasData = sortedSeances.isNotEmpty;
     return ListView(
       padding: const EdgeInsets.only(bottom: 24),
+      physics: const AlwaysScrollableScrollPhysics(),
       children: [
         ActionRow(
           title: 'Planifier rapidement une séance',
@@ -349,6 +386,7 @@ class _PageCoursProfesseurState extends State<PageCoursProfesseur> {
     final hasData = examens.isNotEmpty;
     return ListView(
       padding: const EdgeInsets.only(bottom: 24),
+      physics: const AlwaysScrollableScrollPhysics(),
       children: [
         ActionRow(
           title: 'Suivez vos examens principaux',

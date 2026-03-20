@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+
 import '../api/annonce_professeur_api.dart';
 import '../dto/annonce_professeur_dto.dart';
 import '../dto/ressource_annonce_professeur_dto.dart';
@@ -29,6 +31,20 @@ class AnnonceProfesseurRepository {
     int annonceId,
   ) async {
     final data = await _api.recupererRessources(annonceId);
+    return data
+        .map(
+          (entry) => RessourceAnnonceProfesseurDTO.fromJson(
+            (entry as Map).cast<String, dynamic>(),
+          ),
+        )
+        .toList();
+  }
+
+  Future<List<RessourceAnnonceProfesseurDTO>> ajouterRessourcesAnnonce(
+    int annonceId,
+    List<MultipartFile> fichiers,
+  ) async {
+    final data = await _api.ajouterRessourcesAnnonce(annonceId, fichiers);
     return data
         .map(
           (entry) => RessourceAnnonceProfesseurDTO.fromJson(

@@ -26,6 +26,29 @@ class AnnonceProfesseurApi {
     return data is List ? data : const [];
   }
 
+  Future<List<dynamic>> ajouterRessourcesAnnonce(
+    int annonceId,
+    List<MultipartFile> fichiers,
+  ) async {
+    final data = FormData();
+    for (final fichier in fichiers) {
+      data.files.add(MapEntry('fichiers', fichier));
+    }
+
+    final resp = await _dio.post(
+      '/api/professeur/annonces/$annonceId/ressources',
+      data: data,
+      options: Options(
+        headers: {
+          Headers.contentTypeHeader: 'multipart/form-data',
+        },
+      ),
+    );
+
+    final decoded = _decodeData(resp.data);
+    return decoded is List ? decoded : const [];
+  }
+
   Future<Map<String, dynamic>> recupererAnnonceParId(int annonceId) async {
     final resp = await _dio.get('/api/professeur/annonces/$annonceId');
     return _decodeMap(resp.data);

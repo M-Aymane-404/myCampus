@@ -3,6 +3,7 @@ package com.mycampus.backend.metier.annonces.ressources;
 import com.mycampus.backend.dto.annonces.RessourceAnnonceSortieDTO;
 import com.mycampus.backend.dto.annonces.TelechargementRessourceAnnonceSortieDTO;
 import com.mycampus.backend.entites.Annonce;
+import com.mycampus.backend.entites.Departement;
 import com.mycampus.backend.entites.Etudiant;
 import com.mycampus.backend.entites.Professeur;
 import com.mycampus.backend.entites.RessourceAnnonce;
@@ -66,7 +67,7 @@ public class GestionRessourcesAnnonceMetierImpl implements GestionRessourcesAnno
     @Override
     @Transactional(readOnly = true)
     public List<RessourceAnnonceSortieDTO> listerRessourcesProfesseur(Long annonceId, String emailProfesseur) {
-        requireAnnonceProfesseur(annonceId, emailProfesseur);
+        requireAnnonceVisiblePourProfesseur(annonceId, emailProfesseur);
         return mapperListe(ressourceAnnonceRepository.findByAnnonce_IdOrderByDateUploadDesc(annonceId));
     }
 
@@ -74,12 +75,8 @@ public class GestionRessourcesAnnonceMetierImpl implements GestionRessourcesAnno
     @Transactional(readOnly = true)
     public TelechargementRessourceAnnonceSortieDTO preparerTelechargementProfesseur(Long ressourceId, String emailProfesseur) {
         requireEmailProfesseur(emailProfesseur);
-        professeurRepository.findByEmail(emailProfesseur)
-                .orElseThrow(() -> new UtilisateursException("Professeur non trouve"));
-
-        RessourceAnnonce ressource = ressourceAnnonceRepository.findByIdAndAnnonce_Auteur_Email(ressourceId, emailProfesseur)
-                .orElseThrow(() -> new UtilisateursException("Ressource d'annonce non trouvee ou non autorisee"));
-
+        RessourceAnnonce ressource = requireRessource(ressourceId);
+        requireAnnonceVisiblePourProfesseur(ressource.getAnnonce().getId(), emailProfesseur);
         return versTelechargementDTO(ressource);
     }
 
@@ -130,6 +127,41 @@ public class GestionRessourcesAnnonceMetierImpl implements GestionRessourcesAnno
         }
 
         return annonce;
+    }
+
+    
+    private Annonce requireAnnonceVisiblePourProfesseur(Long annonceId, String emailProfesseur) {
+        requireEmailProfesseur(emailProfesseur);
+
+        Professeur professeur = professeurRepository.findByEmail(emailProfesseur)
+                .orElseThrow(() -> new UtilisateursException("Professeur non trouve"));
+
+        Annonce annonce = requireAnnonce(annonceId);
+
+        if (annonce.getAuteur() != null && professeur.getId().equals(annonce.getAuteur().getId())) {
+            return annonce;
+        }
+
+        AnnonceCibleType cibleType = annonce.getCibleType();
+        if (cibleType == AnnonceCibleType.PROFESSEURS_GLOBAL) {
+            return annonce;
+        }
+
+        if (cibleType == AnnonceCibleType.PROFESSEURS_DEPARTEMENT) {
+            Departement depAnnonce = annonce.getDepartement();
+            Departement depProf = professeur.getDepartementOuTravail();
+            if (depAnnonce != null && depProf != null &&
+                    depAnnonce.getCodeDepartement().equals(depProf.getCodeDepartement())) {
+                return annonce;
+            }
+        }
+
+        if (cibleType == AnnonceCibleType.ETUDIANTS_GLOBAL ||
+                cibleType == AnnonceCibleType.ETUDIANTS_CLASSE) {
+            return annonce;
+        }
+
+        throw new UtilisateursException("Annonce non accessible");
     }
 
     private Annonce requireAnnonceVisiblePourEtudiant(Long annonceId, Long idEtudiant) {
