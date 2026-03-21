@@ -1,5 +1,17 @@
 // releve_notes_dto.dart
 
+int _jsonInt(dynamic value) {
+  if (value == null) return 0;
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  if (value is String) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return 0;
+    return int.tryParse(trimmed) ?? (double.tryParse(trimmed)?.toInt() ?? 0);
+  }
+  return 0;
+}
+
 class ReleveNotesDTO {
   final String semestre;
   final double moyenneSession;
@@ -16,15 +28,30 @@ class ReleveNotesDTO {
   });
 
   factory ReleveNotesDTO.fromJson(Map<String, dynamic> json) {
+    final modules =
+        ((json['modules'] ?? []) as List)
+            .whereType<Map<String, dynamic>>()
+            .map(ModuleNotesDTO.fromJson)
+            .toList();
+
+    // Le backend renvoie parfois un `nbModulesValider` incorrect.
+    // On préfère recalculer à partir des modules reçus (moyenneDuModule >= 10).
+    final nbModulesApi = _jsonInt(json['nbModules']);
+    final nbModulesValiderApi = _jsonInt(
+      json['nbModulesValider'] ?? json['nbModulesValide'],
+    );
+
+    final nbModulesCalcule = modules.length;
+    final nbModulesValiderCalcule =
+        modules.where((m) => m.moyenneDuModule >= 10.0).length;
+
     return ReleveNotesDTO(
       semestre: (json['semestre'] ?? '').toString(),
       moyenneSession: ((json['moyenneSession'] ?? 0) as num).toDouble(),
-      nbModules: (json['nbModules'] ?? 0) as int,
-      nbModulesValider: (json['nbModulesValider'] ?? 0) as int,
-      modules:
-          ((json['modules'] ?? []) as List)
-              .map((e) => ModuleNotesDTO.fromJson(e as Map<String, dynamic>))
-              .toList(),
+      nbModules: nbModulesCalcule > 0 ? nbModulesCalcule : nbModulesApi,
+      nbModulesValider:
+          nbModulesCalcule > 0 ? nbModulesValiderCalcule : nbModulesValiderApi,
+      modules: modules,
     );
   }
 }
