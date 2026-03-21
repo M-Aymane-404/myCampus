@@ -141,14 +141,19 @@ The workflow runs MySQL queries (MySQL nodes) to retrieve:
 in n8n :
 
   1)Go to **Credentials**.
+  
   2)Create a **MySQL** credential (or edit the one used by the workflow).
+  
   3)Fill in the Docker Compose parameters:
-* **Host** : mysql
+  
+* **Host** : mycampus-mysql
 * **Port** : 3306
 * **Database** : mycampus
 * **User** : root
 * **Password** : root
+  
   4)Create a **Mistral** credential
+  
   5)Return to the workflow and verify that all **MySQL** and **Mistral** nodes are linked to this credential.
 
 ### 4️⃣ Configurer l’accès aux fichiers (PDF) pour le RAG
