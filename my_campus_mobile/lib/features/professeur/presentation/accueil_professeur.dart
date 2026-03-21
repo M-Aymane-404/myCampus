@@ -217,21 +217,6 @@ class _AccueilProfesseurState extends State<AccueilProfesseur> {
                       iconColor: const Color(0xFFEA580C),
                     ),
                     const SizedBox(height: 12),
-                    _PriorityMetricCard(
-                      titre: 'Séances aujourd’hui',
-                      valeur:
-                          seancesDuJour.isEmpty
-                              ? '00'
-                              : seancesDuJour.length.toString().padLeft(2, '0'),
-                      aide:
-                          seancesDuJour.isEmpty
-                              ? 'Aucune séance prévue aujourd’hui.'
-                              : '${seancesDuJour.length} séance(s) programmée(s) aujourd’hui.',
-                      icon: Icons.event_available_rounded,
-                      iconBg: const Color(0xFFEEF2FF),
-                      iconColor: AccueilProfesseur.accent,
-                    ),
-                    const SizedBox(height: 14),
                   ]),
                 ),
               ),
@@ -725,9 +710,7 @@ class _TrackingCard extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              const Flexible(
-                child: _StatistiquesBadge(),
-              ),
+              const Flexible(child: _StatistiquesBadge()),
             ],
           ),
           const SizedBox(height: 14),
@@ -757,10 +740,7 @@ class _StatistiquesBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 10,
-        vertical: 6,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: const Color(0xFFF3F5FA),
         borderRadius: BorderRadius.circular(999),

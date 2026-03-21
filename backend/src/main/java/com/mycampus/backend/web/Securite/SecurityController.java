@@ -62,6 +62,9 @@ public class SecurityController {
     @Value("${app.security.cookie-secure:false}")
     private boolean cookieSecure;
 
+    @Value("${app.security.access-token-ttl-minutes:15}")
+    private long accessTokenTtlMinutes;
+
     @GetMapping("/me")
     public Map<String, Object> me(@AuthenticationPrincipal CustomUserDetails user) {
         Utilisateur utilisateur = utilisateurRepository.findByEmail(user.getUsername())
@@ -222,7 +225,7 @@ public class SecurityController {
         Instant instant = Instant.now();
         JwtClaimsSet jwtClaimsSet = JwtClaimsSet.builder()
                 .issuedAt(instant)
-                .expiresAt(instant.plus(2, ChronoUnit.MINUTES))
+                .expiresAt(instant.plus(accessTokenTtlMinutes, ChronoUnit.MINUTES))
                 .subject(sujet)
                 .claim("scope", scope)
                 .claim("userId", userId)

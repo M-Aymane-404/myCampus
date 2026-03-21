@@ -36,8 +36,7 @@ const normalizeSemesterCode = (semester) => {
 
 const buildSemesterCandidates = (semester) => {
     const code = normalizeSemesterCode(semester) || 'S1';
-    const numeric = code.replace(/^S/, '');
-    return [code, numeric];
+    return [code];
 };
 
 const getModulesFromPayload = (payload) => (

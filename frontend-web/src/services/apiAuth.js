@@ -3,6 +3,7 @@ const MOCK_MODE = false;
 const USER_STORAGE_KEY = 'mycampus_user';
 
 let accessTokenMemo = null;
+let refreshPromise = null;
 
 function normalizeRoleFromAuthorities(authorities = []) {
   const joined = Array.isArray(authorities) ? authorities.join(' ') : String(authorities || '');
@@ -182,28 +183,36 @@ export const apiAuth = {
   },
 
   async refreshAccessToken() {
-    const response = await fetch(`${BASE_URL}/rafraichir-jeton`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({}),
-    });
-
-    if (!response.ok) {
-      accessTokenMemo = null;
-      sessionStorage.removeItem(USER_STORAGE_KEY);
-      throw new Error('Session expiree. Veuillez vous reconnecter.');
+    if (refreshPromise) {
+      return refreshPromise;
     }
 
-    const data = await response.json();
-    if (!data.access_token) {
-      throw new Error('Reponse de rafraichissement invalide');
-    }
+    refreshPromise = (async () => {
+      const response = await fetch(`${BASE_URL}/rafraichir-jeton`, {
+        method: 'POST',
+        credentials: 'include',
+      });
 
-    accessTokenMemo = data.access_token;
-    return accessTokenMemo;
+      if (!response.ok) {
+        accessTokenMemo = null;
+        sessionStorage.removeItem(USER_STORAGE_KEY);
+        throw new Error('Session expiree. Veuillez vous reconnecter.');
+      }
+
+      const data = await response.json();
+      if (!data.access_token) {
+        throw new Error('Reponse de rafraichissement invalide');
+      }
+
+      accessTokenMemo = data.access_token;
+      return accessTokenMemo;
+    })();
+
+    try {
+      return await refreshPromise;
+    } finally {
+      refreshPromise = null;
+    }
   },
 
   isTokenExpired(token) {

@@ -28,7 +28,16 @@ import {
 
 const buildMatiereKey = (moduleId, matiereId) => `${moduleId || 'module'}-${matiereId || 'matiere'}`;
 
-const formatNote = (note) => (note || note === 0 ? Number(note).toFixed(2) : '-');
+const formatNote = (note) => {
+    if (note === null || note === undefined) return 'Note non disponible';
+    const parsed = Number(note);
+    if (!Number.isFinite(parsed)) return 'Note non disponible';
+    return parsed.toFixed(2);
+};
+
+const formatSessionAverage = (average, hasSessionAverage) => (
+    hasSessionAverage ? formatNote(average) : 'Moyenne non disponible'
+);
 
 const sortExamEntries = (exams = []) => {
     const order = { NORMAL: 0, RATTRAPAGE: 1 };
@@ -194,6 +203,7 @@ const NotesEtudiant = () => {
     const [currentData, setCurrentData] = useState({
         label: `Semestre ${extractSemesterNumber(activeSemester)}`,
         average: 0,
+        hasSessionAverage: false,
         ects: '0/30',
         status: 'EN COURS',
         modules: [],
@@ -450,7 +460,8 @@ const NotesEtudiant = () => {
                     ? modulesToDisplay.reduce((sum, mod) => sum + (Number(mod.average) || 0), 0) / modulesToDisplay.length
                     : 0;
 
-                const effectiveAverage = Number.isFinite(Number(gradeData.moyenneSession))
+                const hasSessionAverage = Number.isFinite(Number(gradeData.moyenneSession));
+                const effectiveAverage = hasSessionAverage
                     ? Number(gradeData.moyenneSession)
                     : calculatedSessionAverage;
 
@@ -474,6 +485,7 @@ const NotesEtudiant = () => {
                 setCurrentData({
                     label: `Semestre ${activeSemesterNumber}`,
                     average: displayedAverage,
+                    hasSessionAverage,
                     ects: `${ectsValue.toFixed(0)}/30`,
                     status: effectiveStatus,
                     modules: modulesToDisplay,
@@ -642,7 +654,9 @@ const openExamDocument = async (examenId, type) => {
                         </div>
                         <div className="session-average-display">
                             <span className="session-average-label">MOYENNE SESSION</span>
-                            <div className="session-average-value">{currentData.average?.toFixed(2) || '0.00'}</div>
+                            <div className="session-average-value">
+                                {formatSessionAverage(currentData.average, currentData.hasSessionAverage)}
+                            </div>
                         </div>
                     </div>
 
@@ -963,7 +977,11 @@ const openExamDocument = async (examenId, type) => {
                         <div className="summary-stats-box">
                             <div className="stat-row">
                                 <span className="stat-label">Moyenne du Semestre</span>
-                                <div className="stat-val">{currentData.average?.toFixed(2)}<span>/20</span></div>
+                                <div className="stat-val">
+                                    {currentData.hasSessionAverage
+                                        ? <>{formatNote(currentData.average)}<span>/20</span></>
+                                        : 'Moyenne non disponible'}
+                                </div>
                             </div>
                             <div className="stat-row">
                                 <span className="stat-label">Resultat Global</span>

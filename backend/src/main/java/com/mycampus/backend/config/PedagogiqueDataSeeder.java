@@ -49,8 +49,7 @@ public class PedagogiqueDataSeeder {
         seedMatieres();
         seedAffectationEnseignement();
         seedSeances();
-        seedFichiersSeance();
-        seedPresences();
+         seedPresences();
         seedExamens();
         seedResultats();
         //seedNotifications();
@@ -287,7 +286,7 @@ public class PedagogiqueDataSeeder {
         for (int serie = 0; serie < 3; serie++) {
 
             // base date différente pour chaque série
-            LocalDate baseDate = today.plusWeeks(serie);
+            LocalDate baseDate = today.minusWeeks(serie);
 
             for (AffectationEnseignement affectation : affectations) {
 
@@ -343,35 +342,6 @@ public class PedagogiqueDataSeeder {
 
     }
 
-    private void seedFichiersSeance() {
-        List<Seance> seances = seanceRepository.findAll();
-        
-        for (Seance seance : seances) {
-            FichierSeance fichier = FichierSeance.builder()
-                .nomOriginal("cours_" + seance.getType().name() + ".pdf")
-                .chemin("/fichiers/cours_" + seance.getId() + ".pdf")
-                .typeMime("application/pdf")
-                .taille(1024000L)
-                .dateUpload(LocalDateTime.now())
-                .seance(seance)
-                .build();
-            
-            fichierSeanceRepository.save(fichier);
-
-
-            FichierSeance fichier1 = FichierSeance.builder()
-                    .nomOriginal("TD_" + seance.getType().name() + ".pdf")
-                    .chemin("/fichiers/TD_" + seance.getId() + ".pdf")
-                    .typeMime("application/pdf")
-                    .taille(1025000L)
-                    .dateUpload(LocalDateTime.now())
-                    .seance(seance)
-                    .build();
-
-            fichierSeanceRepository.save(fichier1);
-            log.info("Created fichier for seance: {}", seance.getId());
-        }
-    }
 
     private void seedPresences() {
         List<Seance> seances = seanceRepository.findAll();
@@ -416,93 +386,85 @@ public class PedagogiqueDataSeeder {
         List<Examen> examens = Arrays.asList(
                 Examen.builder()
                         .semestre(Semestre.S1)
-                        .dateExamen(Date.from(LocalDateTime.of(2024, 1, 10, 9, 0)
+                        .dateExamen(Date.from(LocalDateTime.of(2026, 1, 10, 9, 0)
                                 .atZone(java.time.ZoneId.systemDefault()).toInstant()))
                         .numeroExamen(2)
                         .typeExamen(TypeExamen.NORMAL)
                         .duree(120)
                         .etat(EtatExamen.PASSE)
-                        .corrigePath("/corriges/html_css_normal_corrige.pdf")
-                        .matiere(reseauxS1)
+                         .matiere(reseauxS1)
                         .build(),
             Examen.builder()
                 .semestre(Semestre.S1)
-                .dateExamen(Date.from(LocalDateTime.of(2024, 12, 10, 9, 0)
+                .dateExamen(Date.from(LocalDateTime.of(2026, 12, 10, 9, 0)
                     .atZone(java.time.ZoneId.systemDefault()).toInstant()))
                 .numeroExamen(1)
                 .typeExamen(TypeExamen.NORMAL)
                 .duree(120)
                 .etat(EtatExamen.PROGRAMME)
-                .corrigePath("/corriges/html_css_normal_corrige.pdf")
-                .matiere(reseauxS1)
+                 .matiere(reseauxS1)
                 .build(),
             Examen.builder()
                 .semestre(Semestre.S1)
-                .dateExamen(Date.from(LocalDateTime.of(2024, 12, 11, 14, 0)
+                .dateExamen(Date.from(LocalDateTime.of(2026, 12, 11, 14, 0)
                     .atZone(java.time.ZoneId.systemDefault()).toInstant()))
                 .numeroExamen(1)
                 .typeExamen(TypeExamen.NORMAL)
                 .duree(120)
                 .etat(EtatExamen.PROGRAMME)
-                .corrigePath("/corriges/javascript_normal_corrige.pdf")
-                .matiere(systemeS1)
+                 .matiere(systemeS1)
                 .build(),
                 Examen.builder()
                         .semestre(Semestre.S1)
-                        .dateExamen(Date.from(LocalDateTime.of(2025, 3, 11, 14, 0)
+                        .dateExamen(Date.from(LocalDateTime.of(2026, 3, 11, 14, 0)
                                 .atZone(java.time.ZoneId.systemDefault()).toInstant()))
                         .numeroExamen(1)
                         .typeExamen(TypeExamen.RATTRAPAGE)
                         .duree(120)
                         .etat(EtatExamen.PROGRAMME)
-                        .corrigePath("/corriges/javascript_normal_corrige.pdf")
-                        .matiere(systemeS1)
+                         .matiere(systemeS1)
                         .build(),
 
             Examen.builder()
                 .semestre(Semestre.S1)
-                .dateExamen(Date.from(LocalDateTime.of(2024, 11, 12, 10, 0)
+                .dateExamen(Date.from(LocalDateTime.of(2026, 11, 12, 10, 0)
                     .atZone(java.time.ZoneId.systemDefault()).toInstant()))
                 .numeroExamen(1)
                 .typeExamen(TypeExamen.NORMAL)
                 .duree(90)
                 .etat(EtatExamen.PASSE)
-                .corrigePath("/corriges/lean_normal_corrige.pdf")
-                .matiere(bddS1)
+                 .matiere(bddS1)
                 .build(),
 
                 Examen.builder()
                         .semestre(Semestre.S1)
-                        .dateExamen(Date.from(LocalDateTime.of(2024, 11, 13, 10, 0)
+                        .dateExamen(Date.from(LocalDateTime.of(2026, 11, 13, 10, 0)
                                 .atZone(java.time.ZoneId.systemDefault()).toInstant()))
                         .numeroExamen(1)
                         .typeExamen(TypeExamen.NORMAL)
                         .duree(90)
                         .etat(EtatExamen.PASSE)
-                        .corrigePath("/corriges/lean_normal_corrige.pdf")
-                        .matiere(pooS1)
+                         .matiere(pooS1)
                         .build(),
                 Examen.builder()
                         .semestre(Semestre.S1)
-                        .dateExamen(Date.from(LocalDateTime.of(2024, 11, 14, 10, 0)
+                        .dateExamen(Date.from(LocalDateTime.of(2026, 11, 14, 10, 0)
                                 .atZone(java.time.ZoneId.systemDefault()).toInstant()))
                         .numeroExamen(1)
                         .typeExamen(TypeExamen.NORMAL)
                         .duree(90)
                         .etat(EtatExamen.PASSE)
-                        .corrigePath("/corriges/lean_normal_corrige.pdf")
-                        .matiere(francaisS1)
+                         .matiere(francaisS1)
                         .build(),
                 Examen.builder()
                         .semestre(Semestre.S1)
-                        .dateExamen(Date.from(LocalDateTime.of(2024, 11, 15, 10, 0)
+                        .dateExamen(Date.from(LocalDateTime.of(2026, 11, 15, 10, 0)
                                 .atZone(java.time.ZoneId.systemDefault()).toInstant()))
                         .numeroExamen(1)
                         .typeExamen(TypeExamen.NORMAL)
                         .duree(90)
                         .etat(EtatExamen.PROGRAMME)
-                        .corrigePath("/corriges/lean_normal_corrige.pdf")
-                        .matiere(anglaisS1)
+                         .matiere(anglaisS1)
                         .build()
         );
         
@@ -531,8 +493,7 @@ public class PedagogiqueDataSeeder {
                     Resultat resultat = Resultat.builder()
                         .note(Math.round(note * 100.0) / 100.0)
                         .datePublication(LocalDateTime.now())
-                        .copieEtudiantPath("/copies/copie_" + etudiant.getId() + "_" + examen.getId() + ".pdf")
-                        .examen(examen)
+                         .examen(examen)
                         .etudiant(etudiant)
                         .build();
                     

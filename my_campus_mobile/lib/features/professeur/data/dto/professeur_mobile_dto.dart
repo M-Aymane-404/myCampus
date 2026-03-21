@@ -73,6 +73,7 @@ class EnseignementProfesseurMobileDTO {
     required this.codeMatiere,
     required this.matiereNom,
     required this.anneeUniversitaire,
+    this.semestre,
   });
 
   final int? id;
@@ -81,8 +82,36 @@ class EnseignementProfesseurMobileDTO {
   final String codeMatiere;
   final String matiereNom;
   final String anneeUniversitaire;
+  final String? semestre;
 
   factory EnseignementProfesseurMobileDTO.fromJson(Map<String, dynamic> json) {
+    Object? semestreRaw =
+        json['moduleSemestre'] ??
+        json['semestreModule'] ??
+        json['semestre'] ??
+        json['semester'] ??
+        json['sem'];
+
+    // Quelques formats backend possibles: { module: { semestre: 'S1' } } ou
+    // { matiere: { module: { semestre: 'S1' } } }.
+    if (semestreRaw == null) {
+      final module = json['module'];
+      if (module is Map) {
+        semestreRaw = module['semestre'] ?? module['semester'] ?? module['sem'];
+      }
+    }
+    if (semestreRaw == null) {
+      final matiere = json['matiere'];
+      if (matiere is Map) {
+        final module = matiere['module'];
+        if (module is Map) {
+          semestreRaw =
+              module['semestre'] ?? module['semester'] ?? module['sem'];
+        }
+      }
+    }
+    final semestre = (semestreRaw ?? '').toString().trim();
+
     return EnseignementProfesseurMobileDTO(
       id: json['id'] is num ? (json['id'] as num).toInt() : null,
       codeClasse: (json['codeClasse'] ?? '').toString(),
@@ -95,6 +124,7 @@ class EnseignementProfesseurMobileDTO {
               .toString(),
       anneeUniversitaire:
           (json['anneeUniversitaire'] ?? json['annee'] ?? '').toString(),
+      semestre: semestre.isEmpty ? null : semestre,
     );
   }
 }

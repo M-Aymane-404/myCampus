@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../../etudiant/data/controller/ControleurFichier.dart';
 import '../../data/controller/controleur_cours_professeur.dart';
+import '../../data/controller/controleur_espace_professeur.dart';
 import '../../data/dto/creation_examen_professeur_dto.dart';
 import '../../data/dto/creation_seance_professeur_dto.dart';
 import '../../data/dto/professeur_mobile_dto.dart';
@@ -655,12 +656,10 @@ class CreateExamenModal extends StatefulWidget {
 }
 
 class _CreateExamenModalState extends State<CreateExamenModal> {
-  static const List<String> _semestres = ['S1', 'S2', 'S3', 'S4'];
   static const List<String> _typesExamen = ['NORMAL', 'RATTRAPAGE'];
   late final TextEditingController _dateCtrl;
   late final TextEditingController _dureeCtrl;
   late final TextEditingController _numeroCtrl;
-  String _selectedSemestre = 'S1';
   String _selectedType = 'NORMAL';
   final _formKey = GlobalKey<FormState>();
   bool _envoiEnCours = false;
@@ -734,28 +733,6 @@ class _CreateExamenModalState extends State<CreateExamenModal> {
                   },
                 ),
                 const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  value: _selectedSemestre,
-                  decoration: const InputDecoration(
-                    labelText: 'Semestre',
-                    border: OutlineInputBorder(),
-                  ),
-                  items:
-                      _semestres
-                          .map(
-                            (sem) =>
-                                DropdownMenuItem(value: sem, child: Text(sem)),
-                          )
-                          .toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() {
-                        _selectedSemestre = value;
-                      });
-                    }
-                  },
-                ),
-                const SizedBox(height: 12),
                 TextFormField(
                   controller: _dureeCtrl,
                   decoration: const InputDecoration(
@@ -811,9 +788,18 @@ class _CreateExamenModalState extends State<CreateExamenModal> {
       return;
     }
 
+    final semestreAuto = _determinerSemestreAuto();
+    if (semestreAuto == null) {
+      _showSnack(
+        'Semestre (module) introuvable pour cette matière (contactez l\'administrateur).',
+        isError: true,
+      );
+      return;
+    }
+
     final dto = CreationExamenProfesseurDTO(
       typeExamen: _selectedType,
-      semestre: _selectedSemestre,
+      semestre: semestreAuto,
       // Backend expects a date-only value (same convention as seance creation).
       dateExamen: _dateCtrl.text.trim(),
       duree: duree,
@@ -834,6 +820,29 @@ class _CreateExamenModalState extends State<CreateExamenModal> {
     } finally {
       if (mounted) setState(() => _envoiEnCours = false);
     }
+  }
+
+  String? _determinerSemestreAuto() {
+    final depuisEnseignement = widget.enseignement.semestre?.trim();
+    if (depuisEnseignement != null && depuisEnseignement.isNotEmpty) {
+      return depuisEnseignement;
+    }
+
+    // Fallback: si des examens existent déjà pour cette matière, on réutilise
+    // leur semestre (utile quand l'API "enseignements" ne renvoie pas semestre).
+    final ctrlEspace = context.read<ControleurEspaceProfesseur>();
+    final memeSelection =
+        ctrlEspace.codeClasseSelectionnee == widget.enseignement.codeClasse &&
+        ctrlEspace.codeMatiereSelectionnee == widget.enseignement.codeMatiere;
+    if (!memeSelection) return null;
+
+    final semestres = ctrlEspace.examens
+        .map((e) => e.semestre.trim())
+        .where((s) => s.isNotEmpty)
+        .toSet();
+    if (semestres.length != 1) return null;
+
+    return semestres.first;
   }
 
   Future<void> _pickDate(TextEditingController controller) async {
