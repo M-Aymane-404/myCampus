@@ -256,15 +256,16 @@ const GestionDepartements = () => {
         surSauvegarder={handleSaveDepartement}
         texteBoutonSauvegarder={isEditing ? "Modifier" : "Créer"}
       >
-        <ChampFormulaire
-          label="Code Département"
-          nom="codeDepartement"
-          valeur={formData.codeDepartement}
-          onChange={handleInputChange}
-          placeholder="Ex: DEPT-INFO"
-          requis
-          disabled={isEditing} // Code shouldn't change when editing
-        />
+        {!isEditing && (
+          <ChampFormulaire
+            label="Code Département"
+            nom="codeDepartement"
+            valeur={formData.codeDepartement}
+            onChange={handleInputChange}
+            placeholder="Ex: DEPT-INFO"
+            requis
+          />
+        )}
         <ChampFormulaire
           label="Type de Département"
           nom="typeDepartement"

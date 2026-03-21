@@ -312,6 +312,7 @@ const DetailsFiliere = ({ filiere, departement, onRetour }) => {
                 surSauvegarder={handleSaveClasse}
                 texteBoutonSauvegarder={isEditing ? "Modifier" : "Créer"}
             >
+                {!isEditing && (
                 <ChampFormulaire
                     label="Code Classe"
                     nom="codeClasse"
@@ -319,8 +320,8 @@ const DetailsFiliere = ({ filiere, departement, onRetour }) => {
                     onChange={handleInputChange}
                     placeholder="Ex: ILCS-L3-GA"
                     requis
-                    disabled={isEditing}
                 />
+                )}
                 <ChampFormulaire
                     label="Nom"
                     nom="nom"

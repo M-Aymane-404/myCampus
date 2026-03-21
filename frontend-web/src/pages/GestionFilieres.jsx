@@ -67,6 +67,7 @@ const GestionFilieres = ({ surVoirClasses }) => {
 
   const [modalOuvert, setModalOuvert] = useState(false);
   const [filiereCourante, setFiliereCourante] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [formulaire, setFormulaire] = useState({
     codeFiliere: '',
     nom: '',
@@ -90,6 +91,7 @@ const GestionFilieres = ({ surVoirClasses }) => {
 
   const ouvrirModalAjout = () => {
     setFiliereCourante(null);
+    setIsEditing(false);
     setFormulaire({
       codeFiliere: '',
       nom: '',
@@ -104,6 +106,7 @@ const GestionFilieres = ({ surVoirClasses }) => {
 
   const ouvrirModalModification = (filiere) => {
     setFiliereCourante(filiere);
+    setIsEditing(true);
     setFormulaire({
       codeFiliere: filiere.codeFiliere,
       nom: filiere.nom,
@@ -244,9 +247,14 @@ const GestionFilieres = ({ surVoirClasses }) => {
       <FormulaireModal
         titre={filiereCourante ? 'Modifier la Filière' : 'Ajouter une Filière'}
         estOuvert={modalOuvert}
-        surFermer={() => setModalOuvert(false)}
+        surFermer={() => {
+          setModalOuvert(false);
+          setIsEditing(false);
+          setFiliereCourante(null);
+        }}
         surSauvegarder={sauvegarder}
       >
+      {!isEditing && (
         <ChampFormulaire
           label="Code Filière"
           nom="codeFiliere"
@@ -255,6 +263,7 @@ const GestionFilieres = ({ surVoirClasses }) => {
           placeholder="Ex: GI-2024"
           requis
         />
+      )}
         <ChampFormulaire
           label="Nom"
           nom="nom"
