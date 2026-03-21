@@ -103,7 +103,8 @@ function App() {
   const [navigationState, setNavigationState] = useState({
     filiereSelectionnee: null,
     classeSelectionnee: null,
-    annonceSelectionneeId: null
+    annonceSelectionneeId: null,
+    annonceVueProfesseur: null,
   });
   const [messagesGlobaux, setMessagesGlobaux] = useState([]);
   const temporisateursMessagesRef = useRef(new Map());
@@ -232,6 +233,11 @@ function App() {
   const gererChangementElement = (destination) => {
     if (typeof destination === 'string') {
       setElementActif(destination);
+      setNavigationState((prev) => ({
+        ...prev,
+        annonceSelectionneeId: null,
+        annonceVueProfesseur: null,
+      }));
       return;
     }
 
@@ -338,7 +344,12 @@ function App() {
       case 'presence':
         return <GestionPresenceProfesseur />;
       case 'annonces':
-        return <GestionAnnoncesProfesseur />;
+        return (
+          <GestionAnnoncesProfesseur
+            annonceSelectionneeId={navigationState.annonceSelectionneeId}
+            vueAnnonceInitiale={navigationState.annonceVueProfesseur}
+          />
+        );
       case 'profil':
         return <ProfilProfesseur />;
       default:

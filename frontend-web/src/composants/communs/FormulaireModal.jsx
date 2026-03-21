@@ -11,7 +11,8 @@ const FormulaireModal = ({
   surSauvegarder,
   texteBoutonSauvegarder = 'Sauvegarder',
   texteBoutonAnnuler = 'Annuler',
-  chargement = false
+  chargement = false,
+  messageErreur = ''
 }) => {
   useEffect(() => {
     if (estOuvert) {
@@ -39,6 +40,11 @@ const FormulaireModal = ({
             <X size={20} />
           </button>
         </div>
+        {messageErreur ? (
+          <div className="formulaire-modal-alert formulaire-modal-alert-erreur" role="alert">
+            {messageErreur}
+          </div>
+        ) : null}
         <div className="formulaire-modal-body">
           {children}
         </div>

@@ -64,6 +64,22 @@
   flex: 1;
 }
 
+.formulaire-modal-alert {
+  margin: 14px 25px 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.45;
+  white-space: pre-line;
+}
+
+.formulaire-modal-alert-erreur {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+
 .formulaire-modal-footer {
   padding: 20px 25px;
   border-top: 1px solid var(--gray-200);

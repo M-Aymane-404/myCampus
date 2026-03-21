@@ -89,6 +89,10 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
     long countByUtilisateur_IdAndLuFalse(Long id);
 
+    boolean existsByTypeAndReferenceTypeAndReferenceId(TypeNotification type, ReferenceType referenceType, Long referenceId);
+
+    boolean existsByUtilisateur_IdAndTypeAndReferenceTypeAndReferenceId(Long utilisateurId, TypeNotification type, ReferenceType referenceType, Long referenceId);
+
     Optional<Notification> findByIdAndUtilisateur_Email(Long id, String email);
 
     Optional<Notification> findByIdAndUtilisateur_Id(Long id, Long utilisateurId);

@@ -1,6 +1,7 @@
 import { Bell, ChevronRight } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { apiNotifications } from '../../services/apiNotifications';
+import apiAnnoncesProfesseur from '../../services/professeur/apiAnnoncesProfesseur';
 import './NotificationHeart.css';
 
 const ROUTES_PAR_ROLE = {
@@ -29,16 +30,42 @@ const normaliserNotifications = (payload) => {
   return [];
 };
 
+const filtrerNotificationsProfesseur = (notifications, annonceIdsAutorisees) => {
+  if (!(annonceIdsAutorisees instanceof Set)) {
+    return notifications;
+  }
+
+  return notifications.filter((notification) => {
+    const referenceType = String(notification?.referenceType || '').toUpperCase();
+    if (referenceType !== 'ANNONCE') {
+      return true;
+    }
+
+    const referenceId = notification?.referenceId;
+    if (referenceId == null) {
+      return false;
+    }
+
+    return annonceIdsAutorisees.has(String(referenceId));
+  });
+};
+
 const construireDestinationNotification = (currentRole, notification) => {
   const destinationParDefaut = ROUTES_PAR_ROLE[currentRole] || ROUTES_PAR_ROLE.student;
   const referenceType = String(notification?.referenceType || '').toUpperCase();
 
   if (referenceType === 'ANNONCE' && notification?.referenceId != null) {
+    const params = {
+      annonceSelectionneeId: notification.referenceId,
+    };
+
+    if (currentRole === 'professor') {
+      params.annonceVueProfesseur = 'admin';
+    }
+
     return {
       id: destinationParDefaut,
-      params: {
-        annonceSelectionneeId: notification.referenceId,
-      },
+      params,
     };
   }
 
@@ -50,22 +77,73 @@ const NotificationHeart = ({ currentRole, surChangementElement }) => {
   const [chargement, setChargement] = useState(false);
   const [compteurNonLues, setCompteurNonLues] = useState(0);
   const [notifications, setNotifications] = useState([]);
+  const [annonceIdsAdminProf, setAnnonceIdsAdminProf] = useState(new Set());
   const conteneurRef = useRef(null);
 
   const aDesNotificationsNonLues = compteurNonLues > 0;
 
+  const chargerAnnonceIdsAdminProf = async () => {
+    if (currentRole !== 'professor') {
+      return null;
+    }
+
+    try {
+      const annonces = await apiAnnoncesProfesseur.listerMesProfAnnonces();
+      const ids = new Set(
+        (Array.isArray(annonces) ? annonces : [])
+          .map((annonce) => annonce?.id)
+          .filter((id) => id !== null && id !== undefined)
+          .map((id) => String(id))
+      );
+      setAnnonceIdsAdminProf(ids);
+      return ids;
+    } catch {
+      setAnnonceIdsAdminProf(new Set());
+      return new Set();
+    }
+  };
+
   const chargerCompteur = async () => {
-    const compteur = await apiNotifications.obtenirCompteurNonLues();
-    setCompteurNonLues(compteur);
+    try {
+      if (currentRole === 'professor') {
+        const [page, ids] = await Promise.all([
+          apiNotifications.obtenirPage({ page: 0, size: 20 }),
+          chargerAnnonceIdsAdminProf(),
+        ]);
+        const elements = filtrerNotificationsProfesseur(
+          normaliserNotifications(page),
+          ids
+        );
+        setCompteurNonLues(elements.filter((notification) => !notification.lu).length);
+        return;
+      }
+
+      const compteur = await apiNotifications.obtenirCompteurNonLues();
+      setCompteurNonLues(compteur);
+    } catch {
+      setCompteurNonLues(0);
+    }
   };
 
   const chargerNotifications = async () => {
     setChargement(true);
     try {
+      let annonceIds = annonceIdsAdminProf;
+      if (currentRole === 'professor') {
+        annonceIds = await chargerAnnonceIdsAdminProf();
+      }
+
       const page = await apiNotifications.obtenirPage({ page: 0, size: 20 });
-      const elements = normaliserNotifications(page);
+      let elements = normaliserNotifications(page);
+      if (currentRole === 'professor') {
+        elements = filtrerNotificationsProfesseur(elements, annonceIds);
+      }
+
       setNotifications(elements);
       setCompteurNonLues(elements.filter((notification) => !notification.lu).length);
+    } catch {
+      setNotifications([]);
+      setCompteurNonLues(0);
     } finally {
       setChargement(false);
     }

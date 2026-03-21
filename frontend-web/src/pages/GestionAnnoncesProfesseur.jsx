@@ -10,16 +10,20 @@ import {
   Megaphone,
   Paperclip,
   Plus,
+  RefreshCw,
+  Search,
   Send,
   Trash2,
   Download,
   Upload,
+  User,
   Users,
   X,
 } from 'lucide-react';
 import apiAnnoncesProfesseur from '../services/professeur/apiAnnoncesProfesseur';
 import './GestionAnnoncesAdmin.css';
 import './GestionAnnoncesProfesseur.css';
+import './AnnoncesEtudiant.css';
 
 const TYPES_ANNONCE = [
   { value: 'AUTRES', label: 'Autres' },
@@ -28,6 +32,8 @@ const TYPES_ANNONCE = [
   { value: 'REUNION', label: 'Reunion' },
   { value: 'EXAMEN', label: 'Examen' },
 ];
+
+const FILTRES_TYPE_ANNONCE = ['TOUS', 'EXAMEN', 'COURS', 'REUNION', 'EVENT', 'AUTRES'];
 
 const FORM_INITIAL = {
   titre: '',
@@ -61,13 +67,107 @@ const formaterDate = (dateStr) => {
   });
 };
 
-const GestionAnnoncesProfesseur = () => {
+const formatDateSidebar = (dateStr) => {
+  if (!dateStr) return 'DATE INCONNUE';
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return 'DATE INCONNUE';
+
+  return date
+    .toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    })
+    .toUpperCase();
+};
+
+const formatDateComplete = (dateStr) => {
+  if (!dateStr) return 'Date inconnue';
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return 'Date inconnue';
+
+  return date.toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
+const getTypeCategorie = (typeAnnonce, cibleType) => {
+  if (typeAnnonce && TYPES_ANNONCE.some((type) => type.value === typeAnnonce)) {
+    return typeAnnonce;
+  }
+
+  if (cibleType === 'PROFESSEURS') {
+    return 'COURS';
+  }
+
+  return 'AUTRES';
+};
+
+const transformAnnonceAdmin = (annonce) => {
+  const publishedAt = annonce?.datePublication || annonce?.dateCreation || null;
+  const publishedTimestamp = publishedAt ? new Date(publishedAt).getTime() : 0;
+  const auteur = annonce?.auteur;
+  const auteurLabel = auteur?.prenom || auteur?.nom
+    ? `${auteur?.prenom || ''} ${auteur?.nom || ''}`.trim()
+    : 'Administration';
+
+  return {
+    id: annonce?.id,
+    title: annonce?.titre || 'Sans titre',
+    date: formatDateSidebar(publishedAt),
+    fullDate: formatDateComplete(publishedAt),
+    publishedTimestamp: Number.isNaN(publishedTimestamp) ? 0 : publishedTimestamp,
+    category: getTypeCategorie(annonce?.typeAnnonce, annonce?.cibleType),
+    subject: annonce?.codeClasse || 'Annonce administration',
+    professor: auteurLabel,
+    authorPhoto: auteur?.photoPath || auteur?.photoProfile || null,
+    content: annonce?.contenu || '',
+  };
+};
+
+const toUpper = (value) => String(value || '').trim().toUpperCase();
+
+const estAnnonceAdminPourProf = (annonce) => {
+  const cibleType = toUpper(annonce?.cibleType);
+  const auteurRole = toUpper(
+    annonce?.auteur?.role || annonce?.auteurRole || annonce?.roleAuteur
+  );
+  const ciblesAutoriseesProf = new Set([
+    'PROFESSEURS_DEPARTEMENT',
+    'PROFESSEURS_GLOBAL',
+  ]);
+
+  if (ciblesAutoriseesProf.has(cibleType)) {
+    return true;
+  }
+
+  if (auteurRole.includes('ADMIN')) {
+    return true;
+  }
+
+  return false;
+};
+
+const GestionAnnoncesProfesseur = ({
+  annonceSelectionneeId = null,
+  vueAnnonceInitiale = null,
+}) => {
   const [chargement, setChargement] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [vueActive, setVueActive] = useState('etudiants');
+  const [vueActive, setVueActive] = useState(
+    vueAnnonceInitiale === 'admin' ? 'admin' : 'etudiants'
+  );
   const [mesAnnonces, setMesAnnonces] = useState([]);
   const [annoncesAdmin, setAnnoncesAdmin] = useState([]);
+  const [annonceAdminActive, setAnnonceAdminActive] = useState(null);
+  const [adminSearchQuery, setAdminSearchQuery] = useState('');
+  const [adminActiveFilter, setAdminActiveFilter] = useState('TOUS');
   const [ressourcesParAnnonce, setRessourcesParAnnonce] = useState({});
+  const [adminRessourceLoading, setAdminRessourceLoading] = useState(false);
   const [mesClasses, setMesClasses] = useState([]);
   const [formulaire, setFormulaire] = useState(FORM_INITIAL);
   const [fichiersSelectionnes, setFichiersSelectionnes] = useState([]);
@@ -97,8 +197,10 @@ const GestionAnnoncesProfesseur = () => {
       ]);
 
       const annoncesChargees = Array.isArray(annonces) ? annonces : [];
+      const annoncesAdminsUniquement = (Array.isArray(annoncesProfesseurs) ? annoncesProfesseurs : [])
+        .filter(estAnnonceAdminPourProf);
       setMesAnnonces(annoncesChargees);
-      setAnnoncesAdmin(Array.isArray(annoncesProfesseurs) ? annoncesProfesseurs : []);
+      setAnnoncesAdmin(annoncesAdminsUniquement);
       setMesClasses(Array.isArray(classes) ? classes : []);
 
       const ressourcesEntries = await Promise.all(
@@ -140,19 +242,105 @@ const GestionAnnoncesProfesseur = () => {
 
   const annoncesAdminTriees = useMemo(
     () =>
-      [...annoncesAdmin].sort(
-        (a, b) => new Date(b?.datePublication || 0) - new Date(a?.datePublication || 0),
-      ),
-    [annoncesAdmin],
+      (Array.isArray(annoncesAdmin) ? annoncesAdmin : [])
+        .map(transformAnnonceAdmin)
+        .sort((a, b) => b.publishedTimestamp - a.publishedTimestamp),
+    [annoncesAdmin]
   );
 
-  const getAnnonceAdminSource = (annonce) => {
-    const auteur = annonce?.auteur;
-    if (auteur?.prenom || auteur?.nom) {
-      return `${auteur.prenom || ''} ${auteur.nom || ''}`.trim();
+  const annoncesAdminFiltrees = useMemo(
+    () =>
+      annoncesAdminTriees.filter((annonce) => {
+        const matchesSearch = annonce.title
+          .toLowerCase()
+          .includes(adminSearchQuery.toLowerCase());
+        const matchesFilter =
+          adminActiveFilter === 'TOUS' || annonce.category === adminActiveFilter;
+
+        return matchesSearch && matchesFilter;
+      }),
+    [annoncesAdminTriees, adminSearchQuery, adminActiveFilter]
+  );
+
+  const ressourcesAnnonceAdminActives = annonceAdminActive?.id
+    ? ressourcesParAnnonce[annonceAdminActive.id] || []
+    : [];
+
+  useEffect(() => {
+    if (vueAnnonceInitiale === 'admin') {
+      setVueActive('admin');
     }
-    return 'Administration';
-  };
+  }, [vueAnnonceInitiale]);
+
+  useEffect(() => {
+    if (!annoncesAdminTriees.length) {
+      setAnnonceAdminActive(null);
+      return;
+    }
+
+    setAnnonceAdminActive((precedente) => {
+      if (annonceSelectionneeId != null) {
+        const annonceCible = annoncesAdminTriees.find(
+          (item) => String(item.id) === String(annonceSelectionneeId)
+        );
+        if (annonceCible) {
+          return annonceCible;
+        }
+      }
+
+      if (precedente) {
+        return (
+          annoncesAdminTriees.find((item) => item.id === precedente.id) ||
+          annoncesAdminTriees[0]
+        );
+      }
+
+      return annoncesAdminTriees[0];
+    });
+  }, [annoncesAdminTriees, annonceSelectionneeId]);
+
+  useEffect(() => {
+    if (annonceSelectionneeId == null) {
+      return;
+    }
+
+    const annonceCible = annoncesAdminTriees.find(
+      (item) => String(item.id) === String(annonceSelectionneeId)
+    );
+
+    if (annonceCible) {
+      setVueActive('admin');
+      setAnnonceAdminActive(annonceCible);
+    }
+  }, [annonceSelectionneeId, annoncesAdminTriees]);
+
+  useEffect(() => {
+    if (!annonceAdminActive?.id || ressourcesParAnnonce[annonceAdminActive.id]) {
+      return;
+    }
+
+    const chargerRessourcesAnnonceAdmin = async () => {
+      try {
+        setAdminRessourceLoading(true);
+        const ressources = await apiAnnoncesProfesseur.listerRessourcesAnnonce(
+          annonceAdminActive.id
+        );
+        setRessourcesParAnnonce((prev) => ({
+          ...prev,
+          [annonceAdminActive.id]: Array.isArray(ressources) ? ressources : [],
+        }));
+      } catch {
+        setRessourcesParAnnonce((prev) => ({
+          ...prev,
+          [annonceAdminActive.id]: [],
+        }));
+      } finally {
+        setAdminRessourceLoading(false);
+      }
+    };
+
+    chargerRessourcesAnnonceAdmin();
+  }, [annonceAdminActive, ressourcesParAnnonce]);
 
   const isFormValid = Boolean(
     formulaire.titre.trim() &&
@@ -738,7 +926,7 @@ const GestionAnnoncesProfesseur = () => {
           <div className="prof-section-header">
             <div>
               <h2>Annonces administrateur</h2>
-              <p>Consultez les annonces diffusees au corps professoral.</p>
+              <p>Consultez les annonces diffusees au corps professoral dans un flux detaille.</p>
             </div>
             <span className="prof-counter">
               {annoncesAdminTriees.length} annonce{annoncesAdminTriees.length > 1 ? 's' : ''}
@@ -752,29 +940,183 @@ const GestionAnnoncesProfesseur = () => {
               Aucune annonce administrateur disponible pour le moment.
             </div>
           ) : (
-            <div className="prof-annonces-grid">
-              {annoncesAdminTriees.map((annonce) => {
-                return (
-                  <div key={annonce.id} className="prof-annonce-card admin-annonce-card">
-                    <div className="prof-annonce-header">
-                      <div>
-                        <div className="prof-annonce-title-row">
-                          <h3>{annonce.titre || 'Sans titre'}</h3>
-                          <span className="prof-badge published">ADMIN</span>
+            <div className="prof-admin-annonces-like-student">
+              <div className="ann-container">
+                <aside className="ann-sidebar">
+                  <div className="ann-sidebar-header">
+                    <h1 className="ann-sidebar-title">Flux admin</h1>
+                    <button
+                      type="button"
+                      onClick={() => chargerDonnees(false)}
+                      className="ann-refresh-btn"
+                      title="Rafraichir les annonces"
+                    >
+                      <RefreshCw size={18} />
+                    </button>
+                  </div>
+
+                  <div className="ann-search-box">
+                    <Search className="ann-search-icon" size={18} />
+                    <input
+                      type="text"
+                      placeholder="Rechercher..."
+                      value={adminSearchQuery}
+                      onChange={(e) => setAdminSearchQuery(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="ann-filters">
+                    {FILTRES_TYPE_ANNONCE.map((filter) => (
+                      <button
+                        key={filter}
+                        type="button"
+                        className={`ann-filter-pill ${adminActiveFilter === filter ? 'active' : ''}`}
+                        onClick={() => setAdminActiveFilter(filter)}
+                      >
+                        {filter}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="ann-list">
+                    {annoncesAdminFiltrees.length > 0 ? (
+                      annoncesAdminFiltrees.map((annonce) => (
+                        <div
+                          key={annonce.id}
+                          className={`ann-item ${annonceAdminActive?.id === annonce.id ? 'active' : ''}`}
+                          onClick={() => setAnnonceAdminActive(annonce)}
+                        >
+                          <div className="ann-item-header">
+                            <span className="ann-item-date">{annonce.date}</span>
+                          </div>
+                          <div className="ann-item-title">{annonce.title}</div>
+                          <div className="ann-item-subtitle">{annonce.subject}</div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="ann-empty">
+                        <p>Aucune annonce trouvee</p>
+                      </div>
+                    )}
+                  </div>
+                </aside>
+
+                <main className="ann-main">
+                  {annonceAdminActive ? (
+                    <article className="ann-detail">
+                      <header className="ann-detail-header">
+                        <div className="ann-prof-box">
+                          <div className="ann-prof-img">
+                            {annonceAdminActive.authorPhoto ? (
+                              <img
+                                src={`http://localhost:8080/uploads/usersPhotos/${annonceAdminActive.authorPhoto}`}
+                                alt={annonceAdminActive.professor}
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.style.display = 'none';
+                                  if (e.target.nextSibling) {
+                                    e.target.nextSibling.style.display = 'block';
+                                  }
+                                }}
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  objectFit: 'cover',
+                                  borderRadius: '50%',
+                                }}
+                              />
+                            ) : null}
+                            <User
+                              size={30}
+                              style={{
+                                margin: 'auto',
+                                display: annonceAdminActive.authorPhoto ? 'none' : 'block',
+                              }}
+                              color="#94a3b8"
+                            />
+                          </div>
+                          <div className="ann-prof-info">
+                            <div className="ann-prof-name">{annonceAdminActive.professor}</div>
+                            <div className="ann-prof-subject">{annonceAdminActive.subject}</div>
+                          </div>
                         </div>
 
-                        <p className="prof-annonce-meta">
-                          {formaterDate(annonce.datePublication)} | {getAnnonceAdminSource(annonce)}
-                        </p>
-                      </div>
-                    </div>
+                        <div className="ann-status-box">
+                          <div className="ann-status-label">PUBLIE LE</div>
+                          <div className="ann-status-date">{annonceAdminActive.fullDate}</div>
+                        </div>
+                      </header>
 
-                    <div className="prof-annonce-content">
-                      {annonce.contenu || 'Aucun contenu.'}
+                      <div className="ann-badges">
+                        <div className={`ann-badge ${annonceAdminActive.category.toLowerCase()}`}>
+                          {annonceAdminActive.category}
+                        </div>
+                      </div>
+
+                      <h2 className="ann-headline">{annonceAdminActive.title}</h2>
+
+                      <div className="ann-content">
+                        {(annonceAdminActive.content || 'Aucun contenu.')
+                          .split('\n\n')
+                          .filter(Boolean)
+                          .map((paragraph, idx) => (
+                            <p key={idx}>{paragraph}</p>
+                          ))}
+                      </div>
+
+                      <div className="ann-resources-section">
+                        <div className="ann-resources-title">
+                          <Paperclip size={14} />
+                          RESSOURCES ATTACHEES
+                        </div>
+
+                        <div className="ann-resources-grid">
+                          {adminRessourceLoading ? (
+                            <div className="ann-no-resources">
+                              <p>Chargement des ressources...</p>
+                            </div>
+                          ) : ressourcesAnnonceAdminActives.length > 0 ? (
+                            ressourcesAnnonceAdminActives.map((ressource) => (
+                              <div
+                                key={ressource.id}
+                                className="ann-resource-card"
+                              >
+                                <div className="ann-resource-icon">
+                                  <FileText size={20} />
+                                </div>
+                                <div className="ann-resource-info">
+                                  <strong>{ressource.nomOriginal || 'Ressource'}</strong>
+                                  <span>{formaterTaille(ressource.taille)}</span>
+                                </div>
+                                <div className="ann-resource-actions">
+                                  <button
+                                    type="button"
+                                    className="ann-resource-btn"
+                                    onClick={() =>
+                                      apiAnnoncesProfesseur.telechargerRessourceAnnonce(ressource.id)
+                                    }
+                                  >
+                                    <Download size={16} />
+                                    Telecharger
+                                  </button>
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="ann-no-resources">
+                              <p>Aucune ressource attachee</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </article>
+                  ) : (
+                    <div className="ann-no-selection">
+                      <p>Selectionnez une annonce pour voir les details</p>
                     </div>
-                  </div>
-                );
-              })}
+                  )}
+                </main>
+              </div>
             </div>
           )}
         </div>

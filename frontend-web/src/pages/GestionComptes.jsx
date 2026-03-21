@@ -34,6 +34,7 @@ const GestionComptes = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(null);
+  const [formError, setFormError] = useState('');
 
   // Data State
   const [usersList, setUsersList] = useState([]);
@@ -131,6 +132,9 @@ const GestionComptes = () => {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+    if (formError) {
+      setFormError('');
+    }
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
@@ -141,6 +145,7 @@ const GestionComptes = () => {
     setFormData(initialFormData);
     setIsEditing(false);
     setSelectedUserId(null);
+    setFormError('');
     setModalOpen(true);
   };
 
@@ -203,6 +208,7 @@ const GestionComptes = () => {
         
         setIsEditing(true);
         setSelectedUserId(id);
+        setFormError('');
         setModalOpen(true);
         setViewModalOpen(false);
       } catch (err) {
@@ -214,6 +220,7 @@ const GestionComptes = () => {
 
   const handleSaveUser = async () => {
     setIsLoading(true);
+    setFormError('');
     try {
       const userPayload = { ...formData };
       const originalUser = usersList.find(u => u.id === selectedUserId);
@@ -227,7 +234,7 @@ const GestionComptes = () => {
           // Update the payload with only the numeric part
           userPayload.ppr = numericPpr;
           if (!/^[0-9]{8}$/.test(numericPpr)) {
-            alert("PPR doit contenir exactement 8 chiffres");
+            setFormError("PPR doit contenir exactement 8 chiffres.");
             setIsLoading(false);
             return;
           }
@@ -241,7 +248,7 @@ const GestionComptes = () => {
           userPayload.apogee = numericApogee;
           
           if (!/^[0-9]{9}$/.test(numericApogee)) {
-            alert("Apogée doit contenir exactement 9 chiffres");
+            setFormError("Apogee doit contenir exactement 9 chiffres.");
             setIsLoading(false);
             return;
           }
@@ -249,15 +256,25 @@ const GestionComptes = () => {
       }
       
       if (formData.cin && !/^[A-Za-z0-9]{4,8}$/.test(formData.cin)) {
-        alert("Numéro de CIN non valide (doit contenir 4 à 8 caractères alphanumériques)");
+        setFormError("Numero de CIN non valide (doit contenir 4 a 8 caracteres alphanumeriques).");
         setIsLoading(false);
         return;
       }
       
       if (formData.tel && (formData.tel.length < 10 || formData.tel.length > 20)) {
-        alert("Numéro de téléphone non valide (doit contenir entre 10 et 20 caractères)");
+        setFormError("Numero de telephone non valide (doit contenir entre 10 et 20 caracteres).");
         setIsLoading(false);
         return;
+      }
+
+      if (formData.role === 'STUDENT' && formData.anneeInscription) {
+        const annee = Number(String(formData.anneeInscription).trim());
+        if (!Number.isInteger(annee) || annee < 2020) {
+          setFormError("anneeInscription: Annee d'inscription minimum est 2020.");
+          setIsLoading(false);
+          return;
+        }
+        userPayload.anneeInscription = annee;
       }
       
       // Check if the enabled status has changed
@@ -268,7 +285,7 @@ const GestionComptes = () => {
       // For students, convert classeId to codeClasse (backend expects codeClasse as String)
       if (formData.role === 'STUDENT') {
         if (!formData.classeId) {
-          alert("La classe de l'étudiant est obligatoire");
+          setFormError("La classe de l'etudiant est obligatoire.");
           setIsLoading(false);
           return;
         }
@@ -366,13 +383,10 @@ const GestionComptes = () => {
     } catch (err) {
       console.error("Save failed:", err);
       const errorMessage = err.message || 'Erreur inconnue';
-      
-      // Show error in a more user-friendly way
-      if (errorMessage.includes('Erreur de validation:')) {
-        alert("Une erreur est survenue lors de la sauvegarde:\n\n" + errorMessage);
-      } else {
-        alert("Une erreur est survenue lors de la sauvegarde: " + errorMessage);
-      }
+      const texteErreur = errorMessage.includes('Erreur de validation:')
+        ? errorMessage
+        : `Une erreur est survenue lors de la sauvegarde: ${errorMessage}`;
+      setFormError(texteErreur);
     } finally {
       setIsLoading(false);
     }
@@ -695,7 +709,14 @@ const GestionComptes = () => {
               }))}
               requis
             />
-            <ChampFormulaire label="Année Inscription" nom="anneeInscription" type="number" valeur={formData.anneeInscription} onChange={handleInputChange} />
+            <ChampFormulaire
+              label="Annee Inscription"
+              nom="anneeInscription"
+              type="text"
+              valeur={formData.anneeInscription}
+              onChange={handleInputChange}
+              placeholder="Ex: 2025"
+            />
             <ChampFormulaire
               label="Semestre Actuel"
               nom="semestreActuel"
@@ -860,9 +881,13 @@ const GestionComptes = () => {
       <FormulaireModal
         titre={isEditing ? "Modifier l'Utilisateur" : "Ajouter un Utilisateur"}
         estOuvert={modalOpen}
-        surFermer={() => setModalOpen(false)}
+        surFermer={() => {
+          setModalOpen(false);
+          setFormError('');
+        }}
         surSauvegarder={handleSaveUser}
         texteBoutonSauvegarder={isEditing ? "Modifier" : "Créer"}
+        messageErreur={formError}
       >
         <div className="form-grid">
           <ChampFormulaire label="Nom" nom="nom" valeur={formData.nom} onChange={handleInputChange} requis />

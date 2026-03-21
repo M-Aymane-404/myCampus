@@ -7,6 +7,26 @@ const formatSeanceDate = (date) => {
     return new Date(date).toLocaleDateString('fr-FR');
 };
 
+const normalizeSemesterCode = (value) => {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+        return `S${Math.max(1, Math.trunc(value))}`;
+    }
+
+    const raw = String(value || '').trim().toUpperCase();
+    if (!raw) return null;
+    if (/^S\d+$/.test(raw)) return raw;
+    if (/^\d+$/.test(raw)) return `S${parseInt(raw, 10)}`;
+    return null;
+};
+
+const buildSemesterCandidates = (semester) => {
+    const normalized = normalizeSemesterCode(semester);
+    if (!normalized) return [semester];
+
+    const numeric = normalized.replace(/^S/, '');
+    return Array.from(new Set([normalized, numeric]));
+};
+
 export const apiCours = {
     getSemesters() {
         return ['S1', 'S2', 'S3', 'S4', 'S5', 'S6'];
@@ -27,15 +47,44 @@ export const apiCours = {
 
     async getStudentModules(semester = null) {
         try {
-            let url = `${BASE_URL}/moi/modules`;
-            if (semester && semester !== 'TOUS') {
-                url += `?semestre=${semester}`;
+            if (!semester || semester === 'TOUS') {
+                const response = await authenticatedFetch(`${BASE_URL}/moi/modules`, {
+                    credentials: 'include'
+                });
+                if (!response.ok) throw new Error('Erreur lors de la recuperation des modules');
+                return await response.json();
             }
-            const response = await authenticatedFetch(url, {
-                credentials: 'include'
-            });
-            if (!response.ok) throw new Error('Erreur lors de la recuperation des modules');
-            return await response.json();
+
+            const candidates = buildSemesterCandidates(semester);
+            let lastError = null;
+
+            for (const candidate of candidates) {
+                try {
+                    const response = await authenticatedFetch(`${BASE_URL}/moi/modules?semestre=${candidate}`, {
+                        credentials: 'include'
+                    });
+                    if (!response.ok) {
+                        continue;
+                    }
+
+                    const payload = await response.json();
+                    if (Array.isArray(payload) && payload.length > 0) {
+                        return payload;
+                    }
+
+                    if (Array.isArray(payload)) {
+                        lastError = null;
+                    }
+                } catch (error) {
+                    lastError = error;
+                }
+            }
+
+            if (lastError) {
+                throw lastError;
+            }
+
+            return [];
         } catch (error) {
             console.error(error);
             throw error;

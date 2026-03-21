@@ -16,6 +16,7 @@ import com.mycampus.backend.metier.Notification.NotificationMetier;
 import com.mycampus.backend.metier.annonces.ressources.GestionRessourcesAnnonceMetier;
 import com.mycampus.backend.repositorys.AnnonceRepository;
 import com.mycampus.backend.repositorys.ClasseRepository;
+import com.mycampus.backend.repositorys.NotificationRepository;
 import com.mycampus.backend.repositorys.ProfesseurRepository;
 import com.mycampus.backend.repositorys.UtilisateurRepository;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +40,7 @@ public class GestionAnnoncesProfesseurMetierImpl implements GestionAnnoncesProfe
     private final ProfesseurRepository professeurRepository;
      private final AnnonceMapper  annonceMapper;
     private final NotificationMetier notificationMetier;
+    private final NotificationRepository notificationRepository;
     private final GestionRessourcesAnnonceMetier gestionRessourcesAnnonceMetier;
 
     @Override
@@ -142,11 +144,8 @@ public class GestionAnnoncesProfesseurMetierImpl implements GestionAnnoncesProfe
             return annonceMapper.changerVersSortieDTO(annonce);
         }
 
-        Departement departementProf = professeur.getDepartementOuTravail();
         if (annonce.getCibleType() == AnnonceCibleType.PROFESSEURS_DEPARTEMENT
-                && annonce.getDepartement() != null
-                && departementProf != null
-                && annonce.getDepartement().getCodeDepartement().equals(departementProf.getCodeDepartement())) {
+                && estAnnonceDepartementVisiblePourProfesseur(annonce, professeur)) {
             return annonceMapper.changerVersSortieDTO(annonce);
         }
 
@@ -167,7 +166,8 @@ public class GestionAnnoncesProfesseurMetierImpl implements GestionAnnoncesProfe
         Professeur professeur =  professeurRepository.findByEmail(emailProfesseur)
                 .orElseThrow(() -> new UtilisateursException("Professeur non trouvé"));
 
-        return annonceRepository.findAnnoncesDuProfGlobalEtDepartement(professeur.getDepartementOuTravail().getCodeDepartement()).stream()
+        return annonceRepository.findAnnoncesProfesseursGlobalEtCiblees().stream()
+                .filter(annonce -> estAnnonceVisiblePourProfesseur(annonce, professeur))
                 .map(annonceMapper::changerVersSortieDTO)
                 .toList();
     }
@@ -252,6 +252,40 @@ public class GestionAnnoncesProfesseurMetierImpl implements GestionAnnoncesProfe
                     dto
             );
         }
+    }
+
+    private boolean estAnnonceVisiblePourProfesseur(Annonce annonce, Professeur professeur) {
+        if (annonce.getCibleType() != AnnonceCibleType.PROFESSEURS_DEPARTEMENT) {
+            return true;
+        }
+        return estAnnonceDepartementVisiblePourProfesseur(annonce, professeur);
+    }
+
+    private boolean estAnnonceDepartementVisiblePourProfesseur(Annonce annonce, Professeur professeur) {
+        if (annonce.getAuteur() != null && professeur.getId().equals(annonce.getAuteur().getId())) {
+            return true;
+        }
+
+        boolean annonceAUnCiblageNotification = notificationRepository.existsByTypeAndReferenceTypeAndReferenceId(
+                TypeNotification.ANNONCE_PUBLIEE,
+                ReferenceType.ANNONCE,
+                annonce.getId()
+        );
+
+        if (!annonceAUnCiblageNotification) {
+            Departement depAnnonce = annonce.getDepartement();
+            Departement depProf = professeur.getDepartementOuTravail();
+            return depAnnonce != null
+                    && depProf != null
+                    && depAnnonce.getCodeDepartement().equals(depProf.getCodeDepartement());
+        }
+
+        return notificationRepository.existsByUtilisateur_IdAndTypeAndReferenceTypeAndReferenceId(
+                professeur.getId(),
+                TypeNotification.ANNONCE_PUBLIEE,
+                ReferenceType.ANNONCE,
+                annonce.getId()
+        );
     }
 
 }

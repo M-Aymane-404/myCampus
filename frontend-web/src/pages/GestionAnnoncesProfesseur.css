@@ -29,6 +29,47 @@
   min-height: 0;
 }
 
+.prof-admin-annonces-like-student .ann-container {
+  height: 72vh;
+  min-height: 580px;
+  border: 1px solid #e2e8f0;
+  border-radius: 24px;
+  overflow: hidden;
+}
+
+.prof-admin-annonces-like-student .ann-sidebar {
+  width: 330px;
+  padding: 1.4rem 1.2rem;
+}
+
+.prof-admin-annonces-like-student .ann-main {
+  padding: 1.6rem 2rem;
+}
+
+.prof-admin-annonces-like-student .ann-headline {
+  font-size: 2rem;
+}
+
+.prof-admin-annonces-like-student .ann-badge.cours {
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.prof-admin-annonces-like-student .ann-badge.event {
+  background: #ecfeff;
+  color: #155e75;
+}
+
+.prof-admin-annonces-like-student .ann-badge.reunion {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.prof-admin-annonces-like-student .ann-badge.autres {
+  background: #f8fafc;
+  color: #334155;
+}
+
 .prof-summary-banner {
   display: flex;
   flex-direction: column;
@@ -553,5 +594,14 @@
 
   .prof-annonce-card {
     padding: 16px;
+  }
+
+  .prof-admin-annonces-like-student .ann-container {
+    height: auto;
+    min-height: 0;
+  }
+
+  .prof-admin-annonces-like-student .ann-main {
+    padding: 1.2rem;
   }
 }

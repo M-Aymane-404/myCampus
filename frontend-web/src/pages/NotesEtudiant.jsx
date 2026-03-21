@@ -20,6 +20,7 @@ import {
 import './NotesEtudiant.css';
 import { apiGrades } from '../services/apiGrades';
 import { apiEtudiant } from '../services/apiEtudiant';
+import { apiCours } from '../services/apiCours';
 import { parseExams } from '../utils/academicUtils';
 import {
     openBlobInNewTab
@@ -49,8 +50,124 @@ const normalizeExamLabel = (exam) => {
     return `Examen ${exam.numeroExamen || ''}`.trim();
 };
 
+const normalizeSemesterCode = (value) => {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+        const numeric = Math.max(1, Math.trunc(value));
+        return `S${numeric}`;
+    }
+
+    const raw = String(value || '').trim().toUpperCase();
+    if (!raw) return null;
+    if (/^S\d+$/.test(raw)) return raw;
+    if (/^\d+$/.test(raw)) return `S${parseInt(raw, 10)}`;
+    return null;
+};
+
+const extractSemesterNumber = (value) => {
+    const code = normalizeSemesterCode(value);
+    if (!code) return 1;
+    return parseInt(code.replace('S', ''), 10);
+};
+
+const normalizeSemesterOptions = (values) => {
+    const unique = new Set();
+    (Array.isArray(values) ? values : []).forEach((value) => {
+        const normalized = normalizeSemesterCode(value);
+        if (normalized) {
+            unique.add(normalized);
+        }
+    });
+
+    if (unique.size === 0) {
+        unique.add('S1');
+    }
+
+    return Array.from(unique).sort((left, right) => extractSemesterNumber(left) - extractSemesterNumber(right));
+};
+
+const normalizeText = (value) => String(value || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
+const normalizeCode = (value) => String(value || '').trim().toUpperCase();
+
+const isLanguagesModule = (moduleName) => normalizeText(moduleName).includes('langues');
+
+const hasAnyNumericGrade = (modules = []) =>
+    modules.some((moduleItem) => Number.isFinite(Number(moduleItem?.average)));
+
+const parseNumericGrade = (value) => {
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? numeric : null;
+};
+
+const mergeDashboardNotesIntoModules = (modules = [], dashboardNotes = []) => {
+    if (!Array.isArray(modules) || modules.length === 0) return modules;
+    if (!Array.isArray(dashboardNotes) || dashboardNotes.length === 0) return modules;
+
+    const notesByMatiere = new Map();
+    dashboardNotes.forEach((entry) => {
+        const key = normalizeText(entry?.matiere || entry?.matiereNom || entry?.nomMatiere);
+        const note = parseNumericGrade(entry?.note);
+
+        if (!key || note === null) return;
+        const queue = notesByMatiere.get(key) || [];
+        queue.push(note);
+        notesByMatiere.set(key, queue);
+    });
+
+    if (notesByMatiere.size === 0) return modules;
+
+    return modules.map((moduleItem) => {
+        const subjects = Array.isArray(moduleItem?.subjects) ? moduleItem.subjects : [];
+        const mergedSubjects = subjects.map((subject) => {
+            const key = normalizeText(subject?.name || subject?.code);
+            const queue = key ? notesByMatiere.get(key) : null;
+            if (!queue || queue.length === 0) {
+                return subject;
+            }
+
+            const alreadyHasGrade = Number.isFinite(Number(subject?.average));
+            if (alreadyHasGrade) {
+                return subject;
+            }
+
+            const nextNote = queue.shift();
+            return {
+                ...subject,
+                average: nextNote,
+                exam: nextNote
+            };
+        });
+
+        const currentAverage = Number(moduleItem?.average);
+        if (Number.isFinite(currentAverage)) {
+            return {
+                ...moduleItem,
+                subjects: mergedSubjects
+            };
+        }
+
+        const subjectAverages = mergedSubjects
+            .map((subject) => Number(subject?.average))
+            .filter((value) => Number.isFinite(value));
+
+        const fallbackAverage = subjectAverages.length > 0
+            ? subjectAverages.reduce((sum, value) => sum + value, 0) / subjectAverages.length
+            : null;
+
+        return {
+            ...moduleItem,
+            subjects: mergedSubjects,
+            average: fallbackAverage
+        };
+    });
+};
+
 const NotesEtudiant = () => {
-    const [activeSemester, setActiveSemester] = useState(1);
+    const [activeSemester, setActiveSemester] = useState('S1');
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState(null);
     const [documentError, setDocumentError] = useState('');
@@ -71,11 +188,11 @@ const NotesEtudiant = () => {
         finalMention: '...',
         certId: 'LUM-2024-PENDING',
         maxSemester: 1,
-        availableSemesters: []
+        availableSemesters: ['S1']
     });
 
     const [currentData, setCurrentData] = useState({
-        label: `Semestre ${activeSemester}`,
+        label: `Semestre ${extractSemesterNumber(activeSemester)}`,
         average: 0,
         ects: '0/30',
         status: 'EN COURS',
@@ -88,14 +205,24 @@ const NotesEtudiant = () => {
         const fetchStats = async () => {
             try {
                 const stats = await apiGrades.fetchGlobalStats();
+                const normalizedSemesters = normalizeSemesterOptions(stats.availableSemesters);
+
                 setStudentStats((prev) => ({
                     ...prev,
                     ...stats,
+                    availableSemesters: normalizedSemesters,
                     sessionMessage: stats.currentSessionStatus === 'Admis'
                         ? 'Felicitations pour vos resultats !'
                         : 'Continuez vos efforts.'
                 }));
-                setActiveSemester(1);
+                setActiveSemester((previousSemester) => {
+                    const normalizedPrevious = normalizeSemesterCode(previousSemester);
+                    if (normalizedPrevious && normalizedSemesters.includes(normalizedPrevious)) {
+                        return normalizedPrevious;
+                    }
+
+                    return normalizedSemesters[0] || 'S1';
+                });
             } catch (err) {
                 console.error('Failed to fetch stats', err);
             }
@@ -112,49 +239,49 @@ const NotesEtudiant = () => {
 
             try {
                 const data = await apiGrades.fetchStudentGrades(activeSemester);
+                const activeSemesterCode = normalizeSemesterCode(activeSemester) || 'S1';
+                const activeSemesterNumber = extractSemesterNumber(activeSemesterCode);
+                const gradeData = data && typeof data === 'object' ? data : { modules: [] };
 
-                if (!data) {
-                    setCurrentData({
-                        label: `Semestre ${activeSemester}`,
-                        average: 0,
-                        ects: '0/30',
-                        status: 'NON DISPONIBLE',
-                        modules: [],
-                        totalModules: 0,
-                        validatedModules: 0
-                    });
-                    setSelectedMatiereKey(null);
-                    setCollapsedExamLists({});
-                    setLoading(false);
-                    return;
-                }
+                const processedModules = (Array.isArray(gradeData.modules) ? gradeData.modules : []).map((mod, idx) => {
+                    const moduleName = mod.nomDuModule || mod.nomModule || mod.nom || mod.moduleName || `Module ${idx + 1}`;
+                    const moduleSemesterCode = normalizeSemesterCode(
+                        mod.semestre
+                        || mod.codeSemestre
+                        || mod.semestreModule
+                        || mod.semester
+                    );
 
-                const processedModules = (data.modules || []).map((mod, idx) => {
-                    const normalizedName = (mod.nomDuModule || '')
+                    const normalizedName = moduleName
                         .toLowerCase()
                         .normalize('NFD')
                         .replace(/[\u0300-\u036f]/g, '');
                     const isLanguages = normalizedName.includes('langues');
 
-                    const subjects = (mod.matieres || []).map((mat, matIdx) => {
-                        const parsedExams = parseExams(mat.examens || []);
+                    const subjects = (Array.isArray(mod.matieres) ? mod.matieres : []).map((mat, matIdx) => {
+                        const rawExams = Array.isArray(mat.examens) ? mat.examens : [];
+                        const normalizedRawExams = rawExams.map((exam) => ({
+                            ...exam,
+                            note: exam?.note ?? exam?.noteExamen ?? exam?.noteFinale ?? exam?.valeurNote ?? null
+                        }));
+                        const parsedExams = parseExams(normalizedRawExams);
                         const exams = sortExamEntries(parsedExams.exams || []).map((exam, examIdx) => ({
                             id: exam.id || `${mod.id || idx}-${mat.id || matIdx}-${examIdx}`,
                             typeExamen: exam.typeExamen,
                             numeroExamen: exam.numeroExamen,
                             label: normalizeExamLabel(exam),
-                            note: exam.note,
+                            note: exam.note ?? exam.noteExamen ?? exam.noteFinale ?? exam.valeurNote,
                             corrigePath: exam.corrigePath,
                             copieEtudiantPath: exam.copieEtudiantPath
                         }));
 
                         return {
                             id: mat.id || `${mod.id || idx}-mat-${matIdx}`,
-                            code: mat.codeMatiere,
-                            name: mat.nomDuMatiere,
+                            code: mat.codeMatiere || mat.code || mat.codeModule,
+                            name: mat.nomDuMatiere || mat.nomMatiere || mat.nom || mat.name || `Matiere ${matIdx + 1}`,
                             ds: parsedExams.ds,
                             exam: parsedExams.exam,
-                            average: mat.moyenneDuMatiere,
+                            average: mat.moyenneDuMatiere ?? mat.moyenneMatiere ?? mat.moyenne ?? null,
                             hasDsCopy: parsedExams.hasDsCopy,
                             hasExamCopy: parsedExams.hasExamCopy,
                             dsCopyPath: parsedExams.dsCopyPath,
@@ -174,9 +301,10 @@ const NotesEtudiant = () => {
 
                     return {
                         id: mod.id || idx,
-                        name: mod.nomDuModule,
-                        ects: mod.coefficient,
-                        coeff: mod.coefficient,
+                        codeModule: mod.codeModule || mod.code || mod.codeDuModule || '',
+                        name: moduleName,
+                        ects: mod.coefficient ?? mod.ects ?? 0,
+                        coeff: mod.coefficient ?? mod.ects ?? 0,
                         ds: sub1 ? sub1.average : null,
                         hasDsCopy: !!sub1CopyPath,
                         dsCopyPath: sub1CopyPath,
@@ -185,27 +313,172 @@ const NotesEtudiant = () => {
                         examCopyPath: sub2CopyPath,
                         hasCorrection: !!correctionPath,
                         correctionPath,
-                        mention: getMentionFromGrade(mod.moyenneDuModule),
-                        average: mod.moyenneDuModule,
-                        letter: (mod.nomDuModule || 'M').charAt(0).toUpperCase(),
+                        mention: getMentionFromGrade(mod.moyenneDuModule ?? mod.moyenneModule ?? mod.moyenne),
+                        average: mod.moyenneDuModule ?? mod.moyenneModule ?? mod.moyenne ?? null,
+                        letter: (moduleName || 'M').charAt(0).toUpperCase(),
+                        semesterCode: moduleSemesterCode,
                         isParent: isLanguages,
                         subjects,
                         isRattrapage: subjects.some((subject) => subject.isRattrapage)
                     };
                 });
 
-                const calculatedSessionAverage = processedModules.length > 0
-                    ? processedModules.reduce((sum, mod) => sum + (mod.average || 0), 0) / processedModules.length
+                let modulesToDisplay = [];
+                let modulesFromCatalog = [];
+
+                try {
+                    const modulesSemestre = await apiCours.getStudentModules(activeSemesterCode);
+                    modulesFromCatalog = (Array.isArray(modulesSemestre) ? modulesSemestre : []).map((moduleItem, index) => ({
+                        id: moduleItem.id || moduleItem.codeModule || `catalog-${index}`,
+                        code: normalizeCode(moduleItem.codeModule || moduleItem.code || moduleItem.id),
+                        name: moduleItem.nom || moduleItem.nomModule || moduleItem.libelle || `Module ${index + 1}`,
+                        semesterCode: normalizeSemesterCode(
+                            moduleItem.semestre
+                            || moduleItem.codeSemestre
+                            || moduleItem.semestreModule
+                            || moduleItem.semester
+                        )
+                    }));
+                } catch (catalogError) {
+                    console.warn('Erreur lors du chargement des modules du semestre:', catalogError);
+                }
+
+                if (modulesFromCatalog.length > 0) {
+                    const semesterAwareCatalogModules = modulesFromCatalog.filter(
+                        (moduleItem) => !moduleItem.semesterCode || moduleItem.semesterCode === activeSemesterCode
+                    );
+                    const modulesCatalogToUse = semesterAwareCatalogModules.length > 0
+                        ? semesterAwareCatalogModules
+                        : modulesFromCatalog;
+
+                    modulesToDisplay = await Promise.all(
+                        modulesCatalogToUse.map(async (catalogItem, index) => {
+                            const moduleMatch = processedModules.find((moduleItem) => {
+                                const moduleCode = normalizeCode(moduleItem.codeModule);
+                                const moduleName = normalizeText(moduleItem.name);
+
+                                return (
+                                    (moduleCode && catalogItem.code && moduleCode === catalogItem.code)
+                                    || (moduleName && normalizeText(catalogItem.name) === moduleName)
+                                );
+                            });
+
+                            if (moduleMatch) {
+                                return {
+                                    ...moduleMatch,
+                                    id: moduleMatch.id || catalogItem.id || `module-${index}`,
+                                    codeModule: moduleMatch.codeModule || catalogItem.code,
+                                    name: moduleMatch.name || catalogItem.name,
+                                    semesterCode: activeSemesterCode,
+                                };
+                            }
+
+                            let matieres = [];
+                            try {
+                                const matieresPayload = await apiCours.getMatieres(catalogItem.code || catalogItem.id);
+                                matieres = Array.isArray(matieresPayload) ? matieresPayload : [];
+                            } catch {
+                                matieres = [];
+                            }
+
+                            const subjects = matieres.map((matiere, matIdx) => ({
+                                id: matiere.id || `${catalogItem.id}-mat-${matIdx}`,
+                                code: matiere.codeMatiere || matiere.code || '',
+                                name: matiere.nom || matiere.nomMatiere || `Matiere ${matIdx + 1}`,
+                                ds: null,
+                                exam: null,
+                                average: null,
+                                hasDsCopy: false,
+                                hasExamCopy: false,
+                                dsCopyPath: null,
+                                examCopyPath: null,
+                                hasCorrection: false,
+                                correctionPath: null,
+                                isRattrapage: false,
+                                exams: []
+                            }));
+
+                            return {
+                                id: catalogItem.id || `module-${index}`,
+                                codeModule: catalogItem.code,
+                                name: catalogItem.name,
+                                ects: 0,
+                                coeff: 0,
+                                ds: null,
+                                hasDsCopy: false,
+                                dsCopyPath: null,
+                                exam: null,
+                                hasExamCopy: false,
+                                examCopyPath: null,
+                                hasCorrection: false,
+                                correctionPath: null,
+                                mention: '-',
+                                average: null,
+                                letter: (catalogItem.name || 'M').charAt(0).toUpperCase(),
+                                semesterCode: activeSemesterCode,
+                                isParent: isLanguagesModule(catalogItem.name),
+                                subjects,
+                                isRattrapage: false,
+                            };
+                        })
+                    );
+                } else {
+                    const semesterAwareModules = processedModules.filter(
+                        (moduleItem) =>
+                            !moduleItem.semesterCode || moduleItem.semesterCode === activeSemesterCode
+                    );
+
+                    const hasSemesterMetadata = processedModules.some(
+                        (moduleItem) => !!moduleItem.semesterCode
+                    );
+                    modulesToDisplay = hasSemesterMetadata ? semesterAwareModules : processedModules;
+                }
+
+                if (!hasAnyNumericGrade(modulesToDisplay) && modulesToDisplay.length > 0) {
+                    try {
+                        const dashboardData = await apiEtudiant.getDashboardData();
+                        modulesToDisplay = mergeDashboardNotesIntoModules(
+                            modulesToDisplay,
+                            dashboardData?.dernieresNotes
+                        );
+                    } catch (dashboardFallbackError) {
+                        console.warn('Impossible de recuperer les dernieres notes du dashboard:', dashboardFallbackError);
+                    }
+                }
+
+                const calculatedSessionAverage = modulesToDisplay.length > 0
+                    ? modulesToDisplay.reduce((sum, mod) => sum + (Number(mod.average) || 0), 0) / modulesToDisplay.length
+                    : 0;
+
+                const effectiveAverage = Number.isFinite(Number(gradeData.moyenneSession))
+                    ? Number(gradeData.moyenneSession)
+                    : calculatedSessionAverage;
+
+                const hasGradeInDisplayedModules = hasAnyNumericGrade(modulesToDisplay);
+                const displayedAverage = hasGradeInDisplayedModules
+                    ? effectiveAverage
+                    : calculatedSessionAverage;
+                const effectiveStatus = hasGradeInDisplayedModules
+                    ? (displayedAverage >= 10 ? 'VALIDE' : 'AJOURNE')
+                    : 'EN COURS';
+
+                const validatedModules = modulesToDisplay.filter((mod) => Number(mod.average) >= 10).length;
+                const totalModules = modulesToDisplay.length;
+                const ectsValue = totalModules > 0
+                    ? modulesToDisplay.reduce(
+                        (acc, mod) => acc + (Number(mod.average) >= 10 ? 30 / totalModules : 0),
+                        0
+                    )
                     : 0;
 
                 setCurrentData({
-                    label: `Semestre ${activeSemester}`,
-                    average: data.moyenneSession || calculatedSessionAverage,
-                    ects: `${processedModules.reduce((acc, mod) => acc + (mod.average >= 10 ? 30 / processedModules.length : 0), 0).toFixed(0)}/30`,
-                    status: (data.moyenneSession || calculatedSessionAverage) >= 10 ? 'VALIDE' : 'AJOURNE',
-                    modules: processedModules,
-                    totalModules: data.totalModules || processedModules.length,
-                    validatedModules: data.validatedModules || processedModules.filter((mod) => mod.average >= 10).length
+                    label: `Semestre ${activeSemesterNumber}`,
+                    average: displayedAverage,
+                    ects: `${ectsValue.toFixed(0)}/30`,
+                    status: effectiveStatus,
+                    modules: modulesToDisplay,
+                    totalModules,
+                    validatedModules
                 });
                 setSelectedMatiereKey(null);
                 setCollapsedExamLists({});
@@ -327,6 +600,9 @@ const openExamDocument = async (examenId, type) => {
         );
     };
 
+    const activeSemesterCode = normalizeSemesterCode(activeSemester) || 'S1';
+    const activeSemesterNumber = extractSemesterNumber(activeSemesterCode);
+
     return (
         <div className="notes-container">
             <div className="notes-header-layout">
@@ -401,10 +677,12 @@ const openExamDocument = async (examenId, type) => {
                             <Filter size={14} color="#6366f1" />
                             <select
                                 value={activeSemester}
-                                onChange={(e) => setActiveSemester(parseInt(e.target.value, 10))}
+                                onChange={(e) => setActiveSemester(normalizeSemesterCode(e.target.value) || 'S1')}
                             >
-                                {(studentStats.availableSemesters || [1]).map((semester) => (
-                                    <option key={semester} value={semester}>Semestre {semester}</option>
+                                {normalizeSemesterOptions(studentStats.availableSemesters).map((semesterCode) => (
+                                    <option key={semesterCode} value={semesterCode}>
+                                        Semestre {extractSemesterNumber(semesterCode)}
+                                    </option>
                                 ))}
                             </select>
                         </div>
@@ -597,7 +875,7 @@ const openExamDocument = async (examenId, type) => {
                             <div className="transcript-ref-badge">Document Officiel</div>
                             <div className="transcript-ref-details">
                                 <span className="ref-label">Reference Document</span>
-                                <span className="ref-value">RN-S{activeSemester}-2024-X</span>
+                                <span className="ref-value">RN-{activeSemesterCode}-2024-X</span>
                             </div>
                         </div>
                     </header>
@@ -608,7 +886,7 @@ const openExamDocument = async (examenId, type) => {
                         <h2>RELEVE DE NOTES ET RESULTATS</h2>
                         <div className="semester-info-line">
                             <div className="line-decor"></div>
-                            <span>SEMESTRE {activeSemester} - SESSION {activeSemester % 2 === 0 ? 'PRINTEMPS' : 'AUTOMNE'} 2024</span>
+                            <span>SEMESTRE {activeSemesterNumber} - SESSION {activeSemesterNumber % 2 === 0 ? 'PRINTEMPS' : 'AUTOMNE'} 2024</span>
                             <div className="line-decor"></div>
                         </div>
                     </div>
@@ -626,7 +904,7 @@ const openExamDocument = async (examenId, type) => {
                             <div className="info-details">
                                 <span className="info-label">FILIERE / NIVEAU</span>
                                 <span className="info-value">
-                                    {studentStats.specialization} - {activeSemester > 4 ? '3eme Annee (L3)' : activeSemester > 2 ? '2eme Annee (L2)' : '1ere Annee (L1)'}
+                                    {studentStats.specialization} - {activeSemesterNumber > 4 ? '3eme Annee (L3)' : activeSemesterNumber > 2 ? '2eme Annee (L2)' : '1ere Annee (L1)'}
                                 </span>
                             </div>
                         </div>

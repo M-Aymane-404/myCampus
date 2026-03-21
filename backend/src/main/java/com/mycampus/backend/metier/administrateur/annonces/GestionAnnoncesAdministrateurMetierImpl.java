@@ -1,11 +1,12 @@
 package com.mycampus.backend.metier.administrateur.annonces;
 
+import com.mycampus.backend.dto.Notification.NotificationEntrerDTO;
 import com.mycampus.backend.dto.Notification.NotificationEntrerPourPlusieursUtilisateurDTO;
 import com.mycampus.backend.dto.annonces.AnnonceEntrerDTO;
 import com.mycampus.backend.dto.annonces.AnnonceSortieDTO;
 import com.mycampus.backend.entites.Annonce;
 import com.mycampus.backend.entites.Classe;
-import com.mycampus.backend.entites.Departement;
+import com.mycampus.backend.entites.Professeur;
 import com.mycampus.backend.entites.Utilisateur;
 import com.mycampus.backend.enumerations.ReferenceType;
 import com.mycampus.backend.enumerations.TypeNotification;
@@ -15,15 +16,18 @@ import com.mycampus.backend.metier.Notification.NotificationMetier;
 import com.mycampus.backend.metier.annonces.ressources.GestionRessourcesAnnonceMetier;
 import com.mycampus.backend.repositorys.AnnonceRepository;
 import com.mycampus.backend.repositorys.ClasseRepository;
-import com.mycampus.backend.repositorys.DepartementRepository;
+import com.mycampus.backend.repositorys.ProfesseurRepository;
 import com.mycampus.backend.repositorys.UtilisateurRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -35,7 +39,7 @@ public class GestionAnnoncesAdministrateurMetierImpl implements GestionAnnoncesA
     private final UtilisateurRepository utilisateurRepository;
     private final ClasseRepository classeRepository;
     private final AnnonceMapper annonceMapper;
-    private final DepartementRepository departementRepository;
+    private final ProfesseurRepository professeurRepository;
     private final NotificationMetier notificationMetier;
     private final GestionRessourcesAnnonceMetier gestionRessourcesAnnonceMetier;
 
@@ -46,7 +50,7 @@ public class GestionAnnoncesAdministrateurMetierImpl implements GestionAnnoncesA
                 .orElseThrow(() -> new UtilisateursException("Auteur non trouve"));
 
         Classe classe = null;
-        Departement departement = null;
+        List<Long> professeurIdsCibles = resoudreProfesseurIdsCibles(annonceDTO);
 
         switch (annonceDTO.getCibleType()) {
             case ETUDIANTS_CLASSE -> {
@@ -57,11 +61,9 @@ public class GestionAnnoncesAdministrateurMetierImpl implements GestionAnnoncesA
                         .orElseThrow(() -> new UtilisateursException("Classe non trouvee: " + annonceDTO.getCodeClasse()));
             }
             case PROFESSEURS_DEPARTEMENT -> {
-                if (annonceDTO.getCodeDepartement() == null || annonceDTO.getCodeDepartement().isBlank()) {
-                    throw new UtilisateursException("Code departement obligatoire pour PROFESSEURS_DEPARTEMENT");
+                if (professeurIdsCibles.isEmpty()) {
+                    throw new UtilisateursException("Pour cibler les professeurs, fournir professeurIds ou professeurPprs");
                 }
-                departement = departementRepository.findByCodeDepartement(annonceDTO.getCodeDepartement())
-                        .orElseThrow(() -> new UtilisateursException("Departement non trouve: " + annonceDTO.getCodeDepartement()));
             }
             default -> {
             }
@@ -76,11 +78,10 @@ public class GestionAnnoncesAdministrateurMetierImpl implements GestionAnnoncesA
                 .cibleType(annonceDTO.getCibleType())
                 .auteur(auteur)
                 .classe(classe)
-                .departement(departement)
                 .build();
 
         Annonce savedAnnonce = annonceRepository.save(annonce);
-        notifierAnnoncePubliee(savedAnnonce, auteur.getId());
+        notifierAnnoncePubliee(savedAnnonce, auteur.getId(), professeurIdsCibles);
 
         log.info("Annonce creee avec succes: {}", savedAnnonce.getId());
         return annonceMapper.changerVersSortieDTO(savedAnnonce);
@@ -127,7 +128,7 @@ public class GestionAnnoncesAdministrateurMetierImpl implements GestionAnnoncesA
 
         annonce.setPubliee(true);
         Annonce savedAnnonce = annonceRepository.save(annonce);
-        notifierAnnoncePubliee(savedAnnonce, annonce.getAuteur().getId());
+        notifierAnnoncePubliee(savedAnnonce, annonce.getAuteur().getId(), List.of());
         log.info("Annonce publiee avec succes");
 
         return annonceMapper.changerVersSortieDTO(savedAnnonce);
@@ -148,7 +149,7 @@ public class GestionAnnoncesAdministrateurMetierImpl implements GestionAnnoncesA
         return annonceMapper.changerVersSortieDTO(savedAnnonce);
     }
 
-    private void notifierAnnoncePubliee(Annonce annonce, Long auteurId) {
+    private void notifierAnnoncePubliee(Annonce annonce, Long auteurId, List<Long> professeurIdsCibles) {
         NotificationEntrerPourPlusieursUtilisateurDTO dto = NotificationEntrerPourPlusieursUtilisateurDTO.builder()
                 .type(TypeNotification.ANNONCE_PUBLIEE)
                 .auteurId(auteurId)
@@ -165,12 +166,71 @@ public class GestionAnnoncesAdministrateurMetierImpl implements GestionAnnoncesA
                 }
             }
             case PROFESSEURS_DEPARTEMENT -> {
-                if (annonce.getDepartement() != null) {
+                if (!professeurIdsCibles.isEmpty()) {
+                    notifierProfesseursSelectionnes(professeurIdsCibles, auteurId, annonce);
+                } else if (annonce.getDepartement() != null) {
                     notificationMetier.notifierProfesseurDepartement(annonce.getDepartement().getCodeDepartement(), dto);
                 }
             }
             case ETUDIANTS_GLOBAL -> notificationMetier.notifierToutsEtudiant(dto);
             case PROFESSEURS_GLOBAL -> notificationMetier.notifierToutsProfesseur(dto);
+        }
+    }
+
+    private List<Long> normaliserProfesseurIds(List<Long> professeurIds) {
+        if (professeurIds == null || professeurIds.isEmpty()) {
+            return List.of();
+        }
+        return professeurIds.stream()
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+    }
+
+    private List<String> normaliserProfesseurPprs(List<String> professeurPprs) {
+        if (professeurPprs == null || professeurPprs.isEmpty()) {
+            return List.of();
+        }
+        return professeurPprs.stream()
+                .filter(StringUtils::hasText)
+                .map(String::trim)
+                .distinct()
+                .toList();
+    }
+
+    private List<Long> resoudreProfesseurIdsCibles(AnnonceEntrerDTO annonceDTO) {
+        List<Long> ids = new ArrayList<>(normaliserProfesseurIds(annonceDTO.getProfesseurIds()));
+
+        for (String ppr : normaliserProfesseurPprs(annonceDTO.getProfesseurPprs())) {
+            Professeur professeur = professeurRepository.findByPpr(ppr)
+                    .orElseThrow(() -> new UtilisateursException("Professeur introuvable pour PPR: " + ppr));
+            if (!ids.contains(professeur.getId())) {
+                ids.add(professeur.getId());
+            }
+        }
+
+        if (!ids.isEmpty()) {
+            List<Professeur> professeursCibles = professeurRepository.findAllById(ids);
+            if (professeursCibles.size() != ids.size()) {
+                throw new UtilisateursException("Un ou plusieurs professeurs cibles sont introuvables");
+            }
+        }
+
+        return ids;
+    }
+
+    private void notifierProfesseursSelectionnes(List<Long> professeurIdsCibles, Long auteurId, Annonce annonce) {
+        for (Long professeurId : professeurIdsCibles) {
+            NotificationEntrerDTO notification = NotificationEntrerDTO.builder()
+                    .type(TypeNotification.ANNONCE_PUBLIEE)
+                    .auteurId(auteurId)
+                    .titre(annonce.getTitre())
+                    .message("Nouvelle annonce: " + annonce.getTitre())
+                    .referenceType(ReferenceType.ANNONCE)
+                    .referenceId(annonce.getId())
+                    .utilisateurRecoitId(professeurId)
+                    .build();
+            notificationMetier.notifierUtilisateur(notification);
         }
     }
 }

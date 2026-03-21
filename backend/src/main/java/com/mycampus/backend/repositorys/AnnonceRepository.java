@@ -2,7 +2,6 @@ package com.mycampus.backend.repositorys;
 
 import com.mycampus.backend.entites.Annonce;
 import com.mycampus.backend.entites.Classe;
-import com.mycampus.backend.entites.Professeur;
 import com.mycampus.backend.enumerations.AnnonceCibleType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -75,7 +74,7 @@ where a.id =:id
 select a from Annonce a
 left join fetch a.auteur
 left join fetch a.departement
-where (a.departement.codeDepartement =:Codedepartement and a.cibleType= 'PROFESSEURS_DEPARTEMENT') or a.cibleType= 'PROFESSEURS_GLOBAL' 
+where a.cibleType = 'PROFESSEURS_DEPARTEMENT' or a.cibleType = 'PROFESSEURS_GLOBAL'
 """)
-    List<Annonce> findAnnoncesDuProfGlobalEtDepartement(@Param("Codedepartement") String Codedepartement);
+    List<Annonce> findAnnoncesProfesseursGlobalEtCiblees();
 }

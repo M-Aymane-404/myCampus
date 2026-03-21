@@ -8,11 +8,14 @@ import com.mycampus.backend.entites.Etudiant;
 import com.mycampus.backend.entites.Professeur;
 import com.mycampus.backend.entites.RessourceAnnonce;
 import com.mycampus.backend.enumerations.AnnonceCibleType;
+import com.mycampus.backend.enumerations.ReferenceType;
+import com.mycampus.backend.enumerations.TypeNotification;
 import com.mycampus.backend.exceptions.UtilisateursException;
 import com.mycampus.backend.metier.professeur.StockageFichiersService;
 import com.mycampus.backend.metier.security.ValidationFichierSecuriseService;
 import com.mycampus.backend.repositorys.AnnonceRepository;
 import com.mycampus.backend.repositorys.EtudiantRepository;
+import com.mycampus.backend.repositorys.NotificationRepository;
 import com.mycampus.backend.repositorys.ProfesseurRepository;
 import com.mycampus.backend.repositorys.RessourceAnnonceRepository;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +40,7 @@ public class GestionRessourcesAnnonceMetierImpl implements GestionRessourcesAnno
     private final RessourceAnnonceRepository ressourceAnnonceRepository;
     private final ProfesseurRepository professeurRepository;
     private final EtudiantRepository etudiantRepository;
+    private final NotificationRepository notificationRepository;
     private final StockageFichiersService stockageFichiersService;
 
     @Override
@@ -148,10 +152,7 @@ public class GestionRessourcesAnnonceMetierImpl implements GestionRessourcesAnno
         }
 
         if (cibleType == AnnonceCibleType.PROFESSEURS_DEPARTEMENT) {
-            Departement depAnnonce = annonce.getDepartement();
-            Departement depProf = professeur.getDepartementOuTravail();
-            if (depAnnonce != null && depProf != null &&
-                    depAnnonce.getCodeDepartement().equals(depProf.getCodeDepartement())) {
+            if (estAnnonceDepartementVisiblePourProfesseur(annonce, professeur)) {
                 return annonce;
             }
         }
@@ -162,6 +163,33 @@ public class GestionRessourcesAnnonceMetierImpl implements GestionRessourcesAnno
         }
 
         throw new UtilisateursException("Annonce non accessible");
+    }
+
+    private boolean estAnnonceDepartementVisiblePourProfesseur(Annonce annonce, Professeur professeur) {
+        if (annonce.getAuteur() != null && professeur.getId().equals(annonce.getAuteur().getId())) {
+            return true;
+        }
+
+        boolean annonceAUnCiblageNotification = notificationRepository.existsByTypeAndReferenceTypeAndReferenceId(
+                TypeNotification.ANNONCE_PUBLIEE,
+                ReferenceType.ANNONCE,
+                annonce.getId()
+        );
+
+        if (!annonceAUnCiblageNotification) {
+            Departement depAnnonce = annonce.getDepartement();
+            Departement depProf = professeur.getDepartementOuTravail();
+            return depAnnonce != null
+                    && depProf != null
+                    && depAnnonce.getCodeDepartement().equals(depProf.getCodeDepartement());
+        }
+
+        return notificationRepository.existsByUtilisateur_IdAndTypeAndReferenceTypeAndReferenceId(
+                professeur.getId(),
+                TypeNotification.ANNONCE_PUBLIEE,
+                ReferenceType.ANNONCE,
+                annonce.getId()
+        );
     }
 
     private Annonce requireAnnonceVisiblePourEtudiant(Long annonceId, Long idEtudiant) {
