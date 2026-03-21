@@ -10,7 +10,10 @@ import {
 import { apiAuth } from '../../services/apiAuth';
 import './ChatBot.css';
 
-const CHAT_WEBHOOK_URL = import.meta.env.VITE_CHAT_WEBHOOK_URL || '';
+const CHAT_WEBHOOK_URL =
+  import.meta.env.VITE_N8N_CHAT_WEBHOOK_URL
+  || import.meta.env.VITE_CHAT_WEBHOOK_URL
+  || '';
 
 const DEFAULT_MESSAGE =
   "Je suis votre assistant MyCampus. Posez-moi une question sur votre contexte academique ou vos documents.";
@@ -166,7 +169,7 @@ export default function ChatBot() {
         {
           id: crypto.randomUUID(),
           sender: 'bot',
-          text: "Le service de chat n'est pas configure dans cet environnement.",
+          text: "Le service de chat n'est pas configure dans cet environnement (variables VITE_N8N_CHAT_WEBHOOK_URL / VITE_CHAT_WEBHOOK_URL manquantes).",
           time: formatTime(new Date()),
         },
       ]);
@@ -189,6 +192,7 @@ export default function ChatBot() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Accept: 'application/json',
         },
         body: JSON.stringify({
           message: trimmedMessage,
@@ -197,31 +201,45 @@ export default function ChatBot() {
         }),
       });
 
-      const raw = await response.text();
-      let data;
       try {
-        data = raw ? JSON.parse(raw) : {};
-      } catch {
-        data = {};
+        const data = await response.json();
+        console.log('CHAT API RESPONSE:', {
+          url: CHAT_WEBHOOK_URL,
+          status: response.status,
+          ok: response.ok,
+          data,
+        });
+
+        if (!response.ok) {
+          throw new Error("Le chatbot n'a pas pu repondre.");
+        }
+
+        if (Object.prototype.hasOwnProperty.call(data || {}, 'ok') && data?.ok === false) {
+          throw new Error("Le chatbot n'a pas pu repondre.");
+        }
+
+        const reply = typeof data?.reply === 'string' ? data.reply : '';
+        if (!reply.trim()) {
+          throw new Error("Le chatbot n'a pas pu repondre.");
+        }
+
+        const normalizedReply = cleanupMarkdownAndOrganize(reply);
+
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: crypto.randomUUID(),
+            sender: 'bot',
+            text: normalizedReply || reply,
+            time: formatTime(new Date()),
+          },
+        ]);
+      } catch (error) {
+        console.error('CHAT API ERROR:', error);
+        throw error;
       }
-
-      if (!response.ok || data?.ok === false) {
-        throw new Error("Le chatbot n'a pas pu repondre.");
-      }
-
-      const reply = typeof data?.reply === 'string' ? data.reply : '';
-      const normalizedReply = cleanupMarkdownAndOrganize(reply);
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          sender: 'bot',
-          text: normalizedReply || reply,
-          time: formatTime(new Date()),
-        },
-      ]);
-    } catch {
+    } catch (error) {
+      console.error('CHATBOT UNAVAILABLE:', error);
       setMessages((prev) => [
         ...prev,
         {

@@ -66,6 +66,8 @@ services:
     container_name: mycampus-frontend
     ports:
       - "5173:5173"
+    environment:
+      N8N_PROXY_TARGET: http://n8n:5678
     depends_on:
       - backend
     networks:

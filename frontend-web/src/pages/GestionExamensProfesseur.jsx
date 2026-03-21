@@ -4,12 +4,11 @@ import {
     UploadCloud, Download, ChevronDown,
     CheckCircle2, Clock, AlertTriangle, X, Loader2
 } from 'lucide-react';
-import { apiExamensProfesseur } from '../services/professeur/apiExamensProfesseur';
+import apiExamensProfesseur from '../services/professeur/apiExamensProfesseur';
 import './GestionExamensProfesseur.css';
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
-const SEMESTRES    = ['S1','S2','S3','S4','S5','S6','S7','S8','S9'];
 const TYPES_EXAMEN = ['NORMAL', 'RATTRAPAGE'];
 const ETATS_EXAMEN = ['PROGRAMME', 'PASSE', 'CORRIGE'];
 
@@ -20,11 +19,27 @@ const ETAT_CONFIG = {
 };
 
 const formVide = {
-    semestre: 'S1', dateExamen: '', numeroExamen: 1,
+    dateExamen: '', numeroExamen: 1,
     typeExamen: 'NORMAL', duree: 90,
 };
 
 const formModifVide = { dateExamen: '', duree: 90, etat: 'PROGRAMME' };
+
+const determinerSemestreModule = (matiere) => {
+    const raw =
+        matiere?.moduleSemestre ??
+        matiere?.semestreModule ??
+        matiere?.module?.semestre ??
+        matiere?.module?.semester ??
+        matiere?.module?.sem ??
+        matiere?.matiere?.module?.semestre ??
+        matiere?.semestre ??
+        matiere?.semester ??
+        matiere?.sem;
+
+    const sem = (raw ?? '').toString().trim();
+    return sem ? sem : null;
+};
 
 const formatDate = (d) => {
     if (!d) return '—';
@@ -63,7 +78,7 @@ const GestionExamensProfesseur = () => {
     useEffect(() => {
         const load = async () => {
             try {
-                const data = await apiExamensProfesseur.obtenirFiltres();
+                const data = await apiExamensProfesseur.chargerFiltres();
                 setFiltres(data || { classes: [] });
                 if (data?.classes?.length > 0) {
                     const c = data.classes[0];
@@ -121,13 +136,15 @@ const GestionExamensProfesseur = () => {
     const handleCreer = async () => {
         if (!selectedClasse || !selectedMatiere) return;
         if (!formCreer.dateExamen) { setError('La date est obligatoire.'); return; }
+        const semestreAuto = determinerSemestreModule(selectedMatiere);
+        if (!semestreAuto) { setError("Semestre (module) introuvable pour cette matière."); return; }
         setLoading(true); setError(null);
         try {
             const nouvel = await apiExamensProfesseur.creerExamen(
                 selectedClasse.codeClasse,
                 selectedMatiere.codeMatiere,
                 {
-                    semestre:     formCreer.semestre,
+                    semestre:     semestreAuto,
                     dateExamen:   new Date(formCreer.dateExamen).toISOString(),
                     numeroExamen: parseInt(formCreer.numeroExamen),
                     typeExamen:   formCreer.typeExamen,
@@ -437,12 +454,6 @@ const GestionExamensProfesseur = () => {
 
                         <div className="modal-form">
                             <div className="form-row">
-                                <div className="form-group">
-                                    <label>Semestre *</label>
-                                    <select value={formCreer.semestre} onChange={e => setFormCreer(f => ({ ...f, semestre: e.target.value }))}>
-                                        {SEMESTRES.map(s => <option key={s} value={s}>{s}</option>)}
-                                    </select>
-                                </div>
                                 <div className="form-group">
                                     <label>Type *</label>
                                     <select value={formCreer.typeExamen} onChange={e => setFormCreer(f => ({ ...f, typeExamen: e.target.value }))}>
