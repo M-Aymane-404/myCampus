@@ -419,6 +419,8 @@ const DetailsModule = ({ module, classe, filiere, departement, onRetour }) => {
                 surSauvegarder={handleSaveMatiere}
                 texteBoutonSauvegarder={isEditing ? "Modifier" : "Créer"}
             >
+
+                {!isEditing && (
                 <ChampFormulaire
                     label="Code Matière"
                     nom="codeMatiere"
@@ -428,6 +430,7 @@ const DetailsModule = ({ module, classe, filiere, departement, onRetour }) => {
                     requis
                     disabled={isEditing}
                 />
+                )}
                 <ChampFormulaire
                     label="Nom"
                     nom="nom"

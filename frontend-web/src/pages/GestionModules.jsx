@@ -70,6 +70,7 @@ const GestionModules = ({ classeId, classeNom, filiereCode, filiereNom, onRetour
 
   const [modalOuvert, setModalOuvert] = useState(false);
   const [moduleCourant, setModuleCourant] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [formulaire, setFormulaire] = useState({
     codeModule: '',
     nom: '',
@@ -90,6 +91,7 @@ const GestionModules = ({ classeId, classeNom, filiereCode, filiereNom, onRetour
 
   const ouvrirModalAjout = () => {
     setModuleCourant(null);
+    setIsEditing(false);
     setFormulaire({
       codeModule: '',
       nom: '',
@@ -103,6 +105,7 @@ const GestionModules = ({ classeId, classeNom, filiereCode, filiereNom, onRetour
 
   const ouvrirModalModification = (module) => {
     setModuleCourant(module);
+    setIsEditing(true);
     setFormulaire({
       codeModule: module.codeModule,
       nom: module.nom,
@@ -255,9 +258,15 @@ const GestionModules = ({ classeId, classeNom, filiereCode, filiereNom, onRetour
       <FormulaireModal
         titre={moduleCourant ? 'Modifier le Module' : 'Ajouter un Module'}
         estOuvert={modalOuvert}
-        surFermer={() => setModalOuvert(false)}
+        surFermer={() => {
+          setModalOuvert(false);
+          setIsEditing(false);
+          setModuleCourant(null);
+        }}
         surSauvegarder={sauvegarder}
       >
+
+        {!isEditing && (
         <ChampFormulaire
           label="Code Module"
           nom="codeModule"
@@ -266,6 +275,7 @@ const GestionModules = ({ classeId, classeNom, filiereCode, filiereNom, onRetour
           placeholder="Ex: GI-INFO-101"
           requis
         />
+        )}
         <ChampFormulaire
           label="Nom"
           nom="nom"
