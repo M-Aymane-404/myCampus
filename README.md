@@ -127,29 +127,29 @@ The project includes the workflow at:
 
 `D:\PFE\myCampus\n8n\workflows\Rag Agent.json`
 in n8n :
-*Go to **Workflows**.
-*Click  **Import**.
-*Import the file **Rag Agent.json**.
-*Open the imported workflow and make sure it is **Active**.
+* Go to **Workflows**.
+* Click  **Import**.
+* Import the file **Rag Agent.json**.
+* Open the imported workflow and make sure it is **Active**.
 
 ### 3️⃣ Configure MySQL and Mistral Credentials in n8n (Required)
 
 The workflow runs MySQL queries (MySQL nodes) to retrieve:
 
-*the user context (grades, attendance, upcoming sessions, announcements)
-*the list of accessible PDF documents
+* the user context (grades, attendance, upcoming sessions, announcements)
+* the list of accessible PDF documents
 in n8n :
 
-1)Go to **Credentials**.
-2)Create a **MySQL** credential (or edit the one used by the workflow).
-3)Fill in the Docker Compose parameters:
-**Host** : mysql
-**Port** : 3306
-**Database** : mycampus
-**User** : root
-**Password** : root
-4)Create a **Mistral** credential
-5)Return to the workflow and verify that all **MySQL** and **Mistral** nodes are linked to this credential.
+* 1)Go to **Credentials**.
+* 2)Create a **MySQL** credential (or edit the one used by the workflow).
+* 3)Fill in the Docker Compose parameters:
+* **Host** : mysql
+* **Port** : 3306
+* **Database** : mycampus
+* **User** : root
+* **Password** : root
+* 4)Create a **Mistral** credential
+* 5)Return to the workflow and verify that all **MySQL** and **Mistral** nodes are linked to this credential.
 
 ### 4️⃣ Configurer l’accès aux fichiers (PDF) pour le RAG
 
@@ -161,17 +161,17 @@ Important checks:
 * **n8n file access restriction**: the n8n container is configured to restrict file system access (via N8N_RESTRICT_FILE_ACCESS_TO).
 File paths stored in the database must point to an allowed location (typically /data/uploads/...).
 * **Quick test**: in n8n, execute the workflow with a “document/pdf/course” question and ensure the following nodes run without errors:
-Read/Write Files from Disk
-Extract from File (PDF)
+* Read/Write Files from Disk
+* Extract from File (PDF)
 ### 5️⃣ Configurer le frontend (URL du webhook n8n)
 
 On the React side, the chatbot uses an environment variable.
 
-*Create/edit:
+* Create/edit:
 ```D:\PFE\myCampus\frontend-web\.env```
-*Set:
+* Set:
 ```VITE_N8N_CHAT_WEBHOOK_URL=http://localhost:5679/webhook/chat```
-Restart/rebuild containers if needed:
+* Restart/rebuild containers if needed:
 ```docker compose up --build```
 
 
