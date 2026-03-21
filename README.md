@@ -316,7 +316,14 @@ Use a valid controller endpoint (e.g. `/api/...`).
 
 ## 👤 Authors
 
-* Project developed by **MyCampus Team**
+* Project developed by **MyCampus Team**:
+  
+  **ALAE MAJJATI**
+
+  **NORHANE RAMZI**
+
+  **MOHAMMMED AYMANE JLIDA**
+  
 * Student project – Software Engineering & Cybersecurity
 
 
