@@ -11,6 +11,7 @@ This document explains how to **run the project locally** step by step.
 
 * **Backend**: Spring Boot (Java 17)
 * **Frontend**: React + Vite
+* **Chatbot**: n8n
 * **Database**: MySQL 8
 * **DB Admin**: phpMyAdmin
 * **Containerization**: Docker & Docker Compose
@@ -20,16 +21,35 @@ This document explains how to **run the project locally** step by step.
 ## 📦 Project Structure
 
 ```
-MyCampus/
+myCampus/
+├─ backend/                 # Backend Spring Boot (API REST, sécurité, WebSocket, JPA)
+│  ├─ src/
+│  │  ├─ main/
+│  │  │  ├─ java/          # Code source (controllers, métier, repositories, config…)
+│  │  │  └─ resources/     # application.properties, emplois JSON, etc.
+│  │  └─ test/             # Tests (profil test H2)
+│  ├─ pom.xml              # Dépendances Maven
+│  └─ Dockerfile
 │
-├── backend/            # Spring Boot application
-│   └── Dockerfile
+├─ frontend-web/            # Frontend Web React + Vite
+│  ├─ src/                 # Pages, composants (dont ChatBot), services (apiAuth…)
+│  ├─ package.json
+│  └─ Dockerfile
 │
-├── frontend-web/       # React (Vite) application
-│   └── Dockerfile
+├─ my_campus_mobile/        # Application mobile Flutter
+│  ├─ lib/                 # Code Flutter
+│  ├─ test/                # Tests Flutter
+│  └─ pubspec.yaml
 │
-├── docker-compose.yml
-└── README.md
+├─ n8n/                     # Workflows n8n (chatbot/RAG)
+│  └─ workflows/
+│     └─ Rag Agent.json
+│
+├─ docker-compose.yml       # Orchestration : mysql, backend, frontend, phpMyAdmin, n8n
+├─ README.md                # Instructions d’exécution
+└─ (autres dossiers)        # ex: fichiers/, jointures/, insert etudiant/
+(ressources/SQL/données)
+
 ```
 
 ---
@@ -73,6 +93,7 @@ This will start:
 * MySQL
 * Backend (Spring Boot)
 * Frontend (React)
+* n8n
 * phpMyAdmin
 
 ---
@@ -89,8 +110,70 @@ You should see:
 * `mycampus-backend`
 * `mycampus-frontend`
 * `mycampus-phpmyadmin`
+* `mycampus-n8n`
 
 ---
+##  n8n Configuration (Chatbot/RAG)
+### 1️⃣ Access n8n
+
+* Start MyCampus using Docker Compose (as described in the startup guide).
+* Open n8n at: `http://localhost:5679`
+* If this is the first run, n8n will ask you to create an admin (owner) account to access the interface.
+
+
+### 2️⃣ Importer le workflow n8n
+
+The project includes the workflow at:
+
+`D:\PFE\myCampus\n8n\workflows\Rag Agent.json`
+in n8n :
+*Go to **Workflows**.
+*Click  **Import**.
+*Import the file **Rag Agent.json**.
+*Open the imported workflow and make sure it is **Active**.
+
+### 3️⃣ Configure MySQL and Mistral Credentials in n8n (Required)
+
+The workflow runs MySQL queries (MySQL nodes) to retrieve:
+
+*the user context (grades, attendance, upcoming sessions, announcements)
+*the list of accessible PDF documents
+in n8n :
+
+1)Go to **Credentials**.
+2)Create a **MySQL** credential (or edit the one used by the workflow).
+3)Fill in the Docker Compose parameters:
+**Host** : mysql
+**Port** : 3306
+**Database** : mycampus
+**User** : root
+**Password** : root
+4)Create a **Mistral** credential
+5)Return to the workflow and verify that all **MySQL** and **Mistral** nodes are linked to this credential.
+
+### 4️⃣ Configurer l’accès aux fichiers (PDF) pour le RAG
+
+The workflow reads session resources (PDFs) from the shared volume uploads_data, then extracts text from PDF files.
+
+Important checks:
+
+* **Shared volume**: n8n and the backend must share the same uploads storage (in Docker Compose this is uploads_data mounted to /data/uploads).
+* **n8n file access restriction**: the n8n container is configured to restrict file system access (via N8N_RESTRICT_FILE_ACCESS_TO).
+File paths stored in the database must point to an allowed location (typically /data/uploads/...).
+* **Quick test**: in n8n, execute the workflow with a “document/pdf/course” question and ensure the following nodes run without errors:
+Read/Write Files from Disk
+Extract from File (PDF)
+### 5️⃣ Configurer le frontend (URL du webhook n8n)
+
+On the React side, the chatbot uses an environment variable.
+
+*Create/edit:
+```D:\PFE\myCampus\frontend-web\.env```
+*Set:
+```VITE_N8N_CHAT_WEBHOOK_URL=http://localhost:5679/webhook/chat```
+Restart/rebuild containers if needed:
+```docker compose up --build```
+
 
 ## 🌐 Access the Application
 
@@ -233,174 +316,4 @@ Use a valid controller endpoint (e.g. `/api/...`).
 
 
 ---
-
-Tu es un assistant technique et fonctionnel expert en génie logiciel, architecture backend Spring Boot, API REST, sécurité et systèmes académiques.
-
-Je travaille sur un Projet de Fin d’Études (PFE) intitulé :
-
-« Plateforme académique intelligente pour la gestion des étudiants, enseignants et structures pédagogiques »
-
-🎓 Contexte du projet
-
-Le projet vise à digitaliser entièrement la gestion académique d’un établissement d’enseignement supérieur (école/EST) en remplaçant les processus manuels (emails, fichiers Excel, documents papier).
-
-La plateforme est web + mobile, sécurisée, multi-rôles et centralisée.
-
-🎯 Objectif global
-
-Concevoir une plateforme permettant :
-
-aux étudiants de consulter leurs notes, absences, cours, examens,
-
-aux enseignants de gérer les cours, présences, notes et examens,
-
-à l’administration de gérer toute la structure académique et les utilisateurs.
-
-👥 Rôles gérés
-
-Administrateur
-
-Professeur
-
-Étudiant
-
-Chaque rôle dispose d’un accès strictement contrôlé (RBAC).
-
-🧩 Architecture technique
-
-Backend : Java Spring Boot (API REST)
-
-Frontend Web : React.js
-
-Frontend Mobile : Flutter
-
-Base de données : MySQL
-
-ORM : JPA / Hibernate
-
-Sécurité : BCrypt + JWT (en cours / prévu)
-
-Documentation API : Swagger (springdoc-openapi)
-
-Containerisation : Docker + Docker Compose
-
-🏗️ Architecture métier (Backend)
-
-Le backend est structuré en couches :
-
-Controller (REST)
-
-Métier / Service (logique business)
-
-Repository (JPA)
-
-DTO Entrée / Sortie
-
-🏫 Modèle académique (entités principales)
-
-Département
-
-Filière
-
-Classe
-
-Module
-
-Matière
-
-AffectationEnseignement
-
-Étudiant
-
-Professeur
-
-Administrateur
-
-🔑 Choix d’architecture IMPORTANT
-
-La clé primaire en base reste id (Long)
-
-MAIS toutes les APIs utilisent des identifiants métier lisibles :
-
-codeDepartement
-
-codeFiliere
-
-codeClasse
-
-codeModule
-
-codeMatiere
-
-ppr (professeur / administrateur)
-
-apogee (étudiant)
-
-👉 Les id ne sont jamais exposés dans les URLs ni les DTO, sauf pour AffectationEnseignement.
-
-🔄 Affectation d’enseignement (cas spécial)
-
-Création / modification : via DTO
-
-Activation / désactivation / suppression : via id uniquement
-
-Exemple :
-
-PUT /affectations/{id} → modifier (DTO)
-
-PATCH /affectations/{id}/activer
-
-PATCH /affectations/{id}/desactiver
-
-DELETE /affectations/{id}
-
-📦 DTO (Data Transfer Objects)
-
-Les DTO d’entrée n’ont pas de id
-
-Les relations sont faites par codes métier
-
-Exemples :
-
-FiliereEntrerDTO → codeDepartement, chefFilierePpr
-
-ClasseEntrerDTO → codeFiliere
-
-EtudiantEntrerDTO → codeClasse
-
-⚙️ Fonctionnalités implémentées
-
-✔ CRUD complet pour toute la structure académique
-✔ CRUD utilisateurs (admin, prof, étudiant)
-✔ Affectation enseignant → classe → matière
-✔ Swagger documenté
-✔ Dockerisé (MySQL + Backend + Frontend)
-✔ Seeder via CommandLineRunner (exécutable via --seed)
-
-🧪 Avancement actuel
-
-Backend fonctionnel et structuré
-
-APIs validées via Swagger
-
-Docker opérationnel
-
-Frontend en cours d’intégration
-
-Sécurité avancée (JWT, permissions fines) prévue
-
-🧠 Ce que j’attends de toi
-
-Quand je te pose une question :
-
-Respecte cette architecture
-
-Propose des solutions propres, professionnelles et scalables
-
-Ne suggère pas de casser le modèle métier (pas d’IDs exposés partout)
-
-Raisonne comme pour un projet académique réel de fin d’études
-
-Réponds comme un architecte logiciel / encadrant technique.
-
 
