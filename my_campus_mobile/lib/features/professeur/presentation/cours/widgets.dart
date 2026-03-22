@@ -417,8 +417,10 @@ class _CreateSeanceModalState extends State<CreateSeanceModal> {
   late final TextEditingController _finCtrl;
   late final TextEditingController _typeCtrl;
   late final TextEditingController _salleCtrl;
+  late final ScrollController _scrollCtrl;
   final _formKey = GlobalKey<FormState>();
   bool _envoiEnCours = false;
+  String? _erreurInline;
 
   @override
   void initState() {
@@ -428,6 +430,7 @@ class _CreateSeanceModalState extends State<CreateSeanceModal> {
     _finCtrl = TextEditingController();
     _typeCtrl = TextEditingController(text: 'COURS');
     _salleCtrl = TextEditingController();
+    _scrollCtrl = ScrollController();
   }
 
   @override
@@ -437,21 +440,23 @@ class _CreateSeanceModalState extends State<CreateSeanceModal> {
     _finCtrl.dispose();
     _typeCtrl.dispose();
     _salleCtrl.dispose();
+    _scrollCtrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-        left: 18,
-        right: 18,
-        top: 20,
-      ),
-      child: Wrap(
-        children: [
-          Form(
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+          left: 18,
+          right: 18,
+          top: 20,
+        ),
+        child: SingleChildScrollView(
+          controller: _scrollCtrl,
+          child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -460,6 +465,37 @@ class _CreateSeanceModalState extends State<CreateSeanceModal> {
                   'Créer une séance',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
                 ),
+                if ((_erreurInline ?? '').trim().isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFEEF2),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFFDA4AF)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.error_outline_rounded,
+                          color: Color(0xFFE11D48),
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            (_erreurInline ?? '').trim(),
+                            style: const TextStyle(
+                              color: Color(0xFF9F1239),
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 14),
                 FieldWithPicker(
                   label: 'Date',
@@ -514,31 +550,48 @@ class _CreateSeanceModalState extends State<CreateSeanceModal> {
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
 
+  void _scrollToTop() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (!_scrollCtrl.hasClients) return;
+      _scrollCtrl.animateTo(
+        0,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+      );
+    });
+  }
+
   Future<void> _soumettre() async {
+    setState(() => _erreurInline = null);
     if (!_formKey.currentState!.validate()) return;
     if (_dateCtrl.text.isEmpty ||
         _debutCtrl.text.isEmpty ||
         _finCtrl.text.isEmpty) {
-      _showSnack('Date et horaires requis', isError: true);
+      setState(() => _erreurInline = 'Date et horaires requis');
+      _scrollToTop();
       return;
     }
 
     final debutMinutes = _parseMinutes(_debutCtrl.text);
     final finMinutes = _parseMinutes(_finCtrl.text);
     if (debutMinutes == null || finMinutes == null) {
-      _showSnack("Format d'heure invalide", isError: true);
+      setState(() => _erreurInline = "Format d'heure invalide");
+      _scrollToTop();
       return;
     }
     if (debutMinutes >= finMinutes) {
-      _showSnack(
-        "L'heure de début doit être strictement avant l'heure de fin.",
-        isError: true,
+      setState(
+        () =>
+            _erreurInline =
+                "L'heure de début doit être strictement avant l'heure de fin.",
       );
+      _scrollToTop();
       return;
     }
 
@@ -566,7 +619,8 @@ class _CreateSeanceModalState extends State<CreateSeanceModal> {
       if (!mounted) return;
       Navigator.of(context).pop(true);
     } catch (e) {
-      _showSnack(_formatApiError(e), isError: true);
+      setState(() => _erreurInline = _formatApiError(e));
+      _scrollToTop();
     } finally {
       if (mounted) setState(() => _envoiEnCours = false);
     }
