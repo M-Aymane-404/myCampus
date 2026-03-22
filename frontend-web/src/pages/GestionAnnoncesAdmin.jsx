@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Megaphone,
   Info,
@@ -78,7 +78,8 @@ const GestionAnnoncesAdmin = () => {
       setClasses(
         (Array.isArray(donneesClasses) ? donneesClasses : []).map((classe) => ({
           id: classe.codeClasse || classe.id?.toString(),
-          nom: classe.nom || classe.libelle || classe.codeClasse || '',
+          nom:
+            classe.nom || classe.nomClasse || classe.libelle || classe.codeClasse || '',
           filiere: classe.nomFiliere || 'GENIE INFORMATIQUE',
           selected: false,
         }))
@@ -87,9 +88,12 @@ const GestionAnnoncesAdmin = () => {
       setProfesseurs(
         (Array.isArray(donneesProfs) ? donneesProfs : []).map((professeur) => ({
           id: professeur.id,
+          ppr: professeur.ppr || '',
           nom: `Pr. ${professeur.prenom} ${professeur.nom}`,
           specialite:
             professeur.specialite ||
+            professeur.departement?.nom ||
+            professeur.departement?.typeDepartement ||
             professeur.departement ||
             'DEPARTEMENT ENSEIGNEMENT',
           photo: professeur.photoUrl || null,
@@ -185,11 +189,11 @@ const GestionAnnoncesAdmin = () => {
     }
 
     setProfesseurs((prev) =>
-      prev.map((professeur) =>
-        professeur.id === id
-          ? { ...professeur, selected: !professeur.selected }
-          : professeur
-      )
+      prev.map((professeur) => ({
+        ...professeur,
+        selected:
+          professeur.id === id ? !professeur.selected : professeur.selected,
+      }))
     );
   };
 
@@ -216,6 +220,12 @@ const GestionAnnoncesAdmin = () => {
     return professeurs.filter((professeur) => professeur.selected).length;
   };
 
+  const tousLesEtudiantsSelectionnes =
+    classes.length > 0 && classes.every((classe) => classe.selected);
+
+  const tousLesProfesseursSelectionnes =
+    professeurs.length > 0 && professeurs.every((professeur) => professeur.selected);
+
   const isFormValid =
     formulaire.titre.trim() &&
     formulaire.contenu.trim() &&
@@ -233,6 +243,21 @@ const GestionAnnoncesAdmin = () => {
       prev.map((professeur) => ({ ...professeur, selected: false }))
     );
     viderFichiers();
+  };
+
+  const handleChangeCible = (nouvelleCible) => {
+    setCible(nouvelleCible);
+    setError('');
+    setSuccess('');
+
+    if (nouvelleCible === 'etudiants') {
+      setProfesseurs((prev) =>
+        prev.map((professeur) => ({ ...professeur, selected: false }))
+      );
+      return;
+    }
+
+    setClasses((prev) => prev.map((classe) => ({ ...classe, selected: false })));
   };
 
   const televerserRessources = async (annonceId) => {
@@ -277,14 +302,14 @@ const GestionAnnoncesAdmin = () => {
         } else {
           annonceData.cibleType = 'ETUDIANTS_GLOBAL';
         }
+      } else if (tousLesProfesseursSelectionnes) {
+        annonceData.cibleType = 'PROFESSEURS_GLOBAL';
       } else {
         const selectedProfs = professeurs.filter((professeur) => professeur.selected);
-        if (selectedProfs.length === 1) {
-          annonceData.cibleType = 'PROFESSEURS_DEPARTEMENT';
-          annonceData.codeDepartement = 'INFO';
-        } else {
-          annonceData.cibleType = 'PROFESSEURS_GLOBAL';
-        }
+        annonceData.cibleType = 'PROFESSEURS_DEPARTEMENT';
+        annonceData.professeurPprs = selectedProfs
+          .map((professeur) => professeur.ppr)
+          .filter(Boolean);
       }
 
       const annonceCreee = await apiAnnonces.creer(annonceData);
@@ -404,7 +429,11 @@ const GestionAnnoncesAdmin = () => {
       return `${nomClasse} (${codeClasse})`;
     }
     if (annonce?.cibleType === 'PROFESSEURS_DEPARTEMENT') {
-      return annonce?.departement?.nom || annonce?.departement?.codeDepartement || 'Departement';
+      return (
+        annonce?.departement?.nom ||
+        annonce?.departement?.codeDepartement ||
+        'Professeurs selectionnes'
+      );
     }
     return 'Cible inconnue';
   };
@@ -426,7 +455,7 @@ const GestionAnnoncesAdmin = () => {
           <button
             className={`target-btn ${cible === 'etudiants' ? 'active' : ''}`}
             type="button"
-            onClick={() => setCible('etudiants')}
+            onClick={() => handleChangeCible('etudiants')}
           >
             <GraduationCap size={20} />
             CIBLER ETUDIANTS
@@ -434,7 +463,7 @@ const GestionAnnoncesAdmin = () => {
           <button
             className={`target-btn ${cible === 'enseignants' ? 'active' : ''}`}
             type="button"
-            onClick={() => setCible('enseignants')}
+            onClick={() => handleChangeCible('enseignants')}
           >
             <Users size={20} />
             CIBLER ENSEIGNANTS
@@ -587,8 +616,23 @@ const GestionAnnoncesAdmin = () => {
               <Layers size={20} color="#6366f1" />
               AUDIENCE
             </h2>
-            <button className="select-all-toggle" type="button" onClick={selectAllTargets}>
-              {cible === 'etudiants' ? 'TOUTES LES CLASSES' : 'TOUS LES PROFS'}
+            <button
+              className={`select-all-toggle ${
+                (cible === 'etudiants' && tousLesEtudiantsSelectionnes) ||
+                (cible === 'enseignants' && tousLesProfesseursSelectionnes)
+                  ? 'active'
+                  : ''
+              }`}
+              type="button"
+              onClick={selectAllTargets}
+            >
+              {cible === 'etudiants'
+                ? tousLesEtudiantsSelectionnes
+                  ? 'ANNULER TOUS LES ETUDIANTS'
+                  : 'TOUTES LES CLASSES'
+                : tousLesProfesseursSelectionnes
+                  ? 'ANNULER TOUS LES PROFS'
+                  : 'TOUS LES PROFS'}
             </button>
           </div>
 
@@ -632,13 +676,15 @@ const GestionAnnoncesAdmin = () => {
 
           <div className="audience-status-bar">
             <Info size={16} />
-            {getSelectedCount() === 0
-              ? cible === 'etudiants'
-                ? "0 CLASSE(S) RECEVRONT L'ANNONCE."
-                : "AUCUN ENSEIGNANT NE RECEVRA L'ANNONCE."
-              : `${getSelectedCount()} ${
-                  cible === 'etudiants' ? 'CLASSE(S)' : 'ENSEIGNANT(S)'
-                } RECEVRONT L'ANNONCE.`}
+            {cible === 'enseignants' && tousLesProfesseursSelectionnes
+              ? "TOUS LES ENSEIGNANTS RECEVRONT L'ANNONCE."
+              : getSelectedCount() === 0
+                ? cible === 'etudiants'
+                  ? "0 CLASSE(S) RECEVRONT L'ANNONCE."
+                  : "AUCUN ENSEIGNANT NE RECEVRA L'ANNONCE."
+                : `${getSelectedCount()} ${
+                    cible === 'etudiants' ? 'CLASSE(S)' : 'ENSEIGNANT(S)'
+                  } RECEVRONT L'ANNONCE.`}
           </div>
         </div>
       </div>
