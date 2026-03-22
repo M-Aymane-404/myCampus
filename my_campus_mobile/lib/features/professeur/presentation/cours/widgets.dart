@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../../etudiant/data/controller/ControleurFichier.dart';
@@ -157,8 +158,14 @@ class SessionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dateLabel = _formatDateJourMoisAnnee(seance.jour);
-    final timeLabel = _formatTimeRange(seance.heureDebut, seance.heureFin);
+    final dateLabel = _formatSeanceDateLabel(
+      startIso: seance.heureDebut,
+      fallbackDate: seance.jour,
+    );
+    final timeLabel = _formatSeanceTimeRangeLabel(
+      startIso: seance.heureDebut,
+      endIso: seance.heureFin,
+    );
     final metaParts = <String>[
       if (dateLabel.isNotEmpty) dateLabel,
       if (timeLabel.isNotEmpty) timeLabel,
@@ -201,7 +208,7 @@ class SessionCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            metaParts.join(' · '),
+            metaParts.join(' • '),
             style: const TextStyle(color: Color(0xFF667085)),
           ),
           const SizedBox(height: 4),
@@ -588,62 +595,95 @@ class _CreateSeanceModalState extends State<CreateSeanceModal> {
   }
 }
 
-String _formatTimeRange(String start, String end) {
-  final debut = start.trim();
-  final fin = end.trim();
-  if (debut.isEmpty && fin.isEmpty) return '';
-  if (fin.isEmpty) return debut;
-  if (debut.isEmpty) return fin;
-  return '$debut - $fin';
+const String _kFrenchLocale = 'fr_FR';
+
+DateTime? _tryParseBackendIsoDateTime(String raw) {
+  final value = raw.trim();
+  if (value.isEmpty) return null;
+  final parsed = DateTime.tryParse(value);
+  if (parsed == null) return null;
+  return parsed.toLocal();
 }
 
-String _formatDateJourMoisAnnee(String raw) {
-  final parsed = _tryParseDate(raw);
-  if (parsed == null) return raw.trim();
-  final dd = parsed.day.toString().padLeft(2, '0');
-  final mm = parsed.month.toString().padLeft(2, '0');
-  final yyyy = parsed.year.toString();
-  return '$dd/$mm/$yyyy';
-}
-
-DateTime? _tryParseDate(String raw) {
+DateTime? _tryParseDateOnly(String raw) {
   final value = raw.trim();
   if (value.isEmpty) return null;
 
-  final embeddedIso = RegExp(r'(\d{4}-\d{2}-\d{2})').firstMatch(value);
-  if (embeddedIso != null) {
-    final parsed = DateTime.tryParse(embeddedIso.group(1)!);
-    if (parsed != null) return parsed;
-  }
-
   final direct = DateTime.tryParse(value);
-  if (direct != null) return direct;
-
-  final fr = RegExp(r'^(\d{2})/(\d{2})/(\d{4})$').firstMatch(value);
-  if (fr != null) {
-    final day = int.parse(fr.group(1)!);
-    final month = int.parse(fr.group(2)!);
-    final year = int.parse(fr.group(3)!);
-    return DateTime(year, month, day);
+  if (direct != null) {
+    final local = direct.toLocal();
+    return DateTime(local.year, local.month, local.day);
   }
 
-  final dash = RegExp(r'^(\d{2})-(\d{2})-(\d{4})$').firstMatch(value);
-  if (dash != null) {
-    final day = int.parse(dash.group(1)!);
-    final month = int.parse(dash.group(2)!);
-    final year = int.parse(dash.group(3)!);
-    return DateTime(year, month, day);
-  }
+  final formats = <DateFormat>[
+    DateFormat('dd/MM/yyyy', _kFrenchLocale),
+    DateFormat('dd-MM-yyyy', _kFrenchLocale),
+    DateFormat('yyyy/MM/dd', _kFrenchLocale),
+  ];
 
-  final ymdSlash = RegExp(r'^(\d{4})/(\d{2})/(\d{2})$').firstMatch(value);
-  if (ymdSlash != null) {
-    final year = int.parse(ymdSlash.group(1)!);
-    final month = int.parse(ymdSlash.group(2)!);
-    final day = int.parse(ymdSlash.group(3)!);
-    return DateTime(year, month, day);
+  for (final format in formats) {
+    try {
+      final parsed = format.parseStrict(value);
+      return DateTime(parsed.year, parsed.month, parsed.day);
+    } catch (_) {}
   }
 
   return null;
+}
+
+DateTime? _tryParseAnyTime(String raw) {
+  final value = raw.trim();
+  if (value.isEmpty) return null;
+
+  final asDateTime = _tryParseBackendIsoDateTime(value);
+  if (asDateTime != null) return asDateTime;
+
+  try {
+    return DateFormat.Hm(_kFrenchLocale).parseStrict(value);
+  } catch (_) {}
+
+  try {
+    return DateFormat('HH:mm:ss', _kFrenchLocale).parseStrict(value);
+  } catch (_) {}
+
+  return null;
+}
+
+String _formatSeanceDateLabel({
+  required String startIso,
+  required String fallbackDate,
+  bool longDate = false,
+}) {
+  final fromStart = _tryParseBackendIsoDateTime(startIso);
+  final date = fromStart ?? _tryParseDateOnly(fallbackDate);
+  if (date == null) return fallbackDate.trim();
+
+  final local = DateTime(date.year, date.month, date.day);
+  if (longDate) {
+    return DateFormat('d MMMM y', _kFrenchLocale).format(local);
+  }
+
+  return DateFormat('dd/MM/yyyy', _kFrenchLocale).format(local);
+}
+
+String _formatSeanceTimeRangeLabel({
+  required String startIso,
+  required String endIso,
+}) {
+  final start = _tryParseAnyTime(startIso);
+  final end = _tryParseAnyTime(endIso);
+  if (start == null && end == null) return '';
+
+  final format = DateFormat.Hm(_kFrenchLocale);
+  if (start == null) return format.format(end!);
+  if (end == null) return format.format(start);
+  return '${format.format(start)} - ${format.format(end)}';
+}
+
+String _formatDateJourMoisAnnee(String raw) {
+  final parsed = _tryParseDateOnly(raw);
+  if (parsed == null) return raw.trim();
+  return DateFormat('dd/MM/yyyy', _kFrenchLocale).format(parsed);
 }
 
 class CreateExamenModal extends StatefulWidget {

@@ -3,7 +3,16 @@ import { User, Plus, Save, Loader2, Eye, EyeOff, Lock, Phone } from 'lucide-reac
 import { apiAuth } from '../services/apiAuth';
 import { apiEtudiant } from '../services/apiEtudiant';
 import { apiAdmin } from '../services/apiAdmin';
+import PhotoSecurisee from '../composants/communs/PhotoSecurisee';
 import './ProfilPage.css';
+
+const extractPhotoValue = (response) =>
+    response?.url ||
+    response?.photoUrl ||
+    response?.photo ||
+    response?.fileName ||
+    response?.photoNom ||
+    null;
 
 const ProfilPage = () => {
     const [loading, setLoading] = useState(true);
@@ -36,15 +45,25 @@ const ProfilPage = () => {
     const [photoPreview, setPhotoPreview] = useState(null);
     const fileInputRef = useRef(null);
 
+    const syncStoredUser = (updates) => {
+        apiAuth.updateUser(updates);
+        window.dispatchEvent(new Event('user-updated'));
+    };
+
     useEffect(() => {
         const chargerProfil = async () => {
             try {
                 setLoading(true);
 
                 const user = apiAuth.getUser();
+                if (!user) {
+                    throw new Error('Utilisateur non authentifie');
+                }
                 const data = user.role === 'admin'
                     ? await apiAdmin.getProfile()
                     : await apiEtudiant.getProfile();
+
+                const resolvedPhoto = extractPhotoValue(data) || extractPhotoValue(user);
 
                 setInfosUtilisateur({
                     nom: data.nom || '',
@@ -56,17 +75,19 @@ const ProfilPage = () => {
                     apogee: data.apogee || data.ppr || '',
                     dateNaissance: data.dateNaissance || '',
                     grade: data.grade || '',
-                    photoUrl: data.photoUrl || null
+                    photoUrl: resolvedPhoto
                 });
                 setTelephoneInitial(data.tel || '');
+                setPhotoPreview(null);
 
-                if (data.photoUrl) {
-                    setPhotoPreview(
-                        data.photoUrl.startsWith('http')
-                            ? data.photoUrl
-                            : `http://localhost:8080${data.photoUrl}`
-                    );
-                }
+                syncStoredUser({
+                    nom: data.nom || user.nom || '',
+                    prenom: data.prenom || user.prenom || '',
+                    email: data.email || user.email || '',
+                    tel: data.tel || user.tel || user.telephone || '',
+                    telephone: data.tel || user.tel || user.telephone || '',
+                    photoProfile: resolvedPhoto,
+                });
             } catch (err) {
                 console.error('Erreur lors du chargement du profil:', err);
                 setError('Impossible de charger les informations du profil.');
@@ -224,31 +245,23 @@ const ProfilPage = () => {
                 throw new Error('Reponse du serveur invalide: URL de photo non trouvee');
             }
 
-            const fullPhotoUrl = photoUrl.startsWith('http')
-                ? photoUrl
-                : `http://localhost:8080${photoUrl}`;
-
             setInfosUtilisateur((prev) => ({ ...prev, photoUrl }));
-            setPhotoPreview(fullPhotoUrl);
-            apiAuth.updateUser({ photoProfile: fullPhotoUrl });
-            window.dispatchEvent(new Event('user-updated'));
+            setPhotoPreview(null);
+            syncStoredUser({ photoProfile: photoUrl });
 
             try {
                 const refreshedData = user.role === 'admin'
                     ? await apiAdmin.getProfile()
                     : await apiEtudiant.getProfile();
 
-                if (refreshedData.photoUrl) {
-                    const refreshedPhotoUrl = refreshedData.photoUrl.startsWith('http')
-                        ? refreshedData.photoUrl
-                        : `http://localhost:8080${refreshedData.photoUrl}`;
-
+                const refreshedPhoto = extractPhotoValue(refreshedData);
+                if (refreshedPhoto) {
                     setInfosUtilisateur((prev) => ({
                         ...prev,
-                        photoUrl: refreshedData.photoUrl
+                        photoUrl: refreshedPhoto
                     }));
-                    setPhotoPreview(refreshedPhotoUrl);
-                    apiAuth.updateUser({ photoProfile: refreshedPhotoUrl });
+                    setPhotoPreview(null);
+                    syncStoredUser({ photoProfile: refreshedPhoto });
                 }
             } catch (refreshError) {
                 console.warn('Could not refresh profile data after photo upload:', refreshError);
@@ -312,10 +325,17 @@ const ProfilPage = () => {
                             {photoPreview ? (
                                 <img src={photoPreview} alt="Profil" className="profile-avatar-image" />
                             ) : (
-                                <span className="profile-avatar-initials">
-                                    {infosUtilisateur.prenom ? infosUtilisateur.prenom.charAt(0) : ''}
-                                    {infosUtilisateur.nom ? infosUtilisateur.nom.charAt(0) : ''}
-                                </span>
+                                <PhotoSecurisee
+                                  photoUrl={infosUtilisateur.photoUrl}
+                                  alt="Profil"
+                                  className="profile-avatar-image"
+                                  fallback={
+                                    <span className="profile-avatar-initials">
+                                      {infosUtilisateur.prenom ? infosUtilisateur.prenom.charAt(0) : ''}
+                                      {infosUtilisateur.nom ? infosUtilisateur.nom.charAt(0) : ''}
+                                    </span>
+                                  }
+                                />
                             )}
 
                             <input

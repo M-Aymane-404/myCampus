@@ -1,5 +1,7 @@
 import 'package:dwm_bot/features/etudiant/presentation/page_notes_etudiant.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import 'core/network/client_dio.dart';
@@ -50,6 +52,8 @@ import 'features/professeur/presentation/professeur_shell.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('fr_FR', null);
+  Intl.defaultLocale = 'fr_FR';
   ClientDio().initialiser();
   runApp(const MyApp());
 }

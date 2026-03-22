@@ -21,6 +21,7 @@ import apiAnnonces from '../services/apiAnnonces';
 import { apiStructure } from '../services/apiStructure';
 import { apiProfesseurs } from '../services/apiProfesseurs';
 import { apiAuth } from '../services/apiAuth';
+import PhotoSecurisee from '../composants/communs/PhotoSecurisee';
 import './GestionAnnoncesAdmin.css';
 import './GestionAnnoncesProfesseur.css';
 
@@ -611,13 +612,16 @@ const GestionAnnoncesAdmin = () => {
                     className={`audience-card ${prof.selected ? 'selected' : ''}`}
                     onClick={() => toggleTarget(prof.id)}
                   >
-                    {prof.photo ? (
-                      <img src={prof.photo} alt={prof.nom} className="audience-avatar" />
-                    ) : (
-                      <div className="audience-avatar admin-audience-avatar-fallback">
-                        {prof.nom.charAt(4)}
-                      </div>
-                    )}
+                    <PhotoSecurisee
+                      photoUrl={prof.photo}
+                      alt={prof.nom}
+                      className="audience-avatar"
+                      fallback={
+                        <div className="audience-avatar admin-audience-avatar-fallback">
+                          {(prof.nom || '?').charAt(4) || (prof.nom || '?').charAt(0)}
+                        </div>
+                      }
+                    />
                     <div className="audience-info">
                       <h3>{prof.nom}</h3>
                       <p>{prof.specialite}</p>

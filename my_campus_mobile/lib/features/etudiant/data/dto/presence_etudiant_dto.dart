@@ -4,6 +4,9 @@ class PresenceEtudiantDTO {
   final DateTime? dateDeclaration;
   final String? typeMotif;
   final String? descriptionDeJustification;
+  final String statutJustificatif;
+  final bool justificationSoumise;
+  final bool justificationValidee;
   final String? motifUrl;
   final String? motifNom;
   final MiniSeancePresenceDTO? seance;
@@ -14,6 +17,9 @@ class PresenceEtudiantDTO {
     required this.dateDeclaration,
     required this.typeMotif,
     required this.descriptionDeJustification,
+    required this.statutJustificatif,
+    required this.justificationSoumise,
+    required this.justificationValidee,
     required this.motifUrl,
     required this.motifNom,
     required this.seance,
@@ -26,6 +32,9 @@ class PresenceEtudiantDTO {
       dateDeclaration: _parseDateTime(json['dateDeclaration']),
       typeMotif: json['typeMotif']?.toString(),
       descriptionDeJustification: json['descriptionDeJustification']?.toString(),
+      statutJustificatif: (json['statutJustificatif'] ?? '').toString(),
+      justificationSoumise: json['justificationSoumise'] == true,
+      justificationValidee: json['justificationValidee'] == true,
       motifUrl: json['motifUrl']?.toString(),
       motifNom: json['motifNom']?.toString(),
       seance:
@@ -40,6 +49,7 @@ class PresenceEtudiantDTO {
   bool get estAbsent => status.toUpperCase() == 'ABSENT';
 
   bool get aJustification {
+    if (justificationSoumise) return true;
     final hasDesc =
         descriptionDeJustification != null &&
         descriptionDeJustification!.trim().isNotEmpty;
@@ -48,8 +58,21 @@ class PresenceEtudiantDTO {
     return hasDesc || hasFileName || hasFileUrl;
   }
 
+  String get justificationState {
+    final value = statutJustificatif.trim().toUpperCase();
+    if (value == 'VALIDE') return 'validated';
+    if (value == 'REFUSE') return 'rejected';
+    if (value == 'EN_ATTENTE') return 'pending';
+    if (value == 'AUCUN') return 'none';
+
+    if (justificationValidee) return 'validated';
+    if (aJustification) return 'pending';
+    return 'none';
+  }
+
   bool get peutAjouterJustification {
     if (!estAbsent) return false;
+    if (justificationState == 'validated') return false;
     if (dateDeclaration == null) return true;
     final diff = DateTime.now().difference(dateDeclaration!);
     return diff.inHours < 48;

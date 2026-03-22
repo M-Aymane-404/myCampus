@@ -339,11 +339,38 @@ class _SessionCard extends StatelessWidget {
   final PresenceEtudiantDTO presence;
   final VoidCallback? onJustifier;
 
+  String _justificationLabel() {
+    switch (presence.justificationState) {
+      case 'validated':
+        return 'Justification validée';
+      case 'rejected':
+        return 'Justification refusée';
+      case 'pending':
+        return 'Justification en attente';
+      default:
+        return 'Justification envoyée';
+    }
+  }
+
+  Color _justificationColor() {
+    switch (presence.justificationState) {
+      case 'validated':
+        return const Color(0xFF16A34A);
+      case 'rejected':
+        return const Color(0xFFEF4444);
+      case 'pending':
+        return const Color(0xFF5B5BEA);
+      default:
+        return const Color(0xFF5B5BEA);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final status = presence.status.toUpperCase();
     final absent = status == 'ABSENT';
     final hasJustification = presence.aJustification;
+    final justificationColor = _justificationColor();
     final d = presence.seance?.date ?? presence.dateDeclaration;
     final date = d == null ? '-' : '${_two(d.day)}/${_two(d.month)}/${d.year}';
     final time = d == null ? '-' : _time(d);
@@ -378,10 +405,10 @@ class _SessionCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Justification envoyee',
+                    Text(
+                      _justificationLabel(),
                       style: TextStyle(
-                        color: Color(0xFF5B5BEA),
+                        color: justificationColor,
                         fontWeight: FontWeight.w800,
                         fontSize: 12,
                       ),
@@ -423,6 +450,26 @@ class _SessionCard extends StatelessWidget {
                   child: Text(
                     hasJustification ? 'Changer la justification' : 'Justifier',
                     style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                ),
+              )
+            else if (hasJustification)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                decoration: BoxDecoration(
+                  color: justificationColor.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  presence.justificationState == 'validated'
+                    ? 'Validée'
+                    : presence.justificationState == 'rejected'
+                      ? 'Refusée'
+                      : 'En attente',
+                  style: TextStyle(
+                    color: justificationColor,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12,
                   ),
                 ),
               )

@@ -12,6 +12,7 @@ import {
 import { useState, useEffect, useRef } from 'react';
 import { apiAuth } from '../../services/apiAuth';
 import NotificationHeart from './NotificationHeart';
+import PhotoSecurisee from '../communs/PhotoSecurisee';
 import './EnTete.css';
 
 const EnTeteProfesseur = ({ elementActif, surChangementElement }) => {
@@ -48,10 +49,7 @@ const EnTeteProfesseur = ({ elementActif, surChangementElement }) => {
 
       const photo = currentUser.photoProfile || currentUser.photo || null;
       if (photo) {
-        const fullPhotoUrl = photo.startsWith('http')
-          ? photo
-          : `http://localhost:8080${photo}`;
-        setPhotoPreview(fullPhotoUrl);
+        setPhotoPreview(photo);
       } else {
         setPhotoPreview(null);
       }
@@ -170,7 +168,12 @@ const EnTeteProfesseur = ({ elementActif, surChangementElement }) => {
           <div className="avatar-wrapper">
             <div className="avatar-profil">
               {photoPreview ? (
-                <img src={photoPreview} alt="Profile" className="avatar-image-small" />
+                <PhotoSecurisee
+                  photoUrl={photoPreview}
+                  alt="Profile"
+                  className="avatar-image-small"
+                  fallback={<span className="avatar-lettre">{initiales}</span>}
+                />
               ) : (
                 <span className="avatar-lettre">{initiales}</span>
               )}

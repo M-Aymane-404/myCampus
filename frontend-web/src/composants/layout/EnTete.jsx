@@ -2,6 +2,7 @@ import { User, LogOut } from 'lucide-react';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { apiAuth } from '../../services/apiAuth';
 import NotificationHeart from './NotificationHeart';
+import PhotoSecurisee from '../communs/PhotoSecurisee';
 import './EnTete.css';
 
 const EnTete = ({ elementActif, surChangementElement }) => {
@@ -82,7 +83,6 @@ const EnTete = ({ elementActif, surChangementElement }) => {
           const userToUse = syncedUser || currentUser;
 
           const photo = userToUse.photoProfile || null;
-          const fullPhotoUrl = photo ? (photo.startsWith('http') ? photo : `http://localhost:8080${photo}`) : null;
 
           setInfosUtilisateur({
             nom: userToUse.nom || '',
@@ -93,7 +93,7 @@ const EnTete = ({ elementActif, surChangementElement }) => {
             departement: userToUse.departement || '',
             role: userToUse.role || 'admin',
             dateCreation: userToUse.dateCreation || new Date().toLocaleDateString(),
-            photoProfile: fullPhotoUrl
+            photoProfile: photo
           });
         }
       } catch (error) {
@@ -256,10 +256,16 @@ const EnTete = ({ elementActif, surChangementElement }) => {
           <div className="avatar-wrapper">
             <div className="avatar-profil">
               {infosUtilisateur.photoProfile ? (
-                <img
-                  src={infosUtilisateur.photoProfile}
+                <PhotoSecurisee
+                  photoUrl={infosUtilisateur.photoProfile}
                   alt="Profil"
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  fallback={
+                    <span className="avatar-lettre">
+                      {infosUtilisateur.prenom ? infosUtilisateur.prenom.charAt(0) : ''}
+                      {infosUtilisateur.nom ? infosUtilisateur.nom.charAt(0) : ''}
+                    </span>
+                  }
                 />
               ) : (
                 <span className="avatar-lettre">
