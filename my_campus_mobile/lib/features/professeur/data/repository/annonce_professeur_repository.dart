@@ -80,4 +80,30 @@ class AnnonceProfesseurRepository {
       data.cast<String, dynamic>(),
     );
   }
+
+  Future<void> supprimerAnnonce(int annonceId) async {
+    await _api.supprimerAnnonce(annonceId);
+  }
+
+  Future<AnnonceProfesseurDTO> publierAnnonce(int annonceId) async {
+    final data = await _api.publierAnnonce(annonceId);
+    if (data.isEmpty) {
+      return recupererAnnonceParId(annonceId);
+    }
+    return AnnonceProfesseurDTO.fromJson(
+      data,
+      estLue: _idsLus.contains(annonceId),
+    );
+  }
+
+  Future<AnnonceProfesseurDTO> depublierAnnonce(int annonceId) async {
+    final data = await _api.depublierAnnonce(annonceId);
+    if (data.isEmpty) {
+      return recupererAnnonceParId(annonceId);
+    }
+    return AnnonceProfesseurDTO.fromJson(
+      data,
+      estLue: _idsLus.contains(annonceId),
+    );
+  }
 }

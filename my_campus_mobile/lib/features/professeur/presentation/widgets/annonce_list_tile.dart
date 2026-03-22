@@ -7,10 +7,16 @@ class AnnonceListTileProfesseur extends StatelessWidget {
     super.key,
     required this.annonce,
     required this.onTap,
+    this.onSupprimer,
+    this.onBasculerPublication,
+    this.actionsEnCours = false,
   });
 
   final AnnonceProfesseurDTO annonce;
   final VoidCallback onTap;
+  final VoidCallback? onSupprimer;
+  final VoidCallback? onBasculerPublication;
+  final bool actionsEnCours;
 
   @override
   Widget build(BuildContext context) {
@@ -148,12 +154,69 @@ class AnnonceListTileProfesseur extends StatelessWidget {
                     ),
                   ),
                 ),
-                const Icon(
-                  Icons.chevron_right_rounded,
-                  color: Color(0xFF94A3B8),
-                ),
+                if (onSupprimer == null && onBasculerPublication == null)
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    color: Color(0xFF94A3B8),
+                  ),
               ],
             ),
+            if (onSupprimer != null || onBasculerPublication != null) ...[
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  if (actionsEnCours)
+                    const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  else ...[
+                    if (onBasculerPublication != null)
+                      TextButton.icon(
+                        onPressed: onBasculerPublication,
+                        icon: Icon(
+                          annonce.publiee
+                              ? Icons.visibility_off_rounded
+                              : Icons.visibility_rounded,
+                          size: 18,
+                        ),
+                        label: Text(annonce.publiee ? 'Depublier' : 'Publier'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: const Color(0xFF4F46E5),
+                          textStyle: const TextStyle(fontWeight: FontWeight.w900),
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 8,
+                          ),
+                        ),
+                      ),
+                    if (onSupprimer != null) ...[
+                      const SizedBox(width: 8),
+                      TextButton.icon(
+                        onPressed: onSupprimer,
+                        icon: const Icon(
+                          Icons.delete_outline_rounded,
+                          size: 18,
+                        ),
+                        label: const Text('Supprimer'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: const Color(0xFFDC2626),
+                          textStyle: const TextStyle(fontWeight: FontWeight.w900),
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 8,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ],
+              ),
+            ],
           ],
         ),
       ),

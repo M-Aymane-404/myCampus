@@ -1,9 +1,11 @@
 import 'package:file_picker/file_picker.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../data/controller/controleur_annonce_professeur.dart';
 import '../data/controller/controleur_espace_professeur.dart';
+import '../data/dto/annonce_professeur_dto.dart';
 import '../data/dto/professeur_mobile_dto.dart';
 import 'page_detail_annonce_professeur.dart';
 import 'page_mes_annonces_professeur.dart';
@@ -32,9 +34,22 @@ class _PageGestionAnnoncesProfesseurState
   final TextEditingController _titleCtrl = TextEditingController();
   final TextEditingController _contentCtrl = TextEditingController();
   bool _envoiEnCours = false;
+  bool _chargementInitial = false;
   String _selectedType = _typeOptions.first;
   String? _selectedClasse;
   List<PlatformFile> _piecesJointes = const [];
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_chargementInitial) return;
+    _chargementInitial = true;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<ControleurAnnonceProfesseur>().chargerAnnonces();
+    });
+  }
 
   @override
   void dispose() {
@@ -123,6 +138,9 @@ class _PageGestionAnnoncesProfesseurState
                                 padding: const EdgeInsets.only(bottom: 12),
                                 child: AnnonceListTileProfesseur(
                                   annonce: annonce,
+                                  actionsEnCours: ctrl.actionEnCoursPour(
+                                    annonce.id,
+                                  ),
                                   onTap: () async {
                                     await context
                                         .read<ControleurAnnonceProfesseur>()
@@ -138,6 +156,9 @@ class _PageGestionAnnoncesProfesseurState
                                       ),
                                     );
                                   },
+                                  onSupprimer: () => _supprimerAnnonce(annonce),
+                                  onBasculerPublication: () =>
+                                      _basculerPublication(annonce),
                                 ),
                               );
                             },
@@ -274,6 +295,106 @@ class _PageGestionAnnoncesProfesseurState
         ),
       ],
     );
+  }
+
+  Future<void> _basculerPublication(AnnonceProfesseurDTO annonce) async {
+    final ctrl = context.read<ControleurAnnonceProfesseur>();
+    final wasPublished = annonce.publiee;
+
+    try {
+      await ctrl.basculerPublication(annonce.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            wasPublished ? 'Annonce depubliee.' : 'Annonce publiee.',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_messageErreur(e))),
+      );
+    }
+  }
+
+  Future<void> _supprimerAnnonce(AnnonceProfesseurDTO annonce) async {
+    final confirmation = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Supprimer l'annonce ?"),
+        content: Text(
+          'Voulez-vous vraiment supprimer "${annonce.titre}" ?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted) return;
+    if (confirmation != true) return;
+
+    try {
+      await context.read<ControleurAnnonceProfesseur>().supprimerAnnonce(
+            annonce.id,
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Annonce supprimee.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_messageErreur(e))),
+      );
+    }
+  }
+
+  String _messageErreur(Object e) {
+    if (e is DioException) {
+      final code = e.response?.statusCode;
+      final data = e.response?.data;
+      if (data is Map) {
+        final message = data['message'] ?? data['error'] ?? data['detail'];
+        if (message != null && message.toString().trim().isNotEmpty) {
+          return message.toString().trim();
+        }
+      }
+      if (data is String && data.trim().isNotEmpty && data.length < 180) {
+        return data.trim();
+      }
+      if (code == 404) return 'Endpoint introuvable (404).';
+      if (code == 405) return 'Methode non supportee (405).';
+      if (code == 401) return 'Non authentifie (401).';
+      if (code == 403) return 'Acces refuse (403).';
+      if (code == 409) return 'Conflit (409).';
+      if (code != null) return 'Erreur serveur ($code).';
+
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout) {
+        return 'Delai depasse. Verifiez la connexion.';
+      }
+      if (e.type == DioExceptionType.connectionError) {
+        return 'Erreur reseau. Verifiez la connexion.';
+      }
+
+      return 'Erreur reseau.';
+    }
+
+    final msg = e.toString().trim();
+    if (msg.isNotEmpty) return msg;
+    return 'Action impossible pour le moment.';
   }
 
   List<String> _buildClassOptions(List<EnseignementProfesseurMobileDTO> enseignements) {
@@ -759,8 +880,8 @@ class _PageGestionAnnoncesProfesseurState
 
   Future<void> _ouvrirMesAnnonces(BuildContext context) async {
     final ctrlAnnonce = context.read<ControleurAnnonceProfesseur>();
-    if (!ctrlAnnonce.chargement && ctrlAnnonce.annoncesPubliques.isEmpty) {
-      await ctrlAnnonce.chargerAnnoncesPubliques();
+    if (!ctrlAnnonce.chargement && ctrlAnnonce.annonces.isEmpty) {
+      await ctrlAnnonce.chargerAnnonces();
     }
     if (!context.mounted) return;
     await Navigator.push(

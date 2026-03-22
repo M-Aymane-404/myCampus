@@ -90,7 +90,7 @@ class AnnonceProfesseurDTO {
         'estLue': estLue,
       };
 
-  AnnonceProfesseurDTO copyWith({bool? estLue}) {
+  AnnonceProfesseurDTO copyWith({bool? estLue, bool? publiee}) {
     return AnnonceProfesseurDTO(
       id: id,
       titre: titre,
@@ -98,7 +98,7 @@ class AnnonceProfesseurDTO {
       datePublication: datePublication,
       urgent: urgent,
       typeAnnonce: typeAnnonce,
-      publiee: publiee,
+      publiee: publiee ?? this.publiee,
       cibleType: cibleType,
       codeClasse: codeClasse,
       auteur: auteur,

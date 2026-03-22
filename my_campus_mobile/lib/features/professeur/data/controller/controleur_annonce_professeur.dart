@@ -11,6 +11,7 @@ class ControleurAnnonceProfesseur extends ChangeNotifier {
 
   final AnnonceProfesseurRepository _repo;
   final Set<int> _idsLus = <int>{};
+  final Set<int> _actionsEnCours = <int>{};
 
   bool _chargement = false;
   String? _erreur;
@@ -29,6 +30,7 @@ class ControleurAnnonceProfesseur extends ChangeNotifier {
   List<AnnonceProfesseurDTO> get annonces => _annonces;
   List<AnnonceProfesseurDTO> get annoncesPubliques => _annoncesPubliques;
   AnnonceProfesseurDTO? get annonceSelectionnee => _annonceSelectionnee;
+  bool actionEnCoursPour(int annonceId) => _actionsEnCours.contains(annonceId);
   List<RessourceAnnonceProfesseurDTO> get ressourcesAnnonceSelectionnee =>
       _ressources;
   bool get ressourcesChargees => _ressourcesChargees;
@@ -184,6 +186,80 @@ class ControleurAnnonceProfesseur extends ChangeNotifier {
       _erreur = e.toString();
     } finally {
       _chargement = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> supprimerAnnonce(int annonceId) async {
+    if (_actionsEnCours.contains(annonceId)) return;
+
+    _actionsEnCours.add(annonceId);
+    _erreur = null;
+    notifyListeners();
+
+    try {
+      await _repo.supprimerAnnonce(annonceId);
+
+      _annonces = _annonces.where((a) => a.id != annonceId).toList();
+      _annoncesPubliques =
+          _annoncesPubliques.where((a) => a.id != annonceId).toList();
+      if (_annonceSelectionnee?.id == annonceId) {
+        _annonceSelectionnee = null;
+        _ressources = [];
+        _ressourcesChargees = false;
+        _ressourceAnnonceId = null;
+        _erreurRessources = null;
+      }
+    } catch (e) {
+      _erreur = e.toString();
+      rethrow;
+    } finally {
+      _actionsEnCours.remove(annonceId);
+      notifyListeners();
+    }
+  }
+
+  Future<void> basculerPublication(int annonceId) async {
+    if (_actionsEnCours.contains(annonceId)) return;
+
+    final current =
+        _annonces
+            .cast<AnnonceProfesseurDTO?>()
+            .firstWhere((a) => a?.id == annonceId, orElse: () => null) ??
+        _annoncesPubliques
+            .cast<AnnonceProfesseurDTO?>()
+            .firstWhere((a) => a?.id == annonceId, orElse: () => null);
+
+    final publier = !(current?.publiee ?? false);
+    final estLue = current?.estLue ?? _idsLus.contains(annonceId);
+
+    _actionsEnCours.add(annonceId);
+    _erreur = null;
+    notifyListeners();
+
+    try {
+      AnnonceProfesseurDTO updated;
+      if (publier) {
+        updated = await _repo.publierAnnonce(annonceId);
+      } else {
+        updated = await _repo.depublierAnnonce(annonceId);
+      }
+
+      updated = updated.copyWith(estLue: estLue);
+      _annonces = _annonces.map((a) => a.id == annonceId ? updated : a).toList();
+      _annoncesPubliques =
+          _annoncesPubliques
+              .map((a) => a.id == annonceId ? updated : a)
+              .toList();
+
+      if (_annonceSelectionnee?.id == annonceId) {
+        _annonceSelectionnee = updated;
+      }
+    } catch (e) {
+      _erreur = e.toString();
+      rethrow;
+    } finally {
+      _actionsEnCours.remove(annonceId);
       notifyListeners();
     }
   }

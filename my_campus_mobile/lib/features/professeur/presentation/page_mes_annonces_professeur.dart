@@ -26,15 +26,15 @@ class _PageMesAnnoncesProfesseurState
 
     final ctrl = context.read<ControleurAnnonceProfesseur>();
     if (!ctrl.chargement) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      ctrl.chargerAnnoncesPubliques();
-    });
-  }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ctrl.chargerAnnonces();
+      });
+    }
   }
 
   Future<void> _refreshListe() async {
-    await context.read<ControleurAnnonceProfesseur>().chargerAnnoncesPubliques();
+    await context.read<ControleurAnnonceProfesseur>().chargerAnnonces();
   }
 
   Future<void> _ouvrirDetail(AnnonceProfesseurDTO annonce) async {
@@ -52,7 +52,7 @@ class _PageMesAnnoncesProfesseurState
   @override
   Widget build(BuildContext context) {
     final ctrl = context.watch<ControleurAnnonceProfesseur>();
-    final annonces = ctrl.annoncesPubliques;
+    final annonces = ctrl.annonces;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FB),
