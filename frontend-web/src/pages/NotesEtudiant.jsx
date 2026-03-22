@@ -1,21 +1,15 @@
 import { useState, useEffect, Fragment } from 'react';
 import {
-    Award,
     BookOpen,
-    Calendar,
     ChevronDown,
     ChevronRight,
     Eye,
     FileText,
     Filter,
-    Hash,
     History,
     Languages,
-    MapPin,
     Printer,
-    Sparkles,
-    Trophy,
-    User
+    Trophy
 } from 'lucide-react';
 import './NotesEtudiant.css';
 import { apiGrades } from '../services/apiGrades';
@@ -614,6 +608,21 @@ const openExamDocument = async (examenId, type) => {
 
     const activeSemesterCode = normalizeSemesterCode(activeSemester) || 'S1';
     const activeSemesterNumber = extractSemesterNumber(activeSemesterCode);
+    const currentYear = new Date();
+    const academicStartYear = currentYear.getMonth() >= 7 ? currentYear.getFullYear() : currentYear.getFullYear() - 1;
+    const academicYearLabel = `${academicStartYear} / ${academicStartYear + 1}`;
+    const issueDateLabel = currentYear.toLocaleDateString('fr-FR');
+    const transcriptResult = currentData.hasSessionAverage
+        ? (currentData.average >= 10 ? 'VALIDE' : 'AJOURNE')
+        : 'EN COURS';
+    const transcriptMention = currentData.hasSessionAverage
+        ? getMentionFromGrade(currentData.average)
+        : '-';
+    const studentLevelLabel = activeSemesterNumber > 4
+        ? '3eme Annee'
+        : activeSemesterNumber > 2
+            ? '2eme Annee'
+            : '1ere Annee';
 
     return (
         <div className="notes-container">
@@ -649,9 +658,6 @@ const openExamDocument = async (examenId, type) => {
 
                 <div className="session-summary-card">
                     <div className="session-summary-header">
-                        <div className="session-icon-box">
-                            <Sparkles size={24} color="white" />
-                        </div>
                         <div className="session-average-display">
                             <span className="session-average-label">MOYENNE SESSION</span>
                             <div className="session-average-value">
@@ -867,74 +873,47 @@ const openExamDocument = async (examenId, type) => {
             <div className="transcript-printable-area">
                 <div className="transcript-content">
                     <header className="transcript-header">
-                        <div className="uni-branding">
-                            <div className="uni-logo-box">
-                                <Award size={32} />
-                            </div>
-                            <div className="uni-names">
-                                <h1>MyCampus</h1>
-                                <div className="uni-contact-info">
-                                    <div className="contact-item">
-                                        <MapPin size={12} />
-                                        <span>Avenue Mohammed V, BP 1014, Rabat, Maroc</span>
-                                    </div>
-                                    <div className="contact-item">
-                                        <Hash size={12} />
-                                        <span>+212 5 37 77 00 00 | contact@MyCampus.ac.ma</span>
-                                    </div>
-                                </div>
-                            </div>
+                        <div className="transcript-brand-block">
+                            <span className="transcript-brand-eyebrow">Portail Academique</span>
+                            <h1>MyCampus</h1>
+                            <p>Releve officiel des notes et resultats</p>
                         </div>
-                        <div className="transcript-ref-container">
-                            <div className="transcript-ref-badge">Document Officiel</div>
-                            <div className="transcript-ref-details">
-                                <span className="ref-label">Reference Document</span>
-                                <span className="ref-value">RN-{activeSemesterCode}-2024-X</span>
+                        <div className="transcript-doc-meta">
+                            <div className="transcript-doc-row">
+                                <span>Reference</span>
+                                <strong>RN-{activeSemesterCode}-{academicStartYear}-X</strong>
+                            </div>
+                            <div className="transcript-doc-row">
+                                <span>Date d edition</span>
+                                <strong>{issueDateLabel}</strong>
                             </div>
                         </div>
                     </header>
 
-                    <hr style={{ border: 'none', height: '3px', background: '#0f172a', margin: '1.5rem 0' }} />
-
                     <div className="transcript-title-section">
                         <h2>RELEVE DE NOTES ET RESULTATS</h2>
-                        <div className="semester-info-line">
-                            <div className="line-decor"></div>
-                            <span>SEMESTRE {activeSemesterNumber} - SESSION {activeSemesterNumber % 2 === 0 ? 'PRINTEMPS' : 'AUTOMNE'} 2024</span>
-                            <div className="line-decor"></div>
-                        </div>
+                        <p>
+                            Semestre {activeSemesterNumber} - Session {activeSemesterNumber % 2 === 0 ? 'Printemps' : 'Automne'} -
+                            {' '}Annee universitaire {academicYearLabel}
+                        </p>
                     </div>
 
                     <div className="transcript-student-grid">
                         <div className="info-card">
-                            <div className="info-icon-box"><User size={20} /></div>
-                            <div className="info-details">
-                                <span className="info-label">NOM ET PRENOM</span>
-                                <span className="info-value">{studentStats.studentName}</span>
-                            </div>
+                            <span className="info-label">Nom et prenom</span>
+                            <span className="info-value">{studentStats.studentName}</span>
                         </div>
                         <div className="info-card">
-                            <div className="info-icon-box"><BookOpen size={20} /></div>
-                            <div className="info-details">
-                                <span className="info-label">FILIERE / NIVEAU</span>
-                                <span className="info-value">
-                                    {studentStats.specialization} - {activeSemesterNumber > 4 ? '3eme Annee (L3)' : activeSemesterNumber > 2 ? '2eme Annee (L2)' : '1ere Annee (L1)'}
-                                </span>
-                            </div>
+                            <span className="info-label">Filiere / niveau</span>
+                            <span className="info-value">{studentStats.specialization} - {studentLevelLabel}</span>
                         </div>
                         <div className="info-card">
-                            <div className="info-icon-box"><Hash size={20} /></div>
-                            <div className="info-details">
-                                <span className="info-label">NUMERO D ETUDIANT (CNE/PPR)</span>
-                                <span className="info-value">{studentStats.studentId}</span>
-                            </div>
+                            <span className="info-label">Numero etudiant</span>
+                            <span className="info-value">{studentStats.studentId}</span>
                         </div>
                         <div className="info-card">
-                            <div className="info-icon-box"><Calendar size={20} /></div>
-                            <div className="info-details">
-                                <span className="info-label">ANNEE UNIVERSITAIRE</span>
-                                <span className="info-value">2023 / 2024</span>
-                            </div>
+                            <span className="info-label">Annee universitaire</span>
+                            <span className="info-value">{academicYearLabel}</span>
                         </div>
                     </div>
 
@@ -985,22 +964,20 @@ const openExamDocument = async (examenId, type) => {
                             </div>
                             <div className="stat-row">
                                 <span className="stat-label">Resultat Global</span>
-                                <div className="stat-val">{currentData.average >= 10 ? 'VALIDE' : 'AJOURNE'}</div>
+                                <div className="stat-val">{transcriptResult}</div>
                             </div>
                             <div className="stat-row mention-row">
                                 <span className="stat-label">Mention</span>
-                                <div className="stat-val">{getMentionFromGrade(currentData.average)}</div>
-                            </div>
-                            <div style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', opacity: 0.1 }}>
-                                <Award size={64} />
+                                <div className="stat-val">{transcriptMention}</div>
                             </div>
                         </div>
 
                         <div className="admin-validation">
-                            <span className="admin-auth-text">Le Doyen de la Faculte</span>
-                            <p style={{ fontSize: '8px', color: '#94a3b8', maxWidth: '180px', margin: 0 }}>
-                                Signature & Cachet
-                            </p>
+                            <span className="admin-auth-text">Pour servir et valoir ce que de droit</span>
+                            <div className="admin-signature-block">
+                                <strong>Le Doyen de la Faculte</strong>
+                                <span>Signature et cachet</span>
+                            </div>
                         </div>
                     </div>
                 </div>

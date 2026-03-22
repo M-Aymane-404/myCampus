@@ -104,6 +104,14 @@
   font-weight: 600;
 }
 
+.dashboard-refresh-meta {
+  display: inline-flex;
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--prof-text-muted);
+}
+
 .prof-session-status {
   display: flex;
   align-items: center;

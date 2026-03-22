@@ -39,6 +39,11 @@ const FORM_INITIAL = {
   contenu: '',
 };
 
+const MAX_ANNONCE_RESOURCE_SIZE = 50 * 1024 * 1024;
+
+const construireMessageErreurRessources = (messageErreur) =>
+  `Annonce non publiee a cause des fichiers. ${messageErreur || 'Le depot des ressources a echoue.'}`;
+
 const GestionAnnoncesAdmin = () => {
   const [chargement, setChargement] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -138,9 +143,39 @@ const GestionAnnoncesAdmin = () => {
     setFormulaire((prev) => ({ ...prev, [name]: value }));
   };
 
+  const construireMessageTailleRessources = (fichiersInvalides) => {
+    if (!fichiersInvalides.length) {
+      return '';
+    }
+
+    const noms = fichiersInvalides.map((fichier) => fichier.name).join(', ');
+    return fichiersInvalides.length === 1
+      ? `Le fichier "${noms}" depasse la taille autorisee. Chaque ressource doit faire 50 Mo maximum.`
+      : `Ces fichiers depassent la taille autorisee: ${noms}. Chaque ressource doit faire 50 Mo maximum.`;
+  };
+
   const gererSelectionFichiers = (event) => {
     const nouveauxFichiers = Array.from(event.target.files || []);
     if (!nouveauxFichiers.length) {
+      return;
+    }
+
+    const fichiersInvalides = nouveauxFichiers.filter(
+      (fichier) => Number(fichier?.size || 0) > MAX_ANNONCE_RESOURCE_SIZE
+    );
+    const fichiersValides = nouveauxFichiers.filter(
+      (fichier) => Number(fichier?.size || 0) <= MAX_ANNONCE_RESOURCE_SIZE
+    );
+
+    if (fichiersInvalides.length) {
+      setError(construireMessageTailleRessources(fichiersInvalides));
+      setSuccess('');
+    } else {
+      setError('');
+    }
+
+    if (!fichiersValides.length) {
+      event.target.value = '';
       return;
     }
 
@@ -152,7 +187,7 @@ const GestionAnnoncesAdmin = () => {
         ])
       );
 
-      nouveauxFichiers.forEach((fichier) => {
+      fichiersValides.forEach((fichier) => {
         existants.set(
           `${fichier.name}-${fichier.size}-${fichier.lastModified}`,
           fichier
@@ -318,10 +353,15 @@ const GestionAnnoncesAdmin = () => {
       try {
         nbRessources = await televerserRessources(annonceCreee.id);
       } catch (uploadError) {
+        try {
+          await apiAnnonces.supprimer(annonceCreee.id);
+        } catch (deleteError) {
+          console.error("Suppression de l'annonce apres echec des ressources impossible:", deleteError);
+        }
+
         await chargerDonnees(false);
-        resetForm();
-        setSuccess("Annonce creee, mais l'envoi des ressources a echoue.");
-        setError(uploadError.message || "Erreur lors de l'envoi des ressources.");
+        setSuccess('');
+        setError(construireMessageErreurRessources(uploadError.message));
         return;
       }
 
@@ -558,6 +598,9 @@ const GestionAnnoncesAdmin = () => {
                   {fichiersSelectionnes.length} fichier(s)
                 </span>
               </div>
+              <p className="attachment-upload-hint">
+                Taille maximale: 50 Mo par fichier.
+              </p>
 
               <div className="attachment-upload-actions">
                 <input

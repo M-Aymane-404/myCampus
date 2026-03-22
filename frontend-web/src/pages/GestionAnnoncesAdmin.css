@@ -250,6 +250,13 @@
   font-weight: 800;
 }
 
+.attachment-upload-hint {
+  margin: -6px 0 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
 .attachment-upload-actions {
   display: flex;
   align-items: center;

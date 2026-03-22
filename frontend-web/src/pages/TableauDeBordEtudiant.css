@@ -48,6 +48,14 @@
   margin: 0;
 }
 
+.dashboard-refresh-meta {
+  display: inline-flex;
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--student-text-muted);
+}
+
 .session-status {
   display: flex;
   align-items: center;
