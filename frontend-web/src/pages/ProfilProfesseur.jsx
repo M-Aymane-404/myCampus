@@ -196,7 +196,7 @@ const ProfilProfesseur = () => {
       email: mappedProfile.email,
       tel: mappedProfile.tel,
       telephone: mappedProfile.tel,
-      photoProfile: mappedProfile.photoUrl,
+      ...(mappedProfile.photoUrl ? { photoProfile: mappedProfile.photoUrl, photoProfileVersion: Date.now() } : {}),
     });
   };
 
@@ -318,7 +318,7 @@ const ProfilProfesseur = () => {
 
       if (responsePhoto) {
         setProfil((prev) => ({ ...prev, photoUrl: responsePhoto }));
-        syncStoredUser({ photoProfile: responsePhoto });
+        syncStoredUser({ photoProfile: responsePhoto, photoProfileVersion: Date.now() });
       } else {
         await reloadProfile();
       }

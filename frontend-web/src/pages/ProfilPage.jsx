@@ -86,7 +86,7 @@ const ProfilPage = () => {
                     email: data.email || user.email || '',
                     tel: data.tel || user.tel || user.telephone || '',
                     telephone: data.tel || user.tel || user.telephone || '',
-                    photoProfile: resolvedPhoto,
+                    ...(resolvedPhoto ? { photoProfile: resolvedPhoto, photoProfileVersion: Date.now() } : {}),
                 });
             } catch (err) {
                 console.error('Erreur lors du chargement du profil:', err);
@@ -247,7 +247,7 @@ const ProfilPage = () => {
 
             setInfosUtilisateur((prev) => ({ ...prev, photoUrl }));
             setPhotoPreview(null);
-            syncStoredUser({ photoProfile: photoUrl });
+            syncStoredUser({ photoProfile: photoUrl, photoProfileVersion: Date.now() });
 
             try {
                 const refreshedData = user.role === 'admin'
@@ -261,7 +261,7 @@ const ProfilPage = () => {
                         photoUrl: refreshedPhoto
                     }));
                     setPhotoPreview(null);
-                    syncStoredUser({ photoProfile: refreshedPhoto });
+                    syncStoredUser({ photoProfile: refreshedPhoto, photoProfileVersion: Date.now() });
                 }
             } catch (refreshError) {
                 console.warn('Could not refresh profile data after photo upload:', refreshError);

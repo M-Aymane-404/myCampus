@@ -227,6 +227,15 @@ const buildDateTime = (date, time) => {
   return `${date}T${time}:00`;
 };
 
+const parseTimeToMinutes = (time) => {
+  if (!time || typeof time !== 'string') return NaN;
+  const [hours, minutes] = time.split(':');
+  const h = Number(hours);
+  const m = Number(minutes);
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return NaN;
+  return h * 60 + m;
+};
+
 const openCourseFile = async (fichier) => {
   if (!fichier?.id) {
     throw new Error('Aucun fichier lié à cette séance.');
@@ -606,6 +615,25 @@ const GestionCoursProfesseur = () => {
       setMessage({
         type: 'error',
         text: 'La date, l’heure de début et l’heure de fin sont obligatoires.',
+      });
+      return;
+    }
+
+    const debutMinutes = parseTimeToMinutes(seanceForm.heureDebut);
+    const finMinutes = parseTimeToMinutes(seanceForm.heureFin);
+
+    if (!Number.isFinite(debutMinutes) || !Number.isFinite(finMinutes)) {
+      setMessage({
+        type: 'error',
+        text: "Format d'heure invalide.",
+      });
+      return;
+    }
+
+    if (debutMinutes >= finMinutes) {
+      setMessage({
+        type: 'error',
+        text: "L'heure de début doit être strictement avant l'heure de fin.",
       });
       return;
     }
