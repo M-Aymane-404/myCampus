@@ -398,7 +398,6 @@ const GestionNotesProfesseur = () => {
         };
 
         if (!payload.dateExamen) throw new Error("La date de l'examen est obligatoire.");
-        if (!payload.numeroExamen) throw new Error("Le numero de l'examen est obligatoire.");
         if (!payload.duree) throw new Error('La duree est obligatoire.');
 
         await apiExamensProfesseur.modifierExamen(selectedExamenId, payload);
@@ -1360,4 +1359,6 @@ const GestionNotesProfesseur = () => {
 };
 
 export default GestionNotesProfesseur;
+
+
 
