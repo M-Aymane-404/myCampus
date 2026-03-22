@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -526,6 +528,20 @@ class _CreateSeanceModalState extends State<CreateSeanceModal> {
       return;
     }
 
+    final debutMinutes = _parseMinutes(_debutCtrl.text);
+    final finMinutes = _parseMinutes(_finCtrl.text);
+    if (debutMinutes == null || finMinutes == null) {
+      _showSnack("Format d'heure invalide", isError: true);
+      return;
+    }
+    if (debutMinutes >= finMinutes) {
+      _showSnack(
+        "L'heure de début doit être strictement avant l'heure de fin.",
+        isError: true,
+      );
+      return;
+    }
+
     final annee =
         widget.enseignement.anneeUniversitaire.trim().isNotEmpty
             ? widget.enseignement.anneeUniversitaire
@@ -550,10 +566,103 @@ class _CreateSeanceModalState extends State<CreateSeanceModal> {
       if (!mounted) return;
       Navigator.of(context).pop(true);
     } catch (e) {
-      _showSnack(e.toString(), isError: true);
+      _showSnack(_formatApiError(e), isError: true);
     } finally {
       if (mounted) setState(() => _envoiEnCours = false);
     }
+  }
+
+  int? _parseMinutes(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return null;
+    final parts = trimmed.split(':');
+    if (parts.length < 2) return null;
+    final h = int.tryParse(parts[0]);
+    final m = int.tryParse(parts[1]);
+    if (h == null || m == null) return null;
+    return h * 60 + m;
+  }
+
+  String _formatApiError(Object error) {
+    if (error is DioException) {
+      final message = _extractMessageFromErrorBody(error.response?.data);
+      if (message != null) return message;
+
+      final fallback = (error.message ?? '').trim();
+      if (fallback.isNotEmpty) return fallback;
+
+      return 'Erreur reseau. Verifiez votre connexion';
+    }
+
+    final raw = error.toString();
+    return raw.startsWith('Exception: ') ? raw.substring(11) : raw;
+  }
+
+  String? _extractMessageFromErrorBody(dynamic data) {
+    if (data == null) return null;
+
+    final decoded = _tryDecodeJson(data);
+
+    if (decoded is Map) {
+      final rawMessage =
+          decoded['message'] ??
+          decoded['error'] ??
+          decoded['detail'] ??
+          decoded['title'] ??
+          decoded['description'];
+      final msg = (rawMessage ?? '').toString().trim();
+      if (msg.isNotEmpty) return _truncate(msg);
+
+      final errorsCandidates = <dynamic>[
+        decoded['fieldErrors'],
+        decoded['errors'],
+        decoded['violations'],
+      ];
+
+      for (final candidate in errorsCandidates) {
+        final extracted = _extractFirstErrorMessage(candidate);
+        if (extracted != null) return _truncate(extracted);
+      }
+    }
+
+    if (decoded is String) {
+      final msg = decoded.trim();
+      if (msg.isNotEmpty) return _truncate(msg);
+    }
+
+    return null;
+  }
+
+  String? _extractFirstErrorMessage(dynamic errors) {
+    if (errors is! List || errors.isEmpty) return null;
+    final first = errors.first;
+    if (first is String && first.trim().isNotEmpty) return first.trim();
+    if (first is Map) {
+      final raw = first['defaultMessage'] ?? first['message'] ?? first['error'];
+      final msg = (raw ?? '').toString().trim();
+      if (msg.isNotEmpty) return msg;
+    }
+    return null;
+  }
+
+  dynamic _tryDecodeJson(dynamic value) {
+    if (value is String) {
+      final trimmed = value.trim();
+      if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+        try {
+          return jsonDecode(trimmed);
+        } catch (_) {
+          return value;
+        }
+      }
+      return value;
+    }
+    return value;
+  }
+
+  String _truncate(String value, {int max = 220}) {
+    if (value.length <= max) return value;
+    return '${value.substring(0, max)}...';
   }
 
   Future<void> _pickDate(TextEditingController controller) async {
