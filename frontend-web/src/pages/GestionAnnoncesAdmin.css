@@ -487,7 +487,6 @@ input:checked+.slider:before {
 
 .audience-card:hover {
   background: #f1f5f9;
-  transform: translateX(4px);
 }
 
 .audience-card.selected {

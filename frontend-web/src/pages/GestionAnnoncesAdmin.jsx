@@ -45,7 +45,6 @@ const GestionAnnoncesAdmin = () => {
   const [cible, setCible] = useState('etudiants');
   const [classes, setClasses] = useState([]);
   const [professeurs, setProfesseurs] = useState([]);
-  const [diffusionProfGlobale, setDiffusionProfGlobale] = useState(false);
   const [annonces, setAnnonces] = useState([]);
   const [ressourcesParAnnonce, setRessourcesParAnnonce] = useState({});
   const [formulaire, setFormulaire] = useState(FORM_INITIAL);
@@ -127,7 +126,6 @@ const GestionAnnoncesAdmin = () => {
       setError(err.message || 'Impossible de charger les annonces administrateur.');
       setClasses([]);
       setProfesseurs([]);
-      setDiffusionProfGlobale(false);
       setAnnonces([]);
       setRessourcesParAnnonce({});
     } finally {
@@ -190,10 +188,6 @@ const GestionAnnoncesAdmin = () => {
       return;
     }
 
-    if (diffusionProfGlobale) {
-      setDiffusionProfGlobale(false);
-    }
-
     setProfesseurs((prev) =>
       prev.map((professeur) => ({
         ...professeur,
@@ -212,9 +206,9 @@ const GestionAnnoncesAdmin = () => {
       return;
     }
 
-    setDiffusionProfGlobale((prev) => !prev);
+    const toutSelectionne = professeurs.every((professeur) => professeur.selected);
     setProfesseurs((prev) =>
-      prev.map((professeur) => ({ ...professeur, selected: false }))
+      prev.map((professeur) => ({ ...professeur, selected: !toutSelectionne }))
     );
   };
 
@@ -223,15 +217,14 @@ const GestionAnnoncesAdmin = () => {
       return classes.filter((classe) => classe.selected).length;
     }
 
-    if (diffusionProfGlobale) {
-      return professeurs.length;
-    }
-
     return professeurs.filter((professeur) => professeur.selected).length;
   };
 
   const tousLesEtudiantsSelectionnes =
     classes.length > 0 && classes.every((classe) => classe.selected);
+
+  const tousLesProfesseursSelectionnes =
+    professeurs.length > 0 && professeurs.every((professeur) => professeur.selected);
 
   const isFormValid =
     formulaire.titre.trim() &&
@@ -249,7 +242,6 @@ const GestionAnnoncesAdmin = () => {
     setProfesseurs((prev) =>
       prev.map((professeur) => ({ ...professeur, selected: false }))
     );
-    setDiffusionProfGlobale(false);
     viderFichiers();
   };
 
@@ -259,7 +251,6 @@ const GestionAnnoncesAdmin = () => {
     setSuccess('');
 
     if (nouvelleCible === 'etudiants') {
-      setDiffusionProfGlobale(false);
       setProfesseurs((prev) =>
         prev.map((professeur) => ({ ...professeur, selected: false }))
       );
@@ -311,7 +302,7 @@ const GestionAnnoncesAdmin = () => {
         } else {
           annonceData.cibleType = 'ETUDIANTS_GLOBAL';
         }
-      } else if (diffusionProfGlobale) {
+      } else if (tousLesProfesseursSelectionnes) {
         annonceData.cibleType = 'PROFESSEURS_GLOBAL';
       } else {
         const selectedProfs = professeurs.filter((professeur) => professeur.selected);
@@ -628,7 +619,7 @@ const GestionAnnoncesAdmin = () => {
             <button
               className={`select-all-toggle ${
                 (cible === 'etudiants' && tousLesEtudiantsSelectionnes) ||
-                (cible === 'enseignants' && diffusionProfGlobale)
+                (cible === 'enseignants' && tousLesProfesseursSelectionnes)
                   ? 'active'
                   : ''
               }`}
@@ -639,7 +630,7 @@ const GestionAnnoncesAdmin = () => {
                 ? tousLesEtudiantsSelectionnes
                   ? 'ANNULER TOUS LES ETUDIANTS'
                   : 'TOUTES LES CLASSES'
-                : diffusionProfGlobale
+                : tousLesProfesseursSelectionnes
                   ? 'ANNULER TOUS LES PROFS'
                   : 'TOUS LES PROFS'}
             </button>
@@ -662,7 +653,7 @@ const GestionAnnoncesAdmin = () => {
               : professeurs.map((prof) => (
                   <div
                     key={prof.id}
-                    className={`audience-card ${(prof.selected || diffusionProfGlobale) ? 'selected' : ''}`}
+                    className={`audience-card ${prof.selected ? 'selected' : ''}`}
                     onClick={() => toggleTarget(prof.id)}
                   >
                     <PhotoSecurisee
@@ -685,15 +676,15 @@ const GestionAnnoncesAdmin = () => {
 
           <div className="audience-status-bar">
             <Info size={16} />
-            {cible === 'enseignants' && diffusionProfGlobale
+            {cible === 'enseignants' && tousLesProfesseursSelectionnes
               ? "TOUS LES ENSEIGNANTS RECEVRONT L'ANNONCE."
               : getSelectedCount() === 0
                 ? cible === 'etudiants'
                   ? "0 CLASSE(S) RECEVRONT L'ANNONCE."
                   : "AUCUN ENSEIGNANT NE RECEVRA L'ANNONCE."
                 : `${getSelectedCount()} ${
-                    cible === 'etudiants' ? 'CLASSE(S)' : 'ENSEIGNANT'
-                  } RECEVRA L'ANNONCE.`}
+                    cible === 'etudiants' ? 'CLASSE(S)' : 'ENSEIGNANT(S)'
+                  } RECEVRONT L'ANNONCE.`}
           </div>
         </div>
       </div>
