@@ -132,6 +132,13 @@ class ClientDio {
         connectTimeout: ConfigurationApp.connexionTimeout,
         receiveTimeout: ConfigurationApp.receptionTimeout,
         headers: ConfigurationApp.entetesParDefaut,
+        responseDecoder: (bytes, options, responseBody) {
+          final decodedUtf8 = utf8.decode(bytes, allowMalformed: true);
+          if (decodedUtf8.contains('\uFFFD')) {
+            return latin1.decode(bytes, allowInvalid: true);
+          }
+          return decodedUtf8;
+        },
       ),
     );
 

@@ -2,9 +2,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:open_filex/open_filex.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 import 'package:provider/provider.dart';
 
+import '../../../core/storage/app_file_storage.dart';
 import '../data/controller/ControleurFichier.dart';
 import '../data/controller/controleur_releve_notes_etudiant.dart';
 import '../data/dto/releve_notes_dto.dart';
@@ -72,47 +74,211 @@ class _PageNotesEtudiantState extends State<PageNotesEtudiant> {
 
   Future<void> _telechargerReleveNotes(ReleveNotesDTO releve) async {
     try {
-      final documentsDir = await getApplicationDocumentsDirectory();
-      final exportDir = Directory('${documentsDir.path}/mycampus/downloads');
-      if (!await exportDir.exists()) {
-        await exportDir.create(recursive: true);
-      }
-
-      final file = File(
-        '${exportDir.path}/releve_notes_${releve.semestre}_${DateTime.now().millisecondsSinceEpoch}.html',
+      final storage = context.read<AppFileStorage>();
+      final bytes = await _construirePdfReleve(releve);
+      final File file = await storage.saveBytes(
+        bytes: bytes,
+        fileName:
+            'releve_notes_${releve.semestre}_${DateTime.now().millisecondsSinceEpoch}.pdf',
+        subDir: 'mycampus/downloads',
       );
-
-      await file.writeAsString(_construireHtmlReleve(releve), flush: true);
-      await OpenFilex.open(file.path);
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Releve telecharge : ${file.uri.pathSegments.last}')),
+        SnackBar(
+          content: Text('Releve telecharge : ${file.uri.pathSegments.last}'),
+          action: SnackBarAction(
+            label: 'Ouvrir',
+            onPressed: () => OpenFilex.open(file.path),
+          ),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur export releve: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erreur export releve: $e')));
     }
   }
 
+  Future<List<int>> _construirePdfReleve(ReleveNotesDTO releve) async {
+    final doc = pw.Document();
+
+    doc.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(24),
+        footer:
+            (ctx) => pw.Align(
+              alignment: pw.Alignment.centerRight,
+              child: pw.Text(
+                'Page ${ctx.pageNumber}/${ctx.pagesCount}',
+                style: pw.TextStyle(fontSize: 9, color: PdfColors.grey600),
+              ),
+            ),
+        build: (ctx) {
+          final rows = <List<String>>[];
+
+          for (final module in releve.modules) {
+            rows.add([
+              (module.codeModule.trim().isEmpty
+                  ? 'M'
+                  : _textePdf(module.codeModule)),
+              _textePdf(module.nomDuModule),
+              module.moyenneDuModule.toStringAsFixed(2),
+              module.moyenneDuModule >= 10 ? 'VALIDE' : 'NON VALIDE',
+            ]);
+
+            for (final matiere in module.matieres) {
+              rows.add([
+                '',
+                '  - ${_textePdf(matiere.nomDuMatiere)}',
+                matiere.moyenneDuMatiere.toStringAsFixed(2),
+                matiere.validee ? 'VALIDE' : 'NON VALIDE',
+              ]);
+            }
+          }
+
+          return [
+            pw.Text(
+              'Releve de notes',
+              style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold),
+            ),
+            pw.SizedBox(height: 4),
+            pw.Text(
+              'Semestre ${_textePdf(releve.semestre)}',
+              style: pw.TextStyle(fontSize: 11, color: PdfColors.grey700),
+            ),
+            pw.SizedBox(height: 16),
+            pw.Row(
+              children: [
+                _kpiPdf(
+                  label: 'Moyenne session',
+                  value: '${releve.moyenneSession.toStringAsFixed(2)}/20',
+                ),
+                pw.SizedBox(width: 10),
+                _kpiPdf(
+                  label: 'Modules valides',
+                  value: '${releve.nbModulesValider}/${releve.nbModules}',
+                ),
+                pw.SizedBox(width: 10),
+                _kpiPdf(
+                  label: 'Resultat',
+                  value: releve.moyenneSession >= 10 ? 'VALIDE' : 'AJOURNE',
+                ),
+              ],
+            ),
+            pw.SizedBox(height: 16),
+            if (rows.isEmpty)
+              pw.Padding(
+                padding: const pw.EdgeInsets.only(top: 12),
+                child: pw.Text(
+                  'Aucun module disponible pour ce semestre.',
+                  style: pw.TextStyle(color: PdfColors.grey700, fontSize: 11),
+                ),
+              )
+            else
+              pw.TableHelper.fromTextArray(
+                context: ctx,
+                headers: const ['Code', 'Intitule', 'Note /20', 'Resultat'],
+                data: rows,
+                headerDecoration: const pw.BoxDecoration(
+                  color: PdfColors.grey200,
+                ),
+                headerStyle: pw.TextStyle(
+                  fontWeight: pw.FontWeight.bold,
+                  fontSize: 10,
+                  color: PdfColors.grey800,
+                ),
+                cellStyle: const pw.TextStyle(fontSize: 10),
+                cellAlignments: const {
+                  0: pw.Alignment.centerLeft,
+                  1: pw.Alignment.centerLeft,
+                  2: pw.Alignment.centerRight,
+                  3: pw.Alignment.centerRight,
+                },
+                columnWidths: const {
+                  0: pw.FlexColumnWidth(1),
+                  1: pw.FlexColumnWidth(3.1),
+                  2: pw.FlexColumnWidth(1),
+                  3: pw.FlexColumnWidth(1.3),
+                },
+              ),
+          ];
+        },
+      ),
+    );
+
+    return doc.save();
+  }
+
+  String _textePdf(String value) {
+    return value
+        .replaceAll('\uFEFF', '')
+        .replaceAll('\u00A0', ' ')
+        .replaceAll('\u202F', ' ')
+        .replaceAll('\u2019', "'")
+        .replaceAll('\u2018', "'")
+        .replaceAll('\u201C', '"')
+        .replaceAll('\u201D', '"')
+        .replaceAll('\u2013', '-')
+        .replaceAll('\u2014', '-');
+  }
+
+  pw.Widget _kpiPdf({required String label, required String value}) {
+    return pw.Expanded(
+      child: pw.Container(
+        padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: pw.BoxDecoration(
+          color: PdfColors.grey100,
+          border: pw.Border.all(color: PdfColors.grey300),
+          borderRadius: pw.BorderRadius.circular(10),
+        ),
+        child: pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Text(
+              label.toUpperCase(),
+              style: pw.TextStyle(
+                fontSize: 9,
+                color: PdfColors.grey700,
+                letterSpacing: 0.6,
+              ),
+            ),
+            pw.SizedBox(height: 6),
+            pw.Text(
+              value,
+              style: pw.TextStyle(
+                fontSize: 14,
+                fontWeight: pw.FontWeight.bold,
+                color: PdfColors.indigo800,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Ancien export HTML (gardé au cas où).
+  // ignore: unused_element
   String _construireHtmlReleve(ReleveNotesDTO releve) {
     final moduleRows =
         releve.modules.isEmpty
             ? '<tr><td colspan="4" style="padding:24px;text-align:center;color:#64748b;">Aucun module disponible pour ce semestre.</td></tr>'
             : releve.modules.map((module) {
-              final subjectRows = module.matieres
-                  .map(
-                    (matiere) => '''
+              final subjectRows =
+                  module.matieres
+                      .map(
+                        (matiere) => '''
 <tr style="background:#f8fafc;">
   <td></td>
   <td style="padding-left:24px;">${_escapeHtml(matiere.nomDuMatiere)}</td>
   <td style="text-align:center;">${matiere.moyenneDuMatiere.toStringAsFixed(2)}</td>
   <td></td>
 </tr>''',
-                  )
-                  .join();
+                      )
+                      .join();
 
               return '''
 <tr>
@@ -188,6 +354,7 @@ $subjectRows''';
 </html>''';
   }
 
+  // ignore: unused_element
   String _escapeHtml(String value) {
     return value
         .replaceAll('&', '&amp;')
@@ -273,7 +440,9 @@ $subjectRows''';
                                             ? fichierCtrl.progression
                                             : null,
                                     color: _primaire,
-                                    backgroundColor: Colors.black.withOpacity(0.08),
+                                    backgroundColor: Colors.black.withOpacity(
+                                      0.08,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 10),
@@ -301,7 +470,8 @@ $subjectRows''';
                       semestreSelectionne: _semestreSelectionne,
                       semestresDisponibles: _semestres,
                       onChangerSemestre: _changerSemestre,
-                      onTelechargerReleve: () => _telechargerReleveNotes(releve),
+                      onTelechargerReleve:
+                          () => _telechargerReleveNotes(releve),
                     ),
                   ],
                 ),
@@ -339,22 +509,22 @@ $subjectRows''';
                           examens: mat.examens,
                           primaire: _primaire,
                           isChild: false,
-                              onOuvrirCopie:
-                                  (ex) => _telechargerEtOuvrirPdf(
-                                    context: context,
-                                    pathRelatif:
-                                        '/api/etudiant/examens/${ex.id}/copie',
-                                    nomFichier:
-                                        "copie_${mat.codeMatiere}_N${ex.numeroExamen}.pdf",
-                                  ),
-                              onOuvrirCorrige:
-                                  (ex) => _telechargerEtOuvrirPdf(
-                                    context: context,
-                                    pathRelatif:
-                                        '/api/etudiant/examens/${ex.id}/corrige',
-                                    nomFichier:
-                                        "corrige_${mat.codeMatiere}_N${ex.numeroExamen}.pdf",
-                                  ),
+                          onOuvrirCopie:
+                              (ex) => _telechargerEtOuvrirPdf(
+                                context: context,
+                                pathRelatif:
+                                    '/api/etudiant/examens/${ex.id}/copie',
+                                nomFichier:
+                                    "copie_${mat.codeMatiere}_N${ex.numeroExamen}.pdf",
+                              ),
+                          onOuvrirCorrige:
+                              (ex) => _telechargerEtOuvrirPdf(
+                                context: context,
+                                pathRelatif:
+                                    '/api/etudiant/examens/${ex.id}/corrige',
+                                nomFichier:
+                                    "corrige_${mat.codeMatiere}_N${ex.numeroExamen}.pdf",
+                              ),
                         );
                       }
 
@@ -473,12 +643,16 @@ class _HeaderNotes extends StatelessWidget {
               ),
               child: PopupMenuButton<String>(
                 onSelected: onChangerSemestre,
-                itemBuilder: (_) =>
-                    semestresDisponibles
-                        .map(
-                          (s) => PopupMenuItem<String>(value: s, child: Text(s)),
-                        )
-                        .toList(),
+                itemBuilder:
+                    (_) =>
+                        semestresDisponibles
+                            .map(
+                              (s) => PopupMenuItem<String>(
+                                value: s,
+                                child: Text(s),
+                              ),
+                            )
+                            .toList(),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -546,10 +720,7 @@ class _HeaderStatCard extends StatelessWidget {
                 fontWeight: FontWeight.w900,
               ),
               children: [
-                TextSpan(
-                  text: value,
-                  style: const TextStyle(fontSize: 24),
-                ),
+                TextSpan(text: value, style: const TextStyle(fontSize: 24)),
                 TextSpan(
                   text: suffix,
                   style: TextStyle(
@@ -931,7 +1102,7 @@ class _EtatChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
-        validee ? 'VALIDÉ' : 'NON VALIDÉ',
+        validee ? 'validé' : 'non validé',
         style: TextStyle(fontWeight: FontWeight.w900, color: fg, fontSize: 11),
       ),
     );
@@ -1003,6 +1174,3 @@ class _CardBase extends StatelessWidget {
     );
   }
 }
-
-
-
