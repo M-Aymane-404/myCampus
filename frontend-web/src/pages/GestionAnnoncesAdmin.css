@@ -437,6 +437,16 @@ input:checked+.slider:before {
   background: #e2e8f0;
 }
 
+.select-all-toggle.active {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: #ffffff;
+  box-shadow: 0 10px 24px rgba(99, 102, 241, 0.24);
+}
+
+.select-all-toggle.active:hover {
+  background: linear-gradient(135deg, #5b5ff0 0%, #4338ca 100%);
+}
+
 .audience-list {
   flex: 1;
   overflow-y: auto;

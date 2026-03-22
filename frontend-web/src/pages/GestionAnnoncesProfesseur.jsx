@@ -753,8 +753,8 @@ const GestionAnnoncesProfesseur = ({
                     onClick={gererSelectionToutesClasses}
                   >
                     {formulaire.modeCiblage === 'ALL'
-                      ? 'TOUTES LES CLASSES SELECTIONNEES'
-                      : 'CHOISIR TOUTES LES CLASSES'}
+                      ? 'ANNULER TOUTES LES CLASSES'
+                      : 'TOUTES LES CLASSES'}
                   </button>
                 </div>
               </div>

@@ -25,9 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -62,7 +60,7 @@ public class GestionAnnoncesAdministrateurMetierImpl implements GestionAnnoncesA
             }
             case PROFESSEURS_DEPARTEMENT -> {
                 if (professeurIdsCibles.isEmpty()) {
-                    throw new UtilisateursException("Pour cibler les professeurs, fournir professeurIds ou professeurPprs");
+                    throw new UtilisateursException("Pour cibler les professeurs, fournir professeurPprs");
                 }
             }
             default -> {
@@ -177,16 +175,6 @@ public class GestionAnnoncesAdministrateurMetierImpl implements GestionAnnoncesA
         }
     }
 
-    private List<Long> normaliserProfesseurIds(List<Long> professeurIds) {
-        if (professeurIds == null || professeurIds.isEmpty()) {
-            return List.of();
-        }
-        return professeurIds.stream()
-                .filter(Objects::nonNull)
-                .distinct()
-                .toList();
-    }
-
     private List<String> normaliserProfesseurPprs(List<String> professeurPprs) {
         if (professeurPprs == null || professeurPprs.isEmpty()) {
             return List.of();
@@ -199,7 +187,7 @@ public class GestionAnnoncesAdministrateurMetierImpl implements GestionAnnoncesA
     }
 
     private List<Long> resoudreProfesseurIdsCibles(AnnonceEntrerDTO annonceDTO) {
-        List<Long> ids = new ArrayList<>(normaliserProfesseurIds(annonceDTO.getProfesseurIds()));
+        List<Long> ids = new java.util.ArrayList<>();
 
         for (String ppr : normaliserProfesseurPprs(annonceDTO.getProfesseurPprs())) {
             Professeur professeur = professeurRepository.findByPpr(ppr)
