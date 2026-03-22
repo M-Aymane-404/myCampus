@@ -863,9 +863,11 @@ class _CreateExamenModalState extends State<CreateExamenModal> {
   late final TextEditingController _dateCtrl;
   late final TextEditingController _dureeCtrl;
   late final TextEditingController _numeroCtrl;
+  late final ScrollController _scrollCtrl;
   String _selectedType = 'NORMAL';
   final _formKey = GlobalKey<FormState>();
   bool _envoiEnCours = false;
+  String? _erreurInline;
 
   @override
   void initState() {
@@ -873,6 +875,7 @@ class _CreateExamenModalState extends State<CreateExamenModal> {
     _dateCtrl = TextEditingController();
     _dureeCtrl = TextEditingController(text: '90');
     _numeroCtrl = TextEditingController(text: '1');
+    _scrollCtrl = ScrollController();
   }
 
   @override
@@ -880,21 +883,23 @@ class _CreateExamenModalState extends State<CreateExamenModal> {
     _dateCtrl.dispose();
     _dureeCtrl.dispose();
     _numeroCtrl.dispose();
+    _scrollCtrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-        left: 18,
-        right: 18,
-        top: 20,
-      ),
-      child: Wrap(
-        children: [
-          Form(
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+          left: 18,
+          right: 18,
+          top: 20,
+        ),
+        child: SingleChildScrollView(
+          controller: _scrollCtrl,
+          child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -903,6 +908,37 @@ class _CreateExamenModalState extends State<CreateExamenModal> {
                   'Créer un examen',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
                 ),
+                if ((_erreurInline ?? '').trim().isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFEEF2),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFFDA4AF)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.error_outline_rounded,
+                          color: Color(0xFFE11D48),
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            (_erreurInline ?? '').trim(),
+                            style: const TextStyle(
+                              color: Color(0xFF9F1239),
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 14),
                 FieldWithPicker(
                   label: 'Date de l\'examen',
@@ -967,36 +1003,54 @@ class _CreateExamenModalState extends State<CreateExamenModal> {
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
 
+  void _scrollToTop() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (!_scrollCtrl.hasClients) return;
+      _scrollCtrl.animateTo(
+        0,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+      );
+    });
+  }
+
   Future<void> _soumettre() async {
+    setState(() => _erreurInline = null);
     if (!_formKey.currentState!.validate()) return;
     if (_dateCtrl.text.isEmpty) {
-      _showSnack('Date requise', isError: true);
+      setState(() => _erreurInline = 'Date requise');
+      _scrollToTop();
       return;
     }
 
     final duree = int.tryParse(_dureeCtrl.text.trim());
     if (duree == null || duree <= 0) {
-      _showSnack('Durée requise (minutes > 0)', isError: true);
+      setState(() => _erreurInline = 'Durée requise (minutes > 0)');
+      _scrollToTop();
       return;
     }
 
     final numero = int.tryParse(_numeroCtrl.text.trim());
     if (numero == null || numero <= 0) {
-      _showSnack('Numéro requis (> 0)', isError: true);
+      setState(() => _erreurInline = 'Numéro requis (> 0)');
+      _scrollToTop();
       return;
     }
 
     final semestreAuto = _determinerSemestreAuto();
     if (semestreAuto == null) {
-      _showSnack(
-        'Semestre (module) introuvable pour cette matière (contactez l\'administrateur).',
-        isError: true,
+      setState(
+        () =>
+            _erreurInline =
+                'Semestre (module) introuvable pour cette matière (contactez l\'administrateur).',
       );
+      _scrollToTop();
       return;
     }
 
@@ -1019,7 +1073,8 @@ class _CreateExamenModalState extends State<CreateExamenModal> {
       if (!mounted) return;
       Navigator.of(context).pop(true);
     } catch (e) {
-      _showSnack(_formatApiError(e), isError: true);
+      setState(() => _erreurInline = _formatApiError(e));
+      _scrollToTop();
     } finally {
       if (mounted) setState(() => _envoiEnCours = false);
     }
