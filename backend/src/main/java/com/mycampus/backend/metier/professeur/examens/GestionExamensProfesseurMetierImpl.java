@@ -6,6 +6,7 @@ import com.mycampus.backend.dto.professeur.DonneeSortie.examens.*;
 import com.mycampus.backend.entites.AffectationEnseignement;
 import com.mycampus.backend.entites.Examen;
 import com.mycampus.backend.enumerations.EtatExamen;
+import com.mycampus.backend.enumerations.Semestre;
 import com.mycampus.backend.exceptions.NotesProfesseurException;
 import com.mycampus.backend.metier.professeur.StockageFichiersService;
 import com.mycampus.backend.repositorys.AffectationEnseignementRepository;
@@ -32,7 +33,6 @@ public class GestionExamensProfesseurMetierImpl  implements GestionExamensProfes
 
     private void validateCreationDto(ExamenCreationEntrerDTO dto) {
         if (dto == null) throw new NotesProfesseurException("DTO obligatoire.");
-        if (dto.getSemestre() == null) throw new NotesProfesseurException("semestre obligatoire.");
         if (dto.getDateExamen() == null) throw new NotesProfesseurException("dateExamen obligatoire.");
         if (dto.getNumeroExamen() == null) throw new NotesProfesseurException("numeroExamen obligatoire.");
         if (dto.getTypeExamen() == null) throw new NotesProfesseurException("typeExamen obligatoire.");
@@ -133,14 +133,26 @@ public class GestionExamensProfesseurMetierImpl  implements GestionExamensProfes
         validateCreationDto(dto);
         AffectationEnseignement ae = requireAffectationUniqueActive(ppr, codeClasse, codeMatiere);
 
+        Semestre semestre = dto.getSemestre();
+        if (semestre == null) {
+            try {
+                semestre = ae.getMatiere().getModule().getSemestre();
+            } catch (Exception ignored) {
+                semestre = null;
+            }
+        }
+        if (semestre == null) {
+            throw new NotesProfesseurException("semestre obligatoire (introuvable via le module de la matiere).");
+        }
+
         boolean exists = examenRepo.existsByMatiere_CodeMatiereAndSemestreAndNumeroExamenAndTypeExamen(
-                codeMatiere, dto.getSemestre(), dto.getNumeroExamen(), dto.getTypeExamen()
+                codeMatiere, semestre, dto.getNumeroExamen(), dto.getTypeExamen()
         );
         if (exists) throw new NotesProfesseurException("Examen déjà existant (même matière/semestre/numéro/type).");
 
         Examen examen = Examen.builder()
                 .matiere(ae.getMatiere())
-                .semestre(dto.getSemestre())
+                .semestre(semestre)
                 .dateExamen(dto.getDateExamen())
                 .numeroExamen(dto.getNumeroExamen())
                 .typeExamen(dto.getTypeExamen())

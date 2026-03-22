@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../../etudiant/data/controller/ControleurFichier.dart';
@@ -157,8 +160,14 @@ class SessionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dateLabel = _formatDateJourMoisAnnee(seance.jour);
-    final timeLabel = _formatTimeRange(seance.heureDebut, seance.heureFin);
+    final dateLabel = _formatSeanceDateLabel(
+      startIso: seance.heureDebut,
+      fallbackDate: seance.jour,
+    );
+    final timeLabel = _formatSeanceTimeRangeLabel(
+      startIso: seance.heureDebut,
+      endIso: seance.heureFin,
+    );
     final metaParts = <String>[
       if (dateLabel.isNotEmpty) dateLabel,
       if (timeLabel.isNotEmpty) timeLabel,
@@ -201,7 +210,7 @@ class SessionCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            metaParts.join(' · '),
+            metaParts.join(' • '),
             style: const TextStyle(color: Color(0xFF667085)),
           ),
           const SizedBox(height: 4),
@@ -408,8 +417,10 @@ class _CreateSeanceModalState extends State<CreateSeanceModal> {
   late final TextEditingController _finCtrl;
   late final TextEditingController _typeCtrl;
   late final TextEditingController _salleCtrl;
+  late final ScrollController _scrollCtrl;
   final _formKey = GlobalKey<FormState>();
   bool _envoiEnCours = false;
+  String? _erreurInline;
 
   @override
   void initState() {
@@ -419,6 +430,7 @@ class _CreateSeanceModalState extends State<CreateSeanceModal> {
     _finCtrl = TextEditingController();
     _typeCtrl = TextEditingController(text: 'COURS');
     _salleCtrl = TextEditingController();
+    _scrollCtrl = ScrollController();
   }
 
   @override
@@ -428,21 +440,23 @@ class _CreateSeanceModalState extends State<CreateSeanceModal> {
     _finCtrl.dispose();
     _typeCtrl.dispose();
     _salleCtrl.dispose();
+    _scrollCtrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-        left: 18,
-        right: 18,
-        top: 20,
-      ),
-      child: Wrap(
-        children: [
-          Form(
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+          left: 18,
+          right: 18,
+          top: 20,
+        ),
+        child: SingleChildScrollView(
+          controller: _scrollCtrl,
+          child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -451,6 +465,37 @@ class _CreateSeanceModalState extends State<CreateSeanceModal> {
                   'Créer une séance',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
                 ),
+                if ((_erreurInline ?? '').trim().isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFEEF2),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFFDA4AF)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.error_outline_rounded,
+                          color: Color(0xFFE11D48),
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            (_erreurInline ?? '').trim(),
+                            style: const TextStyle(
+                              color: Color(0xFF9F1239),
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 14),
                 FieldWithPicker(
                   label: 'Date',
@@ -505,17 +550,48 @@ class _CreateSeanceModalState extends State<CreateSeanceModal> {
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
 
+  void _scrollToTop() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (!_scrollCtrl.hasClients) return;
+      _scrollCtrl.animateTo(
+        0,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+      );
+    });
+  }
+
   Future<void> _soumettre() async {
+    setState(() => _erreurInline = null);
     if (!_formKey.currentState!.validate()) return;
     if (_dateCtrl.text.isEmpty ||
         _debutCtrl.text.isEmpty ||
         _finCtrl.text.isEmpty) {
-      _showSnack('Date et horaires requis', isError: true);
+      setState(() => _erreurInline = 'Date et horaires requis');
+      _scrollToTop();
+      return;
+    }
+
+    final debutMinutes = _parseMinutes(_debutCtrl.text);
+    final finMinutes = _parseMinutes(_finCtrl.text);
+    if (debutMinutes == null || finMinutes == null) {
+      setState(() => _erreurInline = "Format d'heure invalide");
+      _scrollToTop();
+      return;
+    }
+    if (debutMinutes >= finMinutes) {
+      setState(
+        () =>
+            _erreurInline =
+                "L'heure de début doit être strictement avant l'heure de fin.",
+      );
+      _scrollToTop();
       return;
     }
 
@@ -543,10 +619,104 @@ class _CreateSeanceModalState extends State<CreateSeanceModal> {
       if (!mounted) return;
       Navigator.of(context).pop(true);
     } catch (e) {
-      _showSnack(e.toString(), isError: true);
+      setState(() => _erreurInline = _formatApiError(e));
+      _scrollToTop();
     } finally {
       if (mounted) setState(() => _envoiEnCours = false);
     }
+  }
+
+  int? _parseMinutes(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return null;
+    final parts = trimmed.split(':');
+    if (parts.length < 2) return null;
+    final h = int.tryParse(parts[0]);
+    final m = int.tryParse(parts[1]);
+    if (h == null || m == null) return null;
+    return h * 60 + m;
+  }
+
+  String _formatApiError(Object error) {
+    if (error is DioException) {
+      final message = _extractMessageFromErrorBody(error.response?.data);
+      if (message != null) return message;
+
+      final fallback = (error.message ?? '').trim();
+      if (fallback.isNotEmpty) return fallback;
+
+      return 'Erreur reseau. Verifiez votre connexion';
+    }
+
+    final raw = error.toString();
+    return raw.startsWith('Exception: ') ? raw.substring(11) : raw;
+  }
+
+  String? _extractMessageFromErrorBody(dynamic data) {
+    if (data == null) return null;
+
+    final decoded = _tryDecodeJson(data);
+
+    if (decoded is Map) {
+      final rawMessage =
+          decoded['message'] ??
+          decoded['error'] ??
+          decoded['detail'] ??
+          decoded['title'] ??
+          decoded['description'];
+      final msg = (rawMessage ?? '').toString().trim();
+      if (msg.isNotEmpty) return _truncate(msg);
+
+      final errorsCandidates = <dynamic>[
+        decoded['fieldErrors'],
+        decoded['errors'],
+        decoded['violations'],
+      ];
+
+      for (final candidate in errorsCandidates) {
+        final extracted = _extractFirstErrorMessage(candidate);
+        if (extracted != null) return _truncate(extracted);
+      }
+    }
+
+    if (decoded is String) {
+      final msg = decoded.trim();
+      if (msg.isNotEmpty) return _truncate(msg);
+    }
+
+    return null;
+  }
+
+  String? _extractFirstErrorMessage(dynamic errors) {
+    if (errors is! List || errors.isEmpty) return null;
+    final first = errors.first;
+    if (first is String && first.trim().isNotEmpty) return first.trim();
+    if (first is Map) {
+      final raw = first['defaultMessage'] ?? first['message'] ?? first['error'];
+      final msg = (raw ?? '').toString().trim();
+      if (msg.isNotEmpty) return msg;
+    }
+    return null;
+  }
+
+  dynamic _tryDecodeJson(dynamic value) {
+    if (value is String) {
+      final trimmed = value.trim();
+      if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+        try {
+          return jsonDecode(trimmed);
+        } catch (_) {
+          return value;
+        }
+      }
+      return value;
+    }
+    return value;
+  }
+
+  String _truncate(String value, {int max = 220}) {
+    if (value.length <= max) return value;
+    return '${value.substring(0, max)}...';
   }
 
   Future<void> _pickDate(TextEditingController controller) async {
@@ -588,62 +758,95 @@ class _CreateSeanceModalState extends State<CreateSeanceModal> {
   }
 }
 
-String _formatTimeRange(String start, String end) {
-  final debut = start.trim();
-  final fin = end.trim();
-  if (debut.isEmpty && fin.isEmpty) return '';
-  if (fin.isEmpty) return debut;
-  if (debut.isEmpty) return fin;
-  return '$debut - $fin';
+const String _kFrenchLocale = 'fr_FR';
+
+DateTime? _tryParseBackendIsoDateTime(String raw) {
+  final value = raw.trim();
+  if (value.isEmpty) return null;
+  final parsed = DateTime.tryParse(value);
+  if (parsed == null) return null;
+  return parsed.toLocal();
 }
 
-String _formatDateJourMoisAnnee(String raw) {
-  final parsed = _tryParseDate(raw);
-  if (parsed == null) return raw.trim();
-  final dd = parsed.day.toString().padLeft(2, '0');
-  final mm = parsed.month.toString().padLeft(2, '0');
-  final yyyy = parsed.year.toString();
-  return '$dd/$mm/$yyyy';
-}
-
-DateTime? _tryParseDate(String raw) {
+DateTime? _tryParseDateOnly(String raw) {
   final value = raw.trim();
   if (value.isEmpty) return null;
 
-  final embeddedIso = RegExp(r'(\d{4}-\d{2}-\d{2})').firstMatch(value);
-  if (embeddedIso != null) {
-    final parsed = DateTime.tryParse(embeddedIso.group(1)!);
-    if (parsed != null) return parsed;
-  }
-
   final direct = DateTime.tryParse(value);
-  if (direct != null) return direct;
-
-  final fr = RegExp(r'^(\d{2})/(\d{2})/(\d{4})$').firstMatch(value);
-  if (fr != null) {
-    final day = int.parse(fr.group(1)!);
-    final month = int.parse(fr.group(2)!);
-    final year = int.parse(fr.group(3)!);
-    return DateTime(year, month, day);
+  if (direct != null) {
+    final local = direct.toLocal();
+    return DateTime(local.year, local.month, local.day);
   }
 
-  final dash = RegExp(r'^(\d{2})-(\d{2})-(\d{4})$').firstMatch(value);
-  if (dash != null) {
-    final day = int.parse(dash.group(1)!);
-    final month = int.parse(dash.group(2)!);
-    final year = int.parse(dash.group(3)!);
-    return DateTime(year, month, day);
-  }
+  final formats = <DateFormat>[
+    DateFormat('dd/MM/yyyy', _kFrenchLocale),
+    DateFormat('dd-MM-yyyy', _kFrenchLocale),
+    DateFormat('yyyy/MM/dd', _kFrenchLocale),
+  ];
 
-  final ymdSlash = RegExp(r'^(\d{4})/(\d{2})/(\d{2})$').firstMatch(value);
-  if (ymdSlash != null) {
-    final year = int.parse(ymdSlash.group(1)!);
-    final month = int.parse(ymdSlash.group(2)!);
-    final day = int.parse(ymdSlash.group(3)!);
-    return DateTime(year, month, day);
+  for (final format in formats) {
+    try {
+      final parsed = format.parseStrict(value);
+      return DateTime(parsed.year, parsed.month, parsed.day);
+    } catch (_) {}
   }
 
   return null;
+}
+
+DateTime? _tryParseAnyTime(String raw) {
+  final value = raw.trim();
+  if (value.isEmpty) return null;
+
+  final asDateTime = _tryParseBackendIsoDateTime(value);
+  if (asDateTime != null) return asDateTime;
+
+  try {
+    return DateFormat.Hm(_kFrenchLocale).parseStrict(value);
+  } catch (_) {}
+
+  try {
+    return DateFormat('HH:mm:ss', _kFrenchLocale).parseStrict(value);
+  } catch (_) {}
+
+  return null;
+}
+
+String _formatSeanceDateLabel({
+  required String startIso,
+  required String fallbackDate,
+  bool longDate = false,
+}) {
+  final fromStart = _tryParseBackendIsoDateTime(startIso);
+  final date = fromStart ?? _tryParseDateOnly(fallbackDate);
+  if (date == null) return fallbackDate.trim();
+
+  final local = DateTime(date.year, date.month, date.day);
+  if (longDate) {
+    return DateFormat('d MMMM y', _kFrenchLocale).format(local);
+  }
+
+  return DateFormat('dd/MM/yyyy', _kFrenchLocale).format(local);
+}
+
+String _formatSeanceTimeRangeLabel({
+  required String startIso,
+  required String endIso,
+}) {
+  final start = _tryParseAnyTime(startIso);
+  final end = _tryParseAnyTime(endIso);
+  if (start == null && end == null) return '';
+
+  final format = DateFormat.Hm(_kFrenchLocale);
+  if (start == null) return format.format(end!);
+  if (end == null) return format.format(start);
+  return '${format.format(start)} - ${format.format(end)}';
+}
+
+String _formatDateJourMoisAnnee(String raw) {
+  final parsed = _tryParseDateOnly(raw);
+  if (parsed == null) return raw.trim();
+  return DateFormat('dd/MM/yyyy', _kFrenchLocale).format(parsed);
 }
 
 class CreateExamenModal extends StatefulWidget {
@@ -660,9 +863,11 @@ class _CreateExamenModalState extends State<CreateExamenModal> {
   late final TextEditingController _dateCtrl;
   late final TextEditingController _dureeCtrl;
   late final TextEditingController _numeroCtrl;
+  late final ScrollController _scrollCtrl;
   String _selectedType = 'NORMAL';
   final _formKey = GlobalKey<FormState>();
   bool _envoiEnCours = false;
+  String? _erreurInline;
 
   @override
   void initState() {
@@ -670,6 +875,7 @@ class _CreateExamenModalState extends State<CreateExamenModal> {
     _dateCtrl = TextEditingController();
     _dureeCtrl = TextEditingController(text: '90');
     _numeroCtrl = TextEditingController(text: '1');
+    _scrollCtrl = ScrollController();
   }
 
   @override
@@ -677,21 +883,23 @@ class _CreateExamenModalState extends State<CreateExamenModal> {
     _dateCtrl.dispose();
     _dureeCtrl.dispose();
     _numeroCtrl.dispose();
+    _scrollCtrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-        left: 18,
-        right: 18,
-        top: 20,
-      ),
-      child: Wrap(
-        children: [
-          Form(
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+          left: 18,
+          right: 18,
+          top: 20,
+        ),
+        child: SingleChildScrollView(
+          controller: _scrollCtrl,
+          child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -700,6 +908,37 @@ class _CreateExamenModalState extends State<CreateExamenModal> {
                   'Créer un examen',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
                 ),
+                if ((_erreurInline ?? '').trim().isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFEEF2),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFFDA4AF)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.error_outline_rounded,
+                          color: Color(0xFFE11D48),
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            (_erreurInline ?? '').trim(),
+                            style: const TextStyle(
+                              color: Color(0xFF9F1239),
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 14),
                 FieldWithPicker(
                   label: 'Date de l\'examen',
@@ -764,36 +1003,54 @@ class _CreateExamenModalState extends State<CreateExamenModal> {
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
 
+  void _scrollToTop() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (!_scrollCtrl.hasClients) return;
+      _scrollCtrl.animateTo(
+        0,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+      );
+    });
+  }
+
   Future<void> _soumettre() async {
+    setState(() => _erreurInline = null);
     if (!_formKey.currentState!.validate()) return;
     if (_dateCtrl.text.isEmpty) {
-      _showSnack('Date requise', isError: true);
+      setState(() => _erreurInline = 'Date requise');
+      _scrollToTop();
       return;
     }
 
     final duree = int.tryParse(_dureeCtrl.text.trim());
     if (duree == null || duree <= 0) {
-      _showSnack('Durée requise (minutes > 0)', isError: true);
+      setState(() => _erreurInline = 'Durée requise (minutes > 0)');
+      _scrollToTop();
       return;
     }
 
     final numero = int.tryParse(_numeroCtrl.text.trim());
     if (numero == null || numero <= 0) {
-      _showSnack('Numéro requis (> 0)', isError: true);
+      setState(() => _erreurInline = 'Numéro requis (> 0)');
+      _scrollToTop();
       return;
     }
 
     final semestreAuto = _determinerSemestreAuto();
     if (semestreAuto == null) {
-      _showSnack(
-        'Semestre (module) introuvable pour cette matière (contactez l\'administrateur).',
-        isError: true,
+      setState(
+        () =>
+            _erreurInline =
+                'Semestre (module) introuvable pour cette matière (contactez l\'administrateur).',
       );
+      _scrollToTop();
       return;
     }
 
@@ -816,7 +1073,8 @@ class _CreateExamenModalState extends State<CreateExamenModal> {
       if (!mounted) return;
       Navigator.of(context).pop(true);
     } catch (e) {
-      _showSnack(_formatApiError(e), isError: true);
+      setState(() => _erreurInline = _formatApiError(e));
+      _scrollToTop();
     } finally {
       if (mounted) setState(() => _envoiEnCours = false);
     }

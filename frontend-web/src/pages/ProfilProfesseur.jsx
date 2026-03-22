@@ -11,17 +11,12 @@ import {
 } from 'lucide-react';
 import { apiAuth } from '../services/apiAuth';
 import { apiProfesseurs } from '../services/apiProfesseurs';
+import PhotoSecurisee from '../composants/communs/PhotoSecurisee';
 import './ProfilPage.css';
 import './ProfilProfesseur.css';
 
-const API_HOST = 'http://localhost:8080';
 const PHONE_REGEX = /^[+\d\s().-]{8,20}$/;
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png'];
-
-const buildPhotoUrl = (photo) => {
-  if (!photo) return null;
-  return photo.startsWith('http') ? photo : `${API_HOST}${photo}`;
-};
 
 const extractPhotoValue = (response) =>
   response?.url
@@ -115,7 +110,7 @@ const ProfilProfesseur = () => {
         const mappedProfile = readProfile(data, currentUser);
         setProfil(mappedProfile);
         setTelephone(mappedProfile.tel);
-        setPhotoPreview(buildPhotoUrl(mappedProfile.photoUrl));
+        setPhotoPreview(null);
       } catch (err) {
         console.error('Erreur lors du chargement du profil professeur:', err);
         if (mounted) {
@@ -137,8 +132,8 @@ const ProfilProfesseur = () => {
 
   useEffect(() => {
     if (!selectedPhotoFile) {
-      setPhotoPreview(buildPhotoUrl(profil.photoUrl));
-      return undefined;
+      setPhotoPreview(null);
+      return;
     }
 
     const objectUrl = URL.createObjectURL(selectedPhotoFile);
@@ -147,7 +142,7 @@ const ProfilProfesseur = () => {
     return () => {
       URL.revokeObjectURL(objectUrl);
     };
-  }, [selectedPhotoFile, profil.photoUrl]);
+  }, [selectedPhotoFile]);
 
   const displayName = useMemo(() => {
     const fullName = `${profil.prenom} ${profil.nom}`.trim();
@@ -201,7 +196,7 @@ const ProfilProfesseur = () => {
       email: mappedProfile.email,
       tel: mappedProfile.tel,
       telephone: mappedProfile.tel,
-      photoProfile: buildPhotoUrl(mappedProfile.photoUrl),
+      ...(mappedProfile.photoUrl ? { photoProfile: mappedProfile.photoUrl, photoProfileVersion: Date.now() } : {}),
     });
   };
 
@@ -322,9 +317,8 @@ const ProfilProfesseur = () => {
       const responsePhoto = extractPhotoValue(response);
 
       if (responsePhoto) {
-        const fullPhotoUrl = buildPhotoUrl(responsePhoto);
         setProfil((prev) => ({ ...prev, photoUrl: responsePhoto }));
-        syncStoredUser({ photoProfile: fullPhotoUrl });
+        syncStoredUser({ photoProfile: responsePhoto, photoProfileVersion: Date.now() });
       } else {
         await reloadProfile();
       }
@@ -382,7 +376,16 @@ const ProfilProfesseur = () => {
               {photoPreview ? (
                 <img src={photoPreview} alt="Profil professeur" className="profile-avatar-image" />
               ) : (
-                <span className="profile-avatar-initials">{getInitials(profil.prenom, profil.nom)}</span>
+                <PhotoSecurisee
+                  photoUrl={profil.photoUrl}
+                  alt="Profil professeur"
+                  className="profile-avatar-image"
+                  fallback={
+                    <span className="profile-avatar-initials">
+                      {getInitials(profil.prenom, profil.nom)}
+                    </span>
+                  }
+                />
               )}
 
               <input

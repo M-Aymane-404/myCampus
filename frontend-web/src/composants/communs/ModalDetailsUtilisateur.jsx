@@ -1,5 +1,6 @@
 import { X, CheckCircle, Mail, Phone, Fingerprint, Calendar, Award, Hash, BookOpen, Briefcase } from 'lucide-react';
 import { useEffect } from 'react';
+import PhotoSecurisee from './PhotoSecurisee';
 import './ModalDetailsUtilisateur.css';
 
 const ModalDetailsUtilisateur = ({ estOuvert, surFermer, utilisateur, surModifier }) => {
@@ -36,9 +37,14 @@ const ModalDetailsUtilisateur = ({ estOuvert, surFermer, utilisateur, surModifie
 
     const userId = utilisateur.ppr || utilisateur.apogee || "23009845";
 
-    // Check if user has a profile photo
-    const hasAvatar = utilisateur.photoUrl && utilisateur.photoUrl.trim() !== '';
-    const photoUrl = hasAvatar ? `http://localhost:8080${utilisateur.photoUrl}` : null;
+    const initialsFallback = (
+        <div
+            className="large-avatar large-avatar-placeholder"
+            style={{ backgroundImage: 'none' }}
+        >
+            <span style={{ fontSize: '3rem' }}>{initials}</span>
+        </div>
+    );
 
     return (
         <div className="formulaire-modal-overlay" onClick={surFermer}>
@@ -53,23 +59,12 @@ const ModalDetailsUtilisateur = ({ estOuvert, surFermer, utilisateur, surModifie
                     {/* Header */}
                     <div className="profile-header-card">
                         <div className="large-avatar-wrapper">
-                            {hasAvatar ? (
-                                <img 
-                                    src={photoUrl} 
-                                    alt={`${utilisateur.name} profile`}
-                                    className="large-avatar"
-                                    onError={(e) => {
-                                        // Fallback to initials if image fails to load
-                                        e.target.style.display = 'none';
-                                        e.target.nextSibling.style.display = 'flex';
-                                    }}
-                                />
-                            ) : null}
-                            {/* Fallback div - always rendered but hidden when image loads successfully */}
-                            <div className={`large-avatar ${!hasAvatar ? 'large-avatar-placeholder' : ''}`} 
-                                 style={hasAvatar ? { display: 'none' } : { backgroundImage: 'none' }}>
-                                <span style={{ fontSize: '3rem' }}>{initials}</span>
-                            </div>
+                            <PhotoSecurisee
+                                photoUrl={utilisateur.photoUrl}
+                                alt={`${utilisateur.name} profile`}
+                                className="large-avatar"
+                                fallback={initialsFallback}
+                            />
                         </div>
 
                         <div className="profile-info-block">
