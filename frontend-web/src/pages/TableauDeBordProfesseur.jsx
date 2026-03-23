@@ -640,7 +640,7 @@ const buildPresenceInsightsFromApp = async () => {
   };
 };
 
-const TableauDeBordProfesseur = () => {
+const TableauDeBordProfesseur = ({ surNavigation }) => {
   const [dashboard, setDashboard] = useState(null);
   const [prochaineSeance, setProchaineSeance] = useState(null);
   const [presenceInsights, setPresenceInsights] = useState({
@@ -733,9 +733,8 @@ const TableauDeBordProfesseur = () => {
     await loadNotesStats(true);
   };
 
-  const dashboardData = dashboard || {};
+  const dashboardData = useMemo(() => dashboard || {}, [dashboard]);
   const entete = dashboardData.entete || {};
-  const stats = dashboardData.stats || {};
   const sessionCard = normalizeSession(prochaineSeance);
   const dashboardAbsenceInsights = useMemo(() => buildAbsenceInsights(dashboardData), [dashboardData]);
   const prochainExamen = useMemo(() => {
@@ -810,6 +809,48 @@ const TableauDeBordProfesseur = () => {
     { label: 'Cours sans support', value: presenceInsights.coursSansSupport, accent: 'emerald', icon: AlertCircle },
   ];
 
+  const navigateToPresence = (presenceVueProfesseur = null) => {
+    if (typeof surNavigation === 'function') {
+      surNavigation({
+        id: 'presence',
+        params: {
+          presenceVueProfesseur: presenceVueProfesseur
+            ? {
+                ...presenceVueProfesseur,
+                requestId: Date.now(),
+              }
+            : null,
+        },
+      });
+      return;
+    }
+
+    window.location.hash = '#presence';
+  };
+
+  const handlePriorityNavigation = (key) => {
+    if (key === 'today') {
+      navigateToPresence({
+        activeView: 'feuille',
+      });
+      return;
+    }
+
+    if (key === 'notes') {
+      if (typeof surNavigation === 'function') {
+        surNavigation('notes');
+      }
+      return;
+    }
+
+    if (key === 'justifications') {
+      navigateToPresence({
+        activeView: 'justificatifs',
+        statusFilter: 'EN_ATTENTE',
+      });
+    }
+  };
+
   const alertEntries = [
     {
       key: 'today',
@@ -820,6 +861,7 @@ const TableauDeBordProfesseur = () => {
           ? `${formatCompactNumber(absenceInsights.todayCount)} absence${absenceInsights.todayCount > 1 ? 's' : ''} enregistree${absenceInsights.todayCount > 1 ? 's' : ''} aujourd hui.`
           : 'Aucune absence detectee aujourd hui.',
       tone: absenceInsights.todayCount > 0 ? 'danger' : 'soft',
+      actionLabel: 'Ouvrir la presence',
     },
     {
       key: 'notes',
@@ -830,6 +872,7 @@ const TableauDeBordProfesseur = () => {
           ? `${formatCompactNumber(noteMeta.feuillesNotesACompleter)} liste${noteMeta.feuillesNotesACompleter > 1 ? 's' : ''} ont encore des notes manquantes.`
           : 'Toutes les feuilles de notes sont completes.',
       tone: noteMeta.feuillesNotesACompleter > 0 ? 'danger' : 'soft',
+      actionLabel: 'Ouvrir les notes',
     },
     {
       key: 'justifications',
@@ -840,6 +883,7 @@ const TableauDeBordProfesseur = () => {
           ? `${formatCompactNumber(absenceInsights.pendingCount)} justificatif${absenceInsights.pendingCount > 1 ? 's' : ''} restent en attente de consultation.`
           : 'Aucun justificatif en attente.',
       tone: absenceInsights.pendingCount > 0 ? 'warning' : 'soft',
+      actionLabel: 'Traiter',
     },
   ];
 
@@ -1050,7 +1094,12 @@ const TableauDeBordProfesseur = () => {
 
             <div className="prof-priority-list">
               {alertEntries.map((entry) => (
-                <div key={entry.key} className={`prof-priority-item tone-${entry.tone}`}>
+                <button
+                  key={entry.key}
+                  type="button"
+                  className={`prof-priority-item tone-${entry.tone} clickable`}
+                  onClick={() => handlePriorityNavigation(entry.key)}
+                >
                   <div className="prof-priority-main">
                     <div className="prof-priority-copy">
                       <div className="prof-priority-title-row">
@@ -1058,10 +1107,11 @@ const TableauDeBordProfesseur = () => {
                         <strong>{entry.title}</strong>
                       </div>
                       <p>{entry.detail}</p>
+                      <span className="prof-priority-hint">{entry.actionLabel}</span>
                     </div>
                     <div className="prof-priority-value">{entry.value}</div>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
 

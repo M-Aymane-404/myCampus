@@ -3,7 +3,9 @@ package com.mycampus.backend.metier.professeur.presences;
 import com.mycampus.backend.dto.professeur.DonneeEntrer.presences.PresenceEntrerDTO;
 import com.mycampus.backend.dto.professeur.DonneeSortie.presences.EtudiantPresenceSortieDTO;
 import com.mycampus.backend.dto.professeur.DonneeSortie.presences.FeuilleAppelPresenceSortieDTO;
+import com.mycampus.backend.dto.professeur.DonneeSortie.presences.JustificatifProfesseurSortieDTO;
 import com.mycampus.backend.dto.professeur.DonneeSortie.presences.LignePresenceSortieDTO;
+import com.mycampus.backend.entites.AffectationEnseignement;
 import com.mycampus.backend.entites.Classe;
 import com.mycampus.backend.entites.Etudiant;
 import com.mycampus.backend.entites.Presence;
@@ -29,8 +31,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -117,17 +121,30 @@ public class GestionPresencesProfesseurMetierImpl implements GestionPresencesPro
         return presence;
     }
 
+    private boolean hasJustification(Presence presence) {
+        return presence != null && (
+                StringUtils.hasText(presence.getDescriptionDeJustification())
+                        || StringUtils.hasText(presence.getMotifUrl())
+                        || StringUtils.hasText(presence.getMotifNom())
+                        || presence.getTypeMotif() != null
+        );
+    }
+
+    private StatutJustificatif resolveStatutJustificatif(Presence presence) {
+        if (presence == null) {
+            return StatutJustificatif.AUCUN;
+        }
+
+        if (presence.getStatutJustificatif() != null) {
+            return presence.getStatutJustificatif();
+        }
+
+        return hasJustification(presence) ? StatutJustificatif.EN_ATTENTE : StatutJustificatif.AUCUN;
+    }
+
     private LignePresenceSortieDTO toLignePresenceSortieDTO(Presence presence, Etudiant etudiant) {
-        boolean justificationSoumise =
-                presence != null && (
-                        StringUtils.hasText(presence.getDescriptionDeJustification())
-                                || StringUtils.hasText(presence.getMotifUrl())
-                                || StringUtils.hasText(presence.getMotifNom())
-                                || presence.getTypeMotif() != null
-                );
-        StatutJustificatif statutJustificatif = presence != null && presence.getStatutJustificatif() != null
-                ? presence.getStatutJustificatif()
-                : (justificationSoumise ? StatutJustificatif.EN_ATTENTE : StatutJustificatif.AUCUN);
+        boolean justificationSoumise = hasJustification(presence);
+        StatutJustificatif statutJustificatif = resolveStatutJustificatif(presence);
 
         return LignePresenceSortieDTO.builder()
                 .idPresence(presence != null ? presence.getId() : null)
@@ -144,6 +161,45 @@ public class GestionPresencesProfesseurMetierImpl implements GestionPresencesPro
                 .motifUrl(presence != null ? lienFichierSecuriseService.construireUrlJustificatif(presence.getId(), presence.getMotifNom()) : null)
                 .motifNom(presence != null ? presence.getMotifNom() : null)
                 .dateDeclaration(presence != null ? presence.getDateDeclaration() : null)
+                .build();
+    }
+
+    private JustificatifProfesseurSortieDTO toJustificatifProfesseurSortieDTO(Presence presence) {
+        if (presence == null || presence.getEtudiant() == null || presence.getSeance() == null) {
+            return null;
+        }
+
+        Seance seance = presence.getSeance();
+        AffectationEnseignement affectation = seance.getAffectationEnseignement();
+        Etudiant etudiant = presence.getEtudiant();
+        StatutJustificatif statutJustificatif = resolveStatutJustificatif(presence);
+        boolean justificationSoumise = hasJustification(presence);
+
+        return JustificatifProfesseurSortieDTO.builder()
+                .presenceId(presence.getId())
+                .seanceId(seance.getId())
+                .idEtudiant(etudiant.getId())
+                .apogee(etudiant.getApogee())
+                .nomEtudiant(etudiant.getNom())
+                .prenomEtudiant(etudiant.getPrenom())
+                .codeClasse(affectation != null && affectation.getClasse() != null ? affectation.getClasse().getCodeClasse() : null)
+                .nomClasse(affectation != null && affectation.getClasse() != null ? affectation.getClasse().getNom() : null)
+                .codeMatiere(affectation != null && affectation.getMatiere() != null ? affectation.getMatiere().getCodeMatiere() : null)
+                .nomMatiere(affectation != null && affectation.getMatiere() != null ? affectation.getMatiere().getNom() : null)
+                .typeSeance(seance.getType())
+                .dateAbsence(seance.getDate())
+                .heureDebut(seance.getHeureDebut())
+                .heureFin(seance.getHeureFin())
+                .salle(seance.getSalle())
+                .status(presence.getStatus())
+                .statutJustificatif(statutJustificatif)
+                .justifiee(statutJustificatif == StatutJustificatif.VALIDE)
+                .justificationSoumise(justificationSoumise)
+                .motif(presence.getDescriptionDeJustification())
+                .typeMotif(presence.getTypeMotif())
+                .motifUrl(lienFichierSecuriseService.construireUrlJustificatif(presence.getId(), presence.getMotifNom()))
+                .motifNom(presence.getMotifNom())
+                .dateDeclaration(presence.getDateDeclaration())
                 .build();
     }
 
@@ -208,6 +264,83 @@ public class GestionPresencesProfesseurMetierImpl implements GestionPresencesPro
                 .nomMatiere(seance.getAffectationEnseignement().getMatiere().getNom())
                 .lignes(lignesFinales)
                 .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<JustificatifProfesseurSortieDTO> listerJustificatifsProfesseur(
+            String professeurPpr,
+            StatutJustificatif statutJustificatif,
+            String codeClasse,
+            String recherche,
+            LocalDate dateDebut,
+            LocalDate dateFin
+    ) throws SeancesProfesseurException {
+
+        requireProfesseurPpr(professeurPpr);
+
+        final String rechercheNormalisee = StringUtils.hasText(recherche) ? recherche.trim().toLowerCase() : null;
+        final String codeClasseNormalise = StringUtils.hasText(codeClasse) ? codeClasse.trim() : null;
+
+        return presenceRepository.listerJustificatifsParProfesseur(professeurPpr).stream()
+                .filter(this::hasJustification)
+                .filter(presence -> statutJustificatif == null || resolveStatutJustificatif(presence) == statutJustificatif)
+                .filter(presence -> {
+                    if (codeClasseNormalise == null) {
+                        return true;
+                    }
+
+                    Seance seance = presence.getSeance();
+                    AffectationEnseignement affectation = seance != null ? seance.getAffectationEnseignement() : null;
+                    Classe classe = affectation != null ? affectation.getClasse() : null;
+                    return classe != null && codeClasseNormalise.equalsIgnoreCase(classe.getCodeClasse());
+                })
+                .filter(presence -> {
+                    if (dateDebut == null && dateFin == null) {
+                        return true;
+                    }
+
+                    LocalDate dateAbsence = presence.getSeance() != null ? presence.getSeance().getDate() : null;
+                    if (dateAbsence == null) {
+                        return false;
+                    }
+
+                    boolean afterStart = dateDebut == null || !dateAbsence.isBefore(dateDebut);
+                    boolean beforeEnd = dateFin == null || !dateAbsence.isAfter(dateFin);
+                    return afterStart && beforeEnd;
+                })
+                .filter(presence -> {
+                    if (rechercheNormalisee == null) {
+                        return true;
+                    }
+
+                    Etudiant etudiant = presence.getEtudiant();
+                    String prenom = etudiant != null && etudiant.getPrenom() != null ? etudiant.getPrenom().toLowerCase() : "";
+                    String nom = etudiant != null && etudiant.getNom() != null ? etudiant.getNom().toLowerCase() : "";
+                    String apogee = etudiant != null && etudiant.getApogee() != null ? etudiant.getApogee().toLowerCase() : "";
+                    String nomComplet = (prenom + " " + nom).trim();
+                    String nomInverse = (nom + " " + prenom).trim();
+
+                    return prenom.contains(rechercheNormalisee)
+                            || nom.contains(rechercheNormalisee)
+                            || apogee.contains(rechercheNormalisee)
+                            || nomComplet.contains(rechercheNormalisee)
+                            || nomInverse.contains(rechercheNormalisee);
+                })
+                .map(this::toJustificatifProfesseurSortieDTO)
+                .filter(Objects::nonNull)
+                .sorted(
+                        Comparator
+                                .comparingInt((JustificatifProfesseurSortieDTO dto) -> switch (dto.getStatutJustificatif()) {
+                                    case EN_ATTENTE -> 0;
+                                    case VALIDE -> 1;
+                                    case REFUSE -> 2;
+                                    default -> 3;
+                                })
+                                .thenComparing(JustificatifProfesseurSortieDTO::getDateAbsence, Comparator.nullsLast(Comparator.reverseOrder()))
+                                .thenComparing(JustificatifProfesseurSortieDTO::getHeureDebut, Comparator.nullsLast(Comparator.reverseOrder()))
+                )
+                .toList();
     }
 
     @Override
