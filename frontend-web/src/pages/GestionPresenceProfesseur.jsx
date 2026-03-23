@@ -510,17 +510,6 @@ const GestionPresenceProfesseur = ({ navigationIntent }) => {
               <span className="selection-title">Feuille d'appel</span>
               <h2>Liste des etudiants</h2>
             </div>
-
-            {selectedSeance ? (
-              <div className="selected-date-badge">
-                {formatDateLabel(selectedSeance.heureDebut || selectedSeance.date, {
-                  day: '2-digit',
-                  month: 'short',
-                  year: 'numeric',
-                })}
-                <span>{lignes.length} etudiant{lignes.length > 1 ? 's' : ''}</span>
-              </div>
-            ) : null}
           </div>
 
           <div className="presence-lines-card">

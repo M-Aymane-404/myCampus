@@ -156,6 +156,7 @@ public class GestionSeancesProfesseurMetierImpl implements GestionSeancesProfess
                     "seances",
                     java.util.Set.of(
                             ValidationFichierSecuriseService.FormatFichierAutorise.PDF,
+                            ValidationFichierSecuriseService.FormatFichierAutorise.DOCX,
                             ValidationFichierSecuriseService.FormatFichierAutorise.JPEG,
                             ValidationFichierSecuriseService.FormatFichierAutorise.PNG
                     ),

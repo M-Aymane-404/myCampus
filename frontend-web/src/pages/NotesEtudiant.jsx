@@ -165,7 +165,7 @@ const mergeDashboardNotesIntoModules = (modules = [], dashboardNotes = []) => {
             ...moduleItem,
             subjects: mergedSubjects,
             average: fallbackAverage
-
+        };
     });
 };
 
