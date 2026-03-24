@@ -1,0 +1,672 @@
+{
+  "name": "Rag Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nconst msg = body.message || '';\nconst userId = body.userId;\nconst role = body.role;\n\nlet blocked = null;\nif (!msg || msg.trim().length === 0) blocked = 'Message vide.';\nelse if (msg.length > 600) blocked = 'Message trop long.';\nelse if (!userId || !role) blocked = 'userId et role obligatoires.';\nelse {\n  const forbidden = ['ignore previous','ignore all','jailbreak',\n    'forget your instructions','system:','DROP TABLE','--'];\n  if (forbidden.some(w => msg.toLowerCase().includes(w.toLowerCase())))\n    blocked = 'Message non autorisé.';\n}\n\nif (blocked) {\n  return [{ json: { blocked: true, isDocQuestion: false, error: blocked } }];\n}\n\nconst docKeywords = ['document','fichier','pdf','résumé','resume',\n  'résume','contenu','explique','td','tp','polycopié','support',\n  'cours','chapitre','parle de','traite de','c\\'est quoi','de quoi'];\nconst isDocQuestion = docKeywords.some(k => msg.toLowerCase().includes(k));\n\nreturn [{\n  json: {\n    blocked: false,\n    isDocQuestion,\n    message: msg.trim(),\n    userId: parseInt(userId),\n    role: role.toUpperCase()\n  }\n}];"
+      },
+      "id": "db708756-5586-47a7-b239-dc02d4c95686",
+      "name": "Guardrail IN",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -144,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  u.id AS userId,\n  u.nom,\n  u.prenom,\n  u.email,\n  r.nom_role AS role_code,\n  e.apogee,\n  e.niveau,\n  e.semestre_actuel,\n  e.etat_inscription,\n  c.nom AS classe,\n  (\n    SELECT JSON_ARRAYAGG(\n      JSON_OBJECT(\n        'matiere', m.nom,\n        'note', res.note,\n        'type', ex.type_examen,\n        'date', DATE_FORMAT(ex.date_examen, '%d/%m/%Y')\n      )\n    )\n    FROM resultat res\n    JOIN examen ex ON ex.id = res.examen_id\n    JOIN matiere m ON m.id = ex.matiere_id\n    WHERE res.etudiant_id = u.id\n    LIMIT 10\n  ) AS notes,\n  (\n    SELECT CONCAT(\n      SUM(CASE WHEN p.status = 'PRESENT' THEN 1 ELSE 0 END),\n      ' présences / ', COUNT(*), ' séances'\n    )\n    FROM presence p\n    WHERE p.etudiant_id = u.id\n  ) AS presences,\n  (\n    SELECT JSON_ARRAYAGG(\n      JSON_OBJECT(\n        'matiere', m.nom,\n        'date', DATE_FORMAT(s.date, '%d/%m/%Y'),\n        'debut', DATE_FORMAT(s.heure_debut, '%H:%i'),\n        'fin', DATE_FORMAT(s.heure_fin, '%H:%i'),\n        'salle', s.salle,\n        'type', s.type,\n        'etat', s.etat\n      )\n    )\n    FROM seance s\n    JOIN affectation_enseignement ae ON ae.id = s.affectation_enseignement_id\n    JOIN matiere m ON m.id = ae.matiere_id\n    WHERE ae.classe_id = e.classe_id\n      AND s.date >= CURDATE()\n    LIMIT 10\n  ) AS prochaines_seances,\n  (\n    SELECT JSON_ARRAYAGG(\n      JSON_OBJECT(\n        'titre', a.titre,\n        'contenu', a.contenu,\n        'type', a.type_annonce,\n        'date', DATE_FORMAT(a.date_publication, '%d/%m/%Y')\n      )\n    )\n    FROM annonce a\n    WHERE a.publiee = 1\n      AND (\n        a.cible_type = 'ETUDIANTS_GLOBAL'\n        OR (a.cible_type = 'ETUDIANTS_CLASSE' AND a.classe_id = e.classe_id)\n      )\n    ORDER BY a.date_publication DESC\n    LIMIT 5\n  ) AS annonces_etudiant,\n  p.specialite,\n  p.grade AS grade_prof,\n  (\n    SELECT JSON_ARRAYAGG(\n      JSON_OBJECT(\n        'matiere', m.nom,\n        'classe', cl.nom,\n        'annee', ae.annee_universitaire\n      )\n    )\n    FROM affectation_enseignement ae\n    JOIN matiere m ON m.id = ae.matiere_id\n    JOIN classe cl ON cl.id = ae.classe_id\n    WHERE ae.professeur_id = u.id AND ae.active = 1\n  ) AS matieres_prof,\n  (\n    SELECT JSON_ARRAYAGG(\n      JSON_OBJECT(\n        'titre', a.titre,\n        'contenu', a.contenu,\n        'type', a.type_annonce,\n        'date', DATE_FORMAT(a.date_publication, '%d/%m/%Y')\n      )\n    )\n    FROM annonce a\n    WHERE a.publiee = 1\n      AND a.cible_type IN ('PROFESSEURS_GLOBAL', 'PROFESSEURS_DEPARTEMENT')\n    ORDER BY a.date_publication DESC\n    LIMIT 5\n  ) AS annonces_prof\nFROM utilisateur u\nJOIN utilisateur_role ur ON ur.utilisateur_id = u.id\nJOIN role r ON r.id = ur.role_id\nLEFT JOIN etudiant e ON e.utilisateur_id = u.id\nLEFT JOIN classe c ON c.id = e.classe_id\nLEFT JOIN professeur p ON p.utilisateur_id = u.id\nWHERE u.id = {{ $json.userId }}\nLIMIT 1;",
+        "options": {}
+      },
+      "id": "5dae47dd-7522-45ad-9765-fc73e28afcd9",
+      "name": "MySQL - Contexte Utilisateur",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.4,
+      "position": [
+        480,
+        320
+      ],
+      "credentials": {
+        "mySql": {
+          "id": "3KdgMpJPxOvBYpsm",
+          "name": "MySQL account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const guardrail = $('Guardrail IN').first().json;\nconst db = $('MySQL - Contexte Utilisateur').first().json;\n\nconst role = guardrail.role;\nconst nom = (db.prenom || '') + ' ' + (db.nom || '');\n\nfunction safeArray(val) {\n  if (!val) return [];\n  if (Array.isArray(val)) return val;\n  if (typeof val === 'string') {\n    try { return JSON.parse(val); } catch(e) { return []; }\n  }\n  return [];\n}\n\nconst notes         = safeArray(db.notes);\nconst annoncesEtu   = safeArray(db.annonces_etudiant);\nconst annoncesPro   = safeArray(db.annonces_prof);\nconst matieres      = safeArray(db.matieres_prof);\nconst seances       = safeArray(db.prochaines_seances);\n\nlet systemPrompt = '';\n\nif (role === 'ETUDIANT' || db.role_code === 2 || db.role_code === '2') {\n\n  const notesText = notes.length > 0\n    ? notes.map(n => '  - ' + n.matiere + ' : ' + n.note + '/20 (' + n.type + ' du ' + n.date + ')').join('\\n')\n    : '  Aucune note enregistrée.';\n\n  const seancesText = seances.length > 0\n    ? seances.map(s => '  - ' + s.date + ' de ' + s.debut + ' à ' + s.fin + ' | ' + s.matiere + ' (' + s.type + ') Salle: ' + (s.salle || 'non précisée')).join('\\n')\n    : '  Aucune séance à venir enregistrée dans la plateforme.';\n\n  const annoncesText = annoncesEtu.length > 0\n    ? annoncesEtu.map(a => '  - [' + a.urgent + '] ' + a.titre + ' (' + a.date + ') : ' + a.contenu).join('\\n')\n    : '  Aucune annonce.';\n\n  systemPrompt = `Tu es l'assistant intelligent de la plateforme MyCampus.\nTu parles avec l'étudiant ${nom}.\n\n=== INFORMATIONS ÉTUDIANT ===\n- Apogée     : ${db.apogee || 'N/A'}\n- Niveau     : ${db.niveau || 'N/A'}\n- Semestre   : ${db.semestre_actuel || 'N/A'}\n- Classe     : ${db.classe || 'N/A'}\n- Statut     : ${db.etat_inscription || 'N/A'}\n- Présences  : ${db.presences || 'Non disponible'}\n\n=== NOTES ===\n${notesText}\n\n=== PROCHAINES SÉANCES ===\n${seancesText}\n\n=== ANNONCES ===\n${annoncesText}\n\n=== RÈGLES IMPORTANTES ===\n- Réponds UNIQUEMENT avec les données ci-dessus.\n- Si une information n'est pas dans ces données, réponds :\n  \"Cette information n'est pas disponible dans la plateforme.\"\n- Ne jamais inventer de dates, notes, salles ou horaires.\n- Réponds en français, de façon concise et bienveillante.`;\n\n} else if (role === 'PROFESSEUR' || db.role_code === 1 || db.role_code === '1') {\n\n  const matieresText = matieres.length > 0\n    ? matieres.map(m => '  - ' + m.matiere + ' → Classe ' + m.classe + ' (' + m.annee + ')').join('\\n')\n    : '  Aucune affectation enregistrée.';\n\n  const annoncesText = annoncesPro.length > 0\n    ? annoncesPro.map(a => '  - [' + a.urgent + '] ' + a.titre + ' (' + a.date + ') : ' + a.contenu).join('\\n')\n    : '  Aucune annonce.';\n\n  systemPrompt = `Tu es l'assistant intelligent de la plateforme MyCampus.\nTu parles avec le professeur ${nom}.\n\n=== INFORMATIONS PROFESSEUR ===\n- Grade       : ${db.grade_prof || 'N/A'}\n- Spécialité  : ${db.specialite || 'N/A'}\n\n=== MATIÈRES ENSEIGNÉES ===\n${matieresText}\n\n=== ANNONCES ===\n${annoncesText}\n\n=== RÈGLES IMPORTANTES ===\n- Réponds UNIQUEMENT avec les données ci-dessus.\n- Si une information n'est pas dans ces données, réponds :\n  \"Cette information n'est pas disponible dans la plateforme.\"\n- Ne jamais inventer de données.\n- Réponds en français, de façon professionnelle.`;\n\n} else {\n\n  systemPrompt = `Tu es l'assistant intelligent de la plateforme MyCampus.\nTu parles avec l'administrateur ${nom}.\nTu as accès à toutes les informations de la plateforme.\n\n=== RÈGLES ===\n- Réponds de façon précise et complète.\n- Réponds en français.`;\n\n}\n\nreturn [{\n  json: {\n    systemPrompt,\n    userMessage: guardrail.message,\n    userId: guardrail.userId,\n    role\n  }\n}];"
+      },
+      "id": "56a59e71-5201-41ad-87d3-0370418a08d8",
+      "name": "Construire Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        688,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "model": "mistral-large-latest",
+        "options": {
+          "maxTokens": 500,
+          "temperature": 0.3
+        }
+      },
+      "id": "c324a6d3-23df-4559-8241-5bcfb7c4ba97",
+      "name": "Mistral LLM",
+      "type": "@n8n/n8n-nodes-langchain.lmChatMistralCloud",
+      "typeVersion": 1,
+      "position": [
+        1472,
+        240
+      ],
+      "credentials": {
+        "mistralCloudApi": {
+          "id": "ROCqpFCmMTXmjEk3",
+          "name": "Mistral Cloud account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Basic LLM Chain retourne la réponse dans $json.text\nconst reply = $input.first().json.text\n  || $input.first().json.output\n  || $input.first().json.response\n  || $input.first().json.content\n  || '';\n\nif (!reply || reply.trim().length < 3) {\n  return [{ json: { reply: \"Je n'ai pas pu générer une réponse.\", ok: true } }];\n}\n\nconst sensitive = ['mot de passe', 'password', '$2a$'];\nif (sensitive.some(w => reply.toLowerCase().includes(w))) {\n  return [{ json: { reply: \"Je ne peux pas afficher cette information.\", ok: true } }];\n}\n\nreturn [{ json: { reply: reply.trim(), ok: true } }];"
+      },
+      "id": "83d2fa01-2b80-4ac5-bdb4-38ba4353426d",
+      "name": "Guardrail OUT",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1808,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ reply: $json.reply, ok: $json.ok }) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "2b18502d-c2b8-4ead-aff9-6d75bb43d3fb",
+      "name": "Respond - OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1984,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"reply\": \"Message non autorisé ou invalide.\", \"ok\": false }",
+        "options": {
+          "responseCode": 400,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "62a745f3-d5c0-41bd-8649-d7e51cb2a10a",
+      "name": "Respond - Erreur",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        192,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chat",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "30b8aacd-ea0c-4ccf-ae81-bd908c37edbc",
+      "name": "Webhook1",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -336,
+        208
+      ],
+      "webhookId": "mycampus-chat"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "18305e97-c0c5-43b6-aa10-835ce07cc6e8",
+              "leftValue": "= {{ $json.blocked }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        48,
+        208
+      ],
+      "id": "b7aa69b7-d557-4d74-bddd-8fa075da87a2",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Source for Prompt → Define below\n\nSystem Message :\n{{ $('Prompt Document').first().json.systemPrompt }}\n\nUser Message :\n{{ $('Prompt Document').first().json.userMessage }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1520,
+        32
+      ],
+      "id": "d9f1018c-0b73-4967-96b4-4c4bffc19d98",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Guardrail IN').first().json.userId }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1600,
+        240
+      ],
+      "id": "8fee9bd7-385e-4474-816c-5ee7a3f10a5c",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "18305e97-c0c5-43b6-aa10-835ce07cc6e8",
+              "leftValue": "={{ $json.isDocQuestion }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        224,
+        304
+      ],
+      "id": "a5af8067-0bfe-4cd0-a42b-fdb4cbd3672e",
+      "name": "If-Document"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  fs.id,\n  fs.nom_original,\n  fs.chemin,\n  fs.type_mime,\n  DATE_FORMAT(fs.date_upload, '%d/%m/%Y') AS date_upload,\n  m.nom AS matiere,\n  s.type AS type_seance,\n  DATE_FORMAT(s.date, '%d/%m/%Y') AS date_seance,\n  c.nom AS classe\nFROM fichier_seance fs\nJOIN seance s ON s.id = fs.seance_id\nJOIN affectation_enseignement ae ON ae.id = s.affectation_enseignement_id\nJOIN matiere m ON m.id = ae.matiere_id\nJOIN classe c ON c.id = ae.classe_id\nWHERE\n  (\n    '{{ $('Guardrail IN').first().json.role }}' = 'ETUDIANT'\n    AND ae.classe_id = (\n      SELECT classe_id FROM etudiant\n      WHERE utilisateur_id = {{ $('Guardrail IN').first().json.userId }}\n    )\n  )\n  OR (\n    '{{ $('Guardrail IN').first().json.role }}' = 'PROFESSEUR'\n    AND ae.professeur_id = {{ $('Guardrail IN').first().json.userId }}\n  )\n  OR '{{ $('Guardrail IN').first().json.role }}' = 'ADMIN'\nORDER BY fs.date_upload DESC\nLIMIT 20;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.5,
+      "position": [
+        464,
+        32
+      ],
+      "id": "177e7bdb-c5a8-4c6f-95d7-fcd4d86371be",
+      "name": "Execute a SQL query",
+      "credentials": {
+        "mySql": {
+          "id": "3KdgMpJPxOvBYpsm",
+          "name": "MySQL account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const msg = $('Guardrail IN').first().json.message.toLowerCase();\nconst fichiers = $input.all().map(i => i.json);\n\nif (fichiers.length === 0) {\n  return [{ json: {\n    fichierTrouve: false,\n    reponseDirecte: \"Aucun document disponible pour toi dans la plateforme.\",\n    chemin: null\n  }}];\n}\n\nlet fichierChoisi = null;\n\n// Cherche par matière mentionnée dans le message\nfichierChoisi = fichiers.find(f =>\n  f.matiere && msg.includes(f.matiere.toLowerCase().substring(0, 5))\n);\n\n// Cherche par type TD / TP / cours\nif (!fichierChoisi) {\n  if (msg.includes(' td ') || msg.startsWith('td ') || msg.endsWith(' td'))\n    fichierChoisi = fichiers.find(f => f.type_seance === 'TD');\n  else if (msg.includes(' tp ') || msg.startsWith('tp ') || msg.endsWith(' tp'))\n    fichierChoisi = fichiers.find(f => f.type_seance === 'TP');\n  else if (msg.includes('cours'))\n    fichierChoisi = fichiers.find(f => f.type_seance === 'COURS');\n}\n\n// Par défaut : le fichier le plus récent\nif (!fichierChoisi) fichierChoisi = fichiers[0];\n\nconst listeDisponible = fichiers.map(f =>\n  '• ' + f.nom_original + ' — ' + f.matiere + ' (' + f.type_seance + ')'\n).join('\\n');\n\nreturn [{ json: {\n  fichierTrouve: true,\n  chemin: fichierChoisi.chemin,\n  nomFichier: fichierChoisi.nom_original,\n  matiere: fichierChoisi.matiere,\n  typeSeance: fichierChoisi.type_seance,\n  listeDisponible,\n  userMessage: $('Guardrail IN').first().json.message\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        32
+      ],
+      "id": "5738ed42-240d-4536-a0db-c70e31902002",
+      "name": "Choisir Fichier"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        1088,
+        32
+      ],
+      "id": "ed9f2b66-e687-4939-b5df-62051128fe70",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "jsCode": "const info = $('Choisir Fichier').first().json;\nconst texte = $input.first().json.text || '';\n\nconst texteCoupe = texte.length > 20000\n  ? texte.substring(0, 20000) + '\\n[document tronqué]'\n  : texte;\n\nconst userMessage = info.userMessage;\nconst isResume = /résumé|resume|résume|résumer|de quoi|c'est quoi|parle de|traite/i.test(userMessage);\n\nconst systemPrompt = `Tu es l'assistant de la plateforme MyCampus.\nTu analyses le document suivant :\n\nNom     : ${info.nomFichier}\nMatière : ${info.matiere}\nType    : ${info.typeSeance}\n\n=== CONTENU ===\n${texteCoupe}\n=== FIN ===\n\n${isResume\n  ? `Fais un résumé clair et structuré :\n• Introduction : de quoi parle ce document (2-3 phrases)\n• Points clés : les 5 points les plus importants\n• À retenir : ce que l'étudiant doit absolument savoir`\n  : `Réponds précisément à la question en te basant UNIQUEMENT sur le contenu du document.\nSi la réponse n'est pas dans le document, dis-le clairement.`\n}\nRéponds en français, de façon claire et pédagogique.`;\n\nreturn [{ json: { systemPrompt, userMessage } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1296,
+        32
+      ],
+      "id": "b1528bd5-8bdf-4fb6-83e1-23d585242536",
+      "name": "Prompt Document"
+    },
+    {
+      "parameters": {
+        "fileSelector": "=/data/uploads/{{ $('Choisir Fichier').first().json.chemin }}",
+        "options": {
+          "dataPropertyName": "data"
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        896,
+        32
+      ],
+      "id": "473477e8-1c46-4a25-963e-2ec95fed22ca",
+      "name": "Read/Write Files from Disk"
+    },
+    {
+      "parameters": {
+        "model": "mistral-large-latest",
+        "options": {
+          "maxTokens": 500,
+          "temperature": 0.3
+        }
+      },
+      "id": "4b37c9cd-3f28-426f-9342-d718538e58ed",
+      "name": "Mistral LLM1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatMistralCloud",
+      "typeVersion": 1,
+      "position": [
+        944,
+        672
+      ],
+      "credentials": {
+        "mistralCloudApi": {
+          "id": "ROCqpFCmMTXmjEk3",
+          "name": "Mistral Cloud account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Basic LLM Chain retourne la réponse dans $json.text\nconst reply = $input.first().json.text\n  || $input.first().json.output\n  || $input.first().json.response\n  || $input.first().json.content\n  || '';\n\nif (!reply || reply.trim().length < 3) {\n  return [{ json: { reply: \"Je n'ai pas pu générer une réponse.\", ok: true } }];\n}\n\nconst sensitive = ['mot de passe', 'password', '$2a$'];\nif (sensitive.some(w => reply.toLowerCase().includes(w))) {\n  return [{ json: { reply: \"Je ne peux pas afficher cette information.\", ok: true } }];\n}\n\nreturn [{ json: { reply: reply.trim(), ok: true } }];"
+      },
+      "id": "88320bcb-7e82-456e-a704-2500c1010305",
+      "name": "Guardrail OUT1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ reply: $json.reply, ok: $json.ok }) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "4c6ff67b-f04d-4a17-9df8-c0936d1438cf",
+      "name": "Respond - OK1",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1456,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=System Message : {{ $('Construire Prompt').first().json.systemPrompt }}\nUser Message   : {{ $('Construire Prompt').first().json.userMessage }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        992,
+        464
+      ],
+      "id": "1daea065-8a86-4268-816c-37bbf0250b88",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Guardrail IN').first().json.userId }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1072,
+        672
+      ],
+      "id": "bcbab533-77ae-488d-8aba-238e96d58907",
+      "name": "Simple Memory1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Guardrail IN": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MySQL - Contexte Utilisateur": {
+      "main": [
+        [
+          {
+            "node": "Construire Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Construire Prompt": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mistral LLM": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardrail OUT": {
+      "main": [
+        [
+          {
+            "node": "Respond - OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Guardrail IN",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Respond - Erreur",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If-Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Guardrail OUT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If-Document": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "MySQL - Contexte Utilisateur",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query": {
+      "main": [
+        [
+          {
+            "node": "Choisir Fichier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Choisir Fichier": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Prompt Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prompt Document": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read/Write Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mistral LLM1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardrail OUT1": {
+      "main": [
+        [
+          {
+            "node": "Respond - OK1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Guardrail OUT1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory1": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "2b55714f-380f-4413-8bca-9d66c3e53a51",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a55010cde7c5158700578e28e33b634f35a192958865ced66deb786e6d5d23df"
+  },
+  "id": "k68ECDrzSjQlyuaW",
+  "tags": []
+}
