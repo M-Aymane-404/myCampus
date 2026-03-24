@@ -28,7 +28,7 @@ public class EtudiantModificationDTO extends UtilisateurModificationDto {
 
     private NiveauAnnee niveau;
 
-    @Min(value = 2026, message = "Annee d'inscription minimum est 2020")
+    @Min(value = 2020, message = "Annee d'inscription minimum est 2020")
     private Integer anneeInscription;
 
     private Semestre semestreActuel;

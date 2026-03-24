@@ -1,6 +1,34 @@
 const BASE_URL = 'http://localhost:8080/api/admin/utilisateurs/administrateurs';
 import { apiAuth } from './apiAuth';
 
+const buildErrorMessage = async (reponse) => {
+    let messageErreur = `Erreur HTTP: ${reponse.status}`;
+    try {
+        const erreurData = await reponse.json();
+
+        if (erreurData?.details && typeof erreurData.details === 'object') {
+            const detailsMessages = Object.entries(erreurData.details)
+                .map(([field, message]) => `${field}: ${message}`)
+                .join('\n');
+            return `Erreur de validation:\n${detailsMessages}`;
+        }
+
+        if (erreurData?.message) return erreurData.message;
+        if (erreurData?.error) return erreurData.error;
+    } catch (e) {
+        try {
+            const texteErreur = await reponse.text();
+            if (texteErreur) {
+                messageErreur += ': ' + texteErreur;
+            }
+        } catch {
+            // ignore
+        }
+    }
+
+    return messageErreur;
+};
+
 export const apiAdministrateurs = {
     async obtenirTous() {
         try {
@@ -15,7 +43,7 @@ export const apiAdministrateurs = {
             });
 
             if (!reponse.ok) {
-                throw new Error(`Erreur HTTP: ${reponse.status}`);
+                throw new Error(await buildErrorMessage(reponse));
             }
 
             return await reponse.json();
@@ -37,14 +65,8 @@ export const apiAdministrateurs = {
                 body: JSON.stringify(administrateur),
                 credentials: 'include'
             });
-
             if (!reponse.ok) {
-                let messageErreur = `Erreur HTTP: ${reponse.status}`;
-                try {
-                    const erreurData = await reponse.json();
-                    if (erreurData.message) messageErreur = erreurData.message;
-                } catch (e) { }
-                throw new Error(messageErreur);
+                throw new Error(await buildErrorMessage(reponse));
             }
 
             return await reponse.json();
@@ -68,7 +90,7 @@ export const apiAdministrateurs = {
             });
 
             if (!reponse.ok) {
-                throw new Error(`Erreur HTTP: ${reponse.status}`);
+                throw new Error(await buildErrorMessage(reponse));
             }
 
             return await reponse.json();
@@ -88,7 +110,7 @@ export const apiAdministrateurs = {
             });
 
             if (!reponse.ok) {
-                throw new Error(`Erreur HTTP: ${reponse.status}`);
+                throw new Error(await buildErrorMessage(reponse));
             }
 
             return true;
@@ -108,7 +130,7 @@ export const apiAdministrateurs = {
             });
 
             if (!reponse.ok) {
-                throw new Error(`Erreur HTTP: ${reponse.status}`);
+                throw new Error(await buildErrorMessage(reponse));
             }
 
             return true;
@@ -128,7 +150,7 @@ export const apiAdministrateurs = {
             });
 
             if (!reponse.ok) {
-                throw new Error(`Erreur HTTP: ${reponse.status}`);
+                throw new Error(await buildErrorMessage(reponse));
             }
 
             return true;

@@ -84,6 +84,8 @@ const GestionComptes = () => {
     classeId: '' // For student class selection
   };
 
+  const knownFieldNames = new Set(Object.keys(initialFormData));
+
   const [formData, setFormData] = useState(initialFormData);
 
   // Fetch Users and Classes on Mount
@@ -98,7 +100,7 @@ const GestionComptes = () => {
       const data = await apiComptes.obtenirTous();
       const formattedUsers = data.map(user => ({
         ...user,
-        id: user.id || user.apogee || user.ppr, // Fallback ID
+        id: user.apogee || user.ppr || user.id, // Prefer Apogée/PPR for API calls
         name: `${user.prenom} ${user.nom} `,
         initials: `${user.prenom?.charAt(0) || ''}${user.nom?.charAt(0) || ''} `.toUpperCase(),
         role: normalizeRole(user.role),
@@ -169,7 +171,7 @@ const GestionComptes = () => {
       const field = normalizeFieldName(rawField);
       const errorMessage = rest.join(':').trim();
 
-      if (field && errorMessage) {
+      if (field && errorMessage && knownFieldNames.has(field)) {
         parsed[field] = errorMessage;
       }
     });
@@ -204,20 +206,20 @@ const GestionComptes = () => {
         return String(normalizedValue).length >= 10 && String(normalizedValue).length <= 20
           ? ''
           : 'Numero de telephone non valide (10 a 20 caracteres).';
-      case 'ppr':
+      case 'ppr': {
         if (currentRole !== 'PROFESSOR' && currentRole !== 'ADMIN') return '';
-        if (isEditing && !normalizedValue) return '';
+        if (isEditing) return '';
         if (!normalizedValue) return 'Le PPR est obligatoire.';
-        return /^[0-9]{8}$/.test(String(normalizedValue).replace(/^PPR/i, ''))
-          ? ''
-          : 'PPR doit contenir exactement 8 chiffres.';
-      case 'apogee':
+        const digits = String(normalizedValue).replace(/\D/g, '');
+        return /^[0-9]{8}$/.test(digits) ? '' : 'PPR doit contenir exactement 8 chiffres.';
+      }
+      case 'apogee': {
         if (currentRole !== 'STUDENT') return '';
-        if (isEditing && !normalizedValue) return '';
+        if (isEditing) return '';
         if (!normalizedValue) return "L'Apogée est obligatoire.";
-        return /^[0-9]{9}$/.test(String(normalizedValue).replace(/^AP/i, ''))
-          ? ''
-          : 'Apogee doit contenir exactement 9 chiffres.';
+        const digits = String(normalizedValue).replace(/\D/g, '');
+        return /^[0-9]{9}$/.test(digits) ? '' : 'Apogee doit contenir exactement 9 chiffres.';
+      }
       case 'niveau':
         return currentRole === 'STUDENT' && !normalizedValue
           ? 'Le niveau est obligatoire.'
@@ -272,6 +274,11 @@ const GestionComptes = () => {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+
+    if (isEditing && name === 'role') {
+      return;
+    }
+
     const nextValue = type === 'checkbox' ? checked : value;
 
     setFormData(prev => ({
@@ -388,44 +395,59 @@ const GestionComptes = () => {
       const liveErrors = validateForm(formData);
       if (Object.keys(liveErrors).length > 0) {
         setFieldErrors(liveErrors);
-        setFormError('Corrigez les champs en erreur puis reessayez.');
+        const premierErreur = Object.values(liveErrors)[0];
+        setFormError(premierErreur || 'Corrigez les champs en erreur puis reessayez.');
         setIsLoading(false);
         return;
       }
 
       const userPayload = { ...formData };
+      let cleanedPprForPath = null;
+      let cleanedApogeeForPath = null;
       const originalUser = usersList.find(u => u.id === selectedUserId);
       
-      // Validation checks before sending to backend
-      if (formData.role === 'PROFESSOR' || formData.role === 'ADMIN') {
-        if (formData.ppr && formData.ppr.trim() !== '') {
-          // Extract numeric part from PPR (remove "PPR" prefix if present)
+      const effectiveRole = isEditing ? normalizeRole(originalUser?.role || formData.role) : formData.role;
+
+      // Validation checks before sending to backend (only on creation)
+      if (!isEditing && (effectiveRole === 'PROFESSOR' || effectiveRole === 'ADMIN')) {
+        if (formData.ppr && formData.ppr.toString().trim() !== '') {
           const cleanPpr = formData.ppr.toString().trim();
-          const numericPpr = cleanPpr.replace(/^PPR/i, '');
-          // Update the payload with only the numeric part
-          userPayload.ppr = numericPpr;
-          if (!/^[0-9]{8}$/.test(numericPpr)) {
-            setSingleFieldError('ppr', "PPR doit contenir exactement 8 chiffres.");
-            setIsLoading(false);
-            return;
+          const digitsPpr = cleanPpr.replace(/\D/g, '');
+          cleanedPprForPath = digitsPpr || null;
+
+          if (!isEditing) {
+            userPayload.ppr = digitsPpr;
+            if (!/^[0-9]{8}$/.test(digitsPpr)) {
+              setSingleFieldError('ppr', "PPR doit contenir exactement 8 chiffres.");
+              setIsLoading(false);
+              return;
+            }
           }
         }
-      } else if (formData.role === 'STUDENT') {
-        if (formData.apogee && formData.apogee.trim() !== '') {
-          // Extract numeric part from Apogee (remove "AP" prefix if present)
+      } else if (!isEditing && effectiveRole === 'STUDENT') {
+        if (formData.apogee && formData.apogee.toString().trim() !== '') {
           const cleanApogee = formData.apogee.toString().trim();
-          const numericApogee = cleanApogee.replace(/^AP/i, '');
-          // Update the payload with only the numeric part
-          userPayload.apogee = numericApogee;
-          
-          if (!/^[0-9]{9}$/.test(numericApogee)) {
-            setSingleFieldError('apogee', "Apogee doit contenir exactement 9 chiffres.");
-            setIsLoading(false);
-            return;
+          const digitsApogee = cleanApogee.replace(/\D/g, '');
+          cleanedApogeeForPath = digitsApogee || null;
+
+          if (!isEditing) {
+            userPayload.apogee = digitsApogee;
+
+            if (!/^[0-9]{9}$/.test(digitsApogee)) {
+              setSingleFieldError('apogee', "Apogee doit contenir exactement 9 chiffres.");
+              setIsLoading(false);
+              return;
+            }
           }
         }
       }
-      
+
+      // PPR / Apogée are immutable in edit UI (field is hidden), so don't send them in update payload
+      if (isEditing) {
+        delete userPayload.ppr;
+        delete userPayload.apogee;
+      }
+
       if (formData.cin && !/^[A-Za-z0-9]{4,8}$/.test(formData.cin)) {
         setSingleFieldError('cin', "Numero de CIN non valide (doit contenir 4 a 8 caracteres alphanumeriques).");
         setIsLoading(false);
@@ -438,7 +460,7 @@ const GestionComptes = () => {
         return;
       }
 
-      if (formData.role === 'STUDENT' && formData.anneeInscription) {
+      if (effectiveRole === 'STUDENT' && formData.anneeInscription) {
         const annee = Number(String(formData.anneeInscription).trim());
         if (!Number.isInteger(annee) || annee < 2020) {
           setSingleFieldError('anneeInscription', "Annee d'inscription minimum est 2020.");
@@ -454,7 +476,7 @@ const GestionComptes = () => {
       
 
       // For students, convert classeId to codeClasse (backend expects codeClasse as String)
-      if (formData.role === 'STUDENT') {
+      if (effectiveRole === 'STUDENT') {
         if (!formData.classeId) {
           setSingleFieldError('classeId', "La classe de l'etudiant est obligatoire.");
           setIsLoading(false);
@@ -477,6 +499,7 @@ const GestionComptes = () => {
       delete userPayload.id;
       delete userPayload.name;
       delete userPayload.initials;
+      delete userPayload.role;
       
       // Remove immutable identifiers during editing - but keep them if they are being modified
       // Note: PPR and Apogee should not be removed as they might be needed for validation
@@ -503,25 +526,24 @@ const GestionComptes = () => {
       let service;
       let id = selectedUserId;
 
-      // Ensure ID for update matches the specific ID field (ppr/apogee) if needed
-      switch (formData.role) {
+      switch (effectiveRole) {
         case 'PROFESSOR':
           service = apiProfesseurs;
-          if (isEditing) id = formData.ppr || selectedUserId;
+          if (isEditing) id = originalUser?.ppr || formData.ppr || selectedUserId; else id = cleanedPprForPath || formData.ppr || selectedUserId;
           break;
         case 'STUDENT':
           service = apiEtudiants;
-          if (isEditing) id = formData.apogee || selectedUserId;
+          if (isEditing) id = originalUser?.apogee || formData.apogee || selectedUserId; else id = cleanedApogeeForPath || formData.apogee || selectedUserId;
           break;
         default:
           service = apiAdministrateurs;
-          if (isEditing) id = formData.ppr || selectedUserId;
+          if (isEditing) id = originalUser?.ppr || formData.ppr || selectedUserId; else id = cleanedPprForPath || formData.ppr || selectedUserId;
       }
 
       // Log payload for debugging (remove in production)
       console.log('Saving user payload:', JSON.stringify(userPayload, null, 2));
       console.log('User ID being used:', id);
-      console.log('Service being used:', formData.role);
+      console.log('Service being used:', effectiveRole);
 
       if (isEditing) {
         // If only the status changed, use the dedicated endpoints
@@ -558,7 +580,8 @@ const GestionComptes = () => {
 
       if (Object.keys(validationErrors).length > 0) {
         setFieldErrors(validationErrors);
-        setFormError('Corrigez les champs en erreur puis reessayez.');
+        const premierErreur = Object.values(validationErrors)[0];
+        setFormError(premierErreur || 'Corrigez les champs en erreur puis reessayez.');
       } else {
         setFormError(`Une erreur est survenue lors de la sauvegarde: ${errorMessage}`);
       }
@@ -1226,6 +1249,12 @@ const GestionComptes = () => {
 };
 
 export default GestionComptes;
+
+
+
+
+
+
 
 
 

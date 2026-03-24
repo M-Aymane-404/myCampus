@@ -92,7 +92,7 @@ const DetailsClasse = ({ classe, filiere, departement, onRetour }) => {
             description: module.description || '',
             semestre: module.semestre || '',
             coefficient: module.coefficient || 1.0,
-            filiereId: module.filiereId || filiere?.id || ''
+            filiereId: module.filiereId || module.codeFiliere || filiere?.id || filiere?.codeFiliere || ''
         });
         setIsEditing(true);
         setCurrentModule(module);
@@ -107,10 +107,24 @@ const DetailsClasse = ({ classe, filiere, departement, onRetour }) => {
 
         setIsLoading(true);
         try {
+            const filiereReference = (formData.filiereId ?? '').toString().trim();
             if (isEditing) {
-                await apiStructure.modifierModule(currentModule.codeModule, formData);
+                const payload = {
+                    nom: formData.nom,
+                    description: formData.description,
+                    semestre: formData.semestre,
+                    ...(filiereReference ? { filiereId: filiereReference } : {})
+                };
+                await apiStructure.modifierModule(currentModule.codeModule, payload);
             } else {
-                await apiStructure.creerModule(formData);
+                const payload = {
+                    codeModule: formData.codeModule,
+                    nom: formData.nom,
+                    description: formData.description,
+                    semestre: formData.semestre,
+                    filiereId: filiereReference
+                };
+                await apiStructure.creerModule(payload);
             }
 
             await fetchModules();
@@ -121,7 +135,7 @@ const DetailsClasse = ({ classe, filiere, departement, onRetour }) => {
                 description: '',
                 semestre: '',
                 coefficient: 1.0,
-                filiereId: filiere?.id || ''
+                filiereId: filiere?.id || filiere?.codeFiliere || ''
             });
         } catch (err) {
             console.error('Save failed:', err);

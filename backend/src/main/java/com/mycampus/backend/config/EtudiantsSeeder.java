@@ -45,7 +45,7 @@ public class EtudiantsSeeder {
             Etudiant.builder()
                 .nom("Karim").prenom("Bannani").email("Karim@mycampus.ma")
                 .password(passwordEncoder.encode("password123"))
-                .active(true).cin("EC100100").apogee("12O300100")
+                .active(true).cin("EC100100").apogee("120300100")
                 .dateCreation(LocalDateTime.now()).tel("0600000100")
                 .niveau(NiveauAnnee.A1).anneeInscription(2024)
                 .semestreActuel(Semestre.S1).etatInscription(EtatInscription.INSCRIT)
