@@ -291,12 +291,14 @@ const buildNoteStatistics = async () => {
               const notes = [];
               const examDate = getExamDate(examen);
               let notesSaisiesCount = 0;
+              let copiesRestantesACorriger = 0;
 
               lignes.forEach((ligne) => {
                 const value = ligne.note;
                 const numeric = typeof value === 'string' ? Number(value.replace(',', '.')) : Number(value);
                 if (Number.isFinite(numeric)) notes.push(numeric);
                 if (hasEnteredNote(value)) notesSaisiesCount += 1;
+                else copiesRestantesACorriger += 1;
 
                 const studentId = ligne.idEtudiant || ligne.apogee;
                 if (studentId) studentIds.add(studentId);
@@ -306,7 +308,13 @@ const buildNoteStatistics = async () => {
               });
 
               if (lignes.some((ligne) => !ligne.publiee)) examensSansPublication += 1;
-              if (examen.etat === 'PASSE') copiesACorriger += 1;
+              if (
+                copiesRestantesACorriger > 0 &&
+                (['PASSE', 'CORRIGE'].includes(String(examen.etat || '').trim().toUpperCase()) ||
+                  (examDate && examDate.getTime() <= now))
+              ) {
+                copiesACorriger += copiesRestantesACorriger;
+              }
               if (
                 lignes.length > 0 &&
                 notesSaisiesCount < lignes.length &&
