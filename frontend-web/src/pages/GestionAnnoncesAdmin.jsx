@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Megaphone,
   Info,
@@ -21,6 +21,7 @@ import apiAnnonces from '../services/apiAnnonces';
 import { apiStructure } from '../services/apiStructure';
 import { apiProfesseurs } from '../services/apiProfesseurs';
 import { apiAuth } from '../services/apiAuth';
+import PhotoSecurisee from '../composants/communs/PhotoSecurisee';
 import './GestionAnnoncesAdmin.css';
 import './GestionAnnoncesProfesseur.css';
 
@@ -37,6 +38,11 @@ const FORM_INITIAL = {
   categorie: 'AUTRES',
   contenu: '',
 };
+
+const MAX_ANNONCE_RESOURCE_SIZE = 50 * 1024 * 1024;
+
+const construireMessageErreurRessources = (messageErreur) =>
+  `Annonce non publiee a cause des fichiers. ${messageErreur || 'Le depot des ressources a echoue.'}`;
 
 const GestionAnnoncesAdmin = () => {
   const [chargement, setChargement] = useState(true);
@@ -77,7 +83,8 @@ const GestionAnnoncesAdmin = () => {
       setClasses(
         (Array.isArray(donneesClasses) ? donneesClasses : []).map((classe) => ({
           id: classe.codeClasse || classe.id?.toString(),
-          nom: classe.nom || classe.libelle || classe.codeClasse || '',
+          nom:
+            classe.nom || classe.nomClasse || classe.libelle || classe.codeClasse || '',
           filiere: classe.nomFiliere || 'GENIE INFORMATIQUE',
           selected: false,
         }))
@@ -86,9 +93,12 @@ const GestionAnnoncesAdmin = () => {
       setProfesseurs(
         (Array.isArray(donneesProfs) ? donneesProfs : []).map((professeur) => ({
           id: professeur.id,
+          ppr: professeur.ppr || '',
           nom: `Pr. ${professeur.prenom} ${professeur.nom}`,
           specialite:
             professeur.specialite ||
+            professeur.departement?.nom ||
+            professeur.departement?.typeDepartement ||
             professeur.departement ||
             'DEPARTEMENT ENSEIGNEMENT',
           photo: professeur.photoUrl || null,
@@ -133,9 +143,39 @@ const GestionAnnoncesAdmin = () => {
     setFormulaire((prev) => ({ ...prev, [name]: value }));
   };
 
+  const construireMessageTailleRessources = (fichiersInvalides) => {
+    if (!fichiersInvalides.length) {
+      return '';
+    }
+
+    const noms = fichiersInvalides.map((fichier) => fichier.name).join(', ');
+    return fichiersInvalides.length === 1
+      ? `Le fichier "${noms}" depasse la taille autorisee. Chaque ressource doit faire 50 Mo maximum.`
+      : `Ces fichiers depassent la taille autorisee: ${noms}. Chaque ressource doit faire 50 Mo maximum.`;
+  };
+
   const gererSelectionFichiers = (event) => {
     const nouveauxFichiers = Array.from(event.target.files || []);
     if (!nouveauxFichiers.length) {
+      return;
+    }
+
+    const fichiersInvalides = nouveauxFichiers.filter(
+      (fichier) => Number(fichier?.size || 0) > MAX_ANNONCE_RESOURCE_SIZE
+    );
+    const fichiersValides = nouveauxFichiers.filter(
+      (fichier) => Number(fichier?.size || 0) <= MAX_ANNONCE_RESOURCE_SIZE
+    );
+
+    if (fichiersInvalides.length) {
+      setError(construireMessageTailleRessources(fichiersInvalides));
+      setSuccess('');
+    } else {
+      setError('');
+    }
+
+    if (!fichiersValides.length) {
+      event.target.value = '';
       return;
     }
 
@@ -147,7 +187,7 @@ const GestionAnnoncesAdmin = () => {
         ])
       );
 
-      nouveauxFichiers.forEach((fichier) => {
+      fichiersValides.forEach((fichier) => {
         existants.set(
           `${fichier.name}-${fichier.size}-${fichier.lastModified}`,
           fichier
@@ -184,11 +224,11 @@ const GestionAnnoncesAdmin = () => {
     }
 
     setProfesseurs((prev) =>
-      prev.map((professeur) =>
-        professeur.id === id
-          ? { ...professeur, selected: !professeur.selected }
-          : professeur
-      )
+      prev.map((professeur) => ({
+        ...professeur,
+        selected:
+          professeur.id === id ? !professeur.selected : professeur.selected,
+      }))
     );
   };
 
@@ -215,6 +255,12 @@ const GestionAnnoncesAdmin = () => {
     return professeurs.filter((professeur) => professeur.selected).length;
   };
 
+  const tousLesEtudiantsSelectionnes =
+    classes.length > 0 && classes.every((classe) => classe.selected);
+
+  const tousLesProfesseursSelectionnes =
+    professeurs.length > 0 && professeurs.every((professeur) => professeur.selected);
+
   const isFormValid =
     formulaire.titre.trim() &&
     formulaire.contenu.trim() &&
@@ -232,6 +278,21 @@ const GestionAnnoncesAdmin = () => {
       prev.map((professeur) => ({ ...professeur, selected: false }))
     );
     viderFichiers();
+  };
+
+  const handleChangeCible = (nouvelleCible) => {
+    setCible(nouvelleCible);
+    setError('');
+    setSuccess('');
+
+    if (nouvelleCible === 'etudiants') {
+      setProfesseurs((prev) =>
+        prev.map((professeur) => ({ ...professeur, selected: false }))
+      );
+      return;
+    }
+
+    setClasses((prev) => prev.map((classe) => ({ ...classe, selected: false })));
   };
 
   const televerserRessources = async (annonceId) => {
@@ -276,14 +337,14 @@ const GestionAnnoncesAdmin = () => {
         } else {
           annonceData.cibleType = 'ETUDIANTS_GLOBAL';
         }
+      } else if (tousLesProfesseursSelectionnes) {
+        annonceData.cibleType = 'PROFESSEURS_GLOBAL';
       } else {
         const selectedProfs = professeurs.filter((professeur) => professeur.selected);
-        if (selectedProfs.length === 1) {
-          annonceData.cibleType = 'PROFESSEURS_DEPARTEMENT';
-          annonceData.codeDepartement = 'INFO';
-        } else {
-          annonceData.cibleType = 'PROFESSEURS_GLOBAL';
-        }
+        annonceData.cibleType = 'PROFESSEURS_DEPARTEMENT';
+        annonceData.professeurPprs = selectedProfs
+          .map((professeur) => professeur.ppr)
+          .filter(Boolean);
       }
 
       const annonceCreee = await apiAnnonces.creer(annonceData);
@@ -292,10 +353,15 @@ const GestionAnnoncesAdmin = () => {
       try {
         nbRessources = await televerserRessources(annonceCreee.id);
       } catch (uploadError) {
+        try {
+          await apiAnnonces.supprimer(annonceCreee.id);
+        } catch (deleteError) {
+          console.error("Suppression de l'annonce apres echec des ressources impossible:", deleteError);
+        }
+
         await chargerDonnees(false);
-        resetForm();
-        setSuccess("Annonce creee, mais l'envoi des ressources a echoue.");
-        setError(uploadError.message || "Erreur lors de l'envoi des ressources.");
+        setSuccess('');
+        setError(construireMessageErreurRessources(uploadError.message));
         return;
       }
 
@@ -403,7 +469,11 @@ const GestionAnnoncesAdmin = () => {
       return `${nomClasse} (${codeClasse})`;
     }
     if (annonce?.cibleType === 'PROFESSEURS_DEPARTEMENT') {
-      return annonce?.departement?.nom || annonce?.departement?.codeDepartement || 'Departement';
+      return (
+        annonce?.departement?.nom ||
+        annonce?.departement?.codeDepartement ||
+        'Professeurs selectionnes'
+      );
     }
     return 'Cible inconnue';
   };
@@ -425,7 +495,7 @@ const GestionAnnoncesAdmin = () => {
           <button
             className={`target-btn ${cible === 'etudiants' ? 'active' : ''}`}
             type="button"
-            onClick={() => setCible('etudiants')}
+            onClick={() => handleChangeCible('etudiants')}
           >
             <GraduationCap size={20} />
             CIBLER ETUDIANTS
@@ -433,7 +503,7 @@ const GestionAnnoncesAdmin = () => {
           <button
             className={`target-btn ${cible === 'enseignants' ? 'active' : ''}`}
             type="button"
-            onClick={() => setCible('enseignants')}
+            onClick={() => handleChangeCible('enseignants')}
           >
             <Users size={20} />
             CIBLER ENSEIGNANTS
@@ -528,6 +598,9 @@ const GestionAnnoncesAdmin = () => {
                   {fichiersSelectionnes.length} fichier(s)
                 </span>
               </div>
+              <p className="attachment-upload-hint">
+                Taille maximale: 50 Mo par fichier.
+              </p>
 
               <div className="attachment-upload-actions">
                 <input
@@ -586,8 +659,23 @@ const GestionAnnoncesAdmin = () => {
               <Layers size={20} color="#6366f1" />
               AUDIENCE
             </h2>
-            <button className="select-all-toggle" type="button" onClick={selectAllTargets}>
-              {cible === 'etudiants' ? 'TOUTES LES CLASSES' : 'TOUS LES PROFS'}
+            <button
+              className={`select-all-toggle ${
+                (cible === 'etudiants' && tousLesEtudiantsSelectionnes) ||
+                (cible === 'enseignants' && tousLesProfesseursSelectionnes)
+                  ? 'active'
+                  : ''
+              }`}
+              type="button"
+              onClick={selectAllTargets}
+            >
+              {cible === 'etudiants'
+                ? tousLesEtudiantsSelectionnes
+                  ? 'ANNULER TOUS LES ETUDIANTS'
+                  : 'TOUTES LES CLASSES'
+                : tousLesProfesseursSelectionnes
+                  ? 'ANNULER TOUS LES PROFS'
+                  : 'TOUS LES PROFS'}
             </button>
           </div>
 
@@ -611,13 +699,16 @@ const GestionAnnoncesAdmin = () => {
                     className={`audience-card ${prof.selected ? 'selected' : ''}`}
                     onClick={() => toggleTarget(prof.id)}
                   >
-                    {prof.photo ? (
-                      <img src={prof.photo} alt={prof.nom} className="audience-avatar" />
-                    ) : (
-                      <div className="audience-avatar admin-audience-avatar-fallback">
-                        {prof.nom.charAt(4)}
-                      </div>
-                    )}
+                    <PhotoSecurisee
+                      photoUrl={prof.photo}
+                      alt={prof.nom}
+                      className="audience-avatar"
+                      fallback={
+                        <div className="audience-avatar admin-audience-avatar-fallback">
+                          {(prof.nom || '?').charAt(4) || (prof.nom || '?').charAt(0)}
+                        </div>
+                      }
+                    />
                     <div className="audience-info">
                       <h3>{prof.nom}</h3>
                       <p>{prof.specialite}</p>
@@ -628,13 +719,15 @@ const GestionAnnoncesAdmin = () => {
 
           <div className="audience-status-bar">
             <Info size={16} />
-            {getSelectedCount() === 0
-              ? cible === 'etudiants'
-                ? "0 CLASSE(S) RECEVRONT L'ANNONCE."
-                : "AUCUN ENSEIGNANT NE RECEVRA L'ANNONCE."
-              : `${getSelectedCount()} ${
-                  cible === 'etudiants' ? 'CLASSE(S)' : 'ENSEIGNANT(S)'
-                } RECEVRONT L'ANNONCE.`}
+            {cible === 'enseignants' && tousLesProfesseursSelectionnes
+              ? "TOUS LES ENSEIGNANTS RECEVRONT L'ANNONCE."
+              : getSelectedCount() === 0
+                ? cible === 'etudiants'
+                  ? "0 CLASSE(S) RECEVRONT L'ANNONCE."
+                  : "AUCUN ENSEIGNANT NE RECEVRA L'ANNONCE."
+                : `${getSelectedCount()} ${
+                    cible === 'etudiants' ? 'CLASSE(S)' : 'ENSEIGNANT(S)'
+                  } RECEVRONT L'ANNONCE.`}
           </div>
         </div>
       </div>

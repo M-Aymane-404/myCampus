@@ -26,6 +26,14 @@ class ClientDio {
   bool _refreshEnCours = false;
   final List<Future<void> Function(String)> _attenteRefresh = [];
 
+  String? get accessToken => _accessToken;
+
+  Map<String, String>? get authHeaders {
+    final token = _accessToken;
+    if (token == null || token.isEmpty) return null;
+    return {'Authorization': 'Bearer $token'};
+  }
+
   void _logRequest(RequestOptions options) {
     if (!kDebugMode) return;
     final uri = options.uri;
@@ -124,6 +132,13 @@ class ClientDio {
         connectTimeout: ConfigurationApp.connexionTimeout,
         receiveTimeout: ConfigurationApp.receptionTimeout,
         headers: ConfigurationApp.entetesParDefaut,
+        responseDecoder: (bytes, options, responseBody) {
+          final decodedUtf8 = utf8.decode(bytes, allowMalformed: true);
+          if (decodedUtf8.contains('\uFFFD')) {
+            return latin1.decode(bytes, allowInvalid: true);
+          }
+          return decodedUtf8;
+        },
       ),
     );
 

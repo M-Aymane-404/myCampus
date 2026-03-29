@@ -32,6 +32,26 @@ public interface PresenceRepository extends JpaRepository<Presence, Long> {
     Optional<Presence> findByIdAndEtudiant_Id(Long id, Long etudiantId);
 
     @Query("""
+        select distinct p
+        from Presence p
+        join fetch p.etudiant e
+        join fetch p.seance s
+        join fetch s.affectationEnseignement ae
+        join fetch ae.professeur prof
+        join fetch ae.classe c
+        join fetch ae.matiere m
+        where prof.ppr = :professeurPpr
+          and p.status = com.mycampus.backend.enumerations.StatusAbsence.ABSENT
+          and (
+              p.typeMotif is not null
+              or p.descriptionDeJustification is not null
+              or p.motifUrl is not null
+              or p.motifNom is not null
+          )
+    """)
+    List<Presence> listerJustificatifsParProfesseur(@Param("professeurPpr") String professeurPpr);
+
+    @Query("""
         select p
         from Presence p
         join fetch p.etudiant e

@@ -39,9 +39,10 @@ const FORM_INITIAL = {
   titre: '',
   categorie: 'AUTRES',
   contenu: '',
-  modeCiblage: 'ONE',
-  codeClasse: '',
+  classesSelectionnees: [],
 };
+
+const MAX_ANNONCE_RESOURCE_SIZE = 50 * 1024 * 1024;
 
 const formaterDate = (dateStr) => {
   if (!dateStr) return 'Date inconnue';
@@ -94,6 +95,22 @@ const formatDateComplete = (dateStr) => {
     minute: '2-digit',
   });
 };
+
+const construireMessageTailleRessources = (fichiersInvalides) => {
+  if (!fichiersInvalides.length) {
+    return '';
+  }
+
+  const noms = fichiersInvalides.map((fichier) => fichier.name).join(', ');
+  return fichiersInvalides.length === 1
+    ? `Le fichier "${noms}" depasse la taille autorisee. Chaque ressource doit faire 50 Mo maximum.`
+    : `Ces fichiers depassent la taille autorisee: ${noms}. Chaque ressource doit faire 50 Mo maximum.`;
+};
+
+const construireMessageErreurRessources = (messageErreur, nombreClasses) =>
+  nombreClasses > 1
+    ? `Annonces non publiees a cause des fichiers. ${messageErreur || 'Le depot des ressources a echoue pour au moins une classe.'}`
+    : `Annonce non publiee a cause des fichiers. ${messageErreur || 'Le depot des ressources a echoue.'}`;
 
 const getTypeCategorie = (typeAnnonce, cibleType) => {
   if (typeAnnonce && TYPES_ANNONCE.some((type) => type.value === typeAnnonce)) {
@@ -226,19 +243,11 @@ const GestionAnnoncesProfesseur = ({
     }
   };
 
-  const classeSelectionnee = useMemo(
-    () =>
-      mesClasses.find((classe) => classe.codeClasse === formulaire.codeClasse) || null,
-    [mesClasses, formulaire.codeClasse]
-  );
-
   const classesCibles = useMemo(() => {
-    if (formulaire.modeCiblage === 'ALL') {
-      return mesClasses.map((classe) => classe.codeClasse).filter(Boolean);
-    }
-
-    return formulaire.codeClasse ? [formulaire.codeClasse] : [];
-  }, [formulaire.modeCiblage, formulaire.codeClasse, mesClasses]);
+    return Array.isArray(formulaire.classesSelectionnees)
+      ? formulaire.classesSelectionnees.filter(Boolean)
+      : [];
+  }, [formulaire.classesSelectionnees]);
 
   const annoncesAdminTriees = useMemo(
     () =>
@@ -356,22 +365,46 @@ const GestionAnnoncesProfesseur = ({
   const gererSelectionClasse = (codeClasse) => {
     setFormulaire((prev) => ({
       ...prev,
-      modeCiblage: 'ONE',
-      codeClasse: prev.codeClasse === codeClasse ? '' : codeClasse,
+      classesSelectionnees: prev.classesSelectionnees.includes(codeClasse)
+        ? prev.classesSelectionnees.filter((code) => code !== codeClasse)
+        : [...prev.classesSelectionnees, codeClasse],
     }));
   };
 
   const gererSelectionToutesClasses = () => {
+    const toutesLesClasses = mesClasses.map((classe) => classe.codeClasse).filter(Boolean);
+
     setFormulaire((prev) => ({
       ...prev,
-      modeCiblage: prev.modeCiblage === 'ALL' ? 'ONE' : 'ALL',
-      codeClasse: prev.modeCiblage === 'ALL' ? prev.codeClasse : '',
+      classesSelectionnees:
+        prev.classesSelectionnees.length === toutesLesClasses.length
+          ? []
+          : toutesLesClasses,
     }));
   };
 
   const gererSelectionFichiers = (event) => {
     const nouveauxFichiers = Array.from(event.target.files || []);
     if (!nouveauxFichiers.length) {
+      return;
+    }
+
+    const fichiersInvalides = nouveauxFichiers.filter(
+      (fichier) => Number(fichier?.size || 0) > MAX_ANNONCE_RESOURCE_SIZE
+    );
+    const fichiersValides = nouveauxFichiers.filter(
+      (fichier) => Number(fichier?.size || 0) <= MAX_ANNONCE_RESOURCE_SIZE
+    );
+
+    if (fichiersInvalides.length) {
+      setError(construireMessageTailleRessources(fichiersInvalides));
+      setSuccess('');
+    } else {
+      setError('');
+    }
+
+    if (!fichiersValides.length) {
+      event.target.value = '';
       return;
     }
 
@@ -383,7 +416,7 @@ const GestionAnnoncesProfesseur = ({
         ])
       );
 
-      nouveauxFichiers.forEach((fichier) => {
+      fichiersValides.forEach((fichier) => {
         existants.set(
           `${fichier.name}-${fichier.size}-${fichier.lastModified}`,
           fichier
@@ -467,14 +500,13 @@ const GestionAnnoncesProfesseur = ({
       try {
         await Promise.all(annoncesCreees.map((annonce) => televerserRessources(annonce.id)));
       } catch (uploadError) {
-        await chargerDonnees(false);
-        reinitialiserFormulaire();
-        setSuccess(
-          annoncesCreees.length > 1
-            ? `Annonces creees pour ${annoncesCreees.length} classes, mais l'envoi des ressources a echoue.`
-            : "Annonce creee, mais l'envoi des ressources a echoue."
+        await Promise.allSettled(
+          annoncesCreees.map((annonce) => apiAnnoncesProfesseur.supprimerAnnonce(annonce.id))
         );
-        setError(uploadError.message || "Erreur lors de l'envoi des ressources.");
+
+        await chargerDonnees(false);
+        setSuccess('');
+        setError(construireMessageErreurRessources(uploadError.message, annoncesCreees.length));
         return;
       }
 
@@ -663,16 +695,14 @@ const GestionAnnoncesProfesseur = ({
                 <div className="prof-selected-class-box">
                   <div className="prof-selected-class-label">CIBLAGE</div>
                   <strong>
-                    {formulaire.modeCiblage === 'ALL'
-                      ? `Toutes mes classes (${classesCibles.length})`
-                      : classeSelectionnee
-                        ? `${classeSelectionnee.nomClasse} (${classeSelectionnee.codeClasse})`
-                        : 'Aucune classe selectionnee'}
+                    {classesCibles.length === 0
+                      ? 'Aucune classe selectionnee'
+                      : classesCibles.length === 1
+                        ? `${classesCibles[0]}`
+                        : `${classesCibles.length} classes selectionnees`}
                   </strong>
                   <span>
-                    {formulaire.modeCiblage === 'ALL'
-                      ? 'Le frontend cree une annonce distincte pour chaque classe selectionnee.'
-                      : 'Le backend professeur accepte uniquement le ciblage par classe.'}
+                    Le frontend cree une annonce distincte pour chaque classe selectionnee.
                   </span>
                 </div>
               </div>
@@ -688,6 +718,9 @@ const GestionAnnoncesProfesseur = ({
                       {fichiersSelectionnes.length} fichier(s)
                     </span>
                   </div>
+                  <p className="attachment-upload-hint">
+                    Taille maximale: 50 Mo par fichier.
+                  </p>
 
                   <div className="attachment-upload-actions">
                     <input
@@ -748,23 +781,29 @@ const GestionAnnoncesProfesseur = ({
                 </h2>
                 <div className="prof-audience-actions">
                   <button
-                    className={`select-all-toggle ${formulaire.modeCiblage === 'ALL' ? 'active' : ''}`}
+                    className={`select-all-toggle ${
+                      mesClasses.length > 0 && classesCibles.length === mesClasses.length
+                        ? 'active'
+                        : ''
+                    }`}
                     type="button"
                     onClick={gererSelectionToutesClasses}
                   >
-                    {formulaire.modeCiblage === 'ALL'
-                      ? 'TOUTES LES CLASSES SELECTIONNEES'
-                      : 'CHOISIR TOUTES LES CLASSES'}
+                    {mesClasses.length > 0 && classesCibles.length === mesClasses.length
+                      ? 'ANNULER TOUTES LES CLASSES'
+                      : 'TOUTES LES CLASSES'}
                   </button>
                 </div>
               </div>
 
               <div className="audience-status-bar">
                 <Info size={16} />
-                {formulaire.modeCiblage === 'ALL'
+                {mesClasses.length > 0 && classesCibles.length === mesClasses.length
                   ? `${classesCibles.length} CLASSES RECEVRONT L'ANNONCE.`
-                  : formulaire.codeClasse
-                    ? `1 CLASSE RECEVRA L'ANNONCE : ${formulaire.codeClasse}`
+                  : classesCibles.length === 1
+                    ? `1 CLASSE RECEVRA L'ANNONCE : ${classesCibles[0]}`
+                    : classesCibles.length > 1
+                      ? `${classesCibles.length} CLASSES RECEVRONT L'ANNONCE.`
                     : 'SELECTIONNEZ UNE CLASSE POUR DIFFUSER VOTRE ANNONCE.'}
               </div>
 
@@ -777,8 +816,7 @@ const GestionAnnoncesProfesseur = ({
               ) : (
                 <div className="audience-list">
                   {mesClasses.map((classe) => {
-                    const isSelected =
-                      formulaire.modeCiblage === 'ALL' || formulaire.codeClasse === classe.codeClasse;
+                    const isSelected = classesCibles.includes(classe.codeClasse);
 
                     return (
                       <div

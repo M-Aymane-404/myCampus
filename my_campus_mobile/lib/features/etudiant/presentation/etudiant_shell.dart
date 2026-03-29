@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/config/configuration_app.dart';
+import '../../../core/widgets/photo_securisee.dart';
 import '../data/controller/controleur_profil_etudiant.dart';
 import 'AnimatedNotchBottomBar.dart';
 import 'accueil_etudiant.dart';
@@ -82,25 +82,8 @@ class _AvatarMini extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final url = _construireUrlPhoto(photoUrl);
-    if (url != null) {
-      return ClipOval(
-        child: SizedBox.expand(
-          child: Image.network(
-            url,
-            fit: BoxFit.cover,
-            errorBuilder:
-                (_, __, ___) => Container(
-                  color: accent.withOpacity(0.12),
-                  alignment: Alignment.center,
-                  child: Icon(Icons.person, size: 14, color: accent),
-                ),
-          ),
-        ),
-      );
-    }
-
-    return Container(
+    final url = photoUrl?.trim();
+    final fallback = Container(
       decoration: BoxDecoration(
         color: accent.withOpacity(0.12),
         shape: BoxShape.circle,
@@ -108,10 +91,19 @@ class _AvatarMini extends StatelessWidget {
       alignment: Alignment.center,
       child: Icon(Icons.person, size: 14, color: accent),
     );
-  }
-}
 
-String? _construireUrlPhoto(String? photoUrl) {
-  if (photoUrl == null || photoUrl.trim().isEmpty) return null;
-  return "${ConfigurationApp.apiBaseUrl}$photoUrl";
+    if (url == null || url.isEmpty) {
+      return fallback;
+    }
+
+    return ClipOval(
+      child: SizedBox.expand(
+        child: PhotoSecurisee(
+          photoUrl: url,
+          placeholder: fallback,
+          error: fallback,
+        ),
+      ),
+    );
+  }
 }

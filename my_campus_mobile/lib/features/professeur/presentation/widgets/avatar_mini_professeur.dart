@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/config/configuration_app.dart';
+import '../../../../core/widgets/photo_securisee.dart';
 
 class AvatarMiniProfesseur extends StatelessWidget {
   const AvatarMiniProfesseur({
@@ -14,25 +14,8 @@ class AvatarMiniProfesseur extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final url = _buildPhotoUrl(photoUrl);
-    if (url != null) {
-      return ClipOval(
-        child: SizedBox.expand(
-          child: Image.network(
-            url,
-            fit: BoxFit.cover,
-            errorBuilder:
-                (_, __, ___) => Container(
-                  color: accent.withOpacity(0.12),
-                  alignment: Alignment.center,
-                  child: Icon(Icons.person, size: 14, color: accent),
-                ),
-          ),
-        ),
-      );
-    }
-
-    return Container(
+    final url = photoUrl?.trim();
+    final fallback = Container(
       decoration: BoxDecoration(
         color: accent.withOpacity(0.12),
         shape: BoxShape.circle,
@@ -40,10 +23,19 @@ class AvatarMiniProfesseur extends StatelessWidget {
       alignment: Alignment.center,
       child: Icon(Icons.person, size: 14, color: accent),
     );
-  }
-}
 
-String? _buildPhotoUrl(String? photoUrl) {
-  if (photoUrl == null || photoUrl.trim().isEmpty) return null;
-  return '${ConfigurationApp.apiBaseUrl}$photoUrl';
+    if (url == null || url.isEmpty) {
+      return fallback;
+    }
+
+    return ClipOval(
+      child: SizedBox.expand(
+        child: PhotoSecurisee(
+          photoUrl: url,
+          placeholder: fallback,
+          error: fallback,
+        ),
+      ),
+    );
+  }
 }

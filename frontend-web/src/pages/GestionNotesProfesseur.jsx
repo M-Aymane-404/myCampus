@@ -24,11 +24,9 @@ import apiNotesProfesseur from '../services/professeur/apiNotesProfesseur';
 import './GestionNotesProfesseur.css';
 
 const TYPE_EXAMEN_OPTIONS = ['NORMAL', 'RATTRAPAGE'];
-const SEMESTRE_OPTIONS = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8', 'S9'];
 const ETAT_EXAMEN_OPTIONS = ['PROGRAMME', 'PASSE', 'CORRIGE'];
 
 const drawerCreationInitial = {
-  semestre: 'S1',
   dateExamen: '',
   numeroExamen: '',
   typeExamen: 'NORMAL',
@@ -36,7 +34,6 @@ const drawerCreationInitial = {
 };
 
 const drawerModificationInitial = {
-  semestre: 'S1',
   dateExamen: '',
   numeroExamen: '',
   typeExamen: 'NORMAL',
@@ -330,7 +327,6 @@ const GestionNotesProfesseur = () => {
   const openCreateDrawer = () => {
     setCreationForm({
       ...drawerCreationInitial,
-      semestre: selectedExamen?.semestre || 'S1',
       dateExamen: '',
       numeroExamen: examens.length > 0 ? (Math.max(...examens.map((e) => e.numeroExamen || 0)) + 1) : 1,
     });
@@ -344,7 +340,6 @@ const GestionNotesProfesseur = () => {
     if (!selectedExamen) return;
 
     setModificationForm({
-      semestre: selectedExamen.semestre || 'S1',
       dateExamen: toLocalDateTimeInput(selectedExamen.dateExamen),
       numeroExamen: selectedExamen.numeroExamen || '',
       typeExamen: selectedExamen.typeExamen || 'NORMAL',
@@ -375,7 +370,6 @@ const GestionNotesProfesseur = () => {
         }
 
         const payload = {
-          semestre: creationForm.semestre,
           dateExamen: toIsoFromLocalInput(creationForm.dateExamen),
           numeroExamen: Number(creationForm.numeroExamen),
           typeExamen: creationForm.typeExamen,
@@ -398,16 +392,12 @@ const GestionNotesProfesseur = () => {
         if (!selectedExamenId) throw new Error('Aucun examen selectionne.');
 
         const payload = {
-          semestre: modificationForm.semestre,
           dateExamen: toIsoFromLocalInput(modificationForm.dateExamen),
-          numeroExamen: Number(modificationForm.numeroExamen),
-          typeExamen: modificationForm.typeExamen,
           duree: Number(modificationForm.duree),
           etat: modificationForm.etat,
         };
 
         if (!payload.dateExamen) throw new Error("La date de l'examen est obligatoire.");
-        if (!payload.numeroExamen) throw new Error("Le numero de l'examen est obligatoire.");
         if (!payload.duree) throw new Error('La duree est obligatoire.');
 
         await apiExamensProfesseur.modifierExamen(selectedExamenId, payload);
@@ -432,14 +422,7 @@ const GestionNotesProfesseur = () => {
     setSuccess('');
 
     try {
-      const payload = {
-        semestre: selectedExamen.semestre,
-        dateExamen: selectedExamen.dateExamen,
-        numeroExamen: Number(selectedExamen.numeroExamen),
-        typeExamen: selectedExamen.typeExamen,
-        duree: Number(selectedExamen.duree),
-        etat,
-      };
+      const payload = { etat };
 
       await apiExamensProfesseur.modifierExamen(selectedExamenId, payload);
       await refreshExamens(selectedExamenId);
@@ -1261,21 +1244,14 @@ const GestionNotesProfesseur = () => {
                 </div>
 
                 <div className="drawer-form-grid">
-                  <div className="drawer-field">
-                    <label>Semestre</label>
-                    <select
-                        value={examForm.semestre}
-                        onChange={(e) =>
-                            setExamForm((prev) => ({ ...prev, semestre: e.target.value }))
-                        }
-                    >
-                      {SEMESTRE_OPTIONS.map((s) => (
-                          <option key={s} value={s}>
-                            {s}
-                          </option>
-                      ))}
-                    </select>
-                  </div>
+                  {drawerMode === 'edit' && (
+                    <div className="drawer-field">
+                      <label>Semestre</label>
+                      <div className="drawer-field-readonly">
+                        {selectedExamen?.semestre || '--'}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="drawer-field">
                     <label>Numero examen</label>
@@ -1383,4 +1359,6 @@ const GestionNotesProfesseur = () => {
 };
 
 export default GestionNotesProfesseur;
+
+
 

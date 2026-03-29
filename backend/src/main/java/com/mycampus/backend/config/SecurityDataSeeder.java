@@ -31,7 +31,7 @@ public class SecurityDataSeeder {
     private final PedagogiqueDataSeeder pedagogiqueDataSeeder;
 
 
-    //@Bean
+    @Bean
     public ApplicationRunner securityDataSeederRunner() {
         return args -> {
             log.info("Starting security data seeding...");
@@ -216,13 +216,13 @@ public class SecurityDataSeeder {
                 .password(passwordEncoder.encode("password123"))
                 .active(true).cin("AD100001").grade("Grade A")
                 .dateCreation(LocalDateTime.now()).fonction("Directeur")
-                .ppr("ADM00001").tel("0600000001").build(),
+                .ppr("10000001").tel("0600000001").build(),
             Administrateur.builder()
                 .nom("Admin2").prenom("System2").email("admin2@mycampus.ma")
                     .password(passwordEncoder.encode("password123"))
                 .active(true).cin("AD100002").grade("Grade B")
                 .dateCreation(LocalDateTime.now()).fonction("Directeur Adjoint")
-                .ppr("ADM00002").tel("0600000002").build()
+                .ppr("10000002").tel("0600000002").build()
         );
         
         for (Administrateur admin : admins) {

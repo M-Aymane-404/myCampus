@@ -59,6 +59,14 @@
   line-height: 1.6;
 }
 
+.dashboard-refresh-meta {
+  display: inline-flex;
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--admin-text-muted);
+}
+
 .admin-header-side {
   display: flex;
   flex-direction: column;

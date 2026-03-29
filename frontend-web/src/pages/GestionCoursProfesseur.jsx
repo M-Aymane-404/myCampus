@@ -138,10 +138,15 @@ import {
   MoreHorizontal,
 } from 'lucide-react';
 import apiSeancesProfesseur from '../services/professeur/apiSeancesProfesseur';
+import { downloadBlob, openBlobInNewTab } from '../utils/fileAccess';
 import './GestionCoursProfesseur.css';
 
 const TYPE_OPTIONS = ['COURS', 'TD', 'TP'];
 const ETAT_OPTIONS = ['PLANIFIEE', 'TERMINEE', 'ANNULEE'];
+const DOCX_MIME =
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+const SIMPLE_UPLOAD_ERROR_MESSAGE =
+  "Le format du fichier n'est pas valide. Formats acceptes : PDF ou DOCX.";
 
 const emptySeanceForm = {
   type: 'COURS',
@@ -164,6 +169,35 @@ const getFileIcon = (mime = '') => {
   const lower = mime.toLowerCase();
   if (lower.includes('pdf')) return FileText;
   return File;
+};
+
+const getFileExtension = (filename = '') => {
+  const normalized = String(filename).trim().toLowerCase();
+  const index = normalized.lastIndexOf('.');
+  return index >= 0 ? normalized.slice(index + 1) : '';
+};
+
+const isPdfFile = ({ type = '', name = '' } = {}) =>
+  type.toLowerCase().includes('pdf') || getFileExtension(name) === 'pdf';
+
+const isDocxFile = ({ type = '', name = '' } = {}) =>
+  type === DOCX_MIME || getFileExtension(name) === 'docx';
+
+const isSupportedCourseFile = (file) => isPdfFile(file) || isDocxFile(file);
+
+const normalizeUploadErrorMessage = (message = '') => {
+  const normalized = String(message).trim();
+  const lower = normalized.toLowerCase();
+
+  if (
+    lower.includes('signature binaire du fichier non reconnue') ||
+    lower.includes('format du fichier') ||
+    lower.includes('type de fichier')
+  ) {
+    return SIMPLE_UPLOAD_ERROR_MESSAGE;
+  }
+
+  return normalized || 'Impossible de deposer le fichier.';
 };
 
 const formatDate = (date) => {
@@ -227,18 +261,34 @@ const buildDateTime = (date, time) => {
   return `${date}T${time}:00`;
 };
 
+const parseTimeToMinutes = (time) => {
+  if (!time || typeof time !== 'string') return NaN;
+  const [hours, minutes] = time.split(':');
+  const h = Number(hours);
+  const m = Number(minutes);
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return NaN;
+  return h * 60 + m;
+};
+
 const openCourseFile = async (fichier) => {
   if (!fichier?.id) {
     throw new Error('Aucun fichier lié à cette séance.');
   }
 
-  const { blob } = await apiSeancesProfesseur.telechargerFichierBlob(fichier.id);
-  const mimeType = blob.type || '';
-  if (!mimeType.toLowerCase().includes('pdf')) {
-    throw new Error('Le fichier déposé n est pas un PDF valide.');
+  const { blob, filename } = await apiSeancesProfesseur.telechargerFichierBlob(fichier.id);
+  const resolvedFilename = filename || fichier.nomOriginal || 'document';
+
+  if (isPdfFile({ type: blob.type, name: resolvedFilename })) {
+    openBlobInNewTab(blob);
+    return;
   }
 
-  openBlobInNewTab(blob);
+  if (isDocxFile({ type: blob.type, name: resolvedFilename })) {
+    downloadBlob(blob, resolvedFilename);
+    return;
+  }
+
+  throw new Error(SIMPLE_UPLOAD_ERROR_MESSAGE);
 };
 
 const GestionCoursProfesseur = () => {
@@ -473,6 +523,15 @@ const GestionCoursProfesseur = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    if (!isSupportedCourseFile(file)) {
+      setMessage({
+        type: 'error',
+        text: SIMPLE_UPLOAD_ERROR_MESSAGE,
+      });
+      event.target.value = '';
+      return;
+    }
+
     setUploadingSeanceId(seanceId);
     setMessage({ type: '', text: '' });
 
@@ -487,7 +546,7 @@ const GestionCoursProfesseur = () => {
     } catch (err) {
       setMessage({
         type: 'error',
-        text: err.message || 'Impossible de déposer le fichier.',
+        text: normalizeUploadErrorMessage(err.message),
       });
     } finally {
       setUploadingSeanceId(null);
@@ -606,6 +665,25 @@ const GestionCoursProfesseur = () => {
       setMessage({
         type: 'error',
         text: 'La date, l’heure de début et l’heure de fin sont obligatoires.',
+      });
+      return;
+    }
+
+    const debutMinutes = parseTimeToMinutes(seanceForm.heureDebut);
+    const finMinutes = parseTimeToMinutes(seanceForm.heureFin);
+
+    if (!Number.isFinite(debutMinutes) || !Number.isFinite(finMinutes)) {
+      setMessage({
+        type: 'error',
+        text: "Format d'heure invalide.",
+      });
+      return;
+    }
+
+    if (debutMinutes >= finMinutes) {
+      setMessage({
+        type: 'error',
+        text: "L'heure de début doit être strictement avant l'heure de fin.",
       });
       return;
     }
@@ -915,6 +993,7 @@ const GestionCoursProfesseur = () => {
                                       {uploadingSeanceId === seance.id ? 'Envoi...' : 'Ajouter support'}
                                       <input
                                           type="file"
+                                          accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                                           hidden
                                           onChange={(e) => handleUpload(seance.id, e)}
                                       />

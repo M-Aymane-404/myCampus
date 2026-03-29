@@ -35,6 +35,7 @@ const GestionComptes = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [formError, setFormError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
 
   // Data State
   const [usersList, setUsersList] = useState([]);
@@ -83,6 +84,8 @@ const GestionComptes = () => {
     classeId: '' // For student class selection
   };
 
+  const knownFieldNames = new Set(Object.keys(initialFormData));
+
   const [formData, setFormData] = useState(initialFormData);
 
   // Fetch Users and Classes on Mount
@@ -97,7 +100,7 @@ const GestionComptes = () => {
       const data = await apiComptes.obtenirTous();
       const formattedUsers = data.map(user => ({
         ...user,
-        id: user.id || user.apogee || user.ppr, // Fallback ID
+        id: user.apogee || user.ppr || user.id, // Prefer Apogée/PPR for API calls
         name: `${user.prenom} ${user.nom} `,
         initials: `${user.prenom?.charAt(0) || ''}${user.nom?.charAt(0) || ''} `.toUpperCase(),
         role: normalizeRole(user.role),
@@ -130,15 +133,179 @@ const GestionComptes = () => {
     return 'STUDENT';
   };
 
+  const normalizeFieldName = (field) => {
+    const map = {
+      anneeinscription: 'anneeInscription',
+      annee_fin_etude: 'anneeFinEtude',
+      anneefinetude: 'anneeFinEtude',
+      date_naissance: 'dateNaissance',
+      datenaissance: 'dateNaissance',
+      etatinscription: 'etatInscription',
+      semestreactuel: 'semestreActuel',
+      daterecrutement: 'dateRecrutement',
+      codeclasse: 'classeId',
+      classe: 'classeId',
+      telephone: 'tel',
+      motdepasse: 'password',
+      mot_de_passe: 'password',
+    };
+
+    const cleaned = String(field || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[\s_.-]/g, '');
+
+    return map[cleaned] || field;
+  };
+
+  const parseValidationErrors = (message) => {
+    const text = String(message || '').trim();
+    if (!text) return {};
+
+    const parsed = {};
+    text.split('\n').forEach((line) => {
+      const trimmed = line.trim();
+      if (!trimmed || !trimmed.includes(':')) return;
+
+      const [rawField, ...rest] = trimmed.split(':');
+      const field = normalizeFieldName(rawField);
+      const errorMessage = rest.join(':').trim();
+
+      if (field && errorMessage && knownFieldNames.has(field)) {
+        parsed[field] = errorMessage;
+      }
+    });
+
+    return parsed;
+  };
+
+  const validateField = (name, value, nextFormData) => {
+    const currentRole = nextFormData.role;
+    const normalizedValue = typeof value === 'string' ? value.trim() : value;
+
+    switch (name) {
+      case 'nom':
+        return !normalizedValue ? 'Le nom est obligatoire.' : '';
+      case 'prenom':
+        return !normalizedValue ? 'Le prénom est obligatoire.' : '';
+      case 'email':
+        if (!normalizedValue) return "L'email est obligatoire.";
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedValue)
+          ? ''
+          : 'Adresse email invalide.';
+      case 'password':
+        if (isEditing && !normalizedValue) return '';
+        return !normalizedValue ? 'Le mot de passe est obligatoire.' : '';
+      case 'cin':
+        if (!normalizedValue) return '';
+        return /^[A-Za-z0-9]{4,8}$/.test(normalizedValue)
+          ? ''
+          : 'Numero de CIN non valide (4 a 8 caracteres alphanumeriques).';
+      case 'tel':
+        if (!normalizedValue) return '';
+        return String(normalizedValue).length >= 10 && String(normalizedValue).length <= 20
+          ? ''
+          : 'Numero de telephone non valide (10 a 20 caracteres).';
+      case 'ppr': {
+        if (currentRole !== 'PROFESSOR' && currentRole !== 'ADMIN') return '';
+        if (isEditing) return '';
+        if (!normalizedValue) return 'Le PPR est obligatoire.';
+        const digits = String(normalizedValue).replace(/\D/g, '');
+        return /^[0-9]{8}$/.test(digits) ? '' : 'PPR doit contenir exactement 8 chiffres.';
+      }
+      case 'apogee': {
+        if (currentRole !== 'STUDENT') return '';
+        if (isEditing) return '';
+        if (!normalizedValue) return "L'Apogée est obligatoire.";
+        const digits = String(normalizedValue).replace(/\D/g, '');
+        return /^[0-9]{9}$/.test(digits) ? '' : 'Apogee doit contenir exactement 9 chiffres.';
+      }
+      case 'niveau':
+        return currentRole === 'STUDENT' && !normalizedValue
+          ? 'Le niveau est obligatoire.'
+          : '';
+      case 'semestreActuel':
+        return currentRole === 'STUDENT' && !normalizedValue
+          ? 'Le semestre actuel est obligatoire.'
+          : '';
+      case 'anneeInscription':
+        if (currentRole !== 'STUDENT' || !normalizedValue) return '';
+        return Number.isInteger(Number(normalizedValue)) && Number(normalizedValue) >= 2020
+          ? ''
+          : "Annee d'inscription minimum est 2020.";
+      case 'classeId':
+        return currentRole === 'STUDENT' && !normalizedValue
+          ? "La classe de l'etudiant est obligatoire."
+          : '';
+      default:
+        return '';
+    }
+  };
+
+  const validateForm = (data) => {
+    const fieldsToValidate = [
+      'nom',
+      'prenom',
+      'email',
+      'password',
+      'cin',
+      'tel',
+      'ppr',
+      'apogee',
+      'niveau',
+      'semestreActuel',
+      'anneeInscription',
+      'classeId',
+    ];
+
+    return fieldsToValidate.reduce((acc, field) => {
+      const error = validateField(field, data[field], data);
+      if (error) {
+        acc[field] = error;
+      }
+      return acc;
+    }, {});
+  };
+
+  const setSingleFieldError = (field, message) => {
+    setFieldErrors({ [field]: message });
+    setFormError(message);
+  };
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+
+    if (isEditing && name === 'role') {
+      return;
+    }
+
+    const nextValue = type === 'checkbox' ? checked : value;
+
+    setFormData(prev => ({
+      ...prev,
+      [name]: nextValue
+    }));
+
+    const nextFormData = {
+      ...formData,
+      [name]: nextValue
+    };
+
+    const fieldError = validateField(name, nextValue, nextFormData);
+
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      if (fieldError) {
+        next[name] = fieldError;
+      } else {
+        delete next[name];
+      }
+      return next;
+    });
+
     if (formError) {
       setFormError('');
     }
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
   };
 
   const handleOpenAddModal = () => {
@@ -146,6 +313,7 @@ const GestionComptes = () => {
     setIsEditing(false);
     setSelectedUserId(null);
     setFormError('');
+    setFieldErrors({});
     setModalOpen(true);
   };
 
@@ -209,6 +377,7 @@ const GestionComptes = () => {
         setIsEditing(true);
         setSelectedUserId(id);
         setFormError('');
+        setFieldErrors({});
         setModalOpen(true);
         setViewModalOpen(false);
       } catch (err) {
@@ -221,56 +390,80 @@ const GestionComptes = () => {
   const handleSaveUser = async () => {
     setIsLoading(true);
     setFormError('');
+    setFieldErrors({});
     try {
+      const liveErrors = validateForm(formData);
+      if (Object.keys(liveErrors).length > 0) {
+        setFieldErrors(liveErrors);
+        const premierErreur = Object.values(liveErrors)[0];
+        setFormError(premierErreur || 'Corrigez les champs en erreur puis reessayez.');
+        setIsLoading(false);
+        return;
+      }
+
       const userPayload = { ...formData };
+      let cleanedPprForPath = null;
+      let cleanedApogeeForPath = null;
       const originalUser = usersList.find(u => u.id === selectedUserId);
       
-      // Validation checks before sending to backend
-      if (formData.role === 'PROFESSOR' || formData.role === 'ADMIN') {
-        if (formData.ppr && formData.ppr.trim() !== '') {
-          // Extract numeric part from PPR (remove "PPR" prefix if present)
+      const effectiveRole = isEditing ? normalizeRole(originalUser?.role || formData.role) : formData.role;
+
+      // Validation checks before sending to backend (only on creation)
+      if (!isEditing && (effectiveRole === 'PROFESSOR' || effectiveRole === 'ADMIN')) {
+        if (formData.ppr && formData.ppr.toString().trim() !== '') {
           const cleanPpr = formData.ppr.toString().trim();
-          const numericPpr = cleanPpr.replace(/^PPR/i, '');
-          // Update the payload with only the numeric part
-          userPayload.ppr = numericPpr;
-          if (!/^[0-9]{8}$/.test(numericPpr)) {
-            setFormError("PPR doit contenir exactement 8 chiffres.");
-            setIsLoading(false);
-            return;
+          const digitsPpr = cleanPpr.replace(/\D/g, '');
+          cleanedPprForPath = digitsPpr || null;
+
+          if (!isEditing) {
+            userPayload.ppr = digitsPpr;
+            if (!/^[0-9]{8}$/.test(digitsPpr)) {
+              setSingleFieldError('ppr', "PPR doit contenir exactement 8 chiffres.");
+              setIsLoading(false);
+              return;
+            }
           }
         }
-      } else if (formData.role === 'STUDENT') {
-        if (formData.apogee && formData.apogee.trim() !== '') {
-          // Extract numeric part from Apogee (remove "AP" prefix if present)
+      } else if (!isEditing && effectiveRole === 'STUDENT') {
+        if (formData.apogee && formData.apogee.toString().trim() !== '') {
           const cleanApogee = formData.apogee.toString().trim();
-          const numericApogee = cleanApogee.replace(/^AP/i, '');
-          // Update the payload with only the numeric part
-          userPayload.apogee = numericApogee;
-          
-          if (!/^[0-9]{9}$/.test(numericApogee)) {
-            setFormError("Apogee doit contenir exactement 9 chiffres.");
-            setIsLoading(false);
-            return;
+          const digitsApogee = cleanApogee.replace(/\D/g, '');
+          cleanedApogeeForPath = digitsApogee || null;
+
+          if (!isEditing) {
+            userPayload.apogee = digitsApogee;
+
+            if (!/^[0-9]{9}$/.test(digitsApogee)) {
+              setSingleFieldError('apogee', "Apogee doit contenir exactement 9 chiffres.");
+              setIsLoading(false);
+              return;
+            }
           }
         }
       }
-      
+
+      // PPR / Apogée are immutable in edit UI (field is hidden), so don't send them in update payload
+      if (isEditing) {
+        delete userPayload.ppr;
+        delete userPayload.apogee;
+      }
+
       if (formData.cin && !/^[A-Za-z0-9]{4,8}$/.test(formData.cin)) {
-        setFormError("Numero de CIN non valide (doit contenir 4 a 8 caracteres alphanumeriques).");
+        setSingleFieldError('cin', "Numero de CIN non valide (doit contenir 4 a 8 caracteres alphanumeriques).");
         setIsLoading(false);
         return;
       }
       
       if (formData.tel && (formData.tel.length < 10 || formData.tel.length > 20)) {
-        setFormError("Numero de telephone non valide (doit contenir entre 10 et 20 caracteres).");
+        setSingleFieldError('tel', "Numero de telephone non valide (doit contenir entre 10 et 20 caracteres).");
         setIsLoading(false);
         return;
       }
 
-      if (formData.role === 'STUDENT' && formData.anneeInscription) {
+      if (effectiveRole === 'STUDENT' && formData.anneeInscription) {
         const annee = Number(String(formData.anneeInscription).trim());
         if (!Number.isInteger(annee) || annee < 2020) {
-          setFormError("anneeInscription: Annee d'inscription minimum est 2020.");
+          setSingleFieldError('anneeInscription', "Annee d'inscription minimum est 2020.");
           setIsLoading(false);
           return;
         }
@@ -283,9 +476,9 @@ const GestionComptes = () => {
       
 
       // For students, convert classeId to codeClasse (backend expects codeClasse as String)
-      if (formData.role === 'STUDENT') {
+      if (effectiveRole === 'STUDENT') {
         if (!formData.classeId) {
-          setFormError("La classe de l'etudiant est obligatoire.");
+          setSingleFieldError('classeId', "La classe de l'etudiant est obligatoire.");
           setIsLoading(false);
           return;
         }
@@ -306,6 +499,7 @@ const GestionComptes = () => {
       delete userPayload.id;
       delete userPayload.name;
       delete userPayload.initials;
+      delete userPayload.role;
       
       // Remove immutable identifiers during editing - but keep them if they are being modified
       // Note: PPR and Apogee should not be removed as they might be needed for validation
@@ -332,25 +526,24 @@ const GestionComptes = () => {
       let service;
       let id = selectedUserId;
 
-      // Ensure ID for update matches the specific ID field (ppr/apogee) if needed
-      switch (formData.role) {
+      switch (effectiveRole) {
         case 'PROFESSOR':
           service = apiProfesseurs;
-          if (isEditing) id = formData.ppr || selectedUserId;
+          if (isEditing) id = originalUser?.ppr || formData.ppr || selectedUserId; else id = cleanedPprForPath || formData.ppr || selectedUserId;
           break;
         case 'STUDENT':
           service = apiEtudiants;
-          if (isEditing) id = formData.apogee || selectedUserId;
+          if (isEditing) id = originalUser?.apogee || formData.apogee || selectedUserId; else id = cleanedApogeeForPath || formData.apogee || selectedUserId;
           break;
         default:
           service = apiAdministrateurs;
-          if (isEditing) id = formData.ppr || selectedUserId;
+          if (isEditing) id = originalUser?.ppr || formData.ppr || selectedUserId; else id = cleanedPprForPath || formData.ppr || selectedUserId;
       }
 
       // Log payload for debugging (remove in production)
       console.log('Saving user payload:', JSON.stringify(userPayload, null, 2));
       console.log('User ID being used:', id);
-      console.log('Service being used:', formData.role);
+      console.log('Service being used:', effectiveRole);
 
       if (isEditing) {
         // If only the status changed, use the dedicated endpoints
@@ -383,10 +576,15 @@ const GestionComptes = () => {
     } catch (err) {
       console.error("Save failed:", err);
       const errorMessage = err.message || 'Erreur inconnue';
-      const texteErreur = errorMessage.includes('Erreur de validation:')
-        ? errorMessage
-        : `Une erreur est survenue lors de la sauvegarde: ${errorMessage}`;
-      setFormError(texteErreur);
+      const validationErrors = parseValidationErrors(errorMessage);
+
+      if (Object.keys(validationErrors).length > 0) {
+        setFieldErrors(validationErrors);
+        const premierErreur = Object.values(validationErrors)[0];
+        setFormError(premierErreur || 'Corrigez les champs en erreur puis reessayez.');
+      } else {
+        setFormError(`Une erreur est survenue lors de la sauvegarde: ${errorMessage}`);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -678,25 +876,25 @@ const GestionComptes = () => {
       case 'ADMIN':
         return (
           <>
-            {!isEditing && <ChampFormulaire label="PPR" nom="ppr" valeur={formData.ppr} onChange={handleInputChange} requis />}
-            <ChampFormulaire label="Grade" nom="grade" valeur={formData.grade} onChange={handleInputChange} />
-            <ChampFormulaire label="Fonction" nom="fonction" valeur={formData.fonction} onChange={handleInputChange} />
+            {!isEditing && <ChampFormulaire label="PPR" nom="ppr" valeur={formData.ppr} onChange={handleInputChange} requis erreur={fieldErrors.ppr} />}
+            <ChampFormulaire label="Grade" nom="grade" valeur={formData.grade} onChange={handleInputChange} erreur={fieldErrors.grade} />
+            <ChampFormulaire label="Fonction" nom="fonction" valeur={formData.fonction} onChange={handleInputChange} erreur={fieldErrors.fonction} />
           </>
         );
       case 'PROFESSOR':
         return (
           <>
-            {!isEditing && <ChampFormulaire label="PPR" nom="ppr" valeur={formData.ppr} onChange={handleInputChange} requis />}
-            <ChampFormulaire label="Spécialité" nom="specialite" valeur={formData.specialite} onChange={handleInputChange} />
-            <ChampFormulaire label="Grade" nom="grade" valeur={formData.grade} onChange={handleInputChange} />
-            <ChampFormulaire label="Date de Recrutement" nom="dateRecrutement" type="date" valeur={formData.dateRecrutement} onChange={handleInputChange} />
-            <ChampFormulaire label="Statut" nom="statut" valeur={formData.statut} onChange={handleInputChange} />
+            {!isEditing && <ChampFormulaire label="PPR" nom="ppr" valeur={formData.ppr} onChange={handleInputChange} requis erreur={fieldErrors.ppr} />}
+            <ChampFormulaire label="Spécialité" nom="specialite" valeur={formData.specialite} onChange={handleInputChange} erreur={fieldErrors.specialite} />
+            <ChampFormulaire label="Grade" nom="grade" valeur={formData.grade} onChange={handleInputChange} erreur={fieldErrors.grade} />
+            <ChampFormulaire label="Date de Recrutement" nom="dateRecrutement" type="date" valeur={formData.dateRecrutement} onChange={handleInputChange} erreur={fieldErrors.dateRecrutement} />
+            <ChampFormulaire label="Statut" nom="statut" valeur={formData.statut} onChange={handleInputChange} erreur={fieldErrors.statut} />
           </>
         );
       case 'STUDENT':
         return (
           <>
-            {!isEditing && <ChampFormulaire label="Apogée" nom="apogee" valeur={formData.apogee} onChange={handleInputChange} requis />}
+            {!isEditing && <ChampFormulaire label="Apogée" nom="apogee" valeur={formData.apogee} onChange={handleInputChange} requis erreur={fieldErrors.apogee} />}
             <ChampFormulaire
               label="Niveau"
               nom="niveau"
@@ -708,6 +906,7 @@ const GestionComptes = () => {
                 label: option.label
               }))}
               requis
+              erreur={fieldErrors.niveau}
             />
             <ChampFormulaire
               label="Annee Inscription"
@@ -716,6 +915,7 @@ const GestionComptes = () => {
               valeur={formData.anneeInscription}
               onChange={handleInputChange}
               placeholder="Ex: 2025"
+              erreur={fieldErrors.anneeInscription}
             />
             <ChampFormulaire
               label="Semestre Actuel"
@@ -728,9 +928,10 @@ const GestionComptes = () => {
                 label: option.label
               }))}
               requis
+              erreur={fieldErrors.semestreActuel}
             />
-            <ChampFormulaire label="Année Fin Étude" nom="anneeFinEtude" valeur={formData.anneeFinEtude} onChange={handleInputChange} />
-            <ChampFormulaire label="Date de Naissance" nom="dateNaissance" type="date" valeur={formData.dateNaissance} onChange={handleInputChange} />
+            <ChampFormulaire label="Année Fin Étude" nom="anneeFinEtude" valeur={formData.anneeFinEtude} onChange={handleInputChange} erreur={fieldErrors.anneeFinEtude} />
+            <ChampFormulaire label="Date de Naissance" nom="dateNaissance" type="date" valeur={formData.dateNaissance} onChange={handleInputChange} erreur={fieldErrors.dateNaissance} />
             <ChampFormulaire
               label="État Inscription"
               nom="etatInscription"
@@ -742,6 +943,7 @@ const GestionComptes = () => {
                 { value: 'SUSPENDU', label: 'Suspendu' },
                 { value: 'DIPLOME', label: 'Diplômé' }
               ]}
+              erreur={fieldErrors.etatInscription}
             />
             <ChampFormulaire
               label="Classe"
@@ -758,6 +960,7 @@ const GestionComptes = () => {
               }
               requis
               disabled={classesList.length === 0}
+              erreur={fieldErrors.classeId}
             />
           </>
         );
@@ -884,18 +1087,19 @@ const GestionComptes = () => {
         surFermer={() => {
           setModalOpen(false);
           setFormError('');
+          setFieldErrors({});
         }}
         surSauvegarder={handleSaveUser}
         texteBoutonSauvegarder={isEditing ? "Modifier" : "Créer"}
         messageErreur={formError}
       >
         <div className="form-grid">
-          <ChampFormulaire label="Nom" nom="nom" valeur={formData.nom} onChange={handleInputChange} requis />
-          <ChampFormulaire label="Prénom" nom="prenom" valeur={formData.prenom} onChange={handleInputChange} requis />
-          <ChampFormulaire label="Email" nom="email" type="email" valeur={formData.email} onChange={handleInputChange} requis />
-          <ChampFormulaire label="Mot de passe" nom="password" type="password" valeur={formData.password} onChange={handleInputChange} requis />
-          <ChampFormulaire label="CIN" nom="cin" valeur={formData.cin} onChange={handleInputChange} />
-          <ChampFormulaire label="Téléphone" nom="tel" type="tel" valeur={formData.tel} onChange={handleInputChange} />
+          <ChampFormulaire label="Nom" nom="nom" valeur={formData.nom} onChange={handleInputChange} requis erreur={fieldErrors.nom} />
+          <ChampFormulaire label="Prénom" nom="prenom" valeur={formData.prenom} onChange={handleInputChange} requis erreur={fieldErrors.prenom} />
+          <ChampFormulaire label="Email" nom="email" type="email" valeur={formData.email} onChange={handleInputChange} requis erreur={fieldErrors.email} />
+          <ChampFormulaire label="Mot de passe" nom="password" type="password" valeur={formData.password} onChange={handleInputChange} requis erreur={fieldErrors.password} />
+          <ChampFormulaire label="CIN" nom="cin" valeur={formData.cin} onChange={handleInputChange} erreur={fieldErrors.cin} />
+          <ChampFormulaire label="Téléphone" nom="tel" type="tel" valeur={formData.tel} onChange={handleInputChange} erreur={fieldErrors.tel} />
 
           <ChampFormulaire
             label="Rôle"
@@ -909,6 +1113,7 @@ const GestionComptes = () => {
               { value: 'STUDENT', label: 'Étudiant' }
             ]}
             requis
+            erreur={fieldErrors.role}
           />
 
           <div className="form-checkbox-group">
@@ -1044,6 +1249,12 @@ const GestionComptes = () => {
 };
 
 export default GestionComptes;
+
+
+
+
+
+
 
 
 

@@ -7,9 +7,15 @@ class AnnonceProfesseurApi {
   AnnonceProfesseurApi(this._dio);
 
   Future<List<dynamic>> recupererAnnonces() async {
-    final resp = await _dio.get('/api/professeur/annonces/mes-prof-annonces');
-    final data = _decodeData(resp.data);
-    return data is List ? data : const [];
+    try {
+      final resp = await _dio.get('/api/professeur/annonces/mes-annonces');
+      final data = _decodeData(resp.data);
+      return data is List ? data : const [];
+    } on DioException catch (e) {
+      final code = e.response?.statusCode;
+      if (code == 404) return const [];
+      rethrow;
+    }
   }
 
   Future<List<dynamic>> recupererAnnoncesPubliques() async {
@@ -62,9 +68,45 @@ class AnnonceProfesseurApi {
     return _decodeMap(resp.data);
   }
 
+  Future<void> supprimerAnnonce(int annonceId) async {
+    await _dio.delete('/api/professeur/annonces/$annonceId');
+  }
+
+  Future<Map<String, dynamic>> publierAnnonce(int annonceId) async {
+    final resp = await _putOuPost(
+      '/api/professeur/annonces/$annonceId/publier',
+    );
+    return _decodeMap(resp.data);
+  }
+
+  Future<Map<String, dynamic>> depublierAnnonce(int annonceId) async {
+    final resp = await _putOuPost(
+      '/api/professeur/annonces/$annonceId/depublier',
+    );
+    return _decodeMap(resp.data);
+  }
+
+  Future<Response<dynamic>> _putOuPost(String path) async {
+    try {
+      return await _dio.put(path);
+    } on DioException catch (e) {
+      final code = e.response?.statusCode;
+      if (code == 404 || code == 405) {
+        return await _dio.post(path);
+      }
+      rethrow;
+    }
+  }
+
   dynamic _decodeData(Object? data) {
     if (data is String) {
-      return jsonDecode(data);
+      final trimmed = data.trim();
+      if (trimmed.isEmpty) return null;
+      try {
+        return jsonDecode(trimmed);
+      } catch (_) {
+        return data;
+      }
     }
     return data;
   }

@@ -2,7 +2,26 @@ import { User, LogOut } from 'lucide-react';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { apiAuth } from '../../services/apiAuth';
 import NotificationHeart from './NotificationHeart';
+import PhotoSecurisee from '../communs/PhotoSecurisee';
 import './EnTete.css';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+
+const extractPhotoValue = (data) =>
+  data?.photoProfile
+  || data?.photoUrl
+  || data?.photo
+  || data?.url
+  || data?.fileName
+  || data?.photoNom
+  || null;
+
+const withCacheBuster = (photoUrl, version) => {
+  if (!photoUrl) return null;
+  if (!version) return photoUrl;
+  const separator = String(photoUrl).includes('?') ? '&' : '?';
+  return `${photoUrl}${separator}v=${version}`;
+};
 
 const EnTete = ({ elementActif, surChangementElement }) => {
   const [menuOuvert, setMenuOuvert] = useState(false);
@@ -22,40 +41,51 @@ const EnTete = ({ elementActif, surChangementElement }) => {
 
   // Load User Data on Mount
   useEffect(() => {
-    const chargerUtilisateur = async () => {
+    const chargerUtilisateur = async ({ forceRefreshPhoto = false } = {}) => {
       try {
         const currentUser = apiAuth.getUser();
         if (currentUser) {
           let profileData = null;
+          const rawRole = (currentUser.role || '').toLowerCase();
+          const role =
+            rawRole === 'etudiant' ? 'student'
+            : rawRole === 'professeur' ? 'professor'
+            : rawRole === 'administrateur' ? 'admin'
+            : rawRole;
 
-          // Fetch detailed profile data based on role
-          if (!currentUser.nom || !currentUser.prenom) {
-            const role = (currentUser.role || '').toLowerCase();
+          const shouldRefreshPhoto =
+            forceRefreshPhoto
+            || !extractPhotoValue(currentUser);
 
+          if (shouldRefreshPhoto) {
             try {
+              const headers = await apiAuth.getAuthHeadersWithRefresh();
+
               if (role === 'student') {
-                const response = await fetch('http://localhost:8080/api/etudiant/moi', {
+                const response = await fetch(`${API_BASE_URL}/api/etudiant/moi`, {
                   method: 'GET',
-                  headers: apiAuth.getAuthHeaders(),
+                  headers,
+                  credentials: 'include',
                 });
 
                 if (response.ok) {
                   profileData = await response.json();
                 }
               } else if (role === 'professor') {
-                const response = await fetch('http://localhost:8080/api/professeur/moi', {
+                const response = await fetch(`${API_BASE_URL}/api/professeur/moi`, {
                   method: 'GET',
-                  headers: apiAuth.getAuthHeaders(),
+                  headers,
+                  credentials: 'include',
                 });
 
                 if (response.ok) {
                   profileData = await response.json();
                 }
               } else if (role === 'admin') {
-                // Use admin API to get profile
-                const response = await fetch('http://localhost:8080/api/admin/utilisateurs/administrateurs', {
+                const response = await fetch(`${API_BASE_URL}/api/admin/utilisateurs/administrateurs`, {
                   method: 'GET',
-                  headers: apiAuth.getAuthHeaders(),
+                  headers,
+                  credentials: 'include',
                 });
 
                 if (response.ok) {
@@ -63,26 +93,27 @@ const EnTete = ({ elementActif, surChangementElement }) => {
                   profileData = allAdmins.find(admin => admin.email === currentUser.email);
                 }
               }
-
-              if (profileData) {
-                apiAuth.updateUser({
-                  nom: profileData.nom || '',
-                  prenom: profileData.prenom || '',
-                  email: profileData.email || currentUser.email || '',
-                  telephone: profileData.tel || profileData.telephone || '',
-                  photoProfile: profileData.photoUrl || profileData.photo || currentUser.photoProfile || null,
-                });
-              }
             } catch (e) {
-              console.error("Erreur lors du chargement du profil de l'utilisateur", e);
+              console.error("Erreur lors du rafraichissement de la photo profil", e);
             }
+          }
+
+          if (profileData) {
+            const resolvedPhoto = extractPhotoValue(profileData) || extractPhotoValue(currentUser);
+            apiAuth.updateUser({
+              nom: profileData.nom || currentUser.nom || '',
+              prenom: profileData.prenom || currentUser.prenom || '',
+              email: profileData.email || currentUser.email || '',
+              telephone: profileData.tel || profileData.telephone || currentUser.telephone || currentUser.tel || '',
+              ...(resolvedPhoto ? { photoProfile: resolvedPhoto, photoProfileVersion: Date.now() } : {}),
+            });
           }
 
           const syncedUser = apiAuth.getUser();
           const userToUse = syncedUser || currentUser;
 
-          const photo = userToUse.photoProfile || null;
-          const fullPhotoUrl = photo ? (photo.startsWith('http') ? photo : `http://localhost:8080${photo}`) : null;
+          const photo = extractPhotoValue(userToUse);
+          const photoVersion = userToUse.photoProfileVersion || null;
 
           setInfosUtilisateur({
             nom: userToUse.nom || '',
@@ -91,9 +122,10 @@ const EnTete = ({ elementActif, surChangementElement }) => {
             telephone: userToUse.telephone || '',
             nomUtilisateur: userToUse.nomUtilisateur || '',
             departement: userToUse.departement || '',
-            role: userToUse.role || 'admin',
+            role: role || userToUse.role || 'admin',
             dateCreation: userToUse.dateCreation || new Date().toLocaleDateString(),
-            photoProfile: fullPhotoUrl
+            photoProfile: photo,
+            photoProfileVersion: photoVersion,
           });
         }
       } catch (error) {
@@ -101,10 +133,10 @@ const EnTete = ({ elementActif, surChangementElement }) => {
       }
     };
 
-    chargerUtilisateur();
+    chargerUtilisateur({ forceRefreshPhoto: true });
 
     // Listen for profile updates
-    const handleUserUpdate = () => chargerUtilisateur();
+    const handleUserUpdate = () => chargerUtilisateur({ forceRefreshPhoto: true });
     window.addEventListener('user-updated', handleUserUpdate);
 
     return () => {
@@ -256,10 +288,16 @@ const EnTete = ({ elementActif, surChangementElement }) => {
           <div className="avatar-wrapper">
             <div className="avatar-profil">
               {infosUtilisateur.photoProfile ? (
-                <img
-                  src={infosUtilisateur.photoProfile}
+                <PhotoSecurisee
+                  photoUrl={withCacheBuster(infosUtilisateur.photoProfile, infosUtilisateur.photoProfileVersion)}
                   alt="Profil"
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  fallback={
+                    <span className="avatar-lettre">
+                      {infosUtilisateur.prenom ? infosUtilisateur.prenom.charAt(0) : ''}
+                      {infosUtilisateur.nom ? infosUtilisateur.nom.charAt(0) : ''}
+                    </span>
+                  }
                 />
               ) : (
                 <span className="avatar-lettre">

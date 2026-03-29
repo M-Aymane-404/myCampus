@@ -22,9 +22,7 @@ const normalizeSemesterCode = (value) => {
 const buildSemesterCandidates = (semester) => {
     const normalized = normalizeSemesterCode(semester);
     if (!normalized) return [semester];
-
-    const numeric = normalized.replace(/^S/, '');
-    return Array.from(new Set([normalized, numeric]));
+    return [normalized];
 };
 
 export const apiCours = {

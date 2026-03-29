@@ -55,6 +55,7 @@ const EMPTY_NOTE_STATS = {
     uniqueStudentCount: 0,
     totalClasses: 0,
     totalMatieres: 0,
+    examensProgrammes: 0,
     notesPubliees: 0,
     notesEnAttente: 0,
     examensSansPublication: 0,
@@ -127,6 +128,10 @@ const formatHour = (value) => {
 const formatFloat = (value, digits = 2) => (Number.isFinite(value) ? Number(value).toFixed(digits) : '--');
 const formatPercent = (value) => (Number.isFinite(value) ? `${Math.round(value)}%` : '--');
 const formatCompactNumber = (value) => new Intl.NumberFormat('fr-FR').format(value ?? 0);
+const formaterDerniereMiseAJour = (date) =>
+  date
+    ? `Mis a jour a ${date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
+    : '';
 
 const pickFirstValue = (...values) => values.find((value) => value !== undefined && value !== null && value !== '');
 
@@ -189,6 +194,7 @@ const getExamDate = (exam) =>
   parseDateValue(exam?.date) ||
   parseDateValue(exam?.heureDebut);
 
+const isCancelledExam = (exam) => ['ANNULE', 'ANNULEE'].includes(String(exam?.etat || '').trim().toUpperCase());
 const isExamCompleted = (exam) => ['PASSE', 'CORRIGE', 'ANNULE', 'ANNULEE'].includes(String(exam?.etat || '').trim().toUpperCase());
 
 const isCancelledSession = (session) => ['ANNULEE', 'ANNULE'].includes(String(session?.etat || '').trim().toUpperCase());
@@ -241,6 +247,7 @@ const buildNoteStatistics = async () => {
   let examensSansPublication = 0;
   let copiesACorriger = 0;
   let feuillesNotesACompleter = 0;
+  let examensProgrammes = 0;
 
   await Promise.all(
     classes.map(async (classe) => {
@@ -258,6 +265,8 @@ const buildNoteStatistics = async () => {
           const examens = await apiExamensProfesseur.listerExamens(codeClasse, codeMatiere);
           const examensList = Array.isArray(examens) ? examens : [];
           if (examensList.length === 0) return;
+
+          examensProgrammes += examensList.filter((examen) => !isCancelledExam(examen)).length;
 
           examensList.forEach((examen) => {
             const examDate = getExamDate(examen);
@@ -343,6 +352,7 @@ const buildNoteStatistics = async () => {
       uniqueStudentCount: studentIds.size,
       totalClasses: parClasse.length,
       totalMatieres: parMatiere.length,
+      examensProgrammes,
       notesPubliees,
       notesEnAttente,
       examensSansPublication,
@@ -494,13 +504,19 @@ const buildPresenceInsightsFromApp = async () => {
   if (items.length === 0) {
     return {
       prochaineSeance: null,
+      enseignementsActifs: 0,
       absencesJour: 0,
       feuillesACompleter: 0,
       etudiantsARisque: 0,
       justificatifsAConsulter: 0,
+      coursSansSupport: 0,
       tauxPresence: null,
     };
   }
+
+  const enseignementsActifs = new Set(
+    items.map((enseignement) => `${enseignement.codeClasse || ''}-${enseignement.codeMatiere || ''}`)
+  ).size;
 
   const seancesParEnseignement = await Promise.all(
     items.map(async (enseignement) => {
@@ -523,19 +539,35 @@ const buildPresenceInsightsFromApp = async () => {
     }),
   );
 
-  const allSeances = seancesParEnseignement.flat().filter((seance) => !isCancelledSession(seance));
+  const allSeances = Array.from(
+    seancesParEnseignement
+      .flat()
+      .filter((seance) => !isCancelledSession(seance))
+      .reduce((map, seance) => {
+        const key = seance?.id || `${seance?.codeClasse || ''}-${seance?.codeMatiere || ''}-${seance?.date || ''}-${seance?.heureDebut || ''}`;
+        if (!map.has(key)) {
+          map.set(key, seance);
+        }
+        return map;
+      }, new Map())
+      .values(),
+  );
   const now = new Date();
   const prochaineSeance = [...allSeances]
     .map((seance) => ({ seance, startDate: getSessionStartDate(seance) }))
     .filter(({ startDate }) => startDate && startDate.getTime() >= now.getTime())
     .sort((a, b) => a.startDate.getTime() - b.startDate.getTime())[0]?.seance || null;
 
-  const recentSeances = [...allSeances]
+  const upcomingSeances = [...allSeances]
+    .map((seance) => ({ seance, startDate: getSessionStartDate(seance) }))
+    .filter(({ startDate }) => startDate && startDate.getTime() >= now.getTime())
+    .map(({ seance }) => seance);
+
+  const seancesPasseesOuEnCours = [...allSeances]
     .map((seance) => ({ seance, startDate: getSessionStartDate(seance) }))
     .filter(({ startDate }) => startDate && startDate.getTime() <= now.getTime())
     .sort((a, b) => b.startDate.getTime() - a.startDate.getTime())
-    .map(({ seance }) => seance)
-    .slice(0, 8);
+    .map(({ seance }) => seance);
 
   let absencesJour = 0;
   let feuillesACompleter = 0;
@@ -545,7 +577,7 @@ const buildPresenceInsightsFromApp = async () => {
   const absencesParEtudiant = new Map();
 
   await Promise.all(
-    recentSeances.map(async (seance) => {
+    seancesPasseesOuEnCours.map(async (seance) => {
       try {
         const feuille = await apiPresencesProfesseur.chargerFeuille(seance.id);
         const lignes = Array.isArray(feuille?.lignes) ? feuille.lignes : [];
@@ -578,100 +610,62 @@ const buildPresenceInsightsFromApp = async () => {
         if (!seanceComplete) {
           feuillesACompleter += 1;
         }
-      } catch {
-        feuillesACompleter += 1;
+      } catch (err) {
+        console.warn('Impossible de charger la feuille de presence pour la seance', seance?.id, err);
+      }
+    }),
+  );
+
+  const supportsChecks = await Promise.all(
+    upcomingSeances.map(async (seance) => {
+      try {
+        const fichiers = await apiSeancesProfesseur.listerFichiersDeSeance(seance.id);
+        return Array.isArray(fichiers) && fichiers.length > 0 ? 0 : 1;
+      } catch (err) {
+        console.warn('Impossible de charger les ressources de la seance', seance?.id, err);
+        return 0;
       }
     }),
   );
 
   return {
     prochaineSeance,
+    enseignementsActifs,
     absencesJour,
     feuillesACompleter,
     etudiantsARisque: Array.from(absencesParEtudiant.values()).filter((count) => count >= 2).length,
     justificatifsAConsulter,
+    coursSansSupport: supportsChecks.reduce((sum, count) => sum + count, 0),
     tauxPresence: totalStatuses > 0 ? (presents / totalStatuses) * 100 : null,
   };
 };
 
-const TableauDeBordProfesseur = () => {
+const TableauDeBordProfesseur = ({ surNavigation }) => {
   const [dashboard, setDashboard] = useState(null);
   const [prochaineSeance, setProchaineSeance] = useState(null);
   const [presenceInsights, setPresenceInsights] = useState({
     prochaineSeance: null,
+    enseignementsActifs: 0,
     absencesJour: 0,
     feuillesACompleter: 0,
     etudiantsARisque: 0,
     justificatifsAConsulter: 0,
+    coursSansSupport: 0,
     tauxPresence: null,
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeNoteTab, setActiveNoteTab] = useState('classe');
   const [notesState, setNotesState] = useState({ loading: true, error: '', data: EMPTY_NOTE_STATS });
+  const [derniereMiseAJour, setDerniereMiseAJour] = useState(null);
 
-  useEffect(() => {
-    const loadNotesStats = async () => {
-      try {
-        setNotesState((current) => ({ ...current, loading: true, error: '' }));
-        const noteStats = await buildNoteStatistics();
-        setNotesState({ loading: false, error: '', data: noteStats });
-      } catch (err) {
-        console.error('Chargement statistiques des notes impossible:', err);
-        setNotesState({
-          loading: false,
-          error: err.message || 'Impossible de charger les statistiques des notes.',
-          data: EMPTY_NOTE_STATS,
-        });
-      }
-    };
-
-    const loadDashboard = async () => {
-      try {
-        setLoading(true);
-        setError('');
-        const dashboardResponse = await apiTableauDeBordProfesseur.obtenirTableauDeBord();
-        setDashboard(dashboardResponse);
-
-        const [nextSessionResult, presenceResult] = await Promise.allSettled([
-          apiTableauDeBordProfesseur.obtenirProchaineSeance(),
-          buildPresenceInsightsFromApp(),
-        ]);
-
-        const nextSessionApi =
-          nextSessionResult.status === 'fulfilled' ? nextSessionResult.value?.prochaineSeance || null : null;
-        const presenceData =
-          presenceResult.status === 'fulfilled'
-            ? presenceResult.value
-            : {
-                prochaineSeance: null,
-                absencesJour: 0,
-                feuillesACompleter: 0,
-                etudiantsARisque: 0,
-                justificatifsAConsulter: 0,
-                tauxPresence: null,
-              };
-
-        setPresenceInsights(presenceData);
-        setProchaineSeance(pickNearestUpcomingSession(presenceData.prochaineSeance, nextSessionApi));
-      } catch (err) {
-        console.error('Chargement dashboard professeur impossible:', err);
-        setError(err.message || 'Impossible de charger le tableau de bord professeur.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadDashboard();
-    loadNotesStats();
-  }, []);
-
-  const reloadNoteStats = async () => {
+  const loadNotesStats = async (showLoader = true) => {
     try {
-      setNotesState((current) => ({ ...current, loading: true, error: '' }));
+      setNotesState((current) => ({ ...current, loading: showLoader ? true : current.loading, error: '' }));
       const noteStats = await buildNoteStatistics();
       setNotesState({ loading: false, error: '', data: noteStats });
     } catch (err) {
+      console.error('Chargement statistiques des notes impossible:', err);
       setNotesState({
         loading: false,
         error: err.message || 'Impossible de charger les statistiques des notes.',
@@ -680,9 +674,67 @@ const TableauDeBordProfesseur = () => {
     }
   };
 
-  const dashboardData = dashboard || {};
+  const loadDashboardData = async (showLoader = true) => {
+    try {
+      if (showLoader) {
+        setLoading(true);
+      }
+      setError('');
+      const dashboardResponse = await apiTableauDeBordProfesseur.obtenirTableauDeBord();
+      setDashboard(dashboardResponse);
+
+      const [nextSessionResult, presenceResult] = await Promise.allSettled([
+        apiTableauDeBordProfesseur.obtenirProchaineSeance(),
+        buildPresenceInsightsFromApp(),
+      ]);
+
+      const nextSessionApi =
+        nextSessionResult.status === 'fulfilled' ? nextSessionResult.value?.prochaineSeance || null : null;
+      const presenceData =
+        presenceResult.status === 'fulfilled'
+          ? presenceResult.value
+          : {
+              prochaineSeance: null,
+              enseignementsActifs: 0,
+              absencesJour: 0,
+              feuillesACompleter: 0,
+              etudiantsARisque: 0,
+              justificatifsAConsulter: 0,
+              coursSansSupport: 0,
+              tauxPresence: null,
+            };
+
+      setPresenceInsights(presenceData);
+      setProchaineSeance(pickNearestUpcomingSession(presenceData.prochaineSeance, nextSessionApi));
+      setDerniereMiseAJour(new Date());
+    } catch (err) {
+      console.error('Chargement dashboard professeur impossible:', err);
+      setError(err.message || 'Impossible de charger le tableau de bord professeur.');
+    } finally {
+      if (showLoader) {
+        setLoading(false);
+      }
+    }
+  };
+
+  useEffect(() => {
+    loadDashboardData();
+    loadNotesStats();
+
+    const interval = setInterval(() => {
+      loadDashboardData(false);
+      loadNotesStats(false);
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const reloadNoteStats = async () => {
+    await loadNotesStats(true);
+  };
+
+  const dashboardData = useMemo(() => dashboard || {}, [dashboard]);
   const entete = dashboardData.entete || {};
-  const stats = dashboardData.stats || {};
   const sessionCard = normalizeSession(prochaineSeance);
   const dashboardAbsenceInsights = useMemo(() => buildAbsenceInsights(dashboardData), [dashboardData]);
   const prochainExamen = useMemo(() => {
@@ -700,10 +752,7 @@ const TableauDeBordProfesseur = () => {
   const absenceInsights = {
     ...dashboardAbsenceInsights,
     todayCount: presenceInsights.absencesJour,
-    pendingCount:
-      presenceInsights.justificatifsAConsulter > 0
-        ? presenceInsights.justificatifsAConsulter
-        : dashboardAbsenceInsights.pendingCount,
+    pendingCount: presenceInsights.justificatifsAConsulter,
     highRiskCount: presenceInsights.etudiantsARisque,
     attendanceRate:
       presenceInsights.tauxPresence != null
@@ -752,18 +801,55 @@ const TableauDeBordProfesseur = () => {
   const weakPerformer =
     [...activeNoteItems].filter((item) => Number.isFinite(item.tauxReussite)).sort((a, b) => (a.tauxReussite || 0) - (b.tauxReussite || 0))[0] || null;
 
-  const coursSansSupport = Math.max(
-    0,
-    (stats?.nbSeancesTotales ?? 0) - (stats?.nbSeancesTerminees ?? 0),
-  );
-
   const strategicKpis = [
-    { label: 'Enseignements actifs', value: stats?.nbEnseignements ?? 0, accent: 'indigo', icon: BookOpen },
-    { label: 'Examens programmes', value: stats?.nbExamensProgrammes ?? 0, accent: 'amber', icon: ClipboardList },
+    { label: 'Enseignements actifs', value: presenceInsights.enseignementsActifs, accent: 'indigo', icon: BookOpen },
+    { label: 'Examens programmes', value: noteMeta.examensProgrammes, accent: 'amber', icon: ClipboardList },
     { label: 'Copies a corriger', value: noteMeta.copiesACorriger, accent: 'rose', icon: FileWarning },
     { label: 'Feuilles a finaliser', value: noteMeta.feuillesNotesACompleter, accent: 'teal', icon: ClipboardList },
-    { label: 'Cours sans support', value: coursSansSupport, accent: 'emerald', icon: AlertCircle },
+    { label: 'Cours sans support', value: presenceInsights.coursSansSupport, accent: 'emerald', icon: AlertCircle },
   ];
+
+  const navigateToPresence = (presenceVueProfesseur = null) => {
+    if (typeof surNavigation === 'function') {
+      surNavigation({
+        id: 'presence',
+        params: {
+          presenceVueProfesseur: presenceVueProfesseur
+            ? {
+                ...presenceVueProfesseur,
+                requestId: Date.now(),
+              }
+            : null,
+        },
+      });
+      return;
+    }
+
+    window.location.hash = '#presence';
+  };
+
+  const handlePriorityNavigation = (key) => {
+    if (key === 'today') {
+      navigateToPresence({
+        activeView: 'feuille',
+      });
+      return;
+    }
+
+    if (key === 'notes') {
+      if (typeof surNavigation === 'function') {
+        surNavigation('notes');
+      }
+      return;
+    }
+
+    if (key === 'justifications') {
+      navigateToPresence({
+        activeView: 'justificatifs',
+        statusFilter: 'EN_ATTENTE',
+      });
+    }
+  };
 
   const alertEntries = [
     {
@@ -775,6 +861,7 @@ const TableauDeBordProfesseur = () => {
           ? `${formatCompactNumber(absenceInsights.todayCount)} absence${absenceInsights.todayCount > 1 ? 's' : ''} enregistree${absenceInsights.todayCount > 1 ? 's' : ''} aujourd hui.`
           : 'Aucune absence detectee aujourd hui.',
       tone: absenceInsights.todayCount > 0 ? 'danger' : 'soft',
+      actionLabel: 'Ouvrir la presence',
     },
     {
       key: 'notes',
@@ -785,6 +872,7 @@ const TableauDeBordProfesseur = () => {
           ? `${formatCompactNumber(noteMeta.feuillesNotesACompleter)} liste${noteMeta.feuillesNotesACompleter > 1 ? 's' : ''} ont encore des notes manquantes.`
           : 'Toutes les feuilles de notes sont completes.',
       tone: noteMeta.feuillesNotesACompleter > 0 ? 'danger' : 'soft',
+      actionLabel: 'Ouvrir les notes',
     },
     {
       key: 'justifications',
@@ -795,6 +883,7 @@ const TableauDeBordProfesseur = () => {
           ? `${formatCompactNumber(absenceInsights.pendingCount)} justificatif${absenceInsights.pendingCount > 1 ? 's' : ''} restent en attente de consultation.`
           : 'Aucun justificatif en attente.',
       tone: absenceInsights.pendingCount > 0 ? 'warning' : 'soft',
+      actionLabel: 'Traiter',
     },
   ];
 
@@ -830,6 +919,11 @@ const TableauDeBordProfesseur = () => {
           <div className="prof-header-copy">
             <h1>Espace Professeur</h1>
             <p>{[entete?.specialite, entete?.departement].filter(Boolean).join(' | ') || 'Suivi academique et pedagogique en cours.'}</p>
+            {derniereMiseAJour ? (
+              <span className="dashboard-refresh-meta">
+                {formaterDerniereMiseAJour(derniereMiseAJour)}
+              </span>
+            ) : null}
           </div>
 
           <div className="prof-session-status">
@@ -1000,7 +1094,12 @@ const TableauDeBordProfesseur = () => {
 
             <div className="prof-priority-list">
               {alertEntries.map((entry) => (
-                <div key={entry.key} className={`prof-priority-item tone-${entry.tone}`}>
+                <button
+                  key={entry.key}
+                  type="button"
+                  className={`prof-priority-item tone-${entry.tone} clickable`}
+                  onClick={() => handlePriorityNavigation(entry.key)}
+                >
                   <div className="prof-priority-main">
                     <div className="prof-priority-copy">
                       <div className="prof-priority-title-row">
@@ -1008,10 +1107,11 @@ const TableauDeBordProfesseur = () => {
                         <strong>{entry.title}</strong>
                       </div>
                       <p>{entry.detail}</p>
+                      <span className="prof-priority-hint">{entry.actionLabel}</span>
                     </div>
                     <div className="prof-priority-value">{entry.value}</div>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
 

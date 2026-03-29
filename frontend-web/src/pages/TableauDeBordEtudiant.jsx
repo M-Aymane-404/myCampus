@@ -3,6 +3,11 @@ import { Bell, GraduationCap, Clock, MapPin, TrendingUp, AlertCircle, BookOpen, 
 import { apiEtudiant } from '../services/apiEtudiant';
 import './TableauDeBordEtudiant.css';
 
+const formaterDerniereMiseAJour = (date) => {
+  if (!date) return '';
+  return `Mis a jour a ${date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+};
+
 const TableauDeBordEtudiant = ({ surNavigation }) => {
   console.log('DEBUG: TableauDeBordEtudiant component rendered');
 
@@ -11,11 +16,14 @@ const TableauDeBordEtudiant = ({ surNavigation }) => {
   const [nextSession, setNextSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [derniereMiseAJour, setDerniereMiseAJour] = useState(null);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchData = async (showLoader = true) => {
       try {
-        setLoading(true);
+        if (showLoader) {
+          setLoading(true);
+        }
         
         // Fetch dashboard data first
         const dashboardResponse = await apiEtudiant.getDashboardData();
@@ -39,16 +47,24 @@ const TableauDeBordEtudiant = ({ surNavigation }) => {
           console.warn('Failed to fetch announcements, continuing without them:', annoncesError);
           setAnnonces([]); // Set empty array as fallback
         }
+        setDerniereMiseAJour(new Date());
         
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
         setError(err.message);
       } finally {
-        setLoading(false);
+        if (showLoader) {
+          setLoading(false);
+        }
       }
     };
 
     fetchData();
+    const interval = setInterval(() => {
+      fetchData(false);
+    }, 60000);
+
+    return () => clearInterval(interval);
   }, []);
 
   if (loading) {
@@ -97,6 +113,11 @@ const TableauDeBordEtudiant = ({ surNavigation }) => {
                 'L3 Informatique | Session d\'Automne 2023'
               }
             </p>
+            {derniereMiseAJour ? (
+              <span className="dashboard-refresh-meta">
+                {formaterDerniereMiseAJour(derniereMiseAJour)}
+              </span>
+            ) : null}
           </div>
           <div className="session-status">
             <div className="status-indicator"></div>

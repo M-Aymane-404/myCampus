@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/config/configuration_app.dart';
+import '../../../core/widgets/photo_securisee.dart';
 import '../../authentification/presentation/controleur_authentification.dart';
 import '../data/controller/controleur_profil_etudiant.dart';
 import '../data/dto/profil_etudiant_dto.dart';
@@ -375,7 +375,6 @@ class _ProfileHeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final photoUrl = _buildPhotoUrl(profil?.photoUrl);
     final fullName = _buildNomComplet(profil);
 
     return Container(
@@ -394,18 +393,10 @@ class _ProfileHeroCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          CircleAvatar(
+          AvatarPhotoSecurisee(
+            photoUrl: profil?.photoUrl,
             radius: 34,
-            backgroundColor: const Color(0xFFE9ECFF),
-            backgroundImage: photoUrl == null ? null : NetworkImage(photoUrl),
-            child:
-                photoUrl == null
-                    ? const Icon(
-                      Icons.person_rounded,
-                      size: 34,
-                      color: Color(0xFF5B5BEA),
-                    )
-                    : null,
+            accent: const Color(0xFF5B5BEA),
           ),
           const SizedBox(height: 14),
           Text(
@@ -663,11 +654,6 @@ class _EmptyState extends StatelessWidget {
       ),
     );
   }
-}
-
-String? _buildPhotoUrl(String? photoUrl) {
-  if (photoUrl == null || photoUrl.trim().isEmpty) return null;
-  return '${ConfigurationApp.apiBaseUrl}$photoUrl';
 }
 
 String _buildNomComplet(ProfilEtudiantDTO? profil) {

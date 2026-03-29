@@ -11,8 +11,26 @@ import {
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { apiAuth } from '../../services/apiAuth';
+import { apiProfesseurs } from '../../services/apiProfesseurs';
 import NotificationHeart from './NotificationHeart';
+import PhotoSecurisee from '../communs/PhotoSecurisee';
 import './EnTete.css';
+
+const extractPhotoValue = (data) =>
+  data?.photoProfile
+  || data?.photoUrl
+  || data?.photo
+  || data?.url
+  || data?.fileName
+  || data?.photoNom
+  || null;
+
+const withCacheBuster = (photoUrl, version) => {
+  if (!photoUrl) return null;
+  if (!version) return photoUrl;
+  const separator = String(photoUrl).includes('?') ? '&' : '?';
+  return `${photoUrl}${separator}v=${version}`;
+};
 
 const EnTeteProfesseur = ({ elementActif, surChangementElement }) => {
   const [menuOuvert, setMenuOuvert] = useState(false);
@@ -30,34 +48,54 @@ const EnTeteProfesseur = ({ elementActif, surChangementElement }) => {
   const menuRef = useRef(null);
 
   useEffect(() => {
-    const chargerUtilisateur = () => {
+    const chargerUtilisateur = async ({ forceRefreshPhoto = false } = {}) => {
       const currentUser = apiAuth.getUser();
 
       if (!currentUser) return;
 
+      const shouldRefreshPhoto = forceRefreshPhoto || !extractPhotoValue(currentUser);
+      if (shouldRefreshPhoto) {
+        try {
+          const data = await apiProfesseurs.getProfile();
+          const resolvedPhoto = extractPhotoValue(data);
+          if (resolvedPhoto) {
+            apiAuth.updateUser({
+              nom: data.nom || currentUser.nom || '',
+              prenom: data.prenom || currentUser.prenom || '',
+              email: data.email || currentUser.email || '',
+              telephone: data.tel || data.telephone || currentUser.telephone || currentUser.tel || '',
+              photoProfile: resolvedPhoto,
+              photoProfileVersion: Date.now(),
+            });
+          }
+        } catch (e) {
+          console.error('Erreur rafraichissement profil professeur (navbar):', e);
+        }
+      }
+
+      const syncedUser = apiAuth.getUser() || currentUser;
+
       setInfosUtilisateur((prev) => ({
         ...prev,
-        nom: currentUser.nom || prev.nom,
-        prenom: currentUser.prenom || prev.prenom,
-        email: currentUser.email || prev.email,
-        telephone: currentUser.telephone || currentUser.tel || '',
-        nomUtilisateur: currentUser.nomUtilisateur || currentUser.username || '',
-        departement: currentUser.departement || '',
-        dateCreation: currentUser.dateCreation || prev.dateCreation,
+        nom: syncedUser.nom || prev.nom,
+        prenom: syncedUser.prenom || prev.prenom,
+        email: syncedUser.email || prev.email,
+        telephone: syncedUser.telephone || syncedUser.tel || '',
+        nomUtilisateur: syncedUser.nomUtilisateur || syncedUser.username || '',
+        departement: syncedUser.departement || '',
+        dateCreation: syncedUser.dateCreation || prev.dateCreation,
       }));
 
-      const photo = currentUser.photoProfile || currentUser.photo || null;
+      const photo = extractPhotoValue(syncedUser);
+      const photoVersion = syncedUser.photoProfileVersion || null;
       if (photo) {
-        const fullPhotoUrl = photo.startsWith('http')
-          ? photo
-          : `http://localhost:8080${photo}`;
-        setPhotoPreview(fullPhotoUrl);
+        setPhotoPreview(withCacheBuster(photo, photoVersion));
       } else {
         setPhotoPreview(null);
       }
     };
 
-    chargerUtilisateur();
+    chargerUtilisateur({ forceRefreshPhoto: true });
 
     const handleUserUpdate = () => chargerUtilisateur();
     window.addEventListener('user-updated', handleUserUpdate);
@@ -170,7 +208,12 @@ const EnTeteProfesseur = ({ elementActif, surChangementElement }) => {
           <div className="avatar-wrapper">
             <div className="avatar-profil">
               {photoPreview ? (
-                <img src={photoPreview} alt="Profile" className="avatar-image-small" />
+                <PhotoSecurisee
+                  photoUrl={photoPreview}
+                  alt="Profile"
+                  className="avatar-image-small"
+                  fallback={<span className="avatar-lettre">{initiales}</span>}
+                />
               ) : (
                 <span className="avatar-lettre">{initiales}</span>
               )}

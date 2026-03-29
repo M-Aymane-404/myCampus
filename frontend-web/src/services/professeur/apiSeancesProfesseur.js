@@ -3,18 +3,86 @@ import { apiAuth } from '../apiAuth';
 
 const BASE_URL = 'http://localhost:8080/api/professeur';
 
-const lireErreur = async (response, fallback) => {
-    try {
-        const data = await response.json();
-        return data?.message || data?.error || fallback;
-    } catch {
-        try {
-            const text = await response.text();
-            return text || fallback;
-        } catch {
-            return fallback;
-        }
+const isNonEmptyString = (value) => typeof value === 'string' && value.trim().length > 0;
+
+const dedupe = (items) => [...new Set(items)];
+
+const collectStrings = (value, acc = []) => {
+    if (value == null) return acc;
+    if (isNonEmptyString(value)) {
+        acc.push(value.trim());
+        return acc;
     }
+    if (Array.isArray(value)) {
+        value.forEach((item) => collectStrings(item, acc));
+        return acc;
+    }
+    if (typeof value === 'object') {
+        Object.values(value).forEach((item) => collectStrings(item, acc));
+    }
+    return acc;
+};
+
+const extraireMessage = (data) => {
+    if (data == null) return '';
+    if (isNonEmptyString(data)) return data.trim();
+
+    if (Array.isArray(data)) {
+        const messages = dedupe(collectStrings(data));
+        return messages.join(' | ');
+    }
+
+    if (typeof data === 'object') {
+        const knownKeys = [
+            'message',
+            'detail',
+            'error_description',
+            'errorDescription',
+            'error',
+            'title',
+            'reason',
+        ];
+
+        for (const key of knownKeys) {
+            if (data[key] == null) continue;
+            const nested = extraireMessage(data[key]);
+            if (isNonEmptyString(nested)) return nested;
+        }
+
+        const errorsKeys = ['errors', 'violations', 'fieldErrors'];
+        for (const key of errorsKeys) {
+            if (data[key] == null) continue;
+            const messages = dedupe(collectStrings(data[key]));
+            if (messages.length > 0) return messages.join(' | ');
+        }
+
+        const anyStrings = dedupe(collectStrings(data));
+        return anyStrings.join(' | ');
+    }
+
+    return '';
+};
+
+const lireErreur = async (response, fallback) => {
+    let data = null;
+
+    try {
+        data = await response.clone().json();
+    } catch {
+        data = null;
+    }
+
+    const fromJson = extraireMessage(data);
+    if (isNonEmptyString(fromJson)) return fromJson;
+
+    try {
+        const text = (await response.text())?.trim();
+        if (isNonEmptyString(text)) return text;
+    } catch {
+        // ignore
+    }
+
+    return fallback;
 };
 
 const getHeaders = async (json = false) => {

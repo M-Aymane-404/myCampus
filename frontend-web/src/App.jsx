@@ -105,6 +105,7 @@ function App() {
     classeSelectionnee: null,
     annonceSelectionneeId: null,
     annonceVueProfesseur: null,
+    presenceVueProfesseur: null,
   });
   const [messagesGlobaux, setMessagesGlobaux] = useState([]);
   const temporisateursMessagesRef = useRef(new Map());
@@ -237,6 +238,7 @@ function App() {
         ...prev,
         annonceSelectionneeId: null,
         annonceVueProfesseur: null,
+        presenceVueProfesseur: null,
       }));
       return;
     }
@@ -245,10 +247,19 @@ function App() {
       return;
     }
 
+    const shouldResetPresenceContext =
+      destination.id && destination.id !== 'presence' && !(destination.params && 'presenceVueProfesseur' in destination.params);
+
     if (destination.params && typeof destination.params === 'object') {
       setNavigationState((prev) => ({
         ...prev,
+        ...(shouldResetPresenceContext ? { presenceVueProfesseur: null } : {}),
         ...destination.params,
+      }));
+    } else if (shouldResetPresenceContext) {
+      setNavigationState((prev) => ({
+        ...prev,
+        presenceVueProfesseur: null,
       }));
     }
 
@@ -342,7 +353,7 @@ function App() {
       case 'calendrier':
         return <CalendrierAcademiqueProfesseur />;
       case 'presence':
-        return <GestionPresenceProfesseur />;
+        return <GestionPresenceProfesseur navigationIntent={navigationState.presenceVueProfesseur} />;
       case 'annonces':
         return (
           <GestionAnnoncesProfesseur

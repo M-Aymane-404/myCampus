@@ -24,6 +24,11 @@ import './TableauDeBordAdmin.css';
 const formaterNombre = (valeur) =>
   new Intl.NumberFormat('fr-FR').format(valeur ?? 0);
 
+const formaterDerniereMiseAJour = (date) => {
+  if (!date) return '';
+  return `Mis a jour a ${date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+};
+
 const construireKpis = (statistiquesGlobales) => [
   {
     label: 'Etudiants',
@@ -69,23 +74,30 @@ const TableauDeBordAdmin = ({ surNavigation }) => {
   const [dashboard, setDashboard] = useState(null);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState('');
+  const [derniereMiseAJour, setDerniereMiseAJour] = useState(null);
 
   useEffect(() => {
-    const chargerTableauDeBord = async () => {
+    const chargerTableauDeBord = async (showLoader = true) => {
       try {
-        setChargement(true);
+        if (showLoader) setChargement(true);
         setErreur('');
         const donnees = await apiTableauDeBord.obtenirTableauDeBord();
         setDashboard(donnees);
+        setDerniereMiseAJour(new Date());
       } catch (err) {
         console.error('Chargement dashboard admin impossible:', err);
         setErreur(err.message || 'Impossible de charger le tableau de bord.');
       } finally {
-        setChargement(false);
+        if (showLoader) setChargement(false);
       }
     };
 
     chargerTableauDeBord();
+    const interval = setInterval(() => {
+      chargerTableauDeBord(false);
+    }, 60000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const kpis = construireKpis(dashboard?.statistiquesGlobales);
@@ -103,6 +115,11 @@ const TableauDeBordAdmin = ({ surNavigation }) => {
               Vue centrale pour suivre les effectifs, traiter les alertes et lancer
               les operations courantes dans le meme style que l espace etudiant.
             </p>
+            {derniereMiseAJour ? (
+              <span className="dashboard-refresh-meta">
+                {formaterDerniereMiseAJour(derniereMiseAJour)}
+              </span>
+            ) : null}
           </div>
 
           <div className="admin-header-side">

@@ -8,12 +8,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Paths;
 import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 @Service
 public class ValidationFichierSecuriseService {
 
     public enum FormatFichierAutorise {
         PDF(".pdf", "application/pdf"),
+        DOCX(".docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
         JPEG(".jpg", "image/jpeg"),
         PNG(".png", "image/png");
 
@@ -70,6 +73,9 @@ public class ValidationFichierSecuriseService {
             if (commencePar(entete, new byte[]{0x25, 0x50, 0x44, 0x46, 0x2D})) {
                 return FormatFichierAutorise.PDF;
             }
+            if (estDocx(entete, fichier)) {
+                return FormatFichierAutorise.DOCX;
+            }
             if (commencePar(entete, new byte[]{(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A})) {
                 return FormatFichierAutorise.PNG;
             }
@@ -80,6 +86,33 @@ public class ValidationFichierSecuriseService {
             throw new IllegalArgumentException("Impossible de lire le fichier.", ex);
         }
         throw new IllegalArgumentException("Signature binaire du fichier non reconnue.");
+    }
+
+    private boolean estDocx(byte[] entete, MultipartFile fichier) throws IOException {
+        if (!commencePar(entete, new byte[]{0x50, 0x4B, 0x03, 0x04})) {
+            return false;
+        }
+
+        boolean contientDocumentWord = false;
+        boolean contientContentTypes = false;
+
+        try (ZipInputStream zipInputStream = new ZipInputStream(fichier.getInputStream())) {
+            ZipEntry entree;
+            while ((entree = zipInputStream.getNextEntry()) != null) {
+                String nomEntree = entree.getName();
+                if ("word/document.xml".equals(nomEntree)) {
+                    contientDocumentWord = true;
+                } else if ("[Content_Types].xml".equals(nomEntree)) {
+                    contientContentTypes = true;
+                }
+
+                if (contientDocumentWord && contientContentTypes) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private boolean commencePar(byte[] source, byte[] prefixe) {

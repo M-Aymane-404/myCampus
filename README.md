@@ -179,6 +179,10 @@ On the React side, the chatbot uses an environment variable.
 * Restart/rebuild containers if needed:
 ```docker compose up --build```
 
+### Test the chat
+ Make sure that you clicked on the button Publish, then you can test it on the web application
+
+
 
 ## 🌐 Access the Application
 
