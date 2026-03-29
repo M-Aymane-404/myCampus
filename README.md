@@ -121,7 +121,7 @@ You should see:
 * If this is the first run, n8n will ask you to create an admin (owner) account to access the interface.
 
 
-### 2️⃣ Importer le workflow n8n
+### 2️⃣ Import the n8n workflow
 
 The project includes the workflow at:
 
