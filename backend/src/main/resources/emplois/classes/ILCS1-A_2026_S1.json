@@ -7,7 +7,7 @@
         "end": "09:00",
         "matiereCode": "ILCS-POO-S1-M1",
         "matiereNom": "Programmation Orientée Objet",
-        "professeurPpr": "PPR200012",
+        "professeurPpr": "20001200",
         "professeurNom": "Ahmed Kamal",
         "salle": "SALLE 12",
         "typeSeance": "COURS"
@@ -19,7 +19,7 @@
         "end": "10:00",
         "matiereCode": "ILCS-BDD-S1-M1",
         "matiereNom": "Bases de Données",
-        "professeurPpr": "PPR200012",
+        "professeurPpr": "20001200",
         "professeurNom": "Ahmed Kamal",
 
         "salle": "LABO INFO 1",
@@ -31,7 +31,7 @@
         "end": "12:00",
         "matiereCode": "ILCS-RESEAU-S1-M1",
         "matiereNom": "Réseaux",
-        "professeurPpr": "PPR300012",
+        "professeurPpr": "30001200",
         "professeurNom": "Said Barada",
 
         "salle": "SALLE 08",
@@ -43,7 +43,7 @@
         "end": "11:00",
         "matiereCode": "ILCS-SYSTEME-S1-M1",
         "matiereNom": "Systèmes d'Exploitation",
-        "professeurPpr": "PPR200012",
+        "professeurPpr": "20001200",
         "professeurNom": "Ahmed Kamal",
 
         "salle": "LABO INFO 2",
@@ -55,7 +55,7 @@
         "end": "14:00",
         "matiereCode": "ILCS-LANGUES-S1-EN",
         "matiereNom": "Anglais",
-        "professeurPpr": "PPR300012",
+        "professeurPpr": "30001200",
         "professeurNom": "Said Barada",
 
         "salle": "SALLE 05",
@@ -67,7 +67,7 @@
         "end": "11:00",
         "matiereCode": "ILCS-POO-S1-M1",
         "matiereNom": "Programmation Orientée Objet",
-        "professeurPpr": "PPR200012",
+        "professeurPpr": "20001200",
         "professeurNom": "Ahmed Kamal",
 
         "salle": "LABO INFO 1",
@@ -80,7 +80,7 @@
         "end": "10:00",
         "matiereCode": "ILCS-BDD-S1-M1",
         "matiereNom": "Bases de Données",
-        "professeurPpr": "PPR200012",
+        "professeurPpr": "20001200",
         "professeurNom": "Ahmed Kamal",
 
         "salle": "SALLE 10",
@@ -92,7 +92,7 @@
         "end": "14:00",
         "matiereCode": "ILCS-LANGUES-S1-FR",
         "matiereNom": "Français",
-        "professeurPpr": "PPR300012",
+        "professeurPpr": "30001200",
         "professeurNom": "Said Barada",
 
         "salle": "SALLE 03",
